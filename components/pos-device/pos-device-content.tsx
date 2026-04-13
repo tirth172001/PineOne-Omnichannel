@@ -86,13 +86,13 @@ export function POSDeviceContent() {
         ].map((item) => {
           const active = section === item.key
           return (
-            <button
+            <Button variant="ghost"
               key={item.key}
               onClick={() => {
                 setSection(item.key as DeviceSection)
                 setSelectedId(null)
               }}
-              className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
+              className={`w-full rounded-lg border px-3 py-2 !h-auto !justify-start text-left transition-colors ${
                 active
                   ? "border-border bg-secondary/70"
                   : "border-transparent hover:border-border hover:bg-secondary/30"
@@ -100,7 +100,7 @@ export function POSDeviceContent() {
             >
               <p className="text-sm font-medium text-foreground">{item.label}</p>
               <p className="text-xs text-muted-foreground">{item.helper}</p>
-            </button>
+            </Button>
           )
         })}
       </div>
@@ -170,10 +170,10 @@ export function POSDeviceContent() {
           {filtered.map((device) => {
             const online = device.status === "online"
             return (
-              <button
+              <Button variant="ghost"
                 key={device.id}
                 onClick={() => setSelectedId(device.id)}
-                className={`intercom-panel-row ${selectedId === device.id ? "intercom-panel-row-active" : ""}`}
+                className={`intercom-panel-row !h-auto !justify-start ${selectedId === device.id ? "intercom-panel-row-active" : ""}`}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -188,7 +188,7 @@ export function POSDeviceContent() {
                     </Badge>
                   </div>
                 </div>
-              </button>
+              </Button>
             )
           })}
         </div>
@@ -263,7 +263,6 @@ export function POSDeviceContent() {
         hideBottomNav={section !== "overview"}
         leftWidth={248}
         leftMaxWidth={300}
-        centerMaxWidth={1080}
       />
       {!selected && (
         <div className="px-5 py-3 border-t border-border text-xs text-muted-foreground">

@@ -56,8 +56,8 @@ function TxnRow({ txn, selected, onClick }: { txn: typeof transactions[0]; selec
   const { badge } = statusMap[txn.status as keyof typeof statusMap]
   const MI = mIcon[txn.method] ?? CreditCard
   return (
-    <button onClick={onClick}
-      className={`intercom-panel-row ${selected ? "intercom-panel-row-active" : ""}`}>
+    <Button variant="ghost" onClick={onClick}
+      className={`intercom-panel-row !h-auto !justify-start ${selected ? "intercom-panel-row-active" : ""}`}>
       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted shrink-0">
         <MI className="h-4 w-4 text-muted-foreground" />
       </div>
@@ -71,7 +71,7 @@ function TxnRow({ txn, selected, onClick }: { txn: typeof transactions[0]; selec
           <Badge variant="outline" className={`text-[9px] px-1.5 py-0 shrink-0 ${badge}`}>{txn.status}</Badge>
         </div>
       </div>
-    </button>
+    </Button>
   )
 }
 
@@ -234,14 +234,14 @@ export function PaymentsContent() {
         ].map((item) => {
           const active = section === item.key
           return (
-            <button
+            <Button variant="ghost"
               key={item.key}
               onClick={() => {
                 setSection(item.key as PaymentsSection)
                 setSelected(null)
                 setContextMode(null)
               }}
-              className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
+              className={`w-full rounded-lg border px-3 py-2 !h-auto !justify-start text-left transition-colors ${
                 active
                   ? "border-border bg-secondary/70"
                   : "border-transparent hover:border-border hover:bg-secondary/30"
@@ -249,7 +249,7 @@ export function PaymentsContent() {
             >
               <p className="text-sm font-medium text-foreground">{item.label}</p>
               <p className="text-xs text-muted-foreground">{item.helper}</p>
-            </button>
+            </Button>
           )
         })}
       </div>
@@ -334,7 +334,6 @@ export function PaymentsContent() {
         hideBottomNav={section !== "overview"}
         leftWidth={248}
         leftMaxWidth={300}
-        centerMaxWidth={1080}
       />
     </>
   )

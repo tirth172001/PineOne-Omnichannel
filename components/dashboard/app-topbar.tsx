@@ -1,23 +1,28 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { DemoSettingsDialog } from "./demo-settings-dialog"
 import {
-  ArrowLeft,
   BookOpenText,
-  ChevronDown,
   CircleUserRound,
+  CreditCard,
+  LayoutGrid,
   LifeBuoy,
+  Link2,
   LogOut,
+  Monitor,
   Moon,
+  Plus,
   Search,
   Settings,
+  Store,
   Sun,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { DASHBOARD_CONTENT_MAX_WIDTH } from "@/lib/dashboard-layout"
+import { clearDummyAuthSession, readDummyAuthSession } from "@/lib/dummy-auth"
 import { cn } from "@/lib/utils"
 import {
   DropdownMenu,
@@ -32,185 +37,199 @@ interface AppTopbarProps {
   pathname: string
 }
 
-const productItems = [
-  { label: "All products", href: "/" },
-  { label: "Online Payments", href: "/online-payments" },
-  { label: "Offline Payments", href: "/offline-payments" },
-  { label: "Pay by Link", href: "/payment-links" },
+type RailItem = {
+  href: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  matcher: (pathname: string) => boolean
+}
+
+const productItems: RailItem[] = [
+  {
+    href: "/",
+    label: "All products",
+    icon: LayoutGrid,
+    matcher: (pathname) => pathname === "/",
+  },
+  {
+    href: "/online-payments",
+    label: "Online payments",
+    icon: CreditCard,
+    matcher: (pathname) =>
+      pathname.startsWith("/online-payments") ||
+      pathname.startsWith("/card-payments") ||
+      pathname.startsWith("/international-payments"),
+  },
+  {
+    href: "/offline-payments",
+    label: "Offline payments",
+    icon: Store,
+    matcher: (pathname) => pathname.startsWith("/offline-payments") || pathname.startsWith("/pos-device"),
+  },
+  {
+    href: "/payment-links",
+    label: "Pay by link",
+    icon: Link2,
+    matcher: (pathname) => pathname.startsWith("/payment-links"),
+  },
 ]
 
-function getRouteTitle(pathname: string): string {
-  if (pathname === "/") return "Overview"
-  if (pathname.startsWith("/online-payments")) return "Online Payments"
-  if (pathname.startsWith("/offline-payments")) return "Offline Payments"
-  if (pathname.startsWith("/payment-links")) return "Payment Links"
-  if (pathname.startsWith("/card-payments")) return "Card Payments"
-  if (pathname.startsWith("/pos-device")) return "POS Devices"
-  if (pathname.startsWith("/international-payments")) return "International Payments"
-  if (pathname.startsWith("/products")) return "Products"
-  if (pathname.startsWith("/use-cases")) return "Use Cases"
-  if (pathname.startsWith("/support")) return "Support"
-  if (pathname.startsWith("/settings")) return "Settings"
-  if (pathname.startsWith("/onboarding")) return "Onboarding"
-  return "Workspace"
-}
+const utilityItems: RailItem[] = [
+  {
+    href: "/support",
+    label: "Support",
+    icon: LifeBuoy,
+    matcher: (pathname) => pathname.startsWith("/support"),
+  },
+]
 
-function getActiveProduct(pathname: string) {
-  if (pathname.startsWith("/online-payments")) return productItems[1]
-  if (pathname.startsWith("/offline-payments")) return productItems[2]
-  if (pathname.startsWith("/payment-links")) return productItems[3]
-  return productItems[0]
-}
+const itemClass =
+  "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted/55 hover:text-foreground"
 
 export function AppTopbar({ pathname }: AppTopbarProps) {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  const isOnboarding = pathname.startsWith("/onboarding")
+  const [profileName, setProfileName] = useState("Rahul Sharma")
+  const [profileRole, setProfileRole] = useState("Admin")
+  const [demoOpen, setDemoOpen] = useState(false)
 
   useEffect(() => {
     setMounted(true)
+    const session = readDummyAuthSession()
+    if (session) {
+      setProfileName(session.name)
+      setProfileRole(session.role)
+    }
   }, [])
 
   const isDark = mounted ? theme !== "light" : true
-  const activeProduct = useMemo(() => getActiveProduct(pathname), [pathname])
-
-  const navItemClass =
-    "rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/55 hover:text-foreground"
-  const iconButtonClass = "h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
 
   return (
-    <header className="shrink-0 border-b border-border/70 bg-card/90 backdrop-blur">
-      <div
-        className="mx-auto flex h-14 w-full items-center justify-between px-3 md:px-4 lg:px-6 xl:px-8"
-        style={{ maxWidth: DASHBOARD_CONTENT_MAX_WIDTH }}
+    <aside className="relative z-40 h-full w-56 shrink-0 flex flex-col border-r border-border/70 bg-card/95 px-2 py-2 shadow-sm">
+      {/* Logo */}
+      <Link
+        href="/"
+        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
+        aria-label="Pine Labs Home"
       >
-        {!isOnboarding ? (
-          <div className="flex min-w-0 items-center gap-2">
-            <Link href="/" className="mr-1 flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-muted/40">
-              <img
-                src="/brand/pine-labs-icon.ico"
-                alt="Pine Labs icon"
-                className="h-5 w-5 object-contain dark:brightness-0 dark:invert"
-              />
-              <span className="text-sm font-semibold text-foreground">Pine Labs</span>
+        <img
+          src="/brand/pine-labs-icon.ico"
+          alt="Pine Labs icon"
+          className="h-5 w-5 shrink-0 object-contain dark:brightness-0 dark:invert"
+        />
+        <span className="text-sm font-semibold text-foreground">Pine Labs</span>
+      </Link>
+
+      {/* Main nav */}
+      <div className="mt-3 flex flex-1 flex-col gap-1">
+        {productItems.map((item) => {
+          const Icon = item.icon
+          const active = item.matcher(pathname)
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(itemClass, active && "bg-primary/10 text-foreground font-medium")}
+              aria-label={item.label}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span>{item.label}</span>
             </Link>
+          )
+        })}
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className={cn(
-                    navItemClass,
-                    "h-9 rounded-lg border border-primary/35 bg-primary/10 px-3.5 font-semibold text-foreground shadow-sm hover:bg-primary/15",
-                  )}
-                >
-                  <span className="inline-flex items-center gap-1.5">
-                    {activeProduct.label}
-                    <ChevronDown className="h-3.5 w-3.5 text-foreground/70" />
-                  </span>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                {productItems.map((item) => (
-                  <DropdownMenuItem key={item.href} onSelect={() => router.push(item.href)}>
-                    {item.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ) : (
-          <div className="flex min-w-0 items-center gap-2">
-            {isOnboarding && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="h-8 w-8 rounded-full text-muted-foreground"
-                onClick={() => router.back()}
-                aria-label="Go back"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            )}
-            <p className="text-[14px] font-medium text-foreground">{getRouteTitle(pathname)}</p>
-          </div>
-        )}
+        <div className="my-1 h-px w-full bg-border/75" />
 
-        <div className="ml-2 flex items-center gap-1.5">
-          {!isOnboarding && (
-            <>
-              <Link
-                href="/support"
-                className={cn(
-                  "inline-flex items-center justify-center rounded-full transition-colors",
-                  pathname.startsWith("/support") ? "bg-secondary/70 text-foreground" : "text-muted-foreground",
-                  iconButtonClass,
-                )}
-                aria-label="Support"
-              >
-                <LifeBuoy className="h-4 w-4" />
-              </Link>
-              <Link
-                href="https://developer.pinelabs.com/"
-                target="_blank"
-                rel="noreferrer"
-                className={cn("inline-flex items-center justify-center rounded-full", iconButtonClass)}
-                aria-label="BI Docs"
-              >
-                <BookOpenText className="h-4 w-4" />
-              </Link>
-            </>
-          )}
+        {utilityItems.map((item) => {
+          const Icon = item.icon
+          const active = item.matcher(pathname)
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(itemClass, active && "bg-secondary/70 text-foreground font-medium")}
+              aria-label={item.label}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span>{item.label}</span>
+            </Link>
+          )
+        })}
 
-          <Button variant="ghost" size="icon-sm" className={iconButtonClass} aria-label="Search">
-            <Search className="h-4 w-4" />
-          </Button>
+        <button
+          className={itemClass}
+          onClick={() => window.open("https://developer.pinelabs.com/", "_blank", "noopener,noreferrer")}
+        >
+          <BookOpenText className="h-4 w-4 shrink-0" />
+          <span>BI docs</span>
+        </button>
 
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className={iconButtonClass}
-            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            onClick={() => setTheme(isDark ? "light" : "dark")}
-          >
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-
-          {!isOnboarding && (
-            <>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon-sm" className={iconButtonClass}>
-                    <CircleUserRound className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuLabel className="space-y-0.5">
-                    <p className="text-sm font-medium text-foreground">Rahul Sharma</p>
-                    <p className="text-[11px] text-muted-foreground">Admin</p>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => router.push("/settings")}>
-                    <Settings className="mr-2 h-3.5 w-3.5" />
-                    Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => router.push("/")}>
-                    <LogOut className="mr-2 h-3.5 w-3.5" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button
-                size="sm"
-                className="h-8 rounded-md bg-primary px-3 text-[12px] font-medium text-primary-foreground hover:bg-primary/90"
-                onClick={() => router.push("/configure-products")}
-              >
-                Add products
-              </Button>
-            </>
-          )}
-        </div>
+        <button className={itemClass}>
+          <Search className="h-4 w-4 shrink-0" />
+          <span>Search</span>
+        </button>
       </div>
-    </header>
+
+      {/* Bottom */}
+      <div className="flex flex-col gap-1 pb-1">
+        <button
+          className={itemClass}
+          onClick={() => setTheme(isDark ? "light" : "dark")}
+        >
+          {isDark
+            ? <Sun className="h-4 w-4 shrink-0" />
+            : <Moon className="h-4 w-4 shrink-0" />}
+          <span>{isDark ? "Light mode" : "Dark mode"}</span>
+        </button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={cn(itemClass, pathname.startsWith("/settings") && "bg-secondary/70 text-foreground")}
+            >
+              <CircleUserRound className="h-4 w-4 shrink-0" />
+              <span>Profile</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="right" align="end" className="w-52">
+            <DropdownMenuLabel className="space-y-0.5">
+              <p className="text-sm font-medium text-foreground">{profileName}</p>
+              <p className="text-[11px] text-muted-foreground">{profileRole}</p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => router.push("/settings")}>
+              <Settings className="mr-2 h-3.5 w-3.5" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setDemoOpen(true)}>
+              <Monitor className="mr-2 h-3.5 w-3.5" />
+              Demo settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => {
+                clearDummyAuthSession()
+                router.replace("/login")
+              }}
+            >
+              <LogOut className="mr-2 h-3.5 w-3.5" />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <button
+          className={cn(itemClass, pathname.startsWith("/configure-products") && "bg-secondary/70 text-foreground")}
+          onClick={() => router.push("/configure-products")}
+        >
+          <Plus className="h-4 w-4 shrink-0" />
+          <span>Configure</span>
+        </button>
+
+      </div>
+
+      <DemoSettingsDialog open={demoOpen} onOpenChange={setDemoOpen} />
+    </aside>
   )
 }

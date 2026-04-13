@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { DASHBOARD_CONTENT_MAX_WIDTH } from "@/lib/dashboard-layout"
 import { cn } from "@/lib/utils"
 import { useNavVisibility } from "./nav-visibility-context"
+import { readDemoSettings, getResolvedMaxWidth } from "@/lib/demo-settings"
 
 interface WorkspaceShellProps {
   centerMain: React.ReactNode
@@ -34,7 +35,7 @@ export function WorkspaceShell({
   leftMaxWidth = 320,
   rightWidth = 432,
   rightMaxWidth = 520,
-  centerMaxWidth = 1100,
+  centerMaxWidth,
   workspaceMaxWidth = DASHBOARD_CONTENT_MAX_WIDTH,
   hideBottomNavWhenRightOpen = false,
   hideBottomNav = false,
@@ -42,6 +43,19 @@ export function WorkspaceShell({
   centerClassName,
 }: WorkspaceShellProps) {
   const { setHidden } = useNavVisibility()
+
+  const [demoMaxWidth, setDemoMaxWidth] = React.useState(() =>
+    getResolvedMaxWidth(readDemoSettings())
+  )
+  React.useEffect(() => {
+    const handler = () => setDemoMaxWidth(getResolvedMaxWidth(readDemoSettings()))
+    window.addEventListener("demo-settings-changed", handler)
+    return () => window.removeEventListener("demo-settings-changed", handler)
+  }, [])
+
+  const resolvedWorkspaceMaxWidth = workspaceMaxWidth === DASHBOARD_CONTENT_MAX_WIDTH
+    ? demoMaxWidth
+    : workspaceMaxWidth
 
   React.useEffect(() => {
     if (!hideBottomNavWhenRightOpen && !hideBottomNav) return
@@ -54,8 +68,8 @@ export function WorkspaceShell({
   return (
     <div className={cn("relative min-h-0 flex-1 overflow-hidden", className)}>
       <div
-        className="relative mx-auto flex h-full w-full min-h-0 gap-2 overflow-hidden px-3 py-3 md:px-4 lg:px-6 xl:px-8"
-        style={{ maxWidth: workspaceMaxWidth }}
+        className="relative mx-auto flex h-full w-full min-h-0 gap-2 overflow-hidden px-2 py-3"
+        style={{ maxWidth: resolvedWorkspaceMaxWidth }}
       >
         <AnimatePresence initial={false}>
           {hasLeftContext && (
@@ -78,7 +92,7 @@ export function WorkspaceShell({
         >
           <div
             className="mx-auto h-full w-full min-w-0 overflow-hidden rounded-lg olive-surface-soft"
-            style={{ maxWidth: hasLeftContext ? centerMaxWidth : undefined }}
+            style={{ maxWidth: centerMaxWidth }}
           >
             <div className="h-full overflow-hidden">
               {centerMain}
