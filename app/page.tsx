@@ -1,10 +1,10 @@
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
 import { HomeContent } from "@/components/home/home-content"
 
 export default function HomePage() {
   return (
-    <DashboardLayout>
+    <V2DashboardLayout>
       <HomeContent />
-    </DashboardLayout>
+    </V2DashboardLayout>
   )
 }

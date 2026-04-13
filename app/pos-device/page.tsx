@@ -1,10 +1,10 @@
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
 import { POSDeviceContent } from "@/components/pos-device/pos-device-content"
 
 export default function POSDevicePage() {
   return (
-    <DashboardLayout>
+    <V2DashboardLayout>
       <POSDeviceContent />
-    </DashboardLayout>
+    </V2DashboardLayout>
   )
 }

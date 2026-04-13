@@ -1,14 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { PanelEmpty } from "@/components/ui/panels"
-import { Search, MessageCircle, Phone, Mail, FileText, CheckCircle2, Clock, X, XCircle, ArrowRight, Plus, Zap } from "lucide-react"
+import { MessageCircle, Phone, Mail, FileText, CheckCircle2, Clock, X, XCircle, ArrowRight, Plus, Zap } from "lucide-react"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
 
 const categories = [
   { id: "payments", label: "Payments & Transactions", icon: Zap, count: 24 },
@@ -55,6 +56,18 @@ const articles: Record<string, Array<{ title: string; desc: string }>> = {
     { title: "Test mode vs Live mode", desc: "How to switch and what changes" },
   ],
 }
+
+const automationRows = [
+  { id: "AUT-11", title: "Auto-route payment failures", cadence: "Real-time", owner: "Support Ops" },
+  { id: "AUT-12", title: "Daily settlement digest", cadence: "Daily", owner: "Finance Ops" },
+  { id: "AUT-13", title: "Ticket SLA reminder", cadence: "Hourly", owner: "Support Ops" },
+]
+
+const reportRows = [
+  { id: "RPT-21", title: "Open tickets report", cadence: "Daily", owner: "Support Ops" },
+  { id: "RPT-22", title: "Resolution trend report", cadence: "Weekly", owner: "Operations" },
+  { id: "RPT-23", title: "Category volume report", cadence: "Weekly", owner: "Analytics" },
+]
 
 const statusMap = {
   open: { Icon: Clock, badge: "bg-primary/10 text-primary border-primary/20", label: "Open" },
@@ -144,7 +157,7 @@ function CategoryDetail({ catId }: { catId: string }) {
         <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Still need help?</p>
         <div className="grid grid-cols-3 gap-2">
           {[{ I: MessageCircle, l: "Live Chat", sub: "24/7" }, { I: Phone, l: "Call Us", sub: "1800-xxx-xxxx" }, { I: Mail, l: "Email", sub: "support@pinelabs.com" }].map(({ I, l, sub }) => (
-            <button key={l} className="flex flex-col items-center gap-2 rounded-lg bg-muted/35 p-4 transition-colors hover:bg-muted/55">
+            <Button variant="ghost" key={l} className="flex flex-col items-center gap-2 rounded-lg bg-muted/35 p-4 transition-colors hover:bg-muted/55">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
                 <I className="h-4 w-4 text-primary" />
               </div>
@@ -152,7 +165,7 @@ function CategoryDetail({ catId }: { catId: string }) {
                 <p className="text-xs font-medium text-foreground">{l}</p>
                 <p className="text-[10px] text-muted-foreground">{sub}</p>
               </div>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -164,17 +177,72 @@ export default function SupportPage() {
   const [section, setSection] = useState<"overview" | "tickets" | "knowledge" | "automation" | "reports">("overview")
   const [view, setView] = useState<"categories" | "tickets">("categories")
   const [selected, setSelected] = useState<string | null>(null)
-  const [query, setQuery] = useState("")
 
   const mode = section === "tickets" ? "tickets" : section === "knowledge" ? "categories" : view
-  const filteredTickets = tickets.filter(t => t.title.toLowerCase().includes(query.toLowerCase()))
-  const filteredCategories = categories.filter((c) => c.label.toLowerCase().includes(query.toLowerCase()))
   const selectedTicket = tickets.find(t => t.id === selected)
 
+  const categoryColumns: DataTableColumn<(typeof categories)[number]>[] = [
+    { id: "id", header: "Code", accessorKey: "id", width: 120, pinnable: true },
+    {
+      id: "label",
+      header: "Category",
+      accessorKey: "label",
+      width: 260,
+      cell: (category) => (
+        <div className="flex items-center gap-2">
+          <category.icon className="size-3.5 text-muted-foreground" />
+          <span>{category.label}</span>
+        </div>
+      ),
+    },
+    { id: "count", header: "Articles", getValue: (category) => category.count, align: "right", width: 90 },
+  ]
+
+  const ticketColumns: DataTableColumn<(typeof tickets)[number]>[] = [
+    { id: "id", header: "Ticket", accessorKey: "id", width: 120, pinnable: true },
+    { id: "title", header: "Issue", accessorKey: "title", width: 320 },
+    {
+      id: "status",
+      header: "Status",
+      accessorKey: "status",
+      width: 110,
+      filterOptions: [
+        { label: "Open", value: "open" },
+        { label: "Resolved", value: "resolved" },
+        { label: "Closed", value: "closed" },
+      ],
+      cell: (ticket) => {
+        const { Icon, badge, label } = statusMap[ticket.status as keyof typeof statusMap]
+        return (
+          <Badge variant="outline" className={`text-[10px] ${badge}`}>
+            <Icon className="mr-1 size-3" />
+            {label}
+          </Badge>
+        )
+      },
+    },
+    { id: "cat", header: "Category", accessorKey: "cat", width: 130 },
+    { id: "date", header: "Updated", accessorKey: "date", align: "right", width: 120 },
+  ]
+
+  const automationColumns: DataTableColumn<(typeof automationRows)[number]>[] = [
+    { id: "id", header: "ID", accessorKey: "id", width: 90, pinnable: true },
+    { id: "title", header: "Automation", accessorKey: "title", width: 280 },
+    { id: "cadence", header: "Cadence", accessorKey: "cadence", width: 120 },
+    { id: "owner", header: "Owner", accessorKey: "owner", width: 130 },
+  ]
+
+  const reportColumns: DataTableColumn<(typeof reportRows)[number]>[] = [
+    { id: "id", header: "ID", accessorKey: "id", width: 90, pinnable: true },
+    { id: "title", header: "Report", accessorKey: "title", width: 280 },
+    { id: "cadence", header: "Cadence", accessorKey: "cadence", width: 120 },
+    { id: "owner", header: "Owner", accessorKey: "owner", width: 130 },
+  ]
+
   const leftContext = (
-    <div className="h-full overflow-y-auto p-3">
-      <p className="px-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Support</p>
-      <div className="mt-2 space-y-1">
+    <div className="left-panel-content">
+      <p className="left-panel-label">Support</p>
+      <div className="left-panel-stack">
         {[
           { key: "overview", label: "Overview" },
           { key: "tickets", label: "Tickets" },
@@ -184,7 +252,7 @@ export default function SupportPage() {
         ].map((item) => {
           const active = section === item.key
           return (
-            <button
+            <Button variant="ghost"
               key={item.key}
               onClick={() => {
                 const next = item.key as typeof section
@@ -193,12 +261,10 @@ export default function SupportPage() {
                 if (next === "tickets") setView("tickets")
                 if (next === "knowledge") setView("categories")
               }}
-              className={`w-full rounded-md px-3 py-2 text-left transition-colors ${
-                active ? "bg-secondary/70 text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              }`}
+              className={`left-panel-item ${active ? "left-panel-item-active" : "left-panel-item-inactive"}`}
             >
-              <p className="text-[13px] font-medium">{item.label}</p>
-            </button>
+              {item.label}
+            </Button>
           )
         })}
       </div>
@@ -220,96 +286,73 @@ export default function SupportPage() {
       </section>
 
       {(section === "overview" || section === "tickets" || section === "knowledge") && (
-      <div className="overflow-hidden rounded-lg bg-card/80">
-        {section === "overview" && (
-          <div className="px-3 py-2">
-            <div className="flex gap-1 rounded-md bg-muted p-0.5">
-            {(["categories", "tickets"] as const).map(v => (
-              <button key={v} onClick={() => { setView(v); setSelected(null) }}
-                className={`flex-1 rounded px-2 py-1 text-xs capitalize transition-colors ${view === v ? "bg-card text-foreground font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
-                {v}
-              </button>
-            ))}
-          </div>
-          </div>
-        )}
+        <div className="space-y-2">
+          {section === "overview" && (
+            <div className="rounded-lg bg-card/80 px-3 py-2">
+              <div className="flex gap-1 rounded-md bg-muted p-0.5">
+                {(["categories", "tickets"] as const).map((v) => (
+                  <Button
+                    variant="ghost"
+                    key={v}
+                    onClick={() => {
+                      setView(v)
+                      setSelected(null)
+                    }}
+                    className={`flex-1 rounded px-2 py-1 text-xs capitalize transition-colors ${view === v ? "bg-card text-foreground font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {v}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
 
-        <div className="px-3 py-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input placeholder={mode === "categories" ? "Search topics..." : "Search tickets..."} value={query} onChange={e => setQuery(e.target.value)} className="h-8 border-0 bg-muted/70 pl-8 text-xs" />
-          </div>
-        </div>
-
-        <div className="space-y-1 px-2 pb-2">
           {mode === "categories" ? (
-            filteredCategories.map(cat => {
-              const Icon = cat.icon
-              const sel = selected === cat.id
-              return (
-                <button key={cat.id} onClick={() => setSelected(cat.id)}
-                  className={`intercom-panel-row ${sel ? "intercom-panel-row-active" : ""}`}>
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted shrink-0">
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">{cat.label}</p>
-                  </div>
-                  <span className="text-[10px] text-muted-foreground">{cat.count} articles</span>
-                </button>
-              )
-            })
+            <DataTable
+              data={categories}
+              columns={categoryColumns}
+              rowId={(category) => category.id}
+              selectedRowId={selected}
+              onRowClick={(category) => setSelected(category.id)}
+              searchPlaceholder="Search topics..."
+              emptyText="No support topics found"
+              initialPinnedColumnIds={["id"]}
+            />
           ) : (
-            filteredTickets.map(ticket => {
-              const { Icon, badge, label } = statusMap[ticket.status as keyof typeof statusMap]
-              const sel = selected === ticket.id
-              return (
-                <button key={ticket.id} onClick={() => setSelected(ticket.id)}
-                  className={`intercom-panel-row ${sel ? "intercom-panel-row-active" : ""}`}>
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted shrink-0">
-                    <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{ticket.title}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-xs text-muted-foreground">{ticket.date}</p>
-                      <Badge variant="outline" className={`text-[9px] gap-0.5 px-1.5 py-0 ${badge}`}>
-                        <Icon className="h-2.5 w-2.5" />{label}
-                      </Badge>
-                    </div>
-                  </div>
-                </button>
-              )
-            })
+            <DataTable
+              data={tickets}
+              columns={ticketColumns}
+              rowId={(ticket) => ticket.id}
+              selectedRowId={selected}
+              onRowClick={(ticket) => setSelected(ticket.id)}
+              searchPlaceholder="Search tickets..."
+              emptyText="No tickets found"
+              initialPinnedColumnIds={["id"]}
+            />
           )}
         </div>
-      </div>
       )}
 
       {section === "automation" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Automations</p>
-          <div className="mt-3 space-y-2">
-            {["Auto-route payment failures", "Daily settlement digest", "Ticket SLA reminder"].map((a) => (
-              <button key={a} className="intercom-panel-row">
-                <p className="text-sm text-foreground">{a}</p>
-              </button>
-            ))}
-          </div>
-        </section>
+        <DataTable
+          data={automationRows}
+          columns={automationColumns}
+          rowId={(row) => row.id}
+          searchPlaceholder="Search automations..."
+          emptyText="No automations found"
+          initialPinnedColumnIds={["id"]}
+        />
       )}
 
       {section === "reports" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Reports</p>
-          <div className="mt-3 space-y-2">
-            {["Open tickets report", "Resolution trend report", "Category volume report"].map((r) => (
-              <button key={r} className="intercom-panel-row">
-                <p className="text-sm text-foreground">{r}</p>
-              </button>
-            ))}
-          </div>
-        </section>
+        <DataTable
+          data={reportRows}
+          columns={reportColumns}
+          rowId={(row) => row.id}
+          searchPlaceholder="Search reports..."
+          emptyText="No reports found"
+          initialPinnedColumnIds={["id"]}
+        />
       )}
     </div>
   )
@@ -334,7 +377,7 @@ export default function SupportPage() {
           <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Context</p>
           <p className="text-[16px] font-semibold text-foreground">{mode === "tickets" ? "Ticket detail" : "Support topic"}</p>
         </div>
-        <Button variant="ghost" size="icon-sm" className="h-8 w-8" onClick={() => setSelected(null)}>
+        <Button variant="ghost" size="icon-sm" className="h-8 w-8" aria-label="Close support context panel" onClick={() => setSelected(null)}>
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -344,7 +387,7 @@ export default function SupportPage() {
   )
 
   return (
-    <DashboardLayout>
+    <V2DashboardLayout>
       <WorkspaceShell
         leftContext={leftContext}
         showLeftContext
@@ -353,8 +396,7 @@ export default function SupportPage() {
         showRightContext={Boolean(selected)}
         leftWidth={248}
         leftMaxWidth={300}
-        centerMaxWidth={1080}
       />
-    </DashboardLayout>
+    </V2DashboardLayout>
   )
 }

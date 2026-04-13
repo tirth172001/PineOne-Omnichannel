@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -29,26 +29,26 @@ function BusinessForm() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs text-muted-foreground mb-1.5 block">Business Name</Label>
-              <Input defaultValue="Acme Store" className="h-9 text-sm bg-muted border-border" />
+              <Input aria-label="Business Name" defaultValue="Acme Store" className="h-9 text-sm bg-muted border-border" />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground mb-1.5 block">Category</Label>
-              <Input defaultValue="Retail" className="h-9 text-sm bg-muted border-border" />
+              <Input aria-label="Business Category" defaultValue="Retail" className="h-9 text-sm bg-muted border-border" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs text-muted-foreground mb-1.5 block">Email</Label>
-              <Input type="email" defaultValue="rahul@acmestore.in" className="h-9 text-sm bg-muted border-border" />
+              <Input aria-label="Business Email" type="email" defaultValue="rahul@acmestore.in" className="h-9 text-sm bg-muted border-border" />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground mb-1.5 block">Phone</Label>
-              <Input defaultValue="+91 98765 43210" className="h-9 text-sm bg-muted border-border" />
+              <Input aria-label="Business Phone" defaultValue="+91 98765 43210" className="h-9 text-sm bg-muted border-border" />
             </div>
           </div>
           <div>
             <Label className="text-xs text-muted-foreground mb-1.5 block">Business Address</Label>
-            <Input defaultValue="12, Linking Road, Mumbai, Maharashtra 400050" className="h-9 text-sm bg-muted border-border" />
+            <Input aria-label="Business Address" defaultValue="12, Linking Road, Mumbai, Maharashtra 400050" className="h-9 text-sm bg-muted border-border" />
           </div>
         </div>
       </div>
@@ -68,7 +68,7 @@ function BusinessForm() {
                 <p className="text-xs font-medium text-foreground">{label}</p>
                 <p className="text-xs text-muted-foreground font-mono">{value}</p>
               </div>
-              <Badge variant="outline" className={`text-[9px] gap-1 ${status === "verified" ? "text-success border-success/30 bg-success/10" : "text-warning-foreground border-warning/30 bg-warning/10"}`}>
+              <Badge variant="outline" className={`text-[10px] gap-1 ${status === "verified" ? "text-foreground border-success/35 bg-success/20" : "text-foreground border-warning/35 bg-warning/20"}`}>
                 {status === "verified" ? <CheckCircle2 className="h-2.5 w-2.5" /> : <AlertTriangle className="h-2.5 w-2.5" />}
                 {status}
               </Badge>
@@ -213,7 +213,7 @@ function SecurityForm() {
                 <p className="text-xs font-medium text-foreground">{time}</p>
                 <p className="text-[10px] text-muted-foreground">{loc}</p>
               </div>
-              <Badge variant="outline" className={`text-[9px] ${status === "Success" ? "text-success border-success/30 bg-success/10" : "text-destructive border-destructive/30 bg-destructive/10"}`}>
+              <Badge variant="outline" className={`text-[10px] ${status === "Success" ? "text-foreground border-success/35 bg-success/20" : "text-foreground border-destructive/35 bg-destructive/20"}`}>
                 {status}
               </Badge>
             </div>
@@ -238,7 +238,7 @@ function BankingForm() {
               <div>
                 <div className="flex items-center gap-2 mb-0.5">
                   <p className="text-sm font-medium text-foreground">{a.bank}</p>
-                  {a.primary && <Badge variant="outline" className="text-[9px] text-primary border-primary/30 bg-primary/10">Primary</Badge>}
+                  {a.primary && <Badge variant="outline" className="text-[10px] text-foreground border-primary/35 bg-primary/18">Primary</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground font-mono">{a.account} · {a.ifsc}</p>
               </div>
@@ -303,7 +303,7 @@ function ApiKeysForm() {
           <div className="p-3 bg-card border border-border rounded-lg">
             <div className="flex items-center justify-between mb-1">
               <p className="text-xs font-mono text-foreground">https://acmestore.in/webhooks/pine</p>
-              <Badge variant="outline" className="text-[9px] text-success border-success/30 bg-success/10">Active</Badge>
+              <Badge variant="outline" className="text-[10px] text-foreground border-success/35 bg-success/20">Active</Badge>
             </div>
             <p className="text-[10px] text-muted-foreground">payment.success, payment.failed, settlement.completed</p>
           </div>
@@ -347,29 +347,27 @@ export default function SettingsPage() {
   const contextOptions = activeSectionId ? contextOptionsMap[activeSectionId] ?? [] : []
 
   const leftContext = (
-    <div className="h-full overflow-y-auto p-3">
-      <p className="px-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Settings Sections</p>
-      <div className="mt-2 space-y-1">
+    <div className="left-panel-content">
+      <p className="left-panel-label">Settings Sections</p>
+      <div className="left-panel-stack">
         {navItems.map(item => {
           const Icon = item.icon
           const sel = active === item.id
           return (
-            <button
+            <Button variant="ghost"
               key={item.id}
               onClick={() => {
                 setActive(item.id)
                 setSelectedContext(null)
                 setShowContext(false)
               }}
-              className={`w-full rounded-md px-3 py-2 text-left transition-colors ${
-                sel ? "bg-secondary/70 text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              }`}
+              className={`left-panel-item ${sel ? "left-panel-item-active" : "left-panel-item-inactive"}`}
             >
               <div className="flex items-center gap-2">
                 <Icon className="h-3.5 w-3.5" />
-                <p className="text-[13px] font-medium">{item.label}</p>
+                <span>{item.label}</span>
               </div>
-            </button>
+            </Button>
           )
         })}
       </div>
@@ -417,7 +415,7 @@ export default function SettingsPage() {
           <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Context</p>
           <p className="text-[16px] font-semibold text-foreground">{selectedContext ?? activeItem.label}</p>
         </div>
-        <Button variant="ghost" size="icon-sm" className="h-8 w-8" onClick={() => setShowContext(false)}>
+        <Button variant="ghost" size="icon-sm" className="h-8 w-8" aria-label="Close contextual settings panel" onClick={() => setShowContext(false)}>
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -441,7 +439,7 @@ export default function SettingsPage() {
   ) : null
 
   return (
-    <DashboardLayout>
+    <V2DashboardLayout>
       <WorkspaceShell
         leftContext={leftContext}
         showLeftContext
@@ -449,6 +447,6 @@ export default function SettingsPage() {
         rightContext={rightContext}
         showRightContext={Boolean(activeItem) && Boolean(selectedContext) && showContext}
       />
-    </DashboardLayout>
+    </V2DashboardLayout>
   )
 }

@@ -1,10 +1,10 @@
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
 import { ProductsContent } from "@/components/products/products-content"
 
 export default function ProductsPage() {
   return (
-    <DashboardLayout>
+    <V2DashboardLayout>
       <ProductsContent />
-    </DashboardLayout>
+    </V2DashboardLayout>
   )
 }

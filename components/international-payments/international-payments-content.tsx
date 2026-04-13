@@ -80,13 +80,13 @@ export function InternationalPaymentsContent() {
         ].map((item) => {
           const active = section === item.key
           return (
-            <button
+            <Button variant="ghost"
               key={item.key}
               onClick={() => {
                 setSection(item.key as IntlSection)
                 setSelectedId(null)
               }}
-              className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
+              className={`w-full rounded-lg border px-3 py-2 !h-auto !justify-start text-left transition-colors ${
                 active
                   ? "border-border bg-secondary/70"
                   : "border-transparent hover:border-border hover:bg-secondary/30"
@@ -94,7 +94,7 @@ export function InternationalPaymentsContent() {
             >
               <p className="text-sm font-medium text-foreground">{item.label}</p>
               <p className="text-xs text-muted-foreground">{item.helper}</p>
-            </button>
+            </Button>
           )
         })}
       </div>
@@ -159,10 +159,10 @@ export function InternationalPaymentsContent() {
         </div>
         <div className="divide-y divide-border">
           {filtered.map((txn) => (
-            <button
+            <Button variant="ghost"
               key={txn.id}
               onClick={() => setSelectedId(txn.id)}
-              className={`intercom-panel-row ${selectedId === txn.id ? "intercom-panel-row-active" : ""}`}
+              className={`intercom-panel-row !h-auto !justify-start ${selectedId === txn.id ? "intercom-panel-row-active" : ""}`}
             >
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -174,7 +174,7 @@ export function InternationalPaymentsContent() {
                   <Badge variant="outline" className="text-[10px] mt-1 capitalize">{txn.status}</Badge>
                 </div>
               </div>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -236,14 +236,13 @@ export function InternationalPaymentsContent() {
       </PageHeader>
       <WorkspaceShell
         leftContext={leftContext}
-        showLeftContext
+        showLeftContext={false}
         centerMain={centerMain}
         rightContext={rightContext}
         showRightContext={Boolean(selected)}
         hideBottomNav={section !== "overview"}
         leftWidth={248}
         leftMaxWidth={300}
-        centerMaxWidth={1080}
       />
       {!selected && (
         <div className="px-5 py-3 border-t border-border text-xs text-muted-foreground">

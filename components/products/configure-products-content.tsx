@@ -40,22 +40,22 @@ export function ConfigureProductsContent() {
   )
 
   const leftContext = (
-    <div className="h-full overflow-y-auto p-3">
-      <p className="px-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Product categories</p>
-      <div className="mt-2 space-y-1">
+    <div className="left-panel-content">
+      <p className="left-panel-label">Product categories</p>
+      <div className="left-panel-stack">
         {productCategories.map((category) => {
           const isSelected = selectedCategory?.id === category.id
           return (
-            <button
+            <Button variant="ghost"
               key={category.id}
               onClick={() => {
                 setSelectedCategoryId(category.id)
                 setSelectedProductId(null)
               }}
-              className={`intercom-panel-row w-full ${isSelected ? "intercom-panel-row-active" : ""}`}
+              className={`intercom-panel-row !h-auto !justify-start w-full ${isSelected ? "intercom-panel-row-active" : ""}`}
             >
               <p className="min-w-0 flex-1 text-left text-sm font-medium text-foreground">{category.name}</p>
-            </button>
+            </Button>
           )
         })}
       </div>
@@ -99,10 +99,9 @@ export function ConfigureProductsContent() {
           const isSelected = selectedProductId === product.id
 
           return (
-            <button
+            <div
               key={product.id}
-              onClick={() => setSelectedProductId(product.id)}
-              className={`w-full rounded-lg p-3 text-left transition-colors ${isSelected ? "bg-secondary/70" : "bg-card/75 hover:bg-muted/50"}`}
+              className={`w-full rounded-lg p-3 !h-auto !justify-start text-left transition-colors ${isSelected ? "bg-secondary/70" : "bg-card/75 hover:bg-muted/50"}`}
             >
               <div className="flex items-start gap-3">
                 <div
@@ -114,16 +113,24 @@ export function ConfigureProductsContent() {
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-medium text-foreground">{product.name}</p>
                     {isEnabled ? (
-                      <Badge variant="outline" className="text-[9px] border-success/30 bg-success/10 text-success">
+                      <Badge variant="outline" className="text-[10px] border-success/35 bg-success/20 text-foreground">
                         Enabled
                       </Badge>
                     ) : null}
-                    {isComingSoon ? <Badge variant="outline" className="text-[9px]">Coming soon</Badge> : null}
+                    {isComingSoon ? <Badge variant="outline" className="text-[10px]">Coming soon</Badge> : null}
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground">{product.description}</p>
                   {product.whyUseful ? <p className="mt-1 text-xs text-foreground">{product.whyUseful}</p> : null}
                 </div>
-                <div className="shrink-0">
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => setSelectedProductId(product.id)}
+                  >
+                    Details
+                  </Button>
                   {isComingSoon ? (
                     <Button variant="outline" size="sm" className="h-8 text-xs" disabled>
                       Coming soon
@@ -138,7 +145,7 @@ export function ConfigureProductsContent() {
                   )}
                 </div>
               </div>
-            </button>
+            </div>
           )
         })}
       </section>
@@ -195,13 +202,12 @@ export function ConfigureProductsContent() {
 
       <WorkspaceShell
         leftContext={leftContext}
-        showLeftContext
+        showLeftContext={false}
         centerMain={centerMain}
         rightContext={rightContext}
         showRightContext={Boolean(selectedProduct)}
         leftWidth={260}
         leftMaxWidth={300}
-        centerMaxWidth={1040}
       />
     </>
   )

@@ -1,10 +1,10 @@
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
 import { UseCasesContent } from "@/components/use-cases/use-cases-content"
 
 export default function UseCasesPage() {
   return (
-    <DashboardLayout>
+    <V2DashboardLayout>
       <UseCasesContent />
-    </DashboardLayout>
+    </V2DashboardLayout>
   )
 }

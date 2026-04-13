@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Wifi, WifiOff, CheckCircle2, X, XCircle, Clock, CreditCard, Zap, Download, Filter, Search, TrendingUp, Settings } from "lucide-react"
+import { Wifi, WifiOff, CheckCircle2, X, XCircle, Plus, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -10,23 +10,42 @@ import { Switch } from "@/components/ui/switch"
 import { PanelEmpty } from "@/components/ui/panels"
 import { HighchartsPanelChart } from "@/components/ui/highcharts"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
-
-type OfflineNavSection = "overview" | "transactions" | "settlements" | "disputes" | "refunds" | "reports" | "vas"
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
+import { ProductWorkspaceNav, type ProductWorkspaceSection } from "@/components/dashboard/product-workspace-nav"
 type DeviceSegment = "all" | "a920-pro" | "p2-lite" | "a80" | "offline"
+type OfflineNavSection = ProductWorkspaceSection
+type DeviceRow = {
+  id: string
+  name: string
+  location: string
+  status: "online" | "offline"
+  today: string
+  txns: number
+  model: "A920 Pro" | "P2 Lite" | "A80"
+  lastSeen: string
+}
 type VasItem = { id: string; name: string; detail: string; enabled: boolean; requiresConfig: boolean }
 type VasConfig = { label: string; rollout: string; owner: string }
 
-const devices = [
-  { id: "POS-001", name: "Counter 1", location: "Main Floor", status: "online", today: "₹82,400", txns: 68, model: "A920 Pro" },
-  { id: "POS-002", name: "Counter 2", location: "Main Floor", status: "online", today: "₹71,200", txns: 59, model: "A920 Pro" },
-  { id: "POS-003", name: "Counter 3", location: "Main Floor", status: "online", today: "₹65,800", txns: 54, model: "A920 Pro" },
-  { id: "POS-004", name: "Billing Desk", location: "Ground Floor", status: "online", today: "₹54,300", txns: 45, model: "P2 Lite" },
-  { id: "POS-005", name: "Express Lane", location: "Ground Floor", status: "offline", today: "₹0", txns: 0, model: "A920 Pro" },
-  { id: "POS-006", name: "Food Court", location: "First Floor", status: "online", today: "₹48,100", txns: 39, model: "A80" },
-  { id: "POS-007", name: "Electronics", location: "First Floor", status: "online", today: "₹92,000", txns: 62, model: "A920 Pro" },
-  { id: "POS-008", name: "Mobile Dept", location: "First Floor", status: "online", today: "₹45,600", txns: 37, model: "P2 Lite" },
-  { id: "POS-009", name: "Customer Svc", location: "Entry", status: "offline", today: "₹0", txns: 0, model: "A80" },
-  { id: "POS-010", name: "Warehouse", location: "Basement", status: "online", today: "₹11,600", txns: 10, model: "P2 Lite" },
+const initialDevices: DeviceRow[] = [
+  { id: "POS-001", name: "Counter 1", location: "Main Floor", status: "online", today: "₹82,400", txns: 68, model: "A920 Pro", lastSeen: "Now" },
+  { id: "POS-002", name: "Counter 2", location: "Main Floor", status: "online", today: "₹71,200", txns: 59, model: "A920 Pro", lastSeen: "1 min ago" },
+  { id: "POS-003", name: "Counter 3", location: "Main Floor", status: "online", today: "₹65,800", txns: 54, model: "A920 Pro", lastSeen: "3 min ago" },
+  { id: "POS-004", name: "Billing Desk", location: "Ground Floor", status: "online", today: "₹54,300", txns: 45, model: "P2 Lite", lastSeen: "2 min ago" },
+  { id: "POS-005", name: "Express Lane", location: "Ground Floor", status: "offline", today: "₹0", txns: 0, model: "A920 Pro", lastSeen: "2 hr ago" },
+  { id: "POS-006", name: "Food Court", location: "First Floor", status: "online", today: "₹48,100", txns: 39, model: "A80", lastSeen: "Now" },
+  { id: "POS-007", name: "Electronics", location: "First Floor", status: "online", today: "₹92,000", txns: 62, model: "A920 Pro", lastSeen: "Now" },
+  { id: "POS-008", name: "Mobile Dept", location: "First Floor", status: "online", today: "₹45,600", txns: 37, model: "P2 Lite", lastSeen: "5 min ago" },
+  { id: "POS-009", name: "Customer Svc", location: "Entry", status: "offline", today: "₹0", txns: 0, model: "A80", lastSeen: "46 min ago" },
+  { id: "POS-010", name: "Warehouse", location: "Basement", status: "online", today: "₹11,600", txns: 10, model: "P2 Lite", lastSeen: "14 min ago" },
+]
+
+const offlineTransactionRows = [
+  { id: "TXN-89012", device: "POS-001", amount: "₹2,450", method: "Tap", status: "Success", time: "11:42 AM", location: "Main Floor" },
+  { id: "TXN-89011", device: "POS-004", amount: "₹850", method: "Chip", status: "Success", time: "11:39 AM", location: "Ground Floor" },
+  { id: "TXN-89010", device: "POS-007", amount: "₹5,200", method: "Tap", status: "Success", time: "11:30 AM", location: "First Floor" },
+  { id: "TXN-89009", device: "POS-005", amount: "₹1,100", method: "Swipe", status: "Failed", time: "11:18 AM", location: "Ground Floor" },
+  { id: "TXN-89008", device: "POS-006", amount: "₹3,300", method: "Tap", status: "Success", time: "11:05 AM", location: "First Floor" },
 ]
 
 const weeklyData = [
@@ -47,6 +66,22 @@ const deviceTxns = [
   { id: "TXN-D197", amount: 3300, method: "Tap", status: "success", time: "52m ago", card: "Amex •• 3388" },
 ]
 
+const settlementRows = [
+  { id: "STL-901", title: "Today's settlement", amount: "₹1,12,300", state: "Completed" },
+  { id: "STL-900", title: "Pending reconciliation", amount: "₹23,400", state: "Processing" },
+  { id: "STL-899", title: "Holdback reserve", amount: "₹9,800", state: "Review" },
+]
+
+const disputeRows = [
+  { id: "DSP-112", state: "Chargeback requested", amount: "₹2,300" },
+  { id: "DSP-109", state: "Waiting for evidence", amount: "₹5,900" },
+]
+
+const refundRows = [
+  { id: "RFD-611", state: "POS refund approved", amount: "₹780" },
+  { id: "RFD-603", state: "Pending manager review", amount: "₹2,240" },
+]
+
 const defaultVasItems: VasItem[] = [
   { id: "amex-enable", name: "AMEX acceptance", detail: "Enable American Express card acceptance across terminals.", enabled: false, requiresConfig: true },
   { id: "dcc", name: "Dynamic currency conversion", detail: "Offer FX conversion at terminal for international cards.", enabled: true, requiresConfig: true },
@@ -64,31 +99,7 @@ const vasGroups = [
   { id: "experience", title: "In-store experience", itemIds: ["smart-tipping"] },
 ] as const
 
-function DeviceRow({ device, selected, onClick }: { device: typeof devices[0]; selected: boolean; onClick: () => void }) {
-  const online = device.status === "online"
-  return (
-    <button onClick={onClick}
-      className={`intercom-panel-row ${selected ? "intercom-panel-row-active" : ""}`}>
-      <div className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 ${online ? "bg-success/10" : "bg-muted"}`}>
-        {online ? <Wifi className="h-4 w-4 text-success" /> : <WifiOff className="h-4 w-4 text-muted-foreground" />}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-medium text-foreground truncate">{device.name}</p>
-          <p className="text-sm font-semibold text-foreground shrink-0">{device.today}</p>
-        </div>
-        <div className="flex items-center justify-between gap-2 mt-0.5">
-          <p className="text-xs text-muted-foreground truncate">{device.location} · {device.model}</p>
-          <Badge variant="outline" className={`text-[9px] px-1.5 py-0 shrink-0 ${online ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground border-border"}`}>
-            {device.status}
-          </Badge>
-        </div>
-      </div>
-    </button>
-  )
-}
-
-function DeviceDetail({ device }: { device: typeof devices[0] }) {
+function DeviceDetail({ device }: { device: DeviceRow }) {
   const online = device.status === "online"
   return (
     <div className="p-5 space-y-5">
@@ -167,12 +178,18 @@ function DeviceDetail({ device }: { device: typeof devices[0] }) {
   )
 }
 
-export function OfflinePaymentsContent() {
+export function OfflinePaymentsContent({ initialSection }: { initialSection?: OfflineNavSection } = {}) {
+  const [navSection, setNavSection] = useState<OfflineNavSection>(initialSection ?? "transactions")
+  const [deviceRows, setDeviceRows] = useState<DeviceRow[]>(initialDevices)
   const [selected, setSelected] = useState<string | null>(null)
-  const [navSection, setNavSection] = useState<OfflineNavSection>("overview")
   const [deviceSegment, setDeviceSegment] = useState<DeviceSegment>("all")
-  const [rightTab, setRightTab] = useState<"detail" | "analytics">("detail")
-  const [query, setQuery] = useState("")
+  const [rightTab, setRightTab] = useState<"detail" | "analytics" | "add-device">("detail")
+  const [newDeviceForm, setNewDeviceForm] = useState({
+    name: "",
+    location: "",
+    model: "A920 Pro" as DeviceRow["model"],
+    status: "online" as DeviceRow["status"],
+  })
   const [vasItems, setVasItems] = useState<VasItem[]>(defaultVasItems)
   const [selectedVasId, setSelectedVasId] = useState<string | null>(null)
   const [vasConfigById, setVasConfigById] = useState<Record<string, VasConfig>>(defaultVasConfig)
@@ -181,10 +198,10 @@ export function OfflinePaymentsContent() {
     nightRollout: false,
     dailyDigest: true,
   })
-  const selectedDevice = devices.find(d => d.id === selected)
+  const selectedDevice = deviceRows.find((d) => d.id === selected)
   const selectedVas = vasItems.find((item) => item.id === selectedVasId) ?? null
   const selectedVasConfig = selectedVas ? vasConfigById[selectedVas.id] : null
-  const filtered = devices
+  const filteredDevices = deviceRows
     .filter((d) => {
       if (deviceSegment === "all") return true
       if (deviceSegment === "offline") return d.status === "offline"
@@ -193,8 +210,8 @@ export function OfflinePaymentsContent() {
       if (deviceSegment === "a80") return d.model === "A80"
       return true
     })
-    .filter(d => d.name.toLowerCase().includes(query.toLowerCase()) || d.location.toLowerCase().includes(query.toLowerCase()))
-  const onlineCount = devices.filter(d => d.status === "online").length
+  const onlineCount = deviceRows.filter((d) => d.status === "online").length
+  const canCreateDevice = newDeviceForm.name.trim().length > 0 && newDeviceForm.location.trim().length > 0
   const typeOptions = {
     chart: { type: "column" },
     xAxis: { categories: weeklyData.map((d) => d.day) },
@@ -208,39 +225,154 @@ export function OfflinePaymentsContent() {
     ],
   } as const
 
+  const handleCreateDevice = () => {
+    if (!canCreateDevice) return
+    const nextNumber =
+      deviceRows.reduce((max, device) => {
+        const numeric = Number(device.id.replace("POS-", ""))
+        return Number.isNaN(numeric) ? max : Math.max(max, numeric)
+      }, 0) + 1
+    const nextDevice: DeviceRow = {
+      id: `POS-${String(nextNumber).padStart(3, "0")}`,
+      name: newDeviceForm.name.trim(),
+      location: newDeviceForm.location.trim(),
+      model: newDeviceForm.model,
+      status: newDeviceForm.status,
+      today: "₹0",
+      txns: 0,
+      lastSeen: "Now",
+    }
+    setDeviceRows((current) => [nextDevice, ...current])
+    setSelected(nextDevice.id)
+    setRightTab("detail")
+    setNewDeviceForm({
+      name: "",
+      location: "",
+      model: "A920 Pro",
+      status: "online",
+    })
+  }
+
+  const deviceColumns: DataTableColumn<DeviceRow>[] = [
+    { id: "id", header: "Device", accessorKey: "id", width: 110, pinnable: true },
+    { id: "name", header: "Name", accessorKey: "name", width: 170 },
+    { id: "location", header: "Location", accessorKey: "location", width: 140 },
+    {
+      id: "model",
+      header: "Model",
+      accessorKey: "model",
+      width: 120,
+      filterOptions: [
+        { label: "A920 Pro", value: "A920 Pro" },
+        { label: "P2 Lite", value: "P2 Lite" },
+        { label: "A80", value: "A80" },
+      ],
+    },
+    {
+      id: "status",
+      header: "Status",
+      accessorKey: "status",
+      width: 110,
+      filterOptions: [
+        { label: "Online", value: "online" },
+        { label: "Offline", value: "offline" },
+      ],
+      cell: (device) => (
+        <Badge
+          variant="outline"
+          className={device.status === "online" ? "bg-success/20 text-foreground border-success/35" : "bg-muted text-muted-foreground border-border"}
+        >
+          {device.status}
+        </Badge>
+      ),
+    },
+    { id: "txns", header: "Txns", getValue: (device) => device.txns, align: "right", width: 90 },
+    { id: "today", header: "Today", accessorKey: "today", align: "right", width: 120 },
+    { id: "lastSeen", header: "Last Seen", accessorKey: "lastSeen", width: 110, align: "right" },
+  ]
+
+  const transactionColumns: DataTableColumn<(typeof offlineTransactionRows)[number]>[] = [
+    { id: "id", header: "Transaction", accessorKey: "id", width: 140, pinnable: true },
+    { id: "device", header: "Device", accessorKey: "device", width: 110 },
+    { id: "location", header: "Location", accessorKey: "location", width: 130 },
+    {
+      id: "method",
+      header: "Method",
+      accessorKey: "method",
+      width: 100,
+      filterOptions: [
+        { label: "Tap", value: "Tap" },
+        { label: "Chip", value: "Chip" },
+        { label: "Swipe", value: "Swipe" },
+      ],
+    },
+    {
+      id: "status",
+      header: "Status",
+      accessorKey: "status",
+      width: 120,
+      filterOptions: [
+        { label: "Success", value: "Success" },
+        { label: "Failed", value: "Failed" },
+      ],
+      cell: (transaction) => (
+        <Badge
+          variant="outline"
+          className={
+            transaction.status === "Success"
+              ? "bg-success/20 text-foreground border-success/35"
+              : "bg-destructive/20 text-foreground border-destructive/35"
+          }
+        >
+          {transaction.status}
+        </Badge>
+      ),
+    },
+    { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
+    { id: "time", header: "Time", accessorKey: "time", align: "right", width: 110 },
+  ]
+
+  const settlementColumns: DataTableColumn<(typeof settlementRows)[number]>[] = [
+    { id: "id", header: "Batch", accessorKey: "id", width: 110, pinnable: true },
+    { id: "title", header: "Settlement", accessorKey: "title", width: 220 },
+    {
+      id: "state",
+      header: "State",
+      accessorKey: "state",
+      width: 120,
+      filterOptions: [
+        { label: "Completed", value: "Completed" },
+        { label: "Processing", value: "Processing" },
+        { label: "Review", value: "Review" },
+      ],
+    },
+    { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
+  ]
+
+  const disputeColumns: DataTableColumn<(typeof disputeRows)[number]>[] = [
+    { id: "id", header: "Dispute ID", accessorKey: "id", width: 120, pinnable: true },
+    { id: "state", header: "Status", accessorKey: "state", width: 220 },
+    { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
+  ]
+
+  const refundColumns: DataTableColumn<(typeof refundRows)[number]>[] = [
+    { id: "id", header: "Refund ID", accessorKey: "id", width: 120, pinnable: true },
+    { id: "state", header: "State", accessorKey: "state", width: 220 },
+    { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
+  ]
+
   const leftContext = (
-    <div className="h-full overflow-y-auto p-3">
-      <p className="px-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Offline Payments</p>
-      <div className="mt-2 space-y-1">
-        {[
-          { key: "overview", label: "Overview" },
-          { key: "transactions", label: "Transactions" },
-          { key: "settlements", label: "Settlements" },
-          { key: "disputes", label: "Disputes" },
-          { key: "refunds", label: "Refunds" },
-          { key: "reports", label: "Reports" },
-          { key: "vas", label: "Value Added Services" },
-        ].map((item) => {
-          const active = navSection === item.key
-          return (
-            <button
-              key={item.key}
-              onClick={() => {
-                setNavSection(item.key as OfflineNavSection)
-                setSelected(null)
-                setSelectedVasId(null)
-                setRightTab("detail")
-              }}
-              className={`w-full rounded-md px-3 py-2 text-left transition-colors ${
-                active ? "bg-secondary/70 text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              }`}
-            >
-              <p className="text-[13px] font-medium">{item.label}</p>
-            </button>
-          )
-        })}
-      </div>
-    </div>
+    <ProductWorkspaceNav
+      title="Offline Payments"
+      value={navSection}
+      showManageDevices
+      onChange={(nextSection) => {
+        setNavSection(nextSection)
+        setSelected(null)
+        setSelectedVasId(null)
+        setRightTab("detail")
+      }}
+    />
   )
 
   const centerMain = (
@@ -248,10 +380,12 @@ export function OfflinePaymentsContent() {
       <section className="rounded-lg bg-card/80 px-4 py-3">
         <div className="flex flex-wrap items-center gap-3">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{navSection}</p>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+              {navSection === "manage-devices" ? "manage devices" : navSection}
+            </p>
             <h2 className="text-[15px] font-semibold text-foreground">Offline payments workspace</h2>
           </div>
-          {navSection !== "vas" && (
+          {navSection === "manage-devices" && (
             <div className="ml-auto flex items-center gap-1 rounded-md bg-muted/70 p-1">
               {[
                 { key: "all", label: "All" },
@@ -260,7 +394,7 @@ export function OfflinePaymentsContent() {
                 { key: "a80", label: "A80" },
                 { key: "offline", label: "Offline" },
               ].map((item) => (
-                <button
+                <Button variant="ghost"
                   key={item.key}
                   onClick={() => setDeviceSegment(item.key as DeviceSegment)}
                   className={`rounded-sm px-2.5 py-1 text-[11px] ${
@@ -268,80 +402,109 @@ export function OfflinePaymentsContent() {
                   }`}
                 >
                   {item.label}
-                </button>
+                </Button>
               ))}
             </div>
           )}
         </div>
       </section>
 
-      {(navSection === "overview" || navSection === "transactions") && (
+      {navSection === "transactions" && (
         <>
-          {navSection === "overview" && (
-            <div className="grid grid-cols-4 gap-3">
-              {[{l:"Total Devices",v:`${devices.length}`},{l:"Online",v:`${onlineCount}`},{l:"Revenue",v:"₹4.71L"},{l:"Alerts",v:"2 Offline"}].map(s => (
-                <div key={s.l} className="rounded-lg bg-card/80 p-3">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.l}</p>
-                  <p className="mt-1 text-[15px] font-semibold text-foreground">{s.v}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="overflow-hidden rounded-lg bg-card/80">
-            <div className="flex items-center gap-2 px-3 py-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input placeholder="Search devices..." value={query} onChange={e => setQuery(e.target.value)} className="h-8 border-0 bg-muted/70 pl-8 text-xs" />
+          <div className="grid grid-cols-4 gap-3">
+            {[{l:"Transactions",v:"2,146"},{l:"Approved",v:"2,104"},{l:"Declined",v:"42"},{l:"Volume",v:"₹18.6L"}].map(s => (
+              <div key={s.l} className="rounded-lg bg-card/80 p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.l}</p>
+                <p className="mt-1 text-[15px] font-semibold text-foreground">{s.v}</p>
               </div>
-              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setRightTab("analytics")}>Analytics</Button>
-            </div>
-            <div className="space-y-1 px-2 pb-2">
-              {filtered.map(d => <DeviceRow key={d.id} device={d} selected={selected===d.id} onClick={() => { setSelected(d.id); setRightTab("detail") }} />)}
-            </div>
+            ))}
           </div>
+
+          <DataTable
+            data={offlineTransactionRows}
+            columns={transactionColumns}
+            rowId={(transaction) => transaction.id}
+            searchPlaceholder="Search transactions..."
+            emptyText="No transactions found"
+            initialPinnedColumnIds={["id"]}
+            toolbarActions={
+              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setRightTab("analytics")}>
+                Analytics
+              </Button>
+            }
+            onRowClick={() => setRightTab("analytics")}
+          />
+        </>
+      )}
+
+      {navSection === "manage-devices" && (
+        <>
+          <div className="grid grid-cols-4 gap-3">
+            {[{l:"Total Devices",v:`${deviceRows.length}`},{l:"Online",v:`${onlineCount}`},{l:"Revenue",v:"₹4.71L"},{l:"Alerts",v:"2 Offline"}].map(s => (
+              <div key={s.l} className="rounded-lg bg-card/80 p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.l}</p>
+                <p className="mt-1 text-[15px] font-semibold text-foreground">{s.v}</p>
+              </div>
+            ))}
+          </div>
+
+          <DataTable
+            data={filteredDevices}
+            columns={deviceColumns}
+            rowId={(device) => device.id}
+            selectedRowId={selected}
+            onRowClick={(device) => {
+              setSelected(device.id)
+              setRightTab("detail")
+            }}
+            searchPlaceholder="Search devices..."
+            emptyText="No devices found"
+            initialPinnedColumnIds={["id"]}
+            toolbarActions={
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setRightTab("analytics")}>
+                  Analytics
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-8 text-xs gap-1.5"
+                  onClick={() => {
+                    setSelected(null)
+                    setSelectedVasId(null)
+                    setRightTab("add-device")
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add device
+                </Button>
+              </div>
+            }
+          />
         </>
       )}
 
       {navSection === "settlements" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Settlements</p>
-          <div className="mt-3 space-y-2">
-            {[
-              ["Today's settlement", "₹1,12,300", "Completed"],
-              ["Pending reconciliation", "₹23,400", "Processing"],
-              ["Holdback reserve", "₹9,800", "Review"],
-            ].map(([title, value, state]) => (
-              <button key={title} onClick={() => setRightTab("analytics")} className="intercom-panel-row">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{title}</p>
-                  <p className="text-xs text-muted-foreground">{state}</p>
-                </div>
-                <p className="text-sm font-semibold text-foreground">{value}</p>
-              </button>
-            ))}
-          </div>
-        </section>
+        <DataTable
+          data={settlementRows}
+          columns={settlementColumns}
+          rowId={(row) => row.id}
+          searchPlaceholder="Search settlements..."
+          emptyText="No settlements found"
+          initialPinnedColumnIds={["id"]}
+          onRowClick={() => setRightTab("analytics")}
+        />
       )}
 
       {navSection === "disputes" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Disputes</p>
-          <div className="mt-3 space-y-2">
-            {[
-              ["DSP-112", "Chargeback requested", "₹2,300"],
-              ["DSP-109", "Waiting for evidence", "₹5,900"],
-            ].map(([id, state, amount]) => (
-              <button key={id} onClick={() => setRightTab("analytics")} className="intercom-panel-row">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{id}</p>
-                  <p className="text-xs text-muted-foreground">{state}</p>
-                </div>
-                <p className="text-sm font-semibold text-foreground">{amount}</p>
-              </button>
-            ))}
-          </div>
-        </section>
+        <DataTable
+          data={disputeRows}
+          columns={disputeColumns}
+          rowId={(row) => row.id}
+          searchPlaceholder="Search disputes..."
+          emptyText="No disputes found"
+          initialPinnedColumnIds={["id"]}
+          onRowClick={() => setRightTab("analytics")}
+        />
       )}
 
       {navSection === "reports" && (
@@ -357,23 +520,15 @@ export function OfflinePaymentsContent() {
       )}
 
       {navSection === "refunds" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Refunds</p>
-          <div className="mt-3 space-y-2">
-            {[
-              ["RFD-611", "POS refund approved", "₹780"],
-              ["RFD-603", "Pending manager review", "₹2,240"],
-            ].map(([id, status, value]) => (
-              <button key={id} onClick={() => setRightTab("analytics")} className="intercom-panel-row">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{id}</p>
-                  <p className="text-xs text-muted-foreground">{status}</p>
-                </div>
-                <p className="text-sm font-semibold text-foreground">{value}</p>
-              </button>
-            ))}
-          </div>
-        </section>
+        <DataTable
+          data={refundRows}
+          columns={refundColumns}
+          rowId={(row) => row.id}
+          searchPlaceholder="Search refunds..."
+          emptyText="No refunds found"
+          initialPinnedColumnIds={["id"]}
+          onRowClick={() => setRightTab("analytics")}
+        />
       )}
 
       {navSection === "vas" && (
@@ -381,7 +536,7 @@ export function OfflinePaymentsContent() {
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Value Added Services</p>
           <div className="space-y-4">
             {vasGroups.map((group) => {
-              const groupItems = vasItems.filter((item) => group.itemIds.includes(item.id))
+              const groupItems = vasItems.filter((item) => group.itemIds.some((groupId) => groupId === item.id))
               return (
                 <div key={group.id}>
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">{group.title}</p>
@@ -521,9 +676,79 @@ export function OfflinePaymentsContent() {
         <Button variant="outline" className="w-full" onClick={() => setSelectedVasId(null)}>Cancel</Button>
       </div>
     </div>
+  ) : rightTab === "add-device" ? (
+    <div className="p-6 space-y-5">
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Device onboarding</p>
+        <h4 className="mt-1 text-[18px] font-semibold text-foreground">Add POS device</h4>
+      </div>
+      <div className="space-y-3">
+        <div>
+          <p className="text-xs text-muted-foreground">Device name</p>
+          <Input
+            value={newDeviceForm.name}
+            onChange={(event) => setNewDeviceForm((current) => ({ ...current, name: event.target.value }))}
+            placeholder="Counter 11"
+            className="mt-1 h-8 bg-background/50 text-xs"
+          />
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Store location</p>
+          <Input
+            value={newDeviceForm.location}
+            onChange={(event) => setNewDeviceForm((current) => ({ ...current, location: event.target.value }))}
+            placeholder="Second floor"
+            className="mt-1 h-8 bg-background/50 text-xs"
+          />
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Device model</p>
+          <select
+            value={newDeviceForm.model}
+            onChange={(event) =>
+              setNewDeviceForm((current) => ({ ...current, model: event.target.value as DeviceRow["model"] }))
+            }
+            className="mt-1 h-8 w-full rounded-md border border-border bg-background/50 px-2 text-xs text-foreground"
+          >
+            <option value="A920 Pro">A920 Pro</option>
+            <option value="P2 Lite">P2 Lite</option>
+            <option value="A80">A80</option>
+          </select>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Connection status</p>
+          <select
+            value={newDeviceForm.status}
+            onChange={(event) =>
+              setNewDeviceForm((current) => ({ ...current, status: event.target.value as DeviceRow["status"] }))
+            }
+            className="mt-1 h-8 w-full rounded-md border border-border bg-background/50 px-2 text-xs text-foreground"
+          >
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+          </select>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Button className="w-full" disabled={!canCreateDevice} onClick={handleCreateDevice}>
+          Add and configure
+        </Button>
+        <Button variant="outline" className="w-full" onClick={() => setRightTab("detail")}>
+          Cancel
+        </Button>
+      </div>
+    </div>
   ) : rightTab === "detail" ? (
     selectedDevice ? <DeviceDetail device={selectedDevice} /> : (
-      <PanelEmpty icon={Wifi} title="Select a device" description="Click a POS device to view its status, transactions and configuration." />
+      <PanelEmpty
+        icon={Wifi}
+        title={navSection === "manage-devices" ? "Select a device" : "No contextual detail"}
+        description={
+          navSection === "manage-devices"
+            ? "Click a POS device to view its status, transactions and configuration."
+            : "Pick a row or open analytics to see deeper context here."
+        }
+      />
     )
   ) : (
     <div className="mt-0 overflow-auto px-5 py-4 space-y-6">
@@ -541,7 +766,7 @@ export function OfflinePaymentsContent() {
       <Separator />
       <div className="space-y-2">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Revenue by Device</p>
-        {devices.filter(d => d.status==="online").sort((a,b) => parseInt(b.today.replace(/[₹,]/g,"")) - parseInt(a.today.replace(/[₹,]/g,""))).map(d => (
+        {deviceRows.filter(d => d.status==="online").sort((a,b) => parseInt(b.today.replace(/[₹,]/g,"")) - parseInt(a.today.replace(/[₹,]/g,""))).map(d => (
           <div key={d.id} className="flex items-center gap-3">
             <span className="text-xs text-muted-foreground w-28 shrink-0 truncate">{d.name}</span>
             <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
@@ -560,13 +785,22 @@ export function OfflinePaymentsContent() {
         <div>
           <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Context</p>
           <p className="text-[16px] font-semibold text-foreground">
-            {selectedVas ? "Service configuration" : rightTab === "detail" ? "Device detail" : "Analytics"}
+            {selectedVas
+              ? "Service configuration"
+              : rightTab === "add-device"
+                ? "Add device"
+                : rightTab === "detail"
+                  ? navSection === "manage-devices"
+                    ? "Device detail"
+                    : "Context detail"
+                  : "Analytics"}
           </p>
         </div>
         <Button
           variant="ghost"
           size="icon-sm"
           className="h-8 w-8"
+          aria-label="Close contextual panel"
           onClick={() => {
             setSelectedVasId(null)
             setSelected(null)
@@ -584,13 +818,12 @@ export function OfflinePaymentsContent() {
   return (
       <WorkspaceShell
         leftContext={leftContext}
-        showLeftContext
+        showLeftContext={false}
         centerMain={centerMain}
       rightContext={rightContext}
-      showRightContext={Boolean(selectedVas) || rightTab === "analytics" || Boolean(selectedDevice)}
+      showRightContext={Boolean(selectedVas) || rightTab === "analytics" || rightTab === "add-device" || Boolean(selectedDevice)}
       leftWidth={248}
       leftMaxWidth={300}
-      centerMaxWidth={1080}
     />
   )
 }

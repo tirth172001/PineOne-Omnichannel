@@ -1,10 +1,10 @@
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
 import { POSOnboardingFlow } from "@/components/onboarding/pos-onboarding-flow"
 
 export default function POSOnboardingPage() {
   return (
-    <DashboardLayout>
+    <V2DashboardLayout>
       <POSOnboardingFlow />
-    </DashboardLayout>
+    </V2DashboardLayout>
   )
 }

@@ -31,6 +31,7 @@ export interface ChartSpec {
 
 const baseTokenTheme: Highcharts.Options = {
   credits: { enabled: false },
+  accessibility: { enabled: false },
   chart: {
     backgroundColor: "transparent",
     style: {
@@ -76,6 +77,9 @@ const baseTokenTheme: Highcharts.Options = {
     line: {
       marker: { enabled: false },
     },
+    spline: {
+      marker: { enabled: false },
+    },
     area: {
       marker: { enabled: false },
     },
@@ -91,7 +95,55 @@ const baseTokenTheme: Highcharts.Options = {
   },
 }
 
+function coerceLineToSpline(options: ChartSpec): Highcharts.Options {
+  const normalized = Highcharts.merge({}, options as Highcharts.Options)
+  const chartType = normalized.chart?.type
+
+  if (chartType === "line") {
+    normalized.chart = {
+      ...(normalized.chart ?? {}),
+      type: "spline",
+    }
+  }
+
+  if (Array.isArray(normalized.series)) {
+    normalized.series = normalized.series.map((series) => {
+      if (!series) return series
+      const seriesType = (series as Highcharts.SeriesOptionsType).type
+
+      if (seriesType === "line") {
+        return {
+          ...series,
+          type: "spline",
+        } as Highcharts.SeriesOptionsType
+      }
+
+      if (chartType === "line" && !seriesType) {
+        return {
+          ...series,
+          type: "spline",
+        } as Highcharts.SeriesOptionsType
+      }
+
+      return series
+    }) as Highcharts.SeriesOptionsType[]
+  }
+
+  if (normalized.plotOptions?.line) {
+    normalized.plotOptions = {
+      ...normalized.plotOptions,
+      spline: {
+        ...(normalized.plotOptions.spline ?? {}),
+        ...normalized.plotOptions.line,
+      },
+    }
+  }
+
+  return normalized
+}
+
 export function withChartTheme(options: ChartSpec): Highcharts.Options {
+  const normalizedOptions = coerceLineToSpline(options)
   return Highcharts.merge(
     {},
     baseTokenTheme,
@@ -100,7 +152,7 @@ export function withChartTheme(options: ChartSpec): Highcharts.Options {
         reflow: true,
       },
     },
-    options as Highcharts.Options,
+    normalizedOptions,
   )
 }
 
@@ -123,11 +175,21 @@ export function HighchartsPanelChart({
   className?: string
 }) {
   const themed = React.useMemo(() => withChartTheme(options), [options])
+  const handleChartMount = React.useCallback((chart: Highcharts.Chart) => {
+    const chartSvg = chart.container?.querySelector("svg")
+    if (!chartSvg) return
+    chartSvg.setAttribute("aria-hidden", "true")
+    chartSvg.removeAttribute("role")
+    chartSvg.removeAttribute("aria-label")
+    chartSvg.removeAttribute("aria-labelledby")
+  }, [])
+
   return (
     <div className={cn("h-full w-full min-w-0 overflow-hidden", className)}>
       <HighchartsReact
         highcharts={Highcharts}
         options={themed}
+        callback={handleChartMount}
         containerProps={{ style: { height: "100%", width: "100%", overflow: "hidden" } }}
       />
     </div>

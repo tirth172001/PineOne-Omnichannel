@@ -1,12 +1,12 @@
 "use client"
 
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
 import { LendingApplicationFlow } from "@/components/onboarding/lending-application-flow"
 
 export default function LendingOnboardingPage() {
   return (
-    <DashboardLayout>
+    <V2DashboardLayout>
       <LendingApplicationFlow />
-    </DashboardLayout>
+    </V2DashboardLayout>
   )
 }

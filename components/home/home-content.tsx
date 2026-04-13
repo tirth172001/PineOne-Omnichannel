@@ -4,10 +4,12 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { ArrowUpRight, CircleAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { HighchartsPanelChart } from "@/components/ui/highcharts"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
 import { cn } from "@/lib/utils"
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
+import { Badge } from "@/components/ui/badge"
+import { ProductWorkspaceNav, type ProductWorkspaceSection } from "@/components/dashboard/product-workspace-nav"
 
 type WindowSegment = "7D" | "30D" | "90D"
 
@@ -116,6 +118,36 @@ const performanceCards: PerformanceCardConfig[] = [
   },
 ]
 
+const allProductSettlementRows = [
+  { id: "APL-STL-01", product: "Online payments", amount: "₹1,42,330", state: "Processing" },
+  { id: "APL-STL-02", product: "Offline payments", amount: "₹1,12,300", state: "Completed" },
+  { id: "APL-STL-03", product: "Pay by link", amount: "₹48,300", state: "Completed" },
+]
+
+const allProductDisputeRows = [
+  { id: "APL-DSP-01", product: "Online payments", state: "Evidence required", amount: "₹12,500" },
+  { id: "APL-DSP-02", product: "Offline payments", state: "Chargeback requested", amount: "₹2,300" },
+  { id: "APL-DSP-03", product: "Pay by link", state: "Bank timeout", amount: "₹1,800" },
+]
+
+const allProductRefundRows = [
+  { id: "APL-RFD-01", product: "Online payments", state: "Manual review", amount: "₹4,400" },
+  { id: "APL-RFD-02", product: "Offline payments", state: "Approved", amount: "₹780" },
+  { id: "APL-RFD-03", product: "Pay by link", state: "Completed", amount: "₹999" },
+]
+
+const allProductReportRows = [
+  { id: "APL-RPT-01", report: "Cross-product conversion report", cadence: "Weekly", owner: "Growth Ops" },
+  { id: "APL-RPT-02", report: "Settlement reliability report", cadence: "Daily", owner: "Finance Ops" },
+  { id: "APL-RPT-03", report: "Refund velocity report", cadence: "Weekly", owner: "Support Ops" },
+]
+
+const allProductVasRows = [
+  { id: "APL-VAS-01", product: "Online payments", service: "Smart routing", status: "enabled", owner: "Payments Ops" },
+  { id: "APL-VAS-02", product: "Offline payments", service: "AMEX acceptance", status: "pending", owner: "Terminal Ops" },
+  { id: "APL-VAS-03", product: "Pay by link", service: "Smart reminders", status: "enabled", owner: "Collections Team" },
+]
+
 function buildChartOptions(card: PerformanceCardConfig, windowSegment: WindowSegment) {
   const scale = windowScale[windowSegment]
   const processed = card.series.processed.map((value) => Number((value * scale).toFixed(2)))
@@ -187,7 +219,7 @@ function PerformanceCard({
         <div className="ml-auto flex items-center gap-2">
           <div className="flex items-center rounded-md bg-muted/70 p-0.5">
             {windowOptions.map((item) => (
-              <button
+              <Button variant="ghost"
                 key={`${card.id}-${item}`}
                 onClick={() => onSelectWindow(item)}
                 className={cn(
@@ -196,7 +228,7 @@ function PerformanceCard({
                 )}
               >
                 {item}
-              </button>
+              </Button>
             ))}
           </div>
           <Button asChild size="sm" className="h-8 rounded-md px-3 text-[11px]">
@@ -229,42 +261,153 @@ function PerformanceCard({
 }
 
 export function HomeContent() {
+  const [navSection, setNavSection] = useState<ProductWorkspaceSection>("transactions")
   const [windowSegment, setWindowSegment] = useState<WindowSegment>("30D")
+
+  const settlementColumns: DataTableColumn<(typeof allProductSettlementRows)[number]>[] = [
+    { id: "id", header: "Settlement ID", accessorKey: "id", width: 130, pinnable: true },
+    {
+      id: "product",
+      header: "Product",
+      accessorKey: "product",
+      width: 160,
+      filterOptions: [
+        { label: "Online payments", value: "Online payments" },
+        { label: "Offline payments", value: "Offline payments" },
+        { label: "Pay by link", value: "Pay by link" },
+      ],
+    },
+    { id: "state", header: "State", accessorKey: "state", width: 130 },
+    { id: "amount", header: "Amount", accessorKey: "amount", width: 120, align: "right" },
+  ]
+
+  const disputeColumns: DataTableColumn<(typeof allProductDisputeRows)[number]>[] = [
+    { id: "id", header: "Dispute ID", accessorKey: "id", width: 130, pinnable: true },
+    { id: "product", header: "Product", accessorKey: "product", width: 160 },
+    { id: "state", header: "Status", accessorKey: "state", width: 200 },
+    { id: "amount", header: "Amount", accessorKey: "amount", width: 120, align: "right" },
+  ]
+
+  const refundColumns: DataTableColumn<(typeof allProductRefundRows)[number]>[] = [
+    { id: "id", header: "Refund ID", accessorKey: "id", width: 130, pinnable: true },
+    { id: "product", header: "Product", accessorKey: "product", width: 160 },
+    { id: "state", header: "State", accessorKey: "state", width: 200 },
+    { id: "amount", header: "Amount", accessorKey: "amount", width: 120, align: "right" },
+  ]
+
+  const reportColumns: DataTableColumn<(typeof allProductReportRows)[number]>[] = [
+    { id: "id", header: "Report ID", accessorKey: "id", width: 120, pinnable: true },
+    { id: "report", header: "Report", accessorKey: "report", width: 280 },
+    { id: "cadence", header: "Cadence", accessorKey: "cadence", width: 120 },
+    { id: "owner", header: "Owner", accessorKey: "owner", width: 140 },
+  ]
+
+  const vasColumns: DataTableColumn<(typeof allProductVasRows)[number]>[] = [
+    { id: "id", header: "Service ID", accessorKey: "id", width: 120, pinnable: true },
+    { id: "product", header: "Product", accessorKey: "product", width: 160 },
+    { id: "service", header: "Service", accessorKey: "service", width: 220 },
+    {
+      id: "status",
+      header: "Status",
+      accessorKey: "status",
+      width: 120,
+      filterOptions: [
+        { label: "Enabled", value: "enabled" },
+        { label: "Pending", value: "pending" },
+      ],
+      cell: (row) => (
+        <Badge variant="outline" className={row.status === "enabled" ? "bg-success/20 border-success/35 text-foreground" : "bg-warning/20 border-warning/35 text-foreground"}>
+          {row.status}
+        </Badge>
+      ),
+    },
+    { id: "owner", header: "Owner", accessorKey: "owner", width: 150 },
+  ]
+
+  const leftContext = (
+    <ProductWorkspaceNav
+      title="All Products"
+      value={navSection}
+      onChange={(nextSection) => setNavSection(nextSection)}
+    />
+  )
 
   const centerMain = (
     <div className="h-full overflow-y-auto p-4">
-      <div className="space-y-4">
-        <section className="rounded-lg bg-accent/45 px-4 py-3">
-          <div className="flex items-center gap-2 text-[12px] text-foreground">
-            <CircleAlert className="h-3.5 w-3.5 text-primary" />
-            Immediate attention
-          </div>
-          <div className="mt-2 grid gap-2 md:grid-cols-3">
-            {alertItems.map((item) => (
-              <div key={item.title} className="flex items-center justify-between gap-2 rounded-md bg-card/55 px-3 py-2">
-                <p className="truncate text-[12px] text-foreground">{item.title}</p>
-                <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px]" asChild>
-                  <Link href={item.href} target={item.href.startsWith("http") ? "_blank" : undefined} rel="noreferrer">
-                    {item.action}
-                  </Link>
-                </Button>
-              </div>
-            ))}
-          </div>
-        </section>
+      {navSection === "transactions" ? (
+        <div className="space-y-4">
+          <section className="rounded-lg bg-accent/45 px-4 py-3">
+            <div className="flex items-center gap-2 text-[12px] text-foreground">
+              <CircleAlert className="h-3.5 w-3.5 text-primary" />
+              Immediate attention
+            </div>
+            <div className="mt-2 grid gap-2 md:grid-cols-3">
+              {alertItems.map((item) => (
+                <div key={item.title} className="flex items-center justify-between gap-2 rounded-md bg-card/55 px-3 py-2">
+                  <p className="truncate text-[12px] text-foreground">{item.title}</p>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px]" asChild>
+                    <Link href={item.href} target={item.href.startsWith("http") ? "_blank" : undefined} rel="noreferrer">
+                      {item.action}
+                    </Link>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </section>
 
-        <PerformanceCard card={performanceCards[0]} windowSegment={windowSegment} onSelectWindow={setWindowSegment} />
+          <PerformanceCard card={performanceCards[0]} windowSegment={windowSegment} onSelectWindow={setWindowSegment} />
 
-        <div className="grid gap-3">
-          <PerformanceCard card={performanceCards[1]} windowSegment={windowSegment} onSelectWindow={setWindowSegment} />
-          <PerformanceCard card={performanceCards[2]} windowSegment={windowSegment} onSelectWindow={setWindowSegment} />
-          <PerformanceCard card={performanceCards[3]} windowSegment={windowSegment} onSelectWindow={setWindowSegment} />
+          <div className="grid gap-3">
+            <PerformanceCard card={performanceCards[1]} windowSegment={windowSegment} onSelectWindow={setWindowSegment} />
+            <PerformanceCard card={performanceCards[2]} windowSegment={windowSegment} onSelectWindow={setWindowSegment} />
+            <PerformanceCard card={performanceCards[3]} windowSegment={windowSegment} onSelectWindow={setWindowSegment} />
+          </div>
         </div>
-      </div>
+      ) : navSection === "settlements" ? (
+        <DataTable
+          data={allProductSettlementRows}
+          columns={settlementColumns}
+          rowId={(row) => row.id}
+          searchPlaceholder="Search settlements..."
+          initialPinnedColumnIds={["id"]}
+        />
+      ) : navSection === "disputes" ? (
+        <DataTable
+          data={allProductDisputeRows}
+          columns={disputeColumns}
+          rowId={(row) => row.id}
+          searchPlaceholder="Search disputes..."
+          initialPinnedColumnIds={["id"]}
+        />
+      ) : navSection === "refunds" ? (
+        <DataTable
+          data={allProductRefundRows}
+          columns={refundColumns}
+          rowId={(row) => row.id}
+          searchPlaceholder="Search refunds..."
+          initialPinnedColumnIds={["id"]}
+        />
+      ) : navSection === "reports" ? (
+        <DataTable
+          data={allProductReportRows}
+          columns={reportColumns}
+          rowId={(row) => row.id}
+          searchPlaceholder="Search reports..."
+          initialPinnedColumnIds={["id"]}
+        />
+      ) : (
+        <DataTable
+          data={allProductVasRows}
+          columns={vasColumns}
+          rowId={(row) => row.id}
+          searchPlaceholder="Search services..."
+          initialPinnedColumnIds={["id"]}
+        />
+      )}
     </div>
   )
 
   return (
-    <WorkspaceShell centerMain={centerMain} showRightContext={false} centerMaxWidth={1100} />
+    <WorkspaceShell leftContext={leftContext} showLeftContext={false} centerMain={centerMain} showRightContext={false} />
   )
 }

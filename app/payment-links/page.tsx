@@ -1,10 +1,10 @@
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
 import { PaymentLinksContent } from "@/components/payment-links/payment-links-content"
 
 export default function PaymentLinksPage() {
   return (
-    <DashboardLayout>
+    <V2DashboardLayout>
       <PaymentLinksContent />
-    </DashboardLayout>
+    </V2DashboardLayout>
   )
 }

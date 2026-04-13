@@ -337,14 +337,14 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
           <CardContent>
             <div className="grid gap-3 md:grid-cols-2">
               {details.howItWorks.map((step, index) => (
-                <button
+                <Button variant="ghost"
                   key={step}
-                  className="rounded-lg border border-border bg-secondary/25 p-3 text-left transition-colors hover:border-primary/30 hover:bg-secondary/45"
+                  className="rounded-lg border border-border bg-secondary/25 p-3 !h-auto !justify-start text-left transition-colors hover:border-primary/30 hover:bg-secondary/45"
                   onClick={() => setPanelMode("next")}
                 >
                   <p className="mb-1 text-xs text-muted-foreground">Step {index + 1}</p>
                   <p className="text-sm text-foreground">{step}</p>
-                </button>
+                </Button>
               ))}
             </div>
           </CardContent>
@@ -362,10 +362,10 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
               { name: "Analytics", desc: "Deep insights into performance" },
               { name: "Webhooks", desc: "Real-time event notifications" },
             ].map((item) => (
-              <button
+              <Button variant="ghost"
                 key={item.name}
                 onClick={() => setPanelMode("benchmark")}
-                className="flex items-center gap-3 rounded-lg border border-border bg-secondary/30 p-3 text-left transition-colors hover:border-primary/30"
+                className="flex items-center gap-3 rounded-lg border border-border bg-secondary/30 p-3 !h-auto !justify-start text-left transition-colors hover:border-primary/30"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                   <Zap className="h-4 w-4 text-primary" />
@@ -374,7 +374,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                   <p className="text-sm font-medium text-foreground">{item.name}</p>
                   <p className="text-xs text-muted-foreground">{item.desc}</p>
                 </div>
-              </button>
+              </Button>
             ))}
           </div>
         </CardContent>
