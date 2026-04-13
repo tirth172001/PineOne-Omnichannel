@@ -830,7 +830,7 @@ export function POSOnboardingFlow() {
 
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <HelpCircle className="h-4 w-4" />
-          Need help? <button className="text-primary hover:underline">Contact support</button>
+          Need help? <Button variant="link" className="h-auto px-1 text-primary">Contact support</Button>
         </div>
 
         {currentStep < steps.length ? (

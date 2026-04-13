@@ -112,8 +112,8 @@ const useCases = [
 function UseCaseRow({ uc, selected, onClick }: { uc: typeof useCases[0]; selected: boolean; onClick: () => void }) {
   const Icon = uc.icon
   return (
-    <button onClick={onClick}
-      className={`intercom-panel-row ${selected ? "intercom-panel-row-active" : ""}`}>
+    <Button variant="ghost" onClick={onClick}
+      className={`intercom-panel-row !h-auto !justify-start ${selected ? "intercom-panel-row-active" : ""}`}>
       <div className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 ${uc.color}`}>
         <Icon className="h-4 w-4" />
       </div>
@@ -122,7 +122,7 @@ function UseCaseRow({ uc, selected, onClick }: { uc: typeof useCases[0]; selecte
         <p className="text-xs text-muted-foreground">{uc.products.length} products · {uc.stats}</p>
       </div>
       <Badge variant="outline" className="text-[9px] shrink-0">{uc.tag}</Badge>
-    </button>
+    </Button>
   )
 }
 
