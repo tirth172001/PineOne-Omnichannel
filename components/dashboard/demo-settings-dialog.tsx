@@ -25,8 +25,14 @@ const MAX_WIDTH_OPTIONS = [
 ]
 
 const VERSIONS = [
-  { label: "V1", port: 3000, description: "Icon rail nav" },
-  { label: "V2", port: 3001, description: "Persistent sidebar" },
+  { label: "V1", key: "v1" as const, description: "Icon rail nav" },
+  { label: "V2", key: "v2" as const, description: "Persistent sidebar" },
+]
+
+const v1Routes = [
+  "/", "/online-payments", "/offline-payments", "/payment-links",
+  "/card-payments", "/international-payments", "/products",
+  "/use-cases", "/settings", "/support", "/configure-products", "/pos-device",
 ]
 
 interface DemoSettingsDialogProps {
@@ -38,11 +44,9 @@ export function DemoSettingsDialog({ open, onOpenChange }: DemoSettingsDialogPro
   const pathname = usePathname()
   const [settings, setSettings] = useState<DemoSettings>(readDemoSettings)
   const [customInput, setCustomInput] = useState(String(settings.customMaxWidth))
-  const [currentPort, setCurrentPort] = useState(3000)
+  const currentVersion = process.env.NEXT_PUBLIC_APP_VERSION ?? "v1"
 
-  useEffect(() => {
-    setCurrentPort(Number(window.location.port) || 3000)
-  }, [])
+  useEffect(() => {}, [])
 
   function update(patch: Partial<DemoSettings>) {
     const next = { ...settings, ...patch }
@@ -52,23 +56,21 @@ export function DemoSettingsDialog({ open, onOpenChange }: DemoSettingsDialogPro
     window.dispatchEvent(new Event("demo-settings-changed"))
   }
 
-  function switchVersion(port: number) {
-    if (port === currentPort) return
-    const { protocol, hostname } = window.location
-
-    const v1Routes = [
-      "/", "/online-payments", "/offline-payments", "/payment-links",
-      "/card-payments", "/international-payments", "/products",
-      "/use-cases", "/settings", "/support", "/configure-products", "/pos-device",
-    ]
+  function switchVersion(targetKey: "v1" | "v2") {
+    if (targetKey === currentVersion) return
+    const baseUrl =
+      targetKey === "v1"
+        ? process.env.NEXT_PUBLIC_V1_URL
+        : process.env.NEXT_PUBLIC_V2_URL
+    if (!baseUrl) return
 
     let resolvedPath = pathname
-    if (port === 3000 && !v1Routes.includes(pathname)) {
+    if (targetKey === "v1" && !v1Routes.includes(pathname)) {
       const topLevel = "/" + pathname.split("/").filter(Boolean)[0]
       resolvedPath = v1Routes.includes(topLevel) ? topLevel : "/"
     }
 
-    window.location.href = `${protocol}//${hostname}:${port}${resolvedPath}`
+    window.location.href = baseUrl.replace(/\/$/, "") + resolvedPath
   }
 
   return (
@@ -96,11 +98,11 @@ export function DemoSettingsDialog({ open, onOpenChange }: DemoSettingsDialogPro
             </Label>
             <div className="grid grid-cols-2 gap-2">
               {VERSIONS.map((v) => {
-                const active = currentPort === v.port
+                const active = currentVersion === v.key
                 return (
                   <button
-                    key={v.port}
-                    onClick={() => switchVersion(v.port)}
+                    key={v.key}
+                    onClick={() => switchVersion(v.key)}
                     className={cn(
                       "flex flex-col items-start gap-0.5 rounded-lg border px-4 py-3 text-left transition-colors",
                       active
