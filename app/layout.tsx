@@ -3,6 +3,7 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { ThemeProvider } from "@/components/theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { AgentationDevtools } from "@/components/dev/agentation-devtools"
 import { Geist, Geist_Mono, Inter } from 'next/font/google'
 import { cn } from "@/lib/utils";
 
@@ -55,7 +56,10 @@ export default function RootLayout({
           enableSystem={false}
           storageKey="pine-one-theme"
         >
-          <TooltipProvider>{children}</TooltipProvider>
+          <TooltipProvider>
+            {children}
+            <AgentationDevtools />
+          </TooltipProvider>
         </ThemeProvider>
         <Analytics />
       </body>

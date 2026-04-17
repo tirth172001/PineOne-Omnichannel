@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { usePathname } from "next/navigation"
 import { Monitor, Maximize2 } from "lucide-react"
 import {
   Dialog,
@@ -13,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import {
+  notifyDemoSettingsChanged,
   readDemoSettings,
   writeDemoSettings,
   type DemoSettings,
@@ -24,53 +24,27 @@ const MAX_WIDTH_OPTIONS = [
   { label: "Custom", value: "custom" as const, description: "Set your own" },
 ]
 
-const VERSIONS = [
-  { label: "V1", key: "v1" as const, description: "Icon rail nav" },
-  { label: "V2", key: "v2" as const, description: "Persistent sidebar" },
-]
-
-const v1Routes = [
-  "/", "/online-payments", "/offline-payments", "/payment-links",
-  "/card-payments", "/international-payments", "/products",
-  "/use-cases", "/settings", "/support", "/configure-products", "/pos-device",
-]
-
 interface DemoSettingsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
 export function DemoSettingsDialog({ open, onOpenChange }: DemoSettingsDialogProps) {
-  const pathname = usePathname()
   const [settings, setSettings] = useState<DemoSettings>(readDemoSettings)
   const [customInput, setCustomInput] = useState(String(settings.customMaxWidth))
-  const currentVersion = process.env.NEXT_PUBLIC_APP_VERSION ?? "v1"
 
-  useEffect(() => {}, [])
+  useEffect(() => {
+    if (!open) return
+    const latest = readDemoSettings()
+    setSettings(latest)
+    setCustomInput(String(latest.customMaxWidth))
+  }, [open])
 
   function update(patch: Partial<DemoSettings>) {
     const next = { ...settings, ...patch }
     setSettings(next)
     writeDemoSettings(next)
-    // Dispatch a storage event so WorkspaceShell picks it up without a reload
-    window.dispatchEvent(new Event("demo-settings-changed"))
-  }
-
-  function switchVersion(targetKey: "v1" | "v2") {
-    if (targetKey === currentVersion) return
-    const baseUrl =
-      targetKey === "v1"
-        ? process.env.NEXT_PUBLIC_V1_URL
-        : process.env.NEXT_PUBLIC_V2_URL
-    if (!baseUrl) return
-
-    let resolvedPath = pathname
-    if (targetKey === "v1" && !v1Routes.includes(pathname)) {
-      const topLevel = "/" + pathname.split("/").filter(Boolean)[0]
-      resolvedPath = v1Routes.includes(topLevel) ? topLevel : "/"
-    }
-
-    window.location.href = baseUrl.replace(/\/$/, "") + resolvedPath
+    notifyDemoSettingsChanged()
   }
 
   return (
@@ -91,33 +65,6 @@ export function DemoSettingsDialog({ open, onOpenChange }: DemoSettingsDialogPro
         </DialogHeader>
 
         <div className="space-y-6 pt-2">
-          {/* Version switcher */}
-          <div className="space-y-2.5">
-            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Navigation version
-            </Label>
-            <div className="grid grid-cols-2 gap-2">
-              {VERSIONS.map((v) => {
-                const active = currentVersion === v.key
-                return (
-                  <button
-                    key={v.key}
-                    onClick={() => switchVersion(v.key)}
-                    className={cn(
-                      "flex flex-col items-start gap-0.5 rounded-lg border px-4 py-3 text-left transition-colors",
-                      active
-                        ? "border-primary bg-primary/8 text-primary"
-                        : "border-border hover:border-border/80 hover:bg-muted/50 text-muted-foreground"
-                    )}
-                  >
-                    <span className="text-sm font-semibold">{v.label}</span>
-                    <span className="text-[11px] opacity-70">{v.description}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
           {/* Max width */}
           <div className="space-y-2.5">
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -160,7 +107,10 @@ export function DemoSettingsDialog({ open, onOpenChange }: DemoSettingsDialogPro
                   value={customInput}
                   onChange={(e) => setCustomInput(e.target.value)}
                   onBlur={() => {
-                    const val = Math.max(800, Math.min(2560, Number(customInput)))
+                    const parsed = Number(customInput)
+                    const val = Number.isFinite(parsed)
+                      ? Math.max(800, Math.min(2560, parsed))
+                      : settings.customMaxWidth
                     setCustomInput(String(val))
                     update({ customMaxWidth: val })
                   }}

@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button"
 import { HighchartsPanelChart } from "@/components/ui/highcharts"
 
 const products = [
-  { name: "Online Payments", href: "/online-payments", icon: CreditCard, color: "var(--color-primary)", series: [145,178,156,198,167,89,67] },
-  { name: "Offline Payments", href: "/offline-payments", icon: Smartphone, color: "var(--color-chart-2)", series: [245,278,238,312,289,195,168] },
+  { name: "Checkout", href: "/online-payments", icon: CreditCard, color: "var(--color-primary)", series: [145,178,156,198,167,89,67] },
+  { name: "POS Terminal", href: "/offline-payments", icon: Smartphone, color: "var(--color-chart-2)", series: [245,278,238,312,289,195,168] },
   { name: "Payment Links", href: "/payment-links", icon: Link2, color: "var(--color-chart-4)", series: [22,28,18,35,24,15,14] },
 ]
 
@@ -50,4 +50,3 @@ export function ProductOverviewCards() {
     </div>
   )
 }
-

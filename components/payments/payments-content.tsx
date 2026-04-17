@@ -257,7 +257,7 @@ export function PaymentsContent() {
   )
 
   const centerMain = (
-    <div className="h-full overflow-y-auto p-5 space-y-4">
+    <div className="h-full overflow-y-auto p-4 space-y-4">
       <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
         Context-aware routing found one payment anomaly in the selected scope.
         <Button

@@ -3,9 +3,19 @@
 import React, { useEffect, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
+import { Headphones } from "lucide-react"
 import { isDummyAuthenticated } from "@/lib/dummy-auth"
+import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { useIsMobile } from "@/components/ui/use-mobile"
+import { cn } from "@/lib/utils"
+import { BottomNav } from "./bottom-nav"
 import { NavVisibilityProvider } from "./nav-visibility-context"
-import { V2Sidebar } from "./v2-sidebar"
+import { FloatingDemoFab } from "./floating-demo-fab"
+import { useDemoSettingsState } from "./use-demo-settings"
+import { V2Sidebar, V2SidebarMobile } from "./v2-sidebar"
+import { V2SupportDrawer } from "./v2-support-drawer"
+import { V2Topbar } from "./v2-topbar"
 
 interface V2DashboardLayoutProps {
   children: React.ReactNode
@@ -14,8 +24,13 @@ interface V2DashboardLayoutProps {
 export function V2DashboardLayout({ children }: V2DashboardLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const settings = useDemoSettingsState()
+  const centerMaxWidth = settings.maxWidth === "custom" ? settings.customMaxWidth : settings.maxWidth
   const [authReady, setAuthReady] = useState(false)
   const [authenticated, setAuthenticated] = useState(false)
+  const [supportOpen, setSupportOpen] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const isAuthenticated = isDummyAuthenticated()
@@ -40,22 +55,69 @@ export function V2DashboardLayout({ children }: V2DashboardLayoutProps) {
 
   return (
     <NavVisibilityProvider>
-    <div className="relative flex h-screen overflow-hidden bg-background">
-      <V2Sidebar />
-      <div className="min-w-0 flex flex-1 flex-col overflow-hidden">
-        <AnimatePresence initial={false} mode="wait">
-          <motion.div
-            key={pathname}
-            className="flex min-h-0 flex-1 flex-col overflow-hidden"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {children}
-          </motion.div>
-        </AnimatePresence>
+    <div className="relative flex min-h-screen flex-col bg-background">
+      <V2Topbar pathname={pathname} onMenuClick={() => setMobileNavOpen(true)} isMobile={isMobile} />
+      <div className="flex min-h-[calc(100vh-3.5rem)] flex-1">
+        <V2Sidebar />
+        <div className="min-w-0 flex flex-1 flex-col">
+          <AnimatePresence initial={false} mode="wait">
+            <motion.div
+              key={pathname}
+              className="flex flex-1 flex-col pb-20 md:pb-0"
+              style={
+                {
+                  "--dashboard-center-max-width": `${centerMaxWidth}px`,
+                  "--dashboard-top-offset": "56px",
+                } as React.CSSProperties
+              }
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
+      <Button
+        type="button"
+        aria-label="Help and support"
+        className={cn(
+          "group fixed right-5 z-40 h-10 rounded-md shadow-lg transition-all duration-200 ease-out overflow-hidden",
+          isMobile ? "bottom-20" : "bottom-5",
+          "w-10 justify-start p-0 gap-0 hover:w-40 hover:gap-3"
+        )}
+        onClick={() => setSupportOpen(true)}
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center">
+          <Headphones className="h-4 w-4" />
+        </span>
+        <span
+          className={cn(
+            "whitespace-nowrap text-sm transition-all duration-200 ease-out",
+            "w-0 min-w-0 overflow-hidden opacity-0 group-hover:w-[126px] group-hover:pl-0 group-hover:opacity-100"
+          )}
+        >
+          Help & Support
+        </span>
+      </Button>
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <SheetContent
+          side="left"
+          a11yTitle="Navigation menu"
+          a11yDescription="Main navigation links for the platform."
+          className="w-full border-t border-border/60 bg-sidebar p-0"
+        >
+          <V2SidebarMobile onNavigate={() => setMobileNavOpen(false)} />
+        </SheetContent>
+      </Sheet>
+      <BottomNav
+        pathname={pathname}
+        onMenuClick={() => setMobileNavOpen(true)}
+      />
+      <FloatingDemoFab />
+      <V2SupportDrawer open={supportOpen} onOpenChange={setSupportOpen} pathname={pathname} />
     </div>
     </NavVisibilityProvider>
   )

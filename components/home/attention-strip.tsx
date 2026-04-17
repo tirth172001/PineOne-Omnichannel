@@ -28,8 +28,8 @@ export function AttentionStrip() {
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Shopify primary button */}
           <Button size="sm" className="h-8 gap-1.5 text-xs" asChild>
-            <Link href="/products/card-payments">
-              Explore Amex
+            <Link href="/products/online-payments">
+              Explore Checkout
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </Button>

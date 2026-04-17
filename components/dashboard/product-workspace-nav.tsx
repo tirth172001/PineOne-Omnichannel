@@ -4,6 +4,7 @@ import {
   ArrowLeftRight,
   BadgeIndianRupee,
   FileChartColumn,
+  LayoutDashboard,
   MonitorCog,
   RotateCcw,
   Settings2,
@@ -13,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 
 export type ProductWorkspaceSection =
+  | "overview"
   | "transactions"
   | "settlements"
   | "disputes"
@@ -27,6 +29,7 @@ const baseSectionItems: Array<{
   label: string
   icon: React.ComponentType<{ className?: string }>
 }> = [
+  { key: "overview", label: "Overview", icon: LayoutDashboard },
   { key: "transactions", label: "Transactions", icon: ArrowLeftRight },
   { key: "settlements", label: "Settlements", icon: BadgeIndianRupee },
   { key: "disputes", label: "Disputes", icon: ShieldAlert },

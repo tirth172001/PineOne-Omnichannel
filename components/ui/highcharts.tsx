@@ -37,7 +37,7 @@ const baseTokenTheme: Highcharts.Options = {
     style: {
       fontFamily: "var(--font-sans)",
     },
-    spacing: [8, 8, 8, 8],
+    spacing: [6, 6, 6, 6],
   },
   title: { text: undefined },
   subtitle: { text: undefined },
@@ -175,6 +175,62 @@ export function HighchartsPanelChart({
   className?: string
 }) {
   const themed = React.useMemo(() => withChartTheme(options), [options])
+  const panelSafeThemed = React.useMemo(() => {
+    const chartType = ((themed.chart as Highcharts.ChartOptions | undefined)?.type ?? "spline") as string
+    const isPie = chartType === "pie"
+
+    return Highcharts.merge({}, themed, {
+      chart: {
+        reflow: true,
+        spacing: isPie ? [4, 4, 4, 4] : [6, 6, 8, 6],
+        margin: isPie ? [6, 6, 8, 6] : [8, 8, 30, 34],
+      },
+      xAxis: isPie
+        ? undefined
+        : {
+            tickLength: 0,
+            labels: {
+              style: { fontSize: "9px" },
+            },
+          },
+      yAxis: isPie
+        ? undefined
+        : {
+            startOnTick: false,
+            endOnTick: false,
+            minPadding: 0.04,
+            maxPadding: 0.08,
+            labels: {
+              style: { fontSize: "9px" },
+            },
+          },
+      legend: isPie
+        ? {
+            enabled: true,
+            align: "center",
+            verticalAlign: "bottom",
+            layout: "horizontal",
+            itemDistance: 8,
+            itemStyle: { fontSize: "10px" },
+          }
+        : {
+            enabled: false,
+          },
+      plotOptions: {
+        series: {
+          clip: true,
+        },
+        pie: {
+          size: "78%",
+          center: ["50%", "43%"],
+          dataLabels: {
+            enabled: false,
+          },
+        },
+      },
+    })
+  }, [themed])
+
   const handleChartMount = React.useCallback((chart: Highcharts.Chart) => {
     const chartSvg = chart.container?.querySelector("svg")
     if (!chartSvg) return
@@ -188,7 +244,7 @@ export function HighchartsPanelChart({
     <div className={cn("h-full w-full min-w-0 overflow-hidden", className)}>
       <HighchartsReact
         highcharts={Highcharts}
-        options={themed}
+        options={panelSafeThemed}
         callback={handleChartMount}
         containerProps={{ style: { height: "100%", width: "100%", overflow: "hidden" } }}
       />

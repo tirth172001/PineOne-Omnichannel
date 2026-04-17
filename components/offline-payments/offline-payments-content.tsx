@@ -1,21 +1,32 @@
 "use client"
 
-import { useState } from "react"
-import { Wifi, WifiOff, CheckCircle2, X, XCircle, Plus, Settings } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { CheckCircle2, MoreVertical, Settings, Smartphone, Wifi, WifiOff, X, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
-import { PanelEmpty } from "@/components/ui/panels"
+import { PanelEmpty, PageHeader } from "@/components/ui/panels"
 import { HighchartsPanelChart } from "@/components/ui/highcharts"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
 import { ProductWorkspaceNav, type ProductWorkspaceSection } from "@/components/dashboard/product-workspace-nav"
+import { OverviewAnalyticsCanvas, type AnalyticsWidget } from "@/components/dashboard/overview-analytics-canvas"
+import { SectionSummaryStrip, type SectionSummaryMetric } from "@/components/dashboard/section-summary-strip"
 type DeviceSegment = "all" | "a920-pro" | "p2-lite" | "a80" | "offline"
+type TransactionMethodView = "all" | "Tap" | "Chip" | "Swipe"
 type OfflineNavSection = ProductWorkspaceSection
 type DeviceRow = {
   id: string
+  hardwareId: string
+  hardwareModel: string
+  posId: string
+  storeName: string
+  storeAddress: string
+  installationDate: string
+  mode: "Standalone" | "Linked"
   name: string
   location: string
   status: "online" | "offline"
@@ -26,18 +37,24 @@ type DeviceRow = {
 }
 type VasItem = { id: string; name: string; detail: string; enabled: boolean; requiresConfig: boolean }
 type VasConfig = { label: string; rollout: string; owner: string }
+type TableDetail = {
+  title: string
+  description: string
+  value: string
+  rows: Array<{ label: string; value: string }>
+}
 
 const initialDevices: DeviceRow[] = [
-  { id: "POS-001", name: "Counter 1", location: "Main Floor", status: "online", today: "₹82,400", txns: 68, model: "A920 Pro", lastSeen: "Now" },
-  { id: "POS-002", name: "Counter 2", location: "Main Floor", status: "online", today: "₹71,200", txns: 59, model: "A920 Pro", lastSeen: "1 min ago" },
-  { id: "POS-003", name: "Counter 3", location: "Main Floor", status: "online", today: "₹65,800", txns: 54, model: "A920 Pro", lastSeen: "3 min ago" },
-  { id: "POS-004", name: "Billing Desk", location: "Ground Floor", status: "online", today: "₹54,300", txns: 45, model: "P2 Lite", lastSeen: "2 min ago" },
-  { id: "POS-005", name: "Express Lane", location: "Ground Floor", status: "offline", today: "₹0", txns: 0, model: "A920 Pro", lastSeen: "2 hr ago" },
-  { id: "POS-006", name: "Food Court", location: "First Floor", status: "online", today: "₹48,100", txns: 39, model: "A80", lastSeen: "Now" },
-  { id: "POS-007", name: "Electronics", location: "First Floor", status: "online", today: "₹92,000", txns: 62, model: "A920 Pro", lastSeen: "Now" },
-  { id: "POS-008", name: "Mobile Dept", location: "First Floor", status: "online", today: "₹45,600", txns: 37, model: "P2 Lite", lastSeen: "5 min ago" },
-  { id: "POS-009", name: "Customer Svc", location: "Entry", status: "offline", today: "₹0", txns: 0, model: "A80", lastSeen: "46 min ago" },
-  { id: "POS-010", name: "Warehouse", location: "Basement", status: "online", today: "₹11,600", txns: 10, model: "P2 Lite", lastSeen: "14 min ago" },
+  { id: "POS-001", hardwareId: "000001367160", hardwareModel: "Touch | A920", posId: "2569863", storeName: "PINE LABS LIMITED NOIDA KIOSK", storeAddress: "PineLabs, Candor TechSpace, Noida", installationDate: "17 Oct, 2023", mode: "Standalone", name: "Counter 1", location: "Main Floor", status: "online", today: "₹82,400", txns: 68, model: "A920 Pro", lastSeen: "Now" },
+  { id: "POS-002", hardwareId: "000001374921", hardwareModel: "Touch | A910", posId: "2569824", storeName: "PINE LABS LIMITED NOIDA KIOSK", storeAddress: "PineLabs, Candor TechSpace, Noida", installationDate: "17 Oct, 2023", mode: "Standalone", name: "Counter 2", location: "Main Floor", status: "online", today: "₹71,200", txns: 59, model: "A920 Pro", lastSeen: "1 min ago" },
+  { id: "POS-003", hardwareId: "000001572835", hardwareModel: "Touch | A910", posId: "2569826", storeName: "PINE LABS LIMITED NOIDA KIOSK", storeAddress: "PineLabs, Candor TechSpace, Noida", installationDate: "17 Oct, 2023", mode: "Standalone", name: "Counter 3", location: "Main Floor", status: "online", today: "₹65,800", txns: 54, model: "A920 Pro", lastSeen: "3 min ago" },
+  { id: "POS-004", hardwareId: "000001572836", hardwareModel: "Touch | A910", posId: "2569825", storeName: "PINE LABS LIMITED NOIDA KIOSK", storeAddress: "PineLabs, Candor TechSpace, Noida", installationDate: "17 Oct, 2023", mode: "Standalone", name: "Billing Desk", location: "Ground Floor", status: "online", today: "₹54,300", txns: 45, model: "P2 Lite", lastSeen: "2 min ago" },
+  { id: "POS-005", hardwareId: "000002217053", hardwareModel: "Go | A50", posId: "2574976", storeName: "HARISH AMDOSKAR", storeAddress: "Room No 10, Shree Omkar CHS", installationDate: "17 Oct, 2023", mode: "Standalone", name: "Express Lane", location: "Ground Floor", status: "offline", today: "₹0", txns: 0, model: "A920 Pro", lastSeen: "2 hr ago" },
+  { id: "POS-006", hardwareId: "000002217678", hardwareModel: "Go | A50", posId: "2575005", storeName: "KIRAN KUMAR ERUKALA 11221", storeAddress: "18-03-189 Vidhya Nagar, Hyderabad", installationDate: "17 Oct, 2023", mode: "Standalone", name: "Food Court", location: "First Floor", status: "online", today: "₹48,100", txns: 39, model: "A80", lastSeen: "Now" },
+  { id: "POS-007", hardwareId: "000002825779", hardwareModel: "Go | A50", posId: "1709397", storeName: "MAITRIKKUMAR SANJAYKUMAR", storeAddress: "PineLabs Pvt Ltd, Office North", installationDate: "10 Feb, 2022", mode: "Standalone", name: "Electronics", location: "First Floor", status: "online", today: "₹92,000", txns: 62, model: "A920 Pro", lastSeen: "Now" },
+  { id: "POS-008", hardwareId: "000002944210", hardwareModel: "Touch | A920", posId: "2581108", storeName: "BANGALORE RETAIL HUB", storeAddress: "Old Airport Road, Bengaluru", installationDate: "12 Dec, 2023", mode: "Standalone", name: "Mobile Dept", location: "First Floor", status: "online", today: "₹45,600", txns: 37, model: "P2 Lite", lastSeen: "5 min ago" },
+  { id: "POS-009", hardwareId: "000003112278", hardwareModel: "Duo | A80", posId: "2581129", storeName: "PINE CASH & CARRY", storeAddress: "MG Road, Bengaluru", installationDate: "05 Nov, 2023", mode: "Standalone", name: "Customer Svc", location: "Entry", status: "offline", today: "₹0", txns: 0, model: "A80", lastSeen: "46 min ago" },
+  { id: "POS-010", hardwareId: "000003118456", hardwareModel: "Go | A50", posId: "2581194", storeName: "WAREHOUSE COLLECTION POINT", storeAddress: "Electronic City, Bengaluru", installationDate: "21 Jan, 2024", mode: "Standalone", name: "Warehouse", location: "Basement", status: "online", today: "₹11,600", txns: 10, model: "P2 Lite", lastSeen: "14 min ago" },
 ]
 
 const offlineTransactionRows = [
@@ -57,6 +74,10 @@ const weeklyData = [
   { day: "Sat", tap: 101, chip: 61, swipe: 33 },
   { day: "Sun", tap: 87, chip: 52, swipe: 29 },
 ]
+
+function parseInr(value: string) {
+  return Number(value.replace(/[^\d.-]/g, ""))
+}
 
 const deviceTxns = [
   { id: "TXN-D201", amount: 2450, method: "Tap", status: "success", time: "4m ago", card: "Visa •• 8832" },
@@ -80,6 +101,12 @@ const disputeRows = [
 const refundRows = [
   { id: "RFD-611", state: "POS refund approved", amount: "₹780" },
   { id: "RFD-603", state: "Pending manager review", amount: "₹2,240" },
+]
+
+const reportRows = [
+  { id: "RPT-301", title: "Terminal uptime report", cadence: "Daily", owner: "Terminal Ops" },
+  { id: "RPT-302", title: "Card mode mix report", cadence: "Weekly", owner: "Store Ops" },
+  { id: "RPT-303", title: "Offline settlement report", cadence: "Daily", owner: "Finance Ops" },
 ]
 
 const defaultVasItems: VasItem[] = [
@@ -178,12 +205,32 @@ function DeviceDetail({ device }: { device: DeviceRow }) {
   )
 }
 
-export function OfflinePaymentsContent({ initialSection }: { initialSection?: OfflineNavSection } = {}) {
-  const [navSection, setNavSection] = useState<OfflineNavSection>(initialSection ?? "transactions")
+function mapInitialModelToSegment(model?: string): DeviceSegment {
+  const normalized = model?.trim().toLowerCase()
+  if (!normalized) return "all"
+  if (normalized === "a891") return "a920-pro"
+  if (normalized === "mini") return "p2-lite"
+  if (normalized === "go" || normalized === "duo" || normalized === "voice-pod") return "a80"
+  return "all"
+}
+
+export function OfflinePaymentsContent({
+  initialSection,
+  initialModel,
+}: {
+  initialSection?: OfflineNavSection
+  initialModel?: string
+} = {}) {
+  const showInternalBack = initialSection !== undefined
+  const [navSection, setNavSection] = useState<OfflineNavSection>(initialSection ?? "overview")
+  const [overviewCustomizeOpen, setOverviewCustomizeOpen] = useState(false)
   const [deviceRows, setDeviceRows] = useState<DeviceRow[]>(initialDevices)
   const [selected, setSelected] = useState<string | null>(null)
-  const [deviceSegment, setDeviceSegment] = useState<DeviceSegment>("all")
+  const [selectedDeviceIds, setSelectedDeviceIds] = useState<string[]>([])
+  const deviceSegment = mapInitialModelToSegment(initialModel)
+  const [transactionView, setTransactionView] = useState<TransactionMethodView>("all")
   const [rightTab, setRightTab] = useState<"detail" | "analytics" | "add-device">("detail")
+  const [selectedTableDetail, setSelectedTableDetail] = useState<TableDetail | null>(null)
   const [newDeviceForm, setNewDeviceForm] = useState({
     name: "",
     location: "",
@@ -201,6 +248,32 @@ export function OfflinePaymentsContent({ initialSection }: { initialSection?: Of
   const selectedDevice = deviceRows.find((d) => d.id === selected)
   const selectedVas = vasItems.find((item) => item.id === selectedVasId) ?? null
   const selectedVasConfig = selectedVas ? vasConfigById[selectedVas.id] : null
+  const filteredOfflineTransactions = useMemo(
+    () =>
+      offlineTransactionRows.filter((row) => {
+        if (transactionView === "all") return true
+        return row.method === transactionView
+      }),
+    [transactionView]
+  )
+
+  useEffect(() => {
+    setSelectedTableDetail(null)
+    if (navSection !== "manage-devices") {
+      setSelected(null)
+    }
+  }, [navSection])
+  const paymentModeSeries = useMemo(
+    () =>
+      transactionView === "Chip"
+        ? weeklyData.map((d) => d.chip)
+        : transactionView === "Swipe"
+          ? weeklyData.map((d) => d.swipe)
+          : transactionView === "Tap"
+            ? weeklyData.map((d) => d.tap)
+            : weeklyData.map((d) => d.tap + d.chip + d.swipe),
+    [transactionView]
+  )
   const filteredDevices = deviceRows
     .filter((d) => {
       if (deviceSegment === "all") return true
@@ -210,7 +283,94 @@ export function OfflinePaymentsContent({ initialSection }: { initialSection?: Of
       if (deviceSegment === "a80") return d.model === "A80"
       return true
     })
+  useEffect(() => {
+    const validDeviceIds = new Set(filteredDevices.map((device) => device.id))
+    setSelectedDeviceIds((current) => current.filter((id) => validDeviceIds.has(id)))
+  }, [filteredDevices])
+  const allFilteredSelected =
+    filteredDevices.length > 0 && filteredDevices.every((device) => selectedDeviceIds.includes(device.id))
   const onlineCount = deviceRows.filter((d) => d.status === "online").length
+  const offlineCount = deviceRows.length - onlineCount
+  const successOfflineCount = filteredOfflineTransactions.filter((row) => row.status === "Success").length
+  const totalOfflineValue = filteredOfflineTransactions.reduce((sum, row) => sum + parseInr(row.amount), 0)
+  const offlineSuccessRate = filteredOfflineTransactions.length
+    ? (successOfflineCount / filteredOfflineTransactions.length) * 100
+    : 0
+  const averageOfflineTicket = filteredOfflineTransactions.length
+    ? Math.round(totalOfflineValue / filteredOfflineTransactions.length)
+    : 0
+  const processingSettlementCount = settlementRows.filter((row) => row.state !== "Completed").length
+  const offlineWidgets = useMemo<AnalyticsWidget[]>(
+    () => [
+      {
+        id: "offline-processed-value",
+        title: "Processed value",
+        value: `₹${totalOfflineValue.toLocaleString("en-IN")}`,
+        delta: transactionView === "all" ? "All terminal modes" : `${transactionView} mode`,
+        hint: "Captured at POS terminals",
+        chart: paymentModeSeries,
+        compareChart: paymentModeSeries.map((point) => Number((point * 0.9).toFixed(2))),
+        defaultWidth: "wide",
+      },
+      {
+        id: "offline-total-transactions",
+        title: "Total transactions",
+        value: `${filteredOfflineTransactions.length}`,
+        delta: `${successOfflineCount} approved`,
+        hint: "Transactions for current filters",
+        chart: paymentModeSeries.map((point) => Number((point * 1.1).toFixed(2))),
+      },
+      {
+        id: "offline-success-rate",
+        title: "Approval rate",
+        value: `${offlineSuccessRate.toFixed(1)}%`,
+        delta: `${filteredOfflineTransactions.length - successOfflineCount} declined`,
+        hint: "Card-present acceptance health",
+        chart: [96.3, 96.8, 97.1, 97.3, 97.4, 97.6, Number(offlineSuccessRate.toFixed(1))],
+      },
+      {
+        id: "offline-avg-ticket",
+        title: "Average ticket",
+        value: `₹${averageOfflineTicket.toLocaleString("en-IN")}`,
+        delta: "In-store blended basket",
+        hint: "Useful for staffing and campaign slots",
+        chart: [1750, 1810, 1890, 1940, 2010, 2080, averageOfflineTicket || 2000],
+      },
+      {
+        id: "offline-terminal-health",
+        title: "Terminal health",
+        value: `${onlineCount}/${deviceRows.length}`,
+        delta: offlineCount ? `${offlineCount} currently offline` : "All terminals online",
+        hint: "Live connectivity and uptime",
+        chart: [84, 86, 87, 89, 91, 93, offlineCount ? 90 : 95],
+      },
+      {
+        id: "offline-settlement-readiness",
+        title: "Settlement readiness",
+        value: `${Math.max(0, settlementRows.length - processingSettlementCount)}/${settlementRows.length}`,
+        delta: processingSettlementCount ? `${processingSettlementCount} pending action` : "All batches complete",
+        hint: "Reconciliation watch",
+        chart: [88, 89, 90, 91, 92, 93, processingSettlementCount ? 91 : 95],
+      },
+    ],
+    [
+      averageOfflineTicket,
+      deviceRows.length,
+      filteredOfflineTransactions.length,
+      offlineCount,
+      offlineSuccessRate,
+      onlineCount,
+      paymentModeSeries,
+      processingSettlementCount,
+      successOfflineCount,
+      totalOfflineValue,
+      transactionView,
+    ]
+  )
+  const configuredOfflineProducts = useMemo(
+    () => ["Tap", "Chip", "Swipe", ...Array.from(new Set(deviceRows.map((row) => row.model)))],
+    [deviceRows]
+  )
   const canCreateDevice = newDeviceForm.name.trim().length > 0 && newDeviceForm.location.trim().length > 0
   const typeOptions = {
     chart: { type: "column" },
@@ -234,6 +394,22 @@ export function OfflinePaymentsContent({ initialSection }: { initialSection?: Of
       }, 0) + 1
     const nextDevice: DeviceRow = {
       id: `POS-${String(nextNumber).padStart(3, "0")}`,
+      hardwareId: String(300000000000 + nextNumber).padStart(12, "0"),
+      hardwareModel:
+        newDeviceForm.model === "A920 Pro"
+          ? "Touch | A920"
+          : newDeviceForm.model === "P2 Lite"
+            ? "Go | A50"
+            : "Duo | A80",
+      posId: String(2580000 + nextNumber),
+      storeName: newDeviceForm.name.trim().toUpperCase(),
+      storeAddress: `${newDeviceForm.location.trim()}, Bengaluru`,
+      installationDate: new Date().toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+      mode: "Standalone",
       name: newDeviceForm.name.trim(),
       location: newDeviceForm.location.trim(),
       model: newDeviceForm.model,
@@ -254,41 +430,121 @@ export function OfflinePaymentsContent({ initialSection }: { initialSection?: Of
   }
 
   const deviceColumns: DataTableColumn<DeviceRow>[] = [
-    { id: "id", header: "Device", accessorKey: "id", width: 110, pinnable: true },
-    { id: "name", header: "Name", accessorKey: "name", width: 170 },
-    { id: "location", header: "Location", accessorKey: "location", width: 140 },
     {
-      id: "model",
-      header: "Model",
-      accessorKey: "model",
-      width: 120,
-      filterOptions: [
-        { label: "A920 Pro", value: "A920 Pro" },
-        { label: "P2 Lite", value: "P2 Lite" },
-        { label: "A80", value: "A80" },
-      ],
+      id: "select",
+      header: allFilteredSelected ? "✓" : "",
+      width: 44,
+      align: "center",
+      searchable: false,
+      hideable: false,
+      draggable: false,
+      pinnable: false,
+      cell: (device) => (
+        <div className="flex items-center justify-center" onClick={(event) => event.stopPropagation()}>
+          <Checkbox
+            checked={selectedDeviceIds.includes(device.id)}
+            onCheckedChange={(checked) =>
+              setSelectedDeviceIds((current) =>
+                checked ? Array.from(new Set([...current, device.id])) : current.filter((id) => id !== device.id)
+              )
+            }
+            aria-label={`Select ${device.hardwareId}`}
+          />
+        </div>
+      ),
     },
     {
-      id: "status",
-      header: "Status",
-      accessorKey: "status",
+      id: "hardware",
+      header: "Hardware ID / Model",
+      width: 260,
+      pinnable: true,
+      getValue: (device) => device.hardwareId,
+      getSearchValue: (device) => `${device.hardwareId} ${device.hardwareModel} ${device.model}`,
+      cell: (device) => (
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border/70 bg-muted/40 text-muted-foreground">
+            <Smartphone className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-foreground">{device.hardwareId}</p>
+            <p className="truncate text-xs text-muted-foreground">{device.hardwareModel}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "posId",
+      header: "POS ID",
+      accessorKey: "posId",
       width: 110,
+    },
+    {
+      id: "storeName",
+      header: "Store Name",
+      width: 280,
+      getValue: (device) => device.storeName,
+      getSearchValue: (device) => `${device.storeName} ${device.storeAddress}`,
+      cell: (device) => (
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-foreground">{device.storeName}</p>
+          <p className="truncate text-xs text-muted-foreground">{device.storeAddress}</p>
+        </div>
+      ),
+    },
+    {
+      id: "installationDate",
+      header: "Installation Date",
+      accessorKey: "installationDate",
+      width: 140,
+    },
+    {
+      id: "mode",
+      header: "Mode",
+      accessorKey: "mode",
+      width: 120,
       filterOptions: [
-        { label: "Online", value: "online" },
-        { label: "Offline", value: "offline" },
+        { label: "Standalone", value: "Standalone" },
+        { label: "Linked", value: "Linked" },
       ],
       cell: (device) => (
         <Badge
           variant="outline"
-          className={device.status === "online" ? "bg-success/20 text-foreground border-success/35" : "bg-muted text-muted-foreground border-border"}
+          className={
+            device.mode === "Standalone"
+              ? "border-warning/60 bg-warning/20 text-foreground dark:text-warning"
+              : "border-primary/35 bg-primary/15 text-foreground dark:text-primary"
+          }
         >
-          {device.status}
+          {device.mode}
         </Badge>
       ),
     },
-    { id: "txns", header: "Txns", getValue: (device) => device.txns, align: "right", width: 90 },
-    { id: "today", header: "Today", accessorKey: "today", align: "right", width: 120 },
-    { id: "lastSeen", header: "Last Seen", accessorKey: "lastSeen", width: 110, align: "right" },
+    {
+      id: "action",
+      header: "Action",
+      width: 72,
+      align: "center",
+      searchable: false,
+      hideable: false,
+      draggable: false,
+      pinnable: false,
+      getValue: () => "",
+      cell: () => (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="h-7 w-7 rounded-md"
+          onClick={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+          }}
+          aria-label="Open row actions"
+        >
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      ),
+    },
   ]
 
   const transactionColumns: DataTableColumn<(typeof offlineTransactionRows)[number]>[] = [
@@ -361,9 +617,16 @@ export function OfflinePaymentsContent({ initialSection }: { initialSection?: Of
     { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
   ]
 
+  const reportColumns: DataTableColumn<(typeof reportRows)[number]>[] = [
+    { id: "id", header: "Report ID", accessorKey: "id", width: 120, pinnable: true },
+    { id: "title", header: "Report", accessorKey: "title", width: 260 },
+    { id: "cadence", header: "Cadence", accessorKey: "cadence", width: 120 },
+    { id: "owner", header: "Owner", accessorKey: "owner", width: 140 },
+  ]
+
   const leftContext = (
     <ProductWorkspaceNav
-      title="Offline Payments"
+      title="POS Terminal"
       value={navSection}
       showManageDevices
       onChange={(nextSection) => {
@@ -375,64 +638,164 @@ export function OfflinePaymentsContent({ initialSection }: { initialSection?: Of
     />
   )
 
+  const transactionsAmount = filteredOfflineTransactions.reduce((sum, row) => sum + parseInr(row.amount), 0)
+  const successTransactions = filteredOfflineTransactions.filter((row) => row.status === "Success").length
+  const settlementInProgress = settlementRows.filter((row) => row.state !== "Completed").length
+  const disputeAmount = disputeRows.reduce((sum, row) => sum + parseInr(row.amount), 0)
+  const refundAmount = refundRows.reduce((sum, row) => sum + parseInr(row.amount), 0)
+
+  const summaryBySection: Partial<Record<OfflineNavSection, SectionSummaryMetric[]>> = {
+    transactions: [
+      { label: "Total transactions", value: `${filteredOfflineTransactions.length}`, delta: `${successTransactions} successful` },
+      { label: "Processed value", value: `₹${transactionsAmount.toLocaleString("en-IN")}` },
+      { label: "Approval rate", value: `${offlineSuccessRate.toFixed(1)}%`, delta: "Card-present flow" },
+      { label: "Active terminals", value: `${onlineCount}/${deviceRows.length}`, delta: `${offlineCount} offline` },
+    ],
+    settlements: [
+      { label: "Total batches", value: `${settlementRows.length}`, delta: "Current cycle" },
+      { label: "In progress", value: `${settlementInProgress}`, delta: "Awaiting completion" },
+      { label: "Completed", value: `${settlementRows.length - settlementInProgress}`, delta: "Reconciled" },
+      {
+        label: "Settlement amount",
+        value: `₹${settlementRows.reduce((sum, row) => sum + parseInr(row.amount), 0).toLocaleString("en-IN")}`,
+        delta: "Across listed batches",
+      },
+    ],
+    disputes: [
+      { label: "Open disputes", value: `${disputeRows.length}`, delta: "Needs action" },
+      { label: "Exposure", value: `₹${disputeAmount.toLocaleString("en-IN")}`, delta: "Disputed amount" },
+      { label: "Evidence pending", value: `${disputeRows.filter((row) => /evidence/i.test(row.state)).length}`, delta: "High priority" },
+    ],
+    refunds: [
+      { label: "Open refunds", value: `${refundRows.length}`, delta: "Current queue" },
+      { label: "Refund value", value: `₹${refundAmount.toLocaleString("en-IN")}`, delta: "Potential payout" },
+      { label: "Manual review", value: `${refundRows.filter((row) => /review/i.test(row.state)).length}`, delta: "Operator needed" },
+    ],
+    reports: [
+      { label: "Scheduled reports", value: `${reportRows.length}`, delta: "Active schedules" },
+      { label: "Daily reports", value: `${reportRows.filter((row) => row.cadence === "Daily").length}`, delta: "Run every day" },
+      { label: "Weekly reports", value: `${reportRows.filter((row) => row.cadence === "Weekly").length}`, delta: "Run weekly" },
+    ],
+  }
+
+  const headerTitleBySection: Partial<Record<OfflineNavSection, string>> = {
+    overview: "Overview",
+    transactions: "Transactions",
+    settlements: "Settlements",
+    disputes: "Disputes",
+    refunds: "Refunds",
+    reports: "Reports",
+    "manage-devices": "Manage Devices",
+    vas: "Value Added Services",
+  }
+
+  const headerActionsBySection: Partial<Record<OfflineNavSection, React.ReactNode>> = {
+    overview: (
+      <Button size="sm" className="h-8 text-xs" onClick={() => setOverviewCustomizeOpen(true)}>
+        Customize
+      </Button>
+    ),
+    transactions: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button variant="outline" size="sm" className="h-8 text-xs">More actions</Button>
+        <Button size="sm" className="h-8 text-xs">Capture payment</Button>
+      </>
+    ),
+    settlements: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Run settlement</Button>
+      </>
+    ),
+    disputes: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Resolve dispute</Button>
+      </>
+    ),
+    refunds: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Issue refund</Button>
+      </>
+    ),
+    reports: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Generate report</Button>
+      </>
+    ),
+    "manage-devices": (
+      <Button
+        size="sm"
+        className="h-8 text-xs"
+        onClick={() => {
+          setSelected(null)
+          setRightTab("add-device")
+        }}
+      >
+        Add device
+      </Button>
+    ),
+  }
+
+  const pageHeader = (
+    <PageHeader
+      title={headerTitleBySection[navSection] ?? "In-store payment"}
+      subtitle="In-store payment"
+      actions={headerActionsBySection[navSection]}
+      backHref={showInternalBack ? "/products/in-store-payments" : undefined}
+      backLabel="Back to In-store payment"
+    />
+  )
+
   const centerMain = (
     <div className="h-full overflow-y-auto p-4 space-y-4">
-      <section className="rounded-lg bg-card/80 px-4 py-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-              {navSection === "manage-devices" ? "manage devices" : navSection}
-            </p>
-            <h2 className="text-[15px] font-semibold text-foreground">Offline payments workspace</h2>
-          </div>
-          {navSection === "manage-devices" && (
-            <div className="ml-auto flex items-center gap-1 rounded-md bg-muted/70 p-1">
-              {[
-                { key: "all", label: "All" },
-                { key: "a920-pro", label: "A920 Pro" },
-                { key: "p2-lite", label: "P2 Lite" },
-                { key: "a80", label: "A80" },
-                { key: "offline", label: "Offline" },
-              ].map((item) => (
-                <Button variant="ghost"
-                  key={item.key}
-                  onClick={() => setDeviceSegment(item.key as DeviceSegment)}
-                  className={`rounded-sm px-2.5 py-1 text-[11px] ${
-                    deviceSegment === item.key ? "bg-card text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+      {navSection === "overview" && (
+        <OverviewAnalyticsCanvas
+          scopeId="offline-payments-overview"
+          widgets={offlineWidgets}
+          configuredProducts={configuredOfflineProducts}
+          dateOptions={["Today", "Last 7 days", "Last 30 days", "This quarter"]}
+          compareOptions={["Yesterday", "Previous period", "Last week"]}
+          showViewOptions={false}
+          showConfiguredProductsBadge={false}
+          showAutoRefreshControl={false}
+          showCustomizeControl={false}
+          toolbarSurface="plain"
+          customizeOpen={overviewCustomizeOpen}
+          onCustomizeOpenChange={setOverviewCustomizeOpen}
+        />
+      )}
 
       {navSection === "transactions" && (
         <>
-          <div className="grid grid-cols-4 gap-3">
-            {[{l:"Transactions",v:"2,146"},{l:"Approved",v:"2,104"},{l:"Declined",v:"42"},{l:"Volume",v:"₹18.6L"}].map(s => (
-              <div key={s.l} className="rounded-lg bg-card/80 p-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.l}</p>
-                <p className="mt-1 text-[15px] font-semibold text-foreground">{s.v}</p>
-              </div>
-            ))}
-          </div>
+          <SectionSummaryStrip metrics={summaryBySection.transactions ?? []} />
 
           <DataTable
-            data={offlineTransactionRows}
+            data={filteredOfflineTransactions}
             columns={transactionColumns}
             rowId={(transaction) => transaction.id}
             searchPlaceholder="Search transactions..."
             emptyText="No transactions found"
             initialPinnedColumnIds={["id"]}
-            toolbarActions={
-              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setRightTab("analytics")}>
-                Analytics
-              </Button>
-            }
-            onRowClick={() => setRightTab("analytics")}
+            onRowClick={(row) => {
+              setSelected(null)
+              setSelectedTableDetail({
+                title: row.id,
+                description: "Transaction detail and operational context.",
+                value: row.amount,
+                rows: [
+                  { label: "Device", value: row.device },
+                  { label: "Method", value: row.method },
+                  { label: "Status", value: row.status },
+                  { label: "Location", value: row.location },
+                  { label: "Time", value: row.time },
+                ],
+              })
+              setRightTab("detail")
+            }}
           />
         </>
       )}
@@ -455,80 +818,116 @@ export function OfflinePaymentsContent({ initialSection }: { initialSection?: Of
             selectedRowId={selected}
             onRowClick={(device) => {
               setSelected(device.id)
+              setSelectedTableDetail(null)
               setRightTab("detail")
             }}
             searchPlaceholder="Search devices..."
             emptyText="No devices found"
             initialPinnedColumnIds={["id"]}
-            toolbarActions={
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setRightTab("analytics")}>
-                  Analytics
-                </Button>
-                <Button
-                  size="sm"
-                  className="h-8 text-xs gap-1.5"
-                  onClick={() => {
-                    setSelected(null)
-                    setSelectedVasId(null)
-                    setRightTab("add-device")
-                  }}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Add device
-                </Button>
-              </div>
-            }
           />
         </>
       )}
 
       {navSection === "settlements" && (
-        <DataTable
-          data={settlementRows}
-          columns={settlementColumns}
-          rowId={(row) => row.id}
-          searchPlaceholder="Search settlements..."
-          emptyText="No settlements found"
-          initialPinnedColumnIds={["id"]}
-          onRowClick={() => setRightTab("analytics")}
-        />
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.settlements ?? []} />
+          <DataTable
+            data={settlementRows}
+            columns={settlementColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search settlements..."
+            emptyText="No settlements found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) => {
+              setSelected(null)
+              setSelectedTableDetail({
+                title: row.id,
+                description: "Settlement detail and payout status.",
+                value: row.amount,
+                rows: [
+                  { label: "Title", value: row.title },
+                  { label: "State", value: row.state },
+                ],
+              })
+              setRightTab("detail")
+            }}
+          />
+        </>
       )}
 
       {navSection === "disputes" && (
-        <DataTable
-          data={disputeRows}
-          columns={disputeColumns}
-          rowId={(row) => row.id}
-          searchPlaceholder="Search disputes..."
-          emptyText="No disputes found"
-          initialPinnedColumnIds={["id"]}
-          onRowClick={() => setRightTab("analytics")}
-        />
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.disputes ?? []} />
+          <DataTable
+            data={disputeRows}
+            columns={disputeColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search disputes..."
+            emptyText="No disputes found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) => {
+              setSelected(null)
+              setSelectedTableDetail({
+                title: row.id,
+                description: "Dispute case detail and required actions.",
+                value: row.amount,
+                rows: [{ label: "Current state", value: row.state }],
+              })
+              setRightTab("detail")
+            }}
+          />
+        </>
       )}
 
       {navSection === "reports" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Reports</p>
-            <Button variant="ghost" size="sm" className="h-8 text-xs">Generate report</Button>
-          </div>
-          <div className="h-56 rounded-md bg-muted/45 p-2">
-            <HighchartsPanelChart options={typeOptions} />
-          </div>
-        </section>
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.reports ?? []} />
+          <DataTable
+            data={reportRows}
+            columns={reportColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search reports..."
+            emptyText="No reports found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) => {
+              setSelected(null)
+              setSelectedTableDetail({
+                title: row.id,
+                description: "Report configuration and owner context.",
+                value: row.title,
+                rows: [
+                  { label: "Cadence", value: row.cadence },
+                  { label: "Owner", value: row.owner },
+                ],
+              })
+              setRightTab("detail")
+            }}
+          />
+        </>
       )}
 
       {navSection === "refunds" && (
-        <DataTable
-          data={refundRows}
-          columns={refundColumns}
-          rowId={(row) => row.id}
-          searchPlaceholder="Search refunds..."
-          emptyText="No refunds found"
-          initialPinnedColumnIds={["id"]}
-          onRowClick={() => setRightTab("analytics")}
-        />
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.refunds ?? []} />
+          <DataTable
+            data={refundRows}
+            columns={refundColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search refunds..."
+            emptyText="No refunds found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) => {
+              setSelected(null)
+              setSelectedTableDetail({
+                title: row.id,
+                description: "Refund request details and processing context.",
+                value: row.amount,
+                rows: [{ label: "Current state", value: row.state }],
+              })
+              setRightTab("detail")
+            }}
+          />
+        </>
       )}
 
       {navSection === "vas" && (
@@ -739,14 +1138,35 @@ export function OfflinePaymentsContent({ initialSection }: { initialSection?: Of
       </div>
     </div>
   ) : rightTab === "detail" ? (
-    selectedDevice ? <DeviceDetail device={selectedDevice} /> : (
+    navSection !== "manage-devices" && selectedTableDetail ? (
+      <div className="p-6 space-y-5">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Record detail</p>
+          <h4 className="mt-1 text-[18px] font-semibold text-foreground">{selectedTableDetail.title}</h4>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Current value</p>
+          <p className="text-[20px] font-semibold text-foreground">{selectedTableDetail.value}</p>
+        </div>
+        <Separator />
+        <p className="text-sm text-muted-foreground">{selectedTableDetail.description}</p>
+        <div className="space-y-2">
+          {selectedTableDetail.rows.map((item) => (
+            <div key={item.label} className="flex items-center justify-between gap-4">
+              <span className="text-xs text-muted-foreground">{item.label}</span>
+              <span className="text-xs font-medium text-foreground text-right">{item.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : selectedDevice ? <DeviceDetail device={selectedDevice} /> : (
       <PanelEmpty
         icon={Wifi}
-        title={navSection === "manage-devices" ? "Select a device" : "No contextual detail"}
+        title={navSection === "manage-devices" ? "Select a device" : "Select a row"}
         description={
           navSection === "manage-devices"
             ? "Click a POS device to view its status, transactions and configuration."
-            : "Pick a row or open analytics to see deeper context here."
+            : "Click any row in the table to open detail context."
         }
       />
     )
@@ -804,6 +1224,7 @@ export function OfflinePaymentsContent({ initialSection }: { initialSection?: Of
           onClick={() => {
             setSelectedVasId(null)
             setSelected(null)
+            setSelectedTableDetail(null)
             setRightTab("detail")
           }}
         >
@@ -816,14 +1237,23 @@ export function OfflinePaymentsContent({ initialSection }: { initialSection?: Of
   )
 
   return (
+    <>
+      {pageHeader}
       <WorkspaceShell
         leftContext={leftContext}
         showLeftContext={false}
         centerMain={centerMain}
-      rightContext={rightContext}
-      showRightContext={Boolean(selectedVas) || rightTab === "analytics" || rightTab === "add-device" || Boolean(selectedDevice)}
-      leftWidth={248}
-      leftMaxWidth={300}
-    />
+        rightContext={rightContext}
+        showRightContext={
+          Boolean(selectedVas) ||
+          rightTab === "analytics" ||
+          rightTab === "add-device" ||
+          Boolean(selectedDevice) ||
+          Boolean(selectedTableDetail)
+        }
+        leftWidth={248}
+        leftMaxWidth={300}
+      />
+    </>
   )
 }

@@ -99,29 +99,6 @@ const ROUTE_RECIPES: Record<string, PageLayoutRecipe> = {
     },
     section: "products",
   },
-  "/products/[slug]": {
-    showSecondaryNav: true,
-    leftContextPolicy: "none",
-    rightContextPolicy: "on-trigger",
-    defaultOpenState: { left: false, right: false },
-    triggerMap: {
-      ...SHARED_TRIGGER,
-      readiness_click: "Open readiness checklist, benchmark, and next-step actions",
-      step_click: "Open step-level implementation guidance",
-    },
-    section: "products",
-  },
-  "/use-cases": {
-    showSecondaryNav: true,
-    leftContextPolicy: "none",
-    rightContextPolicy: "on-trigger",
-    defaultOpenState: { left: false, right: false },
-    triggerMap: {
-      ...SHARED_TRIGGER,
-      goal_click: "Open recommended bundle and activation path for selected goal",
-    },
-    section: "products",
-  },
   "/support": {
     showSecondaryNav: true,
     leftContextPolicy: "none",
@@ -144,41 +121,6 @@ const ROUTE_RECIPES: Record<string, PageLayoutRecipe> = {
     },
     section: "operations",
   },
-  "/card-payments": {
-    showSecondaryNav: true,
-    leftContextPolicy: "none",
-    rightContextPolicy: "on-trigger",
-    defaultOpenState: { left: false, right: false },
-    triggerMap: {
-      ...SHARED_TRIGGER,
-      network_click: "Open card network performance inspector",
-      row_click: "Open transaction-level card action panel",
-    },
-    section: "payments",
-  },
-  "/pos-device": {
-    showSecondaryNav: true,
-    leftContextPolicy: "none",
-    rightContextPolicy: "on-trigger",
-    defaultOpenState: { left: false, right: false },
-    triggerMap: {
-      ...SHARED_TRIGGER,
-      terminal_click: "Open terminal diagnostics and configuration panel",
-    },
-    section: "payments",
-  },
-  "/international-payments": {
-    showSecondaryNav: true,
-    leftContextPolicy: "none",
-    rightContextPolicy: "on-trigger",
-    defaultOpenState: { left: false, right: false },
-    triggerMap: {
-      ...SHARED_TRIGGER,
-      currency_click: "Open currency corridor and fee optimization context",
-      row_click: "Open transaction compliance and action panel",
-    },
-    section: "payments",
-  },
   "/onboarding/pos": {
     showSecondaryNav: false,
     leftContextPolicy: "none",
@@ -200,10 +142,6 @@ const ROUTE_RECIPES: Record<string, PageLayoutRecipe> = {
 export function getPageLayoutRecipe(pathname: string): PageLayoutRecipe {
   if (pathname in ROUTE_RECIPES) {
     return ROUTE_RECIPES[pathname]
-  }
-
-  if (pathname.startsWith("/products/")) {
-    return ROUTE_RECIPES["/products/[slug]"]
   }
 
   return FALLBACK_RECIPE

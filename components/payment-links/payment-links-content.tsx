@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Link2, Plus, Copy, CheckCircle2, X, XCircle, Clock, Download, Mail, MessageSquare, Filter, ChevronDown } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { Link2, Plus, Copy, CheckCircle2, X, XCircle, Clock, Download, Mail, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -9,10 +9,12 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PanelEmpty } from "@/components/ui/panels"
+import { PanelEmpty, PageHeader } from "@/components/ui/panels"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
 import { ProductWorkspaceNav, type ProductWorkspaceSection } from "@/components/dashboard/product-workspace-nav"
+import { OverviewAnalyticsCanvas, type AnalyticsWidget } from "@/components/dashboard/overview-analytics-canvas"
+import { SectionSummaryStrip, type SectionSummaryMetric } from "@/components/dashboard/section-summary-strip"
 
 type LinkSection = "overview" | "active" | "paid" | "expired" | "failed"
 type LinkNavSection = ProductWorkspaceSection
@@ -32,6 +34,12 @@ type PaymentLinkConfigRow = {
   initiatedAt: string
   sentAt: string
   finalisedAt: string
+}
+type TableDetail = {
+  title: string
+  description: string
+  value: string
+  rows: Array<{ label: string; value: string }>
 }
 
 const links = [
@@ -219,6 +227,10 @@ const paymentLinkConfigStatusMap: Record<PaymentLinkConfigStatus, { label: strin
   success: { label: "Success", badge: "bg-success/20 text-foreground border-success/35" },
   expired: { label: "Expired", badge: "bg-muted text-muted-foreground border-border" },
   failed: { label: "Failed", badge: "bg-destructive/15 text-destructive border-destructive/20" },
+}
+
+function parseInr(value: string) {
+  return Number(value.replace(/[^\d.-]/g, ""))
 }
 
 function LinkDetail({ link }: { link: typeof links[0] }) {
@@ -531,11 +543,14 @@ function ConfigurationDetail({ row, link }: { row: PaymentLinkConfigRow; link?: 
 }
 
 export function PaymentLinksContent({ initialSection }: { initialSection?: LinkNavSection } = {}) {
-  const [navSection, setNavSection] = useState<LinkNavSection>(initialSection ?? "transactions")
+  const showInternalBack = initialSection !== undefined
+  const [navSection, setNavSection] = useState<LinkNavSection>(initialSection ?? "overview")
+  const [overviewCustomizeOpen, setOverviewCustomizeOpen] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null)
   const [section, setSection] = useState<LinkSection>("overview")
   const [rightTab, setRightTab] = useState<"detail" | "create">("detail")
+  const [selectedTableDetail, setSelectedTableDetail] = useState<TableDetail | null>(null)
   const [configurationRows, setConfigurationRows] = useState<PaymentLinkConfigRow[]>(paymentLinkConfigurationSeed)
   const [createStep, setCreateStep] = useState<"form" | "success">("form")
   const [createdLinkUrl, setCreatedLinkUrl] = useState("")
@@ -559,11 +574,129 @@ export function PaymentLinksContent({ initialSection }: { initialSection?: LinkN
   const selectedConfiguration = configurationRows.find((row) => row.id === selectedConfigId) ?? null
   const selectedVas = vasItems.find((item) => item.id === selectedVasId) ?? null
   const selectedVasConfig = selectedVas ? vasConfigById[selectedVas.id] : null
-  const filteredLinks = links
-    .filter((l) => {
-      if (section === "overview") return true
-      return l.status === section
-    })
+
+  useEffect(() => {
+    setSelectedTableDetail(null)
+  }, [navSection])
+  const filteredLinks = useMemo(
+    () =>
+      links.filter((l) => {
+        if (section === "overview") return true
+        return l.status === section
+      }),
+    [section]
+  )
+  const paidLinks = filteredLinks.filter((link) => link.status === "paid")
+  const activeLinks = filteredLinks.filter((link) => link.status === "active")
+  const failedLinks = filteredLinks.filter((link) => link.status === "failed")
+  const expiredLinks = filteredLinks.filter((link) => link.status === "expired")
+  const convertedValue = paidLinks.reduce((sum, link) => sum + link.amount, 0)
+  const expectedValue = filteredLinks.reduce((sum, link) => sum + link.amount, 0)
+  const conversionRate = filteredLinks.length ? (paidLinks.length / filteredLinks.length) * 100 : 0
+  const averageLinkValue = filteredLinks.length ? Math.round(expectedValue / filteredLinks.length) : 0
+  const linkAnalyticsSeries = useMemo(
+    () => [
+      Math.max(1, filteredLinks.length + 2),
+      Math.max(1, filteredLinks.length + 1),
+      Math.max(1, filteredLinks.length + 3),
+      Math.max(1, filteredLinks.length + 4),
+      Math.max(1, filteredLinks.length + 2),
+      Math.max(1, filteredLinks.length + 5),
+      Math.max(1, filteredLinks.length + 4),
+    ],
+    [filteredLinks.length]
+  )
+  const conversionSeries = useMemo(
+    () => [
+      Number((Math.max(15, conversionRate - 6)).toFixed(1)),
+      Number((Math.max(15, conversionRate - 4)).toFixed(1)),
+      Number((Math.max(15, conversionRate - 3)).toFixed(1)),
+      Number((Math.max(15, conversionRate - 2)).toFixed(1)),
+      Number((Math.max(15, conversionRate - 1)).toFixed(1)),
+      Number((Math.max(15, conversionRate - 0.4)).toFixed(1)),
+      Number(conversionRate.toFixed(1)),
+    ],
+    [conversionRate]
+  )
+  const linkOverviewWidgets = useMemo<AnalyticsWidget[]>(
+    () => [
+      {
+        id: "link-expected-value",
+        title: "Expected collection value",
+        value: `₹${expectedValue.toLocaleString("en-IN")}`,
+        delta: `${filteredLinks.length} active or historical links`,
+        hint: "Projected from visible links",
+        chart: linkAnalyticsSeries,
+        compareChart: linkAnalyticsSeries.map((point) => Number((point * 0.88).toFixed(2))),
+        defaultWidth: "wide",
+      },
+      {
+        id: "link-converted-value",
+        title: "Converted value",
+        value: `₹${convertedValue.toLocaleString("en-IN")}`,
+        delta: `${paidLinks.length} links paid`,
+        hint: "Successful collections",
+        chart: [1200, 1800, 2400, 3200, 4800, 5600, convertedValue || 2500],
+      },
+      {
+        id: "link-conversion-rate",
+        title: "Conversion rate",
+        value: `${conversionRate.toFixed(1)}%`,
+        delta: `${activeLinks.length} links still active`,
+        hint: "Paid vs total visible links",
+        chart: conversionSeries,
+      },
+      {
+        id: "link-avg-value",
+        title: "Average link value",
+        value: `₹${averageLinkValue.toLocaleString("en-IN")}`,
+        delta: section === "overview" ? "Across all link statuses" : `Filtered by ${section}`,
+        hint: "Average ask amount",
+        chart: [1300, 1500, 1720, 1910, 2080, 2240, averageLinkValue || 1800],
+      },
+      {
+        id: "link-followups",
+        title: "Follow-up required",
+        value: `${activeLinks.length + failedLinks.length}`,
+        delta: `${failedLinks.length} failed, ${activeLinks.length} awaiting payment`,
+        hint: "Collection intervention queue",
+        chart: [7, 6, 8, 9, 7, 8, activeLinks.length + failedLinks.length || 5],
+      },
+      {
+        id: "link-expiry-risk",
+        title: "Expiry risk",
+        value: `${expiredLinks.length}`,
+        delta: expiredLinks.length ? "Consider auto-reminders" : "No links expired in view",
+        hint: "Prevent collection leakage",
+        chart: [3, 4, 4, 3, 2, 2, expiredLinks.length],
+      },
+    ],
+    [
+      activeLinks.length,
+      averageLinkValue,
+      conversionRate,
+      conversionSeries,
+      convertedValue,
+      expectedValue,
+      expiredLinks.length,
+      failedLinks.length,
+      filteredLinks.length,
+      linkAnalyticsSeries,
+      paidLinks.length,
+      section,
+    ]
+  )
+  const configuredLinkProducts = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          filteredLinks
+            .map((link) => link.channel)
+            .concat(vasItems.filter((item) => item.enabled).map((item) => item.name))
+        )
+      ),
+    [filteredLinks, vasItems]
+  )
   const createRecipientText = [newLinkForm.contactNumber, newLinkForm.email].filter(Boolean).join(" & ")
 
   const resetCreateLinkFlow = () => {
@@ -789,7 +922,7 @@ export function PaymentLinksContent({ initialSection }: { initialSection?: LinkN
       title="Pay By Link"
       value={navSection}
       showConfigurations
-      configurationsLabel="Manage Links"
+      configurationsLabel="Manage all links"
       onChange={(nextSection) => {
         setNavSection(nextSection)
         setSection("overview")
@@ -801,48 +934,141 @@ export function PaymentLinksContent({ initialSection }: { initialSection?: LinkN
     />
   )
 
+  const collectedValue = paidLinks.reduce((sum, link) => sum + link.amount, 0)
+  const pendingCollection = activeLinks.reduce((sum, link) => sum + link.amount, 0)
+  const settlementInProgress = settlementRows.filter((row) => row.state !== "Completed").length
+  const disputeValue = disputeRows.reduce((sum, row) => sum + parseInr(row.amount), 0)
+  const refundValue = refundRows.reduce((sum, row) => sum + parseInr(row.amount), 0)
+  const configurationProcessedValue = configurationRows.reduce((sum, row) => sum + row.amount, 0)
+  const configurationSuccessCount = configurationRows.filter((row) => row.status === "success").length
+  const configurationFailedCount = configurationRows.filter((row) => row.status === "failed").length
+  const configurationExpiredCount = configurationRows.filter((row) => row.status === "expired").length
+
+  const summaryBySection: Partial<Record<LinkNavSection, SectionSummaryMetric[]>> = {
+    transactions: [
+      { label: "Visible links", value: `${filteredLinks.length}`, delta: "Current filter" },
+      { label: "Collected value", value: `₹${collectedValue.toLocaleString("en-IN")}`, delta: `${paidLinks.length} paid` },
+      { label: "Pending collection", value: `₹${pendingCollection.toLocaleString("en-IN")}`, delta: `${activeLinks.length} active` },
+      { label: "Conversion rate", value: `${conversionRate.toFixed(1)}%`, delta: "Paid vs visible" },
+    ],
+    settlements: [
+      { label: "Total batches", value: `${settlementRows.length}`, delta: "Link collections" },
+      { label: "In progress", value: `${settlementInProgress}`, delta: "Awaiting completion" },
+      {
+        label: "Settlement amount",
+        value: `₹${settlementRows.reduce((sum, row) => sum + parseInr(row.amount), 0).toLocaleString("en-IN")}`,
+        delta: "Across listed batches",
+      },
+    ],
+    disputes: [
+      { label: "Open disputes", value: `${disputeRows.length}`, delta: "Requires action" },
+      { label: "Exposure", value: `₹${disputeValue.toLocaleString("en-IN")}`, delta: "Disputed amount" },
+      { label: "Bank timeout", value: `${disputeRows.filter((row) => /timeout/i.test(row.state)).length}`, delta: "Investigate rail" },
+    ],
+    refunds: [
+      { label: "Open refunds", value: `${refundRows.length}`, delta: "Current queue" },
+      { label: "Refund value", value: `₹${refundValue.toLocaleString("en-IN")}`, delta: "Potential payout" },
+      { label: "Completed", value: `${refundRows.filter((row) => /completed/i.test(row.state)).length}`, delta: "Closed items" },
+    ],
+    reports: [
+      { label: "Scheduled reports", value: `${reportRows.length}`, delta: "Active schedules" },
+      { label: "Daily reports", value: `${reportRows.filter((row) => row.cadence === "Daily").length}`, delta: "Run every day" },
+      { label: "Weekly reports", value: `${reportRows.filter((row) => row.cadence === "Weekly").length}`, delta: "Run weekly" },
+    ],
+    configurations: [
+      { label: "Rows in view", value: `${configurationRows.length}`, delta: "Configuration records" },
+      { label: "Success", value: `${configurationSuccessCount}`, delta: "Completed link flows" },
+      { label: "Failed", value: `${configurationFailedCount}`, delta: "Needs retry" },
+      { label: "Expired", value: `${configurationExpiredCount}`, delta: "Past expiry window" },
+      { label: "Processed value", value: `₹${configurationProcessedValue.toLocaleString("en-IN")}`, delta: "Across listed rows" },
+    ],
+  }
+
+  const headerTitleBySection: Partial<Record<LinkNavSection, string>> = {
+    overview: "Overview",
+    transactions: "Transactions",
+    settlements: "Settlements",
+    disputes: "Disputes",
+    refunds: "Refunds",
+    reports: "Reports",
+    configurations: "Manage all links",
+    vas: "Value Added Services",
+  }
+
+  const headerActionsBySection: Partial<Record<LinkNavSection, React.ReactNode>> = {
+    overview: (
+      <Button size="sm" className="h-8 text-xs" onClick={() => setOverviewCustomizeOpen(true)}>
+        Customize
+      </Button>
+    ),
+    transactions: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button variant="outline" size="sm" className="h-8 text-xs">More actions</Button>
+        <Button size="sm" className="h-8 text-xs">Create link</Button>
+      </>
+    ),
+    settlements: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Run settlement</Button>
+      </>
+    ),
+    disputes: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Resolve dispute</Button>
+      </>
+    ),
+    refunds: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Issue refund</Button>
+      </>
+    ),
+    reports: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Generate report</Button>
+      </>
+    ),
+    configurations: (
+      <Button size="sm" className="h-8 text-xs">Create New Payment Link</Button>
+    ),
+  }
+
+  const pageHeader = (
+    <PageHeader
+      title={headerTitleBySection[navSection] ?? "Payment Links"}
+      subtitle="Payment Links"
+      actions={headerActionsBySection[navSection]}
+      backHref={showInternalBack ? "/payment-links" : undefined}
+      backLabel="Back to Payment Links"
+    />
+  )
+
   const centerMain = (
     <div className="h-full overflow-y-auto p-4 space-y-4">
-      <section className="rounded-lg bg-card/80 px-4 py-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{navSection}</p>
-            <h2 className="text-[15px] font-semibold text-foreground">Payment links workspace</h2>
-          </div>
-          {navSection === "transactions" && (
-            <div className="ml-auto flex items-center gap-1 rounded-md bg-muted/70 p-1">
-              {[
-                { key: "overview", label: "All" },
-                { key: "active", label: "Active" },
-                { key: "paid", label: "Paid" },
-                { key: "expired", label: "Expired" },
-                { key: "failed", label: "Failed" },
-              ].map((item) => (
-                <Button variant="ghost"
-                  key={item.key}
-                  onClick={() => setSection(item.key as LinkSection)}
-                  className={`rounded-sm px-2.5 py-1 text-[11px] ${
-                    section === item.key ? "bg-card text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+      {navSection === "overview" && (
+        <OverviewAnalyticsCanvas
+          scopeId="payment-links-overview"
+          widgets={linkOverviewWidgets}
+          configuredProducts={configuredLinkProducts}
+          dateOptions={["Today", "Last 7 days", "Last 30 days", "This quarter"]}
+          compareOptions={["Yesterday", "Previous period", "Last week"]}
+          showViewOptions={false}
+          showConfiguredProductsBadge={false}
+          showAutoRefreshControl={false}
+          showCustomizeControl={false}
+          toolbarSurface="plain"
+          customizeOpen={overviewCustomizeOpen}
+          onCustomizeOpenChange={setOverviewCustomizeOpen}
+        />
+      )}
 
       {navSection === "transactions" && (
         <>
-          <div className="grid grid-cols-4 gap-3">
-            {[{l:"Active",v:`${links.filter(l=>l.status==="active").length}`},{l:"Paid",v:`${links.filter(l=>l.status==="paid").length}`},{l:"Failed",v:`${links.filter(l=>l.status==="failed").length}`},{l:"Expired",v:`${links.filter(l=>l.status==="expired").length}`}].map(s => (
-              <div key={s.l} className="rounded-lg bg-card/80 p-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.l}</p>
-                <p className="mt-1 text-[15px] font-semibold text-foreground">{s.v}</p>
-              </div>
-            ))}
-          </div>
+          <SectionSummaryStrip metrics={summaryBySection.transactions ?? []} />
 
           <DataTable
             data={filteredLinks}
@@ -852,42 +1078,19 @@ export function PaymentLinksContent({ initialSection }: { initialSection?: LinkN
             onRowClick={(link) => {
               setSelected(link.id)
               setSelectedConfigId(null)
+              setSelectedTableDetail(null)
               setRightTab("detail")
             }}
             searchPlaceholder="Search payment links..."
             emptyText="No payment links found"
             initialPinnedColumnIds={["id"]}
-            toolbarActions={
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 text-xs"
-                onClick={() => {
-                  setRightTab("create")
-                  setSelected(null)
-                  setSelectedConfigId(null)
-                }}
-              >
-                Create
-              </Button>
-            }
           />
         </>
       )}
 
       {navSection === "configurations" && (
         <>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
-              Last 7 days
-              <ChevronDown className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5">
-              <Filter className="h-3.5 w-3.5" />
-              Filter by
-            </Button>
-          </div>
-
+          <SectionSummaryStrip metrics={summaryBySection.configurations ?? []} />
           <DataTable
             data={configurationRows}
             columns={configurationColumns}
@@ -896,82 +1099,120 @@ export function PaymentLinksContent({ initialSection }: { initialSection?: LinkN
             onRowClick={(row) => {
               setSelectedConfigId(row.id)
               setSelected(row.linkRefId)
+              setSelectedTableDetail(null)
               setRightTab("detail")
             }}
             searchPlaceholder="Search by payment link id, amount or txn id..."
             emptyText="No payment-link configuration records found"
             initialPinnedColumnIds={["id"]}
-            toolbarActions={
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-8 text-xs">
-                  Download
-                </Button>
-                <Button
-                  size="sm"
-                  className="h-8 text-xs gap-1.5"
-                  onClick={() => {
-                    resetCreateLinkFlow()
-                    setSelected(null)
-                    setSelectedConfigId(null)
-                    setSelectedVasId(null)
-                    setRightTab("create")
-                  }}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Create New Payment Link
-                </Button>
-              </div>
-            }
           />
         </>
       )}
 
       {navSection === "settlements" && (
-        <DataTable
-          data={settlementRows}
-          columns={settlementColumns}
-          rowId={(row) => row.id}
-          searchPlaceholder="Search settlements..."
-          emptyText="No settlements found"
-          initialPinnedColumnIds={["id"]}
-          onRowClick={() => setRightTab("create")}
-        />
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.settlements ?? []} />
+          <DataTable
+            data={settlementRows}
+            columns={settlementColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search settlements..."
+            emptyText="No settlements found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) => {
+              setSelected(null)
+              setSelectedConfigId(null)
+              setSelectedTableDetail({
+                title: row.id,
+                description: "Settlement detail and collection state.",
+                value: row.amount,
+                rows: [
+                  { label: "Title", value: row.title },
+                  { label: "State", value: row.state },
+                ],
+              })
+              setRightTab("detail")
+            }}
+          />
+        </>
       )}
 
       {navSection === "disputes" && (
-        <DataTable
-          data={disputeRows}
-          columns={disputeColumns}
-          rowId={(row) => row.id}
-          searchPlaceholder="Search disputes..."
-          emptyText="No disputes found"
-          initialPinnedColumnIds={["id"]}
-          onRowClick={() => setRightTab("create")}
-        />
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.disputes ?? []} />
+          <DataTable
+            data={disputeRows}
+            columns={disputeColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search disputes..."
+            emptyText="No disputes found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) => {
+              setSelected(null)
+              setSelectedConfigId(null)
+              setSelectedTableDetail({
+                title: row.id,
+                description: "Dispute detail and resolution context.",
+                value: row.amount,
+                rows: [{ label: "Current state", value: row.state }],
+              })
+              setRightTab("detail")
+            }}
+          />
+        </>
       )}
 
       {navSection === "reports" && (
-        <DataTable
-          data={reportRows}
-          columns={reportColumns}
-          rowId={(row) => row.id}
-          searchPlaceholder="Search reports..."
-          emptyText="No reports found"
-          initialPinnedColumnIds={["id"]}
-          toolbarActions={<Button variant="ghost" size="sm" className="h-8 text-xs">Generate report</Button>}
-        />
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.reports ?? []} />
+          <DataTable
+            data={reportRows}
+            columns={reportColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search reports..."
+            emptyText="No reports found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) => {
+              setSelected(null)
+              setSelectedConfigId(null)
+              setSelectedTableDetail({
+                title: row.id,
+                description: "Report schedule and owner detail.",
+                value: row.title,
+                rows: [
+                  { label: "Cadence", value: row.cadence },
+                  { label: "Owner", value: row.owner },
+                ],
+              })
+              setRightTab("detail")
+            }}
+          />
+        </>
       )}
 
       {navSection === "refunds" && (
-        <DataTable
-          data={refundRows}
-          columns={refundColumns}
-          rowId={(row) => row.id}
-          searchPlaceholder="Search refunds..."
-          emptyText="No refunds found"
-          initialPinnedColumnIds={["id"]}
-          onRowClick={() => setRightTab("create")}
-        />
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.refunds ?? []} />
+          <DataTable
+            data={refundRows}
+            columns={refundColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search refunds..."
+            emptyText="No refunds found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) => {
+              setSelected(null)
+              setSelectedConfigId(null)
+              setSelectedTableDetail({
+                title: row.id,
+                description: "Refund detail and payout status.",
+                value: row.amount,
+                rows: [{ label: "Current state", value: row.state }],
+              })
+              setRightTab("detail")
+            }}
+          />
+        </>
       )}
 
       {navSection === "vas" && (
@@ -1138,12 +1379,34 @@ export function PaymentLinksContent({ initialSection }: { initialSection?: LinkN
           setRightTab("detail")
           setSelected(null)
           setSelectedConfigId(null)
+          setSelectedTableDetail(null)
           setNavSection("configurations")
         }}
       />
     )
   ) : navSection === "configurations" && selectedConfiguration ? (
     <ConfigurationDetail row={selectedConfiguration} link={selectedLink ?? undefined} />
+  ) : selectedTableDetail ? (
+    <div className="p-5 space-y-5">
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Record detail</p>
+        <h4 className="mt-1 text-[18px] font-semibold text-foreground">{selectedTableDetail.title}</h4>
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground">Current value</p>
+        <p className="text-[20px] font-semibold text-foreground">{selectedTableDetail.value}</p>
+      </div>
+      <Separator />
+      <p className="text-sm text-muted-foreground">{selectedTableDetail.description}</p>
+      <div className="space-y-2">
+        {selectedTableDetail.rows.map((row) => (
+          <div key={row.label} className="flex items-center justify-between gap-4">
+            <span className="text-xs text-muted-foreground">{row.label}</span>
+            <span className="text-xs font-medium text-foreground text-right">{row.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   ) : selectedLink ? <LinkDetail link={selectedLink} /> : (
     <PanelEmpty icon={Link2} title="Select a payment link" description="Click a link to open contextual actions like sharing, QR, and lifecycle controls." />
   )
@@ -1172,6 +1435,7 @@ export function PaymentLinksContent({ initialSection }: { initialSection?: LinkN
             setSelectedVasId(null)
             setSelected(null)
             setSelectedConfigId(null)
+            setSelectedTableDetail(null)
             setRightTab("detail")
             resetCreateLinkFlow()
           }}
@@ -1185,14 +1449,23 @@ export function PaymentLinksContent({ initialSection }: { initialSection?: LinkN
   )
 
   return (
-    <WorkspaceShell
-      leftContext={leftContext}
-      showLeftContext={false}
-      centerMain={centerMain}
-      rightContext={rightContext}
-      showRightContext={Boolean(selectedVas) || rightTab === "create" || Boolean(selectedLink) || Boolean(selectedConfiguration)}
-      leftWidth={248}
-      leftMaxWidth={300}
-    />
+    <>
+      {pageHeader}
+      <WorkspaceShell
+        leftContext={leftContext}
+        showLeftContext={false}
+        centerMain={centerMain}
+        rightContext={rightContext}
+        showRightContext={
+          Boolean(selectedVas) ||
+          rightTab === "create" ||
+          Boolean(selectedLink) ||
+          Boolean(selectedConfiguration) ||
+          Boolean(selectedTableDetail)
+        }
+        leftWidth={248}
+        leftMaxWidth={300}
+      />
+    </>
   )
 }
