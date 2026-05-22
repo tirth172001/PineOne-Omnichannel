@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import {
   BarChart3,
   Clock,
@@ -24,6 +25,12 @@ import { ProductWorkspaceNav, type ProductWorkspaceSection } from "@/components/
 import { PageHeader } from "@/components/ui/panels"
 import { OverviewAnalyticsCanvas, type AnalyticsWidget } from "@/components/dashboard/overview-analytics-canvas"
 import { SectionSummaryStrip, type SectionSummaryMetric } from "@/components/dashboard/section-summary-strip"
+import {
+  advanceOnboardingProgress,
+  markOnboardingStarted,
+  type ProductOnboardingFeature,
+  type ProductOnboardingProgress,
+} from "@/lib/product-onboarding"
 
 type SectionKey = "overview" | "upi" | "cards" | "emi" | "wallets"
 type NavSection = ProductWorkspaceSection
@@ -47,6 +54,10 @@ type RightContext =
   | { kind: "metric"; title: string; description: string; value: string }
   | { kind: "vas"; id: string }
   | null
+
+const onboardingFeatureLabel: Record<ProductOnboardingFeature, string> = {
+  payout: "Payout",
+}
 
 const weeklyData = [
   { day: "Mon", upi: 62, cards: 55, emi: 18, wallets: 10 },
@@ -131,7 +142,13 @@ function parseInr(value: string) {
   return Number(value.replace(/[^\d.-]/g, ""))
 }
 
-export function OnlinePaymentsContent({ initialSection }: { initialSection?: NavSection } = {}) {
+export function OnlinePaymentsContent({
+  initialSection,
+  onboardingFeature,
+}: {
+  initialSection?: NavSection
+  onboardingFeature?: ProductOnboardingFeature | null
+} = {}) {
   const showInternalBack = initialSection !== undefined
   const [navSection, setNavSection] = useState<NavSection>(initialSection ?? "overview")
   const [section, setSection] = useState<SectionKey>("overview")
@@ -158,16 +175,25 @@ export function OnlinePaymentsContent({ initialSection }: { initialSection?: Nav
   })
   const [configSaveState, setConfigSaveState] = useState<"idle" | "saving" | "saved">("idle")
   const [previewDevice, setPreviewDevice] = useState<"mobile" | "desktop">("mobile")
+  const [onboardingProgress, setOnboardingProgress] = useState<ProductOnboardingProgress | null>(null)
 
   const updateCheckoutConfig = (updater: (current: CheckoutConfig) => CheckoutConfig) => {
     setCheckoutConfig((current) => updater(current))
     setConfigSaveState("idle")
   }
 
+  useEffect(() => {
+    if (navSection !== "configurations" || !onboardingFeature) return
+    setOnboardingProgress(markOnboardingStarted(onboardingFeature, 4))
+  }, [navSection, onboardingFeature])
+
   const handleSaveConfiguration = () => {
     setConfigSaveState("saving")
     window.setTimeout(() => {
       setConfigSaveState("saved")
+      if (onboardingFeature) {
+        setOnboardingProgress(advanceOnboardingProgress(onboardingFeature, 1))
+      }
     }, 500)
   }
 
@@ -469,14 +495,19 @@ export function OnlinePaymentsContent({ initialSection }: { initialSection?: Nav
       </Button>
     ),
     configurations: (
-      <Button
-        size="sm"
-        className="h-8 text-xs"
-        disabled={configSaveState === "saving"}
-        onClick={handleSaveConfiguration}
-      >
-        {configSaveState === "saving" ? "Saving..." : "Save configuration"}
-      </Button>
+      <>
+        <Button asChild variant="outline" size="sm" className="h-8 text-xs">
+          <Link href="/settings?module=credentials">Credentials</Link>
+        </Button>
+        <Button
+          size="sm"
+          className="h-8 text-xs"
+          disabled={configSaveState === "saving"}
+          onClick={handleSaveConfiguration}
+        >
+          {configSaveState === "saving" ? "Saving..." : "Save configuration"}
+        </Button>
+      </>
     ),
     transactions: (
       <>
@@ -549,6 +580,38 @@ export function OnlinePaymentsContent({ initialSection }: { initialSection?: Nav
         <section className="h-full min-h-0">
           <div className="grid h-full min-h-0 gap-6 xl:grid-cols-2">
             <div className="h-full min-h-0 overflow-y-auto space-y-4 pr-2">
+              {onboardingFeature && onboardingProgress && (
+                <div className="rounded-lg border border-warning/35 bg-warning/10 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                        {onboardingFeatureLabel[onboardingFeature]} setup progress
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-foreground">
+                        {onboardingProgress.stepsCompleted}/{onboardingProgress.totalSteps} steps complete
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Save configuration to record progress and continue onboarding.
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="border-warning/35 bg-warning/20 text-[10px] text-foreground">
+                      {onboardingProgress.status === "configured" ? "Configured" : "In progress"}
+                    </Badge>
+                  </div>
+                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-warning transition-all"
+                      style={{
+                        width: `${Math.max(
+                          8,
+                          (onboardingProgress.stepsCompleted / Math.max(1, onboardingProgress.totalSteps)) * 100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="rounded-lg bg-card/80 p-4">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Whitelabel identity</p>
                 <div className="mt-3 grid gap-3 md:grid-cols-2">

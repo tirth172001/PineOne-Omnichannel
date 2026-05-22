@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useIsMobile } from "@/components/ui/use-mobile"
+import { AnimatedNumberText } from "@/components/ui/animated-number-text"
 import { cn } from "@/lib/utils"
 
 export interface SectionSummaryMetric {
@@ -30,7 +31,10 @@ function SectionSummaryMetricCard({
       )}
     >
       <p className="text-[11px] font-medium tracking-wide text-muted-foreground">{metric.label}</p>
-      <p className="mt-2 text-[18px] leading-none font-semibold text-foreground">{metric.value}</p>
+      <AnimatedNumberText
+        value={metric.value}
+        className="mt-2 text-[18px] leading-none font-semibold text-foreground"
+      />
     </div>
   )
 }

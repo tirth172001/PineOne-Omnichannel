@@ -4,28 +4,34 @@ import { useEffect, useState, type CSSProperties, type ComponentType, type React
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
+  ArrowLeftRight,
   Bell,
+  BookOpen,
   Building2,
   CircleDot,
   CreditCard,
-  HelpCircle,
+  Ellipsis,
+  FileText,
+  Gavel,
+  Globe,
   Home,
-  LayoutGrid,
-  LifeBuoy,
+  Link2,
   LogOut,
+  MessageSquare,
   MessageSquareText,
+  Moon,
   QrCode,
-  ReceiptIndianRupee,
+  RotateCcw,
   Search,
   Shield,
   SlidersHorizontal,
-  SquareTerminal,
   Store,
-  Tags,
+  Sun,
   UserCircle2,
   Users,
   WalletCards,
 } from "lucide-react"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -56,29 +62,29 @@ const navGroups: Array<{ label?: string; items: ShellNavItem[] }> = [
   {
     items: [
       { label: "Overview", href: "/", icon: Home },
-      { label: "Transaction", href: "/transactions", icon: ReceiptIndianRupee },
+      { label: "Transaction", href: "/transactions", icon: ArrowLeftRight },
       { label: "Settlement", href: "/settlements", icon: WalletCards },
-      { label: "Dispute cases", href: "/disputes", icon: CircleDot },
-      { label: "Refunds", href: "/refunds", icon: CreditCard },
-      { label: "Reports", href: "/reports", icon: LayoutGrid },
+      { label: "Dispute cases", href: "/disputes", icon: Gavel },
+      { label: "Refunds", href: "/refunds", icon: RotateCcw },
+      { label: "Reports", href: "/reports", icon: FileText },
     ],
   },
   {
     label: "In-store payment",
     items: [
-      { label: "POS terminals", href: "/offline-payments/manage-devices", icon: SquareTerminal },
-      { label: "Store QR stickers", href: "/products/in-store-payments/upi-qr-sticker", icon: Store },
+      { label: "POS terminals", href: "/offline-payments/manage-devices", icon: Store },
+      { label: "Store QR stickers", href: "/products/in-store-payments/upi-qr-sticker", icon: QrCode },
     ],
   },
   {
     label: "Online payment",
     items: [
-      { label: "Checkout for website", href: "/online-payments", icon: CreditCard },
-      { label: "Payment links", href: "/payment-links", icon: Tags },
-      { label: "Subscriptions", href: "/products/other-products", icon: CircleDot },
+      { label: "Payment gateway", href: "/online-payments", icon: Globe },
+      { label: "Payment links", href: "/payment-links", icon: Link2 },
+      { label: "Subscriptions", href: "/products/other-products", icon: RotateCcw },
       {
         label: "More",
-        icon: CircleDot,
+        icon: Ellipsis,
         subItems: [
           { label: "Smart routing", href: "/online-products/smart-routing", icon: CreditCard },
           { label: "QR codes", href: "/online-products/qr-codes", icon: QrCode },
@@ -90,8 +96,8 @@ const navGroups: Array<{ label?: string; items: ShellNavItem[] }> = [
   {
     label: "Help & support",
     items: [
-      { label: "Knowledge hub", href: "/support/knowledge-hub", icon: HelpCircle },
-      { label: "Support queries", href: "/support/support-queries", icon: LifeBuoy },
+      { label: "Knowledge hub", href: "/support/knowledge-hub", icon: BookOpen },
+      { label: "Support queries", href: "/support/support-queries", icon: MessageSquare },
     ],
   },
 ]
@@ -127,12 +133,12 @@ function SidebarNav() {
   }, [pathname])
 
   return (
-    <aside className="sticky top-0 h-screen w-[220px] shrink-0 border-r border-border/60 bg-sidebar lg:w-64">
+    <aside className="sticky top-0 h-screen w-[220px] shrink-0 border-r border-border/60 bg-background lg:w-64">
       <div className="flex h-16 items-center border-b border-border/60 px-3">
         <span className="text-[28px] font-semibold tracking-tight text-foreground">ONE</span>
       </div>
 
-      <nav className="h-[calc(100vh-4rem)] overflow-y-auto px-2 py-3">
+      <nav className="h-[calc(100vh-4rem)] overflow-y-auto bg-background px-2 py-3">
         {navGroups.map((group, groupIndex) => (
           <div key={`${group.label ?? "core"}-${groupIndex}`} className={cn(groupIndex > 0 && "mt-5")}>
             {group.label ? (
@@ -222,8 +228,10 @@ function SidebarNav() {
 
 function Topbar() {
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
   const [profileName, setProfileName] = useState("Rahul Sharma")
   const [profileRole, setProfileRole] = useState("Admin")
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     const session = readDummyAuthSession()
@@ -232,7 +240,12 @@ function Topbar() {
     setProfileRole(session.role)
   }, [])
 
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const isAdmin = profileRole.toLowerCase() === "admin"
+  const isDark = mounted ? theme !== "light" : true
 
   return (
     <header className="sticky top-0 z-30 h-16 border-b border-border/60 bg-background px-6">
@@ -254,8 +267,14 @@ function Topbar() {
             <Switch checked={false} aria-label="Toggle test mode" />
           </div>
 
-          <Button variant="ghost" size="icon-sm" className="h-8 w-8">
-            <SlidersHorizontal className="h-3.5 w-3.5" />
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="h-8 w-8"
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
           </Button>
           <Button variant="ghost" size="icon-sm" className="h-8 w-8">
             <Bell className="h-3.5 w-3.5" />

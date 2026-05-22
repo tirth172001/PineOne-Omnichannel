@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getSidebarSections, type NavItem, type NavSection } from "@/lib/navigation/navigation-model"
+import { getSidebarSections, type NavItem, type NavSection, type SidebarProduct } from "@/lib/navigation/navigation-model"
 
 function NavGroup({
   item,
@@ -33,10 +33,10 @@ function NavGroup({
         href={item.href}
         onClick={onNavigate}
         className={cn(
-          "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+          "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
           isActive
-            ? "bg-muted/55 text-foreground font-semibold"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            ? "bg-muted/55 text-foreground font-semibold shadow-[inset_0_0_0_1px_hsl(var(--border)/0.45)]"
+            : "text-muted-foreground/90 hover:bg-muted/70 hover:text-foreground"
         )}
       >
         <Icon className="h-4 w-4 shrink-0" />
@@ -68,10 +68,10 @@ function NavGroup({
       <button
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+          "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
           isActive
             ? "text-foreground"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            : "text-muted-foreground/90 hover:bg-muted/70 hover:text-foreground"
         )}
       >
         <Icon className="h-4 w-4 shrink-0" />
@@ -136,9 +136,9 @@ function NavGroup({
   )
 }
 
-export function V2Sidebar() {
+export function V2Sidebar({ product = "payments" }: { product?: SidebarProduct }) {
   const pathname = usePathname()
-  const navSections = getSidebarSections()
+  const navSections = getSidebarSections(product)
 
   return (
     <V2SidebarContent pathname={pathname} navSections={navSections} />
@@ -154,22 +154,22 @@ type V2SidebarContentProps = {
 
 function V2SidebarContent({ pathname, navSections, mobile = false, onNavigate }: V2SidebarContentProps) {
   const navClassName = mobile
-    ? "flex max-h-[76dvh] flex-col gap-4 overflow-y-auto px-3 py-3"
-    : "flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-4"
+    ? "flex max-h-[76dvh] flex-col gap-5 overflow-y-auto px-3 py-3"
+    : "flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4"
 
   if (mobile) {
     return (
       <nav className={navClassName}>
         {navSections.map((section, si) => (
-          <div key={si} className="flex flex-col gap-0.5">
+          <div key={si} className={cn("flex flex-col gap-0.5", si > 0 ? "border-t border-border/35 pt-4" : "")}>
             {section.label && (
-              <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+              <p className="mb-1 px-3 text-[12px] font-semibold tracking-[0.01em] text-muted-foreground/80">
                 {section.label}
               </p>
             )}
-            {section.items.map((item) => (
+            {section.items.map((item, ii) => (
               <NavGroup
-                key={item.href ?? item.label}
+                key={`${si}-${ii}-${item.href ?? item.label}`}
                 item={item}
                 pathname={pathname}
                 onNavigate={onNavigate}
@@ -185,14 +185,14 @@ function V2SidebarContent({ pathname, navSections, mobile = false, onNavigate }:
     <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-60 shrink-0 self-start flex-col bg-sidebar md:flex">
       <nav className={navClassName}>
         {navSections.map((section, si) => (
-          <div key={si} className="flex flex-col gap-0.5">
+          <div key={si} className={cn("flex flex-col gap-0.5", si > 0 ? "border-t border-border/35 pt-4" : "")}>
             {section.label && (
-              <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+              <p className="mb-1 px-3 text-[12px] font-semibold tracking-[0.01em] text-muted-foreground/80">
                 {section.label}
               </p>
             )}
-            {section.items.map((item) => (
-              <NavGroup key={item.href ?? item.label} item={item} pathname={pathname} onNavigate={onNavigate} />
+            {section.items.map((item, ii) => (
+              <NavGroup key={`${si}-${ii}-${item.href ?? item.label}`} item={item} pathname={pathname} onNavigate={onNavigate} />
             ))}
           </div>
         ))}
@@ -202,12 +202,14 @@ function V2SidebarContent({ pathname, navSections, mobile = false, onNavigate }:
 }
 
 export function V2SidebarMobile({
+  product = "payments",
   onNavigate,
 }: {
+  product?: SidebarProduct
   onNavigate?: () => void
 }) {
   const pathname = usePathname()
-  const navSections = getSidebarSections()
+  const navSections = getSidebarSections(product)
 
   return (
     <V2SidebarContent pathname={pathname} navSections={navSections} mobile onNavigate={onNavigate} />

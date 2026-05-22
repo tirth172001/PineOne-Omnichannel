@@ -1,10 +1,10 @@
-import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
+import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
 import { DisputesRouteContent } from "@/components/disputes/disputes-route-content"
 
 export default function DisputesPage() {
   return (
-    <V2DashboardLayout>
+    <TransactionsPlatformShell>
       <DisputesRouteContent />
-    </V2DashboardLayout>
+    </TransactionsPlatformShell>
   )
 }

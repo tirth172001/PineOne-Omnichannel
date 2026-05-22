@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { AnimatedNumberText } from "@/components/ui/animated-number-text"
 import { PageHeader, PanelEmpty } from "@/components/ui/panels"
 import { HighchartsPanelChart } from "@/components/ui/highcharts"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
@@ -64,7 +65,10 @@ function TxnRow({ txn, selected, onClick }: { txn: typeof transactions[0]; selec
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-medium text-foreground truncate">{txn.merchant}</p>
-          <p className="text-sm font-semibold text-foreground shrink-0">₹{txn.amount.toLocaleString("en-IN")}</p>
+          <AnimatedNumberText
+            value={`₹${txn.amount.toLocaleString("en-IN")}`}
+            className="text-sm font-semibold text-foreground shrink-0"
+          />
         </div>
         <div className="flex items-center justify-between gap-2 mt-0.5">
           <p className="text-xs text-muted-foreground truncate">{txn.label} · {txn.time}</p>
@@ -85,7 +89,10 @@ function TxnDetail({ txn }: { txn: typeof transactions[0] }) {
           <MI className="h-6 w-6 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-2xl font-bold text-foreground">₹{txn.amount.toLocaleString("en-IN")}</p>
+          <AnimatedNumberText
+            value={`₹${txn.amount.toLocaleString("en-IN")}`}
+            className="text-2xl font-bold text-foreground"
+          />
           <p className="text-sm text-muted-foreground">{txn.merchant}</p>
           <Badge variant="outline" className={`mt-1.5 text-xs gap-1 ${badge}`}>
             <Icon className="h-3 w-3" />{txn.status}
@@ -164,7 +171,7 @@ function Analytics() {
             {methodData.map(d => (
               <div key={d.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-sm" style={{ backgroundColor: d.color }} /><span className="text-xs text-muted-foreground">{d.name}</span></div>
-                <span className="text-xs font-semibold text-foreground">{d.value}%</span>
+                <AnimatedNumberText value={`${d.value}%`} className="text-xs font-semibold text-foreground" />
               </div>
             ))}
           </div>
@@ -178,7 +185,7 @@ function Analytics() {
             <div key={d.reason} className="flex items-center gap-3">
               <span className="text-xs text-muted-foreground flex-1">{d.reason}</span>
               <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden"><div className="h-full bg-destructive/70 rounded-full" style={{ width: `${(d.count/18)*100}%` }} /></div>
-              <span className="text-xs font-medium text-foreground w-4 text-right">{d.count}</span>
+              <AnimatedNumberText value={`${d.count}`} className="text-xs font-medium text-foreground w-4 text-right" />
             </div>
           ))}
         </div>
@@ -191,7 +198,7 @@ function Analytics() {
             <span className="text-xs text-muted-foreground">{l}</span>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">{b} avg</span>
-              <span className="text-xs font-semibold text-success">{y}</span>
+              <AnimatedNumberText value={y} className="text-xs font-semibold text-success" />
               <TrendingUp className="h-3 w-3 text-success" />
             </div>
           </div>
@@ -274,7 +281,7 @@ export function PaymentsContent() {
         {[{l:"Today",v:"₹2.34L"},{l:"Success",v:"96.7%"},{l:"Failed",v:"3.3%"},{l:"Txns",v:"234"}].map(s => (
           <div key={s.l} className="rounded-xl border border-border bg-card p-3">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.l}</p>
-            <p className="text-base font-semibold text-foreground mt-1">{s.v}</p>
+            <AnimatedNumberText value={s.v} className="text-base font-semibold text-foreground mt-1" />
           </div>
         ))}
       </div>

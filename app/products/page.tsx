@@ -1,10 +1,10 @@
-import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
+import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
 import { ProductsContent } from "@/components/products/products-content"
 
 export default function ProductsPage() {
   return (
-    <V2DashboardLayout>
+    <TransactionsPlatformShell>
       <ProductsContent />
-    </V2DashboardLayout>
+    </TransactionsPlatformShell>
   )
 }

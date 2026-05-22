@@ -1,10 +1,10 @@
-import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
-import { AccountPageContent } from "@/components/account/account-page-content"
+import { AccountRouteContent } from "@/components/account/account-route-content"
+import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
 
 export default function AccountFeedbackPage() {
   return (
-    <V2DashboardLayout>
-      <AccountPageContent page="feedback" />
-    </V2DashboardLayout>
+    <TransactionsPlatformShell>
+      <AccountRouteContent tab="feedback" />
+    </TransactionsPlatformShell>
   )
 }

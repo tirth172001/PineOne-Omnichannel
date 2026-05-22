@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { PanelEmpty, PageHeader } from "@/components/ui/panels"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
+import { AnimatedNumberText } from "@/components/ui/animated-number-text"
 import { productCategories } from "@/lib/products-data"
 
 function ProductGrid({
@@ -132,9 +133,12 @@ export function ProductsContent() {
             ].map((item) => (
               <div key={item.label} className="rounded-lg bg-secondary/45 p-3">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{item.label}</p>
-              <p className="mt-1 text-[15px] font-semibold text-foreground">{item.value}</p>
-            </div>
-          ))}
+                <AnimatedNumberText
+                  value={item.value}
+                  className="mt-1 text-[15px] font-semibold text-foreground"
+                />
+              </div>
+            ))}
         </div>
         <Separator className="my-4" />
         <div className="relative max-w-sm">
@@ -198,7 +202,7 @@ export function ProductsContent() {
       <PageHeader title="All products" description="Catalog, activation status, and operational handoff">
         <Badge variant="outline" className="text-xs gap-1.5 border-success/30 bg-success/10 text-success">
           <CheckCircle2 className="h-3 w-3" />
-          {configuredProducts} configured products
+          <AnimatedNumberText value={`${configuredProducts}`} className="text-xs" /> configured products
         </Badge>
         {selectedProduct && (
           <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setSelectedProductId(null)}>

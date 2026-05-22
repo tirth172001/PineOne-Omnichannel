@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import type { ComponentType } from "react"
+import type { ComponentType, ReactNode } from "react"
 import {
   ArrowUpRight,
   AudioLines,
@@ -22,14 +22,14 @@ import { PageHeader } from "@/components/ui/panels"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
 import { ProductCatalogCard, type ProductCatalogCardAction } from "./product-catalog-card"
 
-type ManagedProductAction = {
+export type ManagedProductAction = {
   label: string
   href: string
   variant?: "default" | "outline" | "secondary" | "ghost"
   showArrow?: boolean
 }
 
-type ManagedProduct = {
+export type ManagedProduct = {
   id: string
   name: string
   description: string
@@ -53,7 +53,7 @@ type ManagedProduct = {
     | "links"
 }
 
-type HeaderAction = ManagedProductAction
+export type HeaderAction = ManagedProductAction
 
 interface ManageProductListContentProps {
   title: string
@@ -62,6 +62,7 @@ interface ManageProductListContentProps {
   primaryAction?: HeaderAction
   headerActions?: HeaderAction[]
   rowActionLabel?: string
+  topBanner?: ReactNode
 }
 
 const IMAGE_ICON_MAP: Record<NonNullable<ManagedProduct["imageIconName"]>, ComponentType<{ className?: string }>> = {
@@ -83,6 +84,7 @@ export function ManageProductListContent({
   primaryAction,
   headerActions,
   rowActionLabel = "Configure",
+  topBanner,
 }: ManageProductListContentProps) {
   const orderedProducts = [...products].sort((a, b) => Number(b.configured) - Number(a.configured))
   const resolvedHeaderActions = headerActions ?? (primaryAction ? [primaryAction] : [])
@@ -129,6 +131,7 @@ export function ManageProductListContent({
 
   const centerMain = (
     <div className="h-full overflow-y-auto p-4 space-y-3">
+      {topBanner ? topBanner : null}
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {orderedProducts.map((product) => {
           const ProductImageIcon = product.imageIconName ? IMAGE_ICON_MAP[product.imageIconName] : null

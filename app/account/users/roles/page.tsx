@@ -1,10 +1,10 @@
 import { ManageUserRolesContent } from "@/components/account/manage-user-roles-content"
-import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
+import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
 
 export default function AccountUserRolesPage() {
   return (
-    <V2DashboardLayout>
+    <TransactionsPlatformShell>
       <ManageUserRolesContent />
-    </V2DashboardLayout>
+    </TransactionsPlatformShell>
   )
 }

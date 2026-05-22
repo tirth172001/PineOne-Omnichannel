@@ -37,6 +37,7 @@ import {
 import { cn } from "@/lib/utils"
 import { clearDummyAuthSession, readDummyAuthSession } from "@/lib/dummy-auth"
 import { getConfiguredProductNames, getGlobalSearchItems } from "@/lib/global-search"
+import { ROUTES } from "@/lib/navigation/routes"
 import {
   DEFAULT_LANGUAGE,
   SUPPORTED_LANGUAGES,
@@ -56,19 +57,19 @@ const NOTIFICATION_ITEMS = [
     id: "n1",
     title: "Settlement batch delayed",
     detail: "One batch is delayed by 45 mins",
-    href: "/offline-payments/settlements",
+    href: ROUTES.settlements.root,
   },
   {
     id: "n2",
     title: "High failure spike detected",
     detail: "Online failure rate crossed 2.3%",
-    href: "/online-payments",
+    href: ROUTES.onlinePayments.transactions,
   },
   {
     id: "n3",
     title: "New product recommendation",
     detail: "Pay Later can improve conversion on your profile",
-    href: "/products",
+    href: ROUTES.products.root,
   },
 ]
 
@@ -101,7 +102,7 @@ export function V2Topbar({ pathname, onMenuClick, isMobile = false }: V2TopbarPr
   )
 
   const openGlobalSearch = () => {
-    router.push(`/search?from=${encodeURIComponent(pathname)}`)
+    router.push(`${ROUTES.search}?from=${encodeURIComponent(pathname)}`)
   }
 
   useEffect(() => {
@@ -124,7 +125,7 @@ export function V2Topbar({ pathname, onMenuClick, isMobile = false }: V2TopbarPr
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault()
         if (isMobile) {
-          router.push(`/search?from=${encodeURIComponent(pathname)}`)
+          router.push(`${ROUTES.search}?from=${encodeURIComponent(pathname)}`)
           return
         }
         searchInputRef.current?.focus()
@@ -172,7 +173,7 @@ export function V2Topbar({ pathname, onMenuClick, isMobile = false }: V2TopbarPr
             </Button>
           ) : null}
           <Link
-            href="/"
+            href={ROUTES.home}
             className="flex items-center rounded-md px-2 py-1.5 transition-colors hover:bg-primary/10"
             aria-label="PineLabs Home"
           >

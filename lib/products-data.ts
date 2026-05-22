@@ -58,6 +58,30 @@ export const productCategories: ProductCategory[] = [
     description: "Primary payment surfaces available in the V3 workspace",
     products: [
       {
+        id: "payment-gateway",
+        name: "Payment Gateway",
+        description: "Online payment orchestration for checkout, routing, retries, and reconciliation.",
+        icon: CreditCard,
+        status: "enabled",
+        href: "/products/online-payments",
+      },
+      {
+        id: "subscription",
+        name: "Subscription",
+        description: "Recurring collections, mandate lifecycle, dunning, and renewal analytics.",
+        icon: Route,
+        status: "enabled",
+        href: "/products/online-payments",
+      },
+      {
+        id: "payout",
+        name: "Payout",
+        description: "Business disbursals and beneficiary payouts with approval and settlement controls.",
+        icon: HandCoins,
+        status: "available",
+        href: "/products/online-payments",
+      },
+      {
         id: "online-payments",
         name: "Online payment",
         description: "Checkout, smart routing, and payment-link product surfaces.",

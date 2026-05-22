@@ -34,6 +34,10 @@ const baseTokenTheme: Highcharts.Options = {
   accessibility: { enabled: false },
   chart: {
     backgroundColor: "transparent",
+    borderWidth: 0,
+    plotBackgroundColor: "transparent",
+    plotBorderWidth: 0,
+    plotShadow: false,
     style: {
       fontFamily: "var(--font-sans)",
     },
@@ -96,7 +100,7 @@ const baseTokenTheme: Highcharts.Options = {
 }
 
 function coerceLineToSpline(options: ChartSpec): Highcharts.Options {
-  const normalized = Highcharts.merge({}, options as Highcharts.Options)
+  const normalized = Highcharts.merge({}, options as Highcharts.Options) as Highcharts.Options
   const chartType = normalized.chart?.type
 
   if (chartType === "line") {
@@ -107,7 +111,8 @@ function coerceLineToSpline(options: ChartSpec): Highcharts.Options {
   }
 
   if (Array.isArray(normalized.series)) {
-    normalized.series = normalized.series.map((series) => {
+    normalized.series = normalized.series.map(
+      (series: Highcharts.SeriesOptionsType | Highcharts.UnknownSeriesOptions | undefined) => {
       if (!series) return series
       const seriesType = (series as Highcharts.SeriesOptionsType).type
 
@@ -126,7 +131,8 @@ function coerceLineToSpline(options: ChartSpec): Highcharts.Options {
       }
 
       return series
-    }) as Highcharts.SeriesOptionsType[]
+      }
+    ) as Highcharts.SeriesOptionsType[]
   }
 
   if (normalized.plotOptions?.line) {
@@ -170,38 +176,62 @@ export function formatCompact(value: number): string {
 export function HighchartsPanelChart({
   options,
   className,
+  fillParent = true,
 }: {
   options: ChartSpec
   className?: string
+  fillParent?: boolean
 }) {
   const themed = React.useMemo(() => withChartTheme(options), [options])
   const panelSafeThemed = React.useMemo(() => {
     const chartType = ((themed.chart as Highcharts.ChartOptions | undefined)?.type ?? "spline") as string
     const isPie = chartType === "pie"
-
-    return Highcharts.merge({}, themed, {
+    const panelDefaults: Highcharts.Options = {
       chart: {
         reflow: true,
-        spacing: isPie ? [4, 4, 4, 4] : [6, 6, 8, 6],
-        margin: isPie ? [6, 6, 8, 6] : [8, 8, 30, 34],
+        spacing: isPie ? [8, 10, 10, 10] : [2, 4, 26, 4],
+        margin: isPie ? undefined : [6, 8, 34, 38],
+        backgroundColor: "transparent",
+        borderWidth: 0,
+        plotBackgroundColor: "transparent",
+        plotBorderWidth: 0,
+        plotShadow: false,
       },
       xAxis: isPie
         ? undefined
         : {
+            lineWidth: 1,
             tickLength: 0,
+            tickWidth: 0,
             labels: {
-              style: { fontSize: "9px" },
+              enabled: true,
+              style: { fontSize: "10px" },
+              autoRotation: [0],
+              overflow: "justify",
+              reserveSpace: true,
+              y: 10,
             },
+            tickPixelInterval: 50,
+            startOnTick: true,
+            endOnTick: true,
           },
       yAxis: isPie
         ? undefined
         : {
+            opposite: false,
+            lineWidth: 0,
+            tickLength: 0,
+            tickWidth: 0,
+            gridLineWidth: 1,
             startOnTick: false,
             endOnTick: false,
             minPadding: 0.04,
-            maxPadding: 0.08,
+            maxPadding: 0.12,
             labels: {
-              style: { fontSize: "9px" },
+              enabled: true,
+              style: { fontSize: "10px" },
+              reserveSpace: true,
+              x: -10,
             },
           },
       legend: isPie
@@ -212,23 +242,69 @@ export function HighchartsPanelChart({
             layout: "horizontal",
             itemDistance: 8,
             itemStyle: { fontSize: "10px" },
+            margin: 8,
           }
         : {
             enabled: false,
           },
       plotOptions: {
         series: {
-          clip: true,
+          clip: false,
         },
         pie: {
-          size: "78%",
-          center: ["50%", "43%"],
+          size: "74%",
+          center: ["50%", "40%"],
           dataLabels: {
             enabled: false,
           },
         },
       },
-    })
+      responsive: {
+        rules: [
+          {
+            condition: {
+              maxWidth: 460,
+            },
+            chartOptions: {
+              xAxis: isPie
+                ? undefined
+                : {
+                    labels: {
+                      style: { fontSize: "9px" },
+                    },
+                  },
+              yAxis: isPie
+                ? undefined
+                : {
+                    labels: {
+                      style: { fontSize: "9px" },
+                    },
+                  },
+              legend: isPie
+                ? {
+                    enabled: false,
+                  }
+                : {
+                    enabled: false,
+                  },
+              plotOptions: isPie
+                ? {
+                    pie: {
+                      size: "84%",
+                      center: ["50%", "50%"],
+                    },
+                  }
+                : {},
+            },
+          },
+        ],
+      },
+    }
+
+    // Important: defaults first, themed options last.
+    // This keeps panels safe while still allowing each chart config
+    // to explicitly control legend/labels/spacing when needed.
+    return Highcharts.merge({}, panelDefaults, themed)
   }, [themed])
 
   const handleChartMount = React.useCallback((chart: Highcharts.Chart) => {
@@ -238,16 +314,40 @@ export function HighchartsPanelChart({
     chartSvg.removeAttribute("role")
     chartSvg.removeAttribute("aria-label")
     chartSvg.removeAttribute("aria-labelledby")
+
+    // Remove Highcharts top-level background rect so charts don't render an outer box.
+    const outerRect = chart.container?.querySelector("svg > rect")
+    if (outerRect instanceof SVGRectElement) {
+      outerRect.setAttribute("fill", "none")
+      outerRect.setAttribute("stroke", "none")
+      outerRect.style.fill = "none"
+      outerRect.style.stroke = "none"
+      outerRect.style.display = "none"
+    }
   }, [])
 
   return (
-    <div className={cn("h-full w-full min-w-0 overflow-hidden", className)}>
-      <HighchartsReact
-        highcharts={Highcharts}
-        options={panelSafeThemed}
-        callback={handleChartMount}
-        containerProps={{ style: { height: "100%", width: "100%", overflow: "hidden" } }}
-      />
-    </div>
+    <HighchartsReact
+      highcharts={Highcharts}
+      options={panelSafeThemed}
+      callback={handleChartMount}
+      containerProps={{
+        className: cn(
+          fillParent ? "h-full w-full min-w-0 overflow-visible text-left" : "w-full min-w-0 overflow-visible text-left",
+          className
+        ),
+        style: {
+          height: fillParent ? "100%" : undefined,
+          width: "100%",
+          overflow: "visible",
+          boxSizing: "border-box",
+          display: "flex",
+          justifyContent: "flex-start",
+          alignItems: "stretch",
+          background: "transparent",
+          border: "none",
+        },
+      }}
+    />
   )
 }

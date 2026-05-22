@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { HighchartsPanelChart, type ChartSpec } from "@/components/ui/highcharts"
+import { AnimatedNumberText } from "@/components/ui/animated-number-text"
 import { cn } from "@/lib/utils"
 
 type WidgetWidth = "compact" | "wide" | "full"
@@ -434,7 +435,10 @@ export function OverviewAnalyticsCanvas({
               </div>
 
               <div className="mb-2 flex items-end">
-                <p className="text-[20px] font-semibold leading-none text-foreground">{widget.value}</p>
+                <AnimatedNumberText
+                  value={widget.value}
+                  className="text-[20px] font-semibold leading-none text-foreground"
+                />
               </div>
 
               {widget.actions?.length ? (

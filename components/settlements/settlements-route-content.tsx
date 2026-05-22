@@ -1,11 +1,16 @@
 "use client"
 
+import { SettlementsContent } from "./settlements-content"
 import { V3SettlementsContent } from "./v3-settlements-content"
 
-interface SettlementsRouteContentProps {
+type SettlementsRouteContentProps = {
   batchId?: string
 }
 
 export function SettlementsRouteContent({ batchId }: SettlementsRouteContentProps) {
-  return <V3SettlementsContent initialBatchId={batchId} />
+  if (batchId) {
+    return <V3SettlementsContent initialBatchId={batchId} />
+  }
+
+  return <SettlementsContent />
 }

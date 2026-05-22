@@ -6,19 +6,48 @@ import { AnimatePresence, motion } from "framer-motion"
 import { Headphones } from "lucide-react"
 import { isDummyAuthenticated } from "@/lib/dummy-auth"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { useIsMobile } from "@/components/ui/use-mobile"
 import { cn } from "@/lib/utils"
+import { ROUTES } from "@/lib/navigation/routes"
+import {
+  inferSidebarProductFromPathname,
+  type SidebarProduct,
+} from "@/lib/navigation/navigation-model"
 import { BottomNav } from "./bottom-nav"
 import { NavVisibilityProvider } from "./nav-visibility-context"
 import { FloatingDemoFab } from "./floating-demo-fab"
 import { useDemoSettingsState } from "./use-demo-settings"
+import { V2ProductRail } from "./v2-product-rail"
 import { V2Sidebar, V2SidebarMobile } from "./v2-sidebar"
 import { V2SupportDrawer } from "./v2-support-drawer"
 import { V2Topbar } from "./v2-topbar"
 
 interface V2DashboardLayoutProps {
   children: React.ReactNode
+}
+
+function ProductComingSoon({
+  product,
+}: {
+  product: SidebarProduct
+}) {
+  const title = product === "cards" ? "Cards" : product === "fintech-apis" ? "Fintech APIs" : "Product"
+
+  return (
+    <div className="mx-auto flex min-h-[calc(100vh-3.5rem)] w-full max-w-4xl items-center justify-center px-6 py-12">
+      <section className="w-full max-w-xl space-y-4 rounded-xl border border-border/70 bg-card/40 p-8 text-center">
+        <Badge variant="outline" className="rounded-full px-3 py-1 text-xs">
+          Coming soon
+        </Badge>
+        <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
+        <p className="text-sm text-muted-foreground">
+          This workspace is under active development. Use the left navigation to preview planned sections.
+        </p>
+      </section>
+    </div>
+  )
 }
 
 export function V2DashboardLayout({ children }: V2DashboardLayoutProps) {
@@ -30,14 +59,36 @@ export function V2DashboardLayout({ children }: V2DashboardLayoutProps) {
   const [authenticated, setAuthenticated] = useState(false)
   const [supportOpen, setSupportOpen] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [activeProduct, setActiveProduct] = useState<SidebarProduct>(() =>
+    inferSidebarProductFromPathname(pathname)
+  )
   const isMobile = useIsMobile()
+
+  const productDefaultRoute: Record<SidebarProduct, string> = {
+    payments: ROUTES.home,
+    "cross-border": ROUTES.crossBorder.root,
+    cards: ROUTES.products.giftCardsComingSoon,
+    "fintech-apis": ROUTES.products.fintechApisComingSoon,
+  }
+
+  const handleProductChange = (product: SidebarProduct) => {
+    setActiveProduct(product)
+    if (inferSidebarProductFromPathname(pathname) !== product) {
+      router.push(productDefaultRoute[product])
+    }
+  }
+
+  useEffect(() => {
+    const inferred = inferSidebarProductFromPathname(pathname)
+    setActiveProduct(inferred)
+  }, [pathname])
 
   useEffect(() => {
     const isAuthenticated = isDummyAuthenticated()
     setAuthenticated(isAuthenticated)
     setAuthReady(true)
     if (!isAuthenticated) {
-      router.replace("/login")
+      router.replace(ROUTES.login)
     }
   }, [pathname, router])
 
@@ -58,7 +109,8 @@ export function V2DashboardLayout({ children }: V2DashboardLayoutProps) {
     <div className="relative flex min-h-screen flex-col bg-background">
       <V2Topbar pathname={pathname} onMenuClick={() => setMobileNavOpen(true)} isMobile={isMobile} />
       <div className="flex min-h-[calc(100vh-3.5rem)] flex-1">
-        <V2Sidebar />
+        <V2ProductRail activeProduct={activeProduct} onProductChange={handleProductChange} />
+        <V2Sidebar product={activeProduct} />
         <div className="min-w-0 flex flex-1 flex-col">
           <AnimatePresence initial={false} mode="wait">
             <motion.div
@@ -75,7 +127,11 @@ export function V2DashboardLayout({ children }: V2DashboardLayoutProps) {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             >
-              {children}
+              {activeProduct === "cards" || activeProduct === "fintech-apis" ? (
+                <ProductComingSoon product={activeProduct} />
+              ) : (
+                children
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -109,7 +165,7 @@ export function V2DashboardLayout({ children }: V2DashboardLayoutProps) {
           a11yDescription="Main navigation links for the platform."
           className="w-full border-t border-border/60 bg-sidebar p-0"
         >
-          <V2SidebarMobile onNavigate={() => setMobileNavOpen(false)} />
+          <V2SidebarMobile product={activeProduct} onNavigate={() => setMobileNavOpen(false)} />
         </SheetContent>
       </Sheet>
       <BottomNav

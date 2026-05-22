@@ -2,7 +2,26 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowUpRight, CheckCircle2, CircleAlert, Download, FileUp, Loader2, MoreHorizontal, Pause, PenLine, Trash2, X } from "lucide-react"
+import {
+  ArrowUpRight,
+  Check,
+  CheckCircle2,
+  CircleAlert,
+  Copy,
+  CreditCard,
+  Download,
+  FileUp,
+  Landmark,
+  Link2,
+  Loader2,
+  MoreHorizontal,
+  Pause,
+  PenLine,
+  Smartphone,
+  Trash2,
+  X,
+  XCircle,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -14,13 +33,24 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { ProductWorkspaceNav, type ProductWorkspaceSection } from "@/components/dashboard/product-workspace-nav"
+import { DetailSidepanelShell } from "@/components/shared/activity-timeline-sidepanel"
 import { PageHeader } from "@/components/ui/panels"
-import { configuredProductNames } from "@/lib/products-data"
-import { OverviewAnalyticsCanvas, type AnalyticsWidget } from "@/components/dashboard/overview-analytics-canvas"
+import { OverviewSnapshotChartCard } from "@/components/home/overview-snapshot-chart-card"
+import { OverviewDetailCards } from "@/components/home/overview-detail-cards"
+import { TransactionStateBranchFlow, type BranchFlowNode } from "@/components/home/transaction-state-branch-flow"
+import { AnimatedNumberText } from "@/components/ui/animated-number-text"
 import { SectionSummaryStrip, type SectionSummaryMetric } from "@/components/dashboard/section-summary-strip"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Switch } from "@/components/ui/switch"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,6 +93,7 @@ type BulkRefundStatus = "idle" | "processing" | "completed"
 type DisputeStatus = "Win" | "Loss" | "In review" | "Pending action"
 type RecoveryStatus = "Recovered" | "Recovering" | "At risk" | "Not recovered"
 type DisputeActionType = "partial-defend" | "defend" | "accept"
+type DisputeListingView = "pending action" | "in review" | "closed"
 
 type RefundTableRow = {
   orderId: string
@@ -87,6 +118,38 @@ type DisputeTimelineItem = {
   status: string
   timestamp: string
   detail: string
+}
+
+type TimelineTone = "success" | "failed" | "pending" | "neutral"
+
+type TransactionAttemptValue = string | number | boolean | null | undefined
+type TransactionAttemptDetails = Record<string, TransactionAttemptValue>
+
+type TransactionAttempt = {
+  id: string
+  statusLabel: string
+  timestamp: string
+  detail?: string
+  tone: TimelineTone
+  method: string
+  details: TransactionAttemptDetails
+}
+
+type AttemptDetailSectionKey = "transaction" | "method" | "customer" | "link" | "emi" | "errors" | "metadata"
+
+type AttemptFieldDefinition = {
+  label: string
+  section: AttemptDetailSectionKey
+  order: number
+  copyable?: boolean
+}
+
+type AttemptDetailField = {
+  key: string
+  label: string
+  value: string
+  copyable: boolean
+  order: number
 }
 
 type DisputeTableRow = {
@@ -236,9 +299,30 @@ const performanceCards: PerformanceCardConfig[] = [
 ]
 
 const allProductSettlementRows = [
-  { id: "APL-STL-01", product: "Checkout", amount: "₹1,42,330", state: "Processing" },
-  { id: "APL-STL-02", product: "POS Terminal", amount: "₹1,12,300", state: "Completed" },
-  { id: "APL-STL-03", product: "Payment Links", amount: "₹48,300", state: "Completed" },
+  {
+    id: "APL-STL-01",
+    product: "Checkout",
+    amount: "₹1,42,330",
+    state: "Processing",
+    settlementDate: "16 Apr 2026, 07:30 PM",
+    bankAccount: "HDFC Bank •••• 4821",
+  },
+  {
+    id: "APL-STL-02",
+    product: "POS Terminal",
+    amount: "₹1,12,300",
+    state: "Completed",
+    settlementDate: "15 Apr 2026, 07:10 PM",
+    bankAccount: "ICICI Bank •••• 9204",
+  },
+  {
+    id: "APL-STL-03",
+    product: "Payment Links",
+    amount: "₹48,300",
+    state: "Completed",
+    settlementDate: "15 Apr 2026, 05:45 PM",
+    bankAccount: "Axis Bank •••• 1163",
+  },
 ]
 
 const allProductTransactionRows = [
@@ -339,6 +423,123 @@ const allProductTransactionRows = [
     refundedAmount: 0,
   },
 ]
+
+type TransactionTableRow = (typeof allProductTransactionRows)[number]
+
+const attemptDetailSectionMeta: Record<AttemptDetailSectionKey, { label: string; order: number }> = {
+  transaction: { label: "Transaction details", order: 1 },
+  method: { label: "Payment method details", order: 2 },
+  customer: { label: "Customer details", order: 3 },
+  link: { label: "Payment link details", order: 4 },
+  emi: { label: "EMI details", order: 5 },
+  errors: { label: "Failure details", order: 6 },
+  metadata: { label: "Additional metadata", order: 7 },
+}
+
+const attemptFieldDefinitions: Record<string, AttemptFieldDefinition> = {
+  paymentId: { label: "Payment ID", section: "transaction", order: 1, copyable: true },
+  originalAmount: { label: "Original transaction amount", section: "transaction", order: 2 },
+  capturedAmount: { label: "Captured amount", section: "transaction", order: 3 },
+  currency: { label: "Currency", section: "transaction", order: 4 },
+  paymentMode: { label: "Payment mode", section: "method", order: 1 },
+  provider: { label: "Provider", section: "method", order: 2 },
+  network: { label: "Network", section: "method", order: 3 },
+  issuer: { label: "Issuer", section: "method", order: 4 },
+  cardCategory: { label: "Card category", section: "method", order: 5 },
+  lastFourDigits: { label: "Last four digits", section: "method", order: 6 },
+  customerVpa: { label: "Customer VPA", section: "customer", order: 1 },
+  payerName: { label: "Payer name", section: "customer", order: 2 },
+  paymentLink: { label: "Payment link", section: "link", order: 1, copyable: true },
+  paymentLinkDescription: { label: "Payment link description", section: "link", order: 2 },
+  invoiceNumber: { label: "Invoice number", section: "link", order: 3 },
+  emiType: { label: "EMI type", section: "emi", order: 1 },
+  emiProgram: { label: "EMI program", section: "emi", order: 2 },
+  responseMessage: { label: "Response message", section: "errors", order: 1 },
+  errorReason: { label: "Error reason", section: "errors", order: 2 },
+  errorCode: { label: "Error code", section: "errors", order: 3 },
+  errorMessage: { label: "Error message", section: "errors", order: 4 },
+  errorStep: { label: "Error step", section: "errors", order: 5 },
+  errorSource: { label: "Error source", section: "errors", order: 6 },
+  httpStatusCode: { label: "HTTP status code", section: "errors", order: 7 },
+  udf1: { label: "UDF 1", section: "metadata", order: 1 },
+  udf2: { label: "UDF 2", section: "metadata", order: 2 },
+  udf3: { label: "UDF 3", section: "metadata", order: 3 },
+}
+
+const transactionAttemptsById: Record<string, TransactionAttempt[]> = {
+  "TXN-990020": [
+    {
+      id: "TXN-990020-attempt-3",
+      statusLabel: "Payment Captured",
+      timestamp: "15 Apr 2026, 11:30 AM",
+      detail: "Captured successfully after fallback from UPI.",
+      tone: "success",
+      method: "Card · Visa",
+      details: {
+        paymentId: "e8dd9787-91c4-4...",
+        originalAmount: "₹ 15,000.00",
+        capturedAmount: "₹ 13,000.00",
+        paymentMode: "Credit Card",
+        currency: "INR",
+        network: "VISA",
+        issuer: "HDFC",
+        cardCategory: "Super Premium",
+        lastFourDigits: "xxxx 4111",
+        customerVpa: "srv*****kaoksbi",
+        payerName: "Ms P*******AVA",
+        paymentLink: "https://pyn.onl/PL...",
+        paymentLinkDescription: "Testing",
+        invoiceNumber: "NA",
+        emiType: "No Cost",
+        emiProgram: "Bank EMI",
+        responseMessage: "Approved",
+        udf1: "Testing 1",
+        udf2: "Testing 2",
+        udf3: "Testing 3",
+      },
+    },
+    {
+      id: "TXN-990020-attempt-2",
+      statusLabel: "Payment Failed",
+      timestamp: "15 Apr 2026, 11:28 AM",
+      detail: "UPI intent failed due to merchant configuration.",
+      tone: "failed",
+      method: "UPI Intent · GPay",
+      details: {
+        paymentId: "e8dd9787-91c4-4...",
+        originalAmount: "₹ 15,000.00",
+        capturedAmount: "₹ 0.00",
+        paymentMode: "UPI Intent",
+        currency: "INR",
+        customerVpa: "srv*****kaoksbi",
+        payerName: "Ms P*******AVA",
+        responseMessage: "NA",
+        errorReason: "CONVENIENCE_FEE_NOT_CONFIGURED",
+        errorCode: "OPERATION_NOT_ALLOWED",
+        errorMessage: "Convenience fee not configured for merchant",
+        errorStep: "PAYMENT_INITIATION",
+        errorSource: "CONFIGURATION",
+        httpStatusCode: "422",
+        paymentLink: "https://pyn.onl/PL...",
+        paymentLinkDescription: "Testing",
+      },
+    },
+    {
+      id: "TXN-990020-attempt-1",
+      statusLabel: "Payment Initiated",
+      timestamp: "15 Apr 2026, 11:27 AM",
+      detail: "Customer redirected to UPI app for approval.",
+      tone: "pending",
+      method: "UPI Intent · GPay",
+      details: {
+        paymentId: "e8dd9787-91c4-4...",
+        paymentMode: "UPI Intent",
+        currency: "INR",
+        customerVpa: "srv*****kaoksbi",
+      },
+    },
+  ],
+}
 
 const allProductDisputeRows: DisputeTableRow[] = [
   {
@@ -746,6 +947,90 @@ const allProductVasRows = [
   { id: "APL-VAS-03", product: "Payment Links", service: "Smart reminders", status: "enabled", owner: "Collections Team" },
 ]
 
+function formatAttemptFieldLabel(key: string) {
+  return key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^./, (char) => char.toUpperCase())
+}
+
+function getToneForStatus(status: TransactionTableRow["paymentStatus"]): TimelineTone {
+  if (status === "Success") return "success"
+  if (status === "Failed") return "failed"
+  if (status === "Pending" || status === "Initiated") return "pending"
+  return "neutral"
+}
+
+function buildFallbackTransactionAttempts(transaction: TransactionTableRow): TransactionAttempt[] {
+  const [paymentMode = "NA", provider = "NA"] = transaction.paymentMethod.split("·").map((value) => value.trim())
+  const capturedAmount = Math.max(0, transaction.amount - transaction.refundedAmount)
+  const responseMessage =
+    transaction.paymentStatus === "Failed"
+      ? "Declined by issuer"
+      : transaction.paymentStatus === "Pending" || transaction.paymentStatus === "Initiated"
+        ? "Awaiting confirmation"
+        : "Approved"
+
+  return [
+    {
+      id: `${transaction.transactionId}-attempt-1`,
+      statusLabel: `Payment ${transaction.paymentStatus}`,
+      timestamp: transaction.createdAt,
+      detail: `${transaction.product} · ${transaction.transactionType}`,
+      tone: getToneForStatus(transaction.paymentStatus),
+      method: transaction.paymentMethod,
+      details: {
+        paymentId: transaction.transactionId,
+        originalAmount: `₹ ${transaction.amount.toLocaleString("en-IN")}.00`,
+        capturedAmount: `₹ ${capturedAmount.toLocaleString("en-IN")}.00`,
+        paymentMode,
+        provider,
+        currency: "INR",
+        responseMessage,
+      },
+    },
+  ]
+}
+
+function getAttemptDetailSections(details?: TransactionAttemptDetails) {
+  if (!details) return []
+
+  const grouped = new Map<AttemptDetailSectionKey, AttemptDetailField[]>()
+  ;(Object.keys(attemptDetailSectionMeta) as AttemptDetailSectionKey[]).forEach((sectionKey) => {
+    grouped.set(sectionKey, [])
+  })
+
+  Object.entries(details).forEach(([key, rawValue]) => {
+    if (rawValue == null || rawValue === "") return
+    const definition = attemptFieldDefinitions[key]
+    const section = definition?.section ?? "metadata"
+    const value = typeof rawValue === "boolean" ? (rawValue ? "Yes" : "No") : String(rawValue)
+
+    grouped.get(section)?.push({
+      key,
+      label: definition?.label ?? formatAttemptFieldLabel(key),
+      value,
+      copyable: Boolean(definition?.copyable),
+      order: definition?.order ?? 999,
+    })
+  })
+
+  return (Object.keys(attemptDetailSectionMeta) as AttemptDetailSectionKey[])
+    .map((sectionKey) => ({
+      key: sectionKey,
+      label: attemptDetailSectionMeta[sectionKey].label,
+      order: attemptDetailSectionMeta[sectionKey].order,
+      fields:
+        grouped
+          .get(sectionKey)
+          ?.sort((fieldA, fieldB) => fieldA.order - fieldB.order || fieldA.label.localeCompare(fieldB.label)) ?? [],
+    }))
+    .filter((section) => section.fields.length > 0)
+    .sort((sectionA, sectionB) => sectionA.order - sectionB.order)
+}
+
 function parseInr(value: string) {
   return Number(value.replace(/[^\d.-]/g, ""))
 }
@@ -833,7 +1118,7 @@ function buildChartOptions(card: PerformanceCardConfig, windowSegment: WindowSeg
       },
       {
         title: { text: undefined },
-        opposite: true,
+        opposite: false,
         labels: { format: "{value}%" },
       },
     ],
@@ -916,7 +1201,10 @@ function PerformanceCard({
             className={cn("px-3 py-2", index < 2 ? "border-b border-border/55 sm:border-b-0" : "")}
           >
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{metric.label}</p>
-            <p className="mt-1 text-[16px] font-semibold text-foreground">{metric.value}</p>
+            <AnimatedNumberText
+              value={metric.value}
+              className="mt-1 text-[16px] font-semibold text-foreground"
+            />
             <p className="mt-0.5 text-[11px] text-muted-foreground">{metric.detail}</p>
           </div>
         ))}
@@ -931,10 +1219,23 @@ function PerformanceCard({
 
 export function HomeContent({ initialSection = "overview" }: { initialSection?: ProductWorkspaceSection } = {}) {
   const [navSection, setNavSection] = useState<ProductWorkspaceSection>(initialSection)
-  const [overviewCustomizeOpen, setOverviewCustomizeOpen] = useState(false)
+  const [overviewDateRange, setOverviewDateRange] = useState<"last-7-days" | "last-30-days" | "last-90-days">("last-7-days")
+  const [overviewProductFilter, setOverviewProductFilter] = useState<"all" | "Checkout" | "POS Terminal" | "Payment Links">("all")
+  const [snapshotTransactionTrendMode, setSnapshotTransactionTrendMode] = useState<"successful" | "failed">("successful")
+  const [overviewSnapshotCustomizeOpen, setOverviewSnapshotCustomizeOpen] = useState(false)
+  const [overviewHiddenSnapshotCards, setOverviewHiddenSnapshotCards] = useState<string[]>([])
+  const [overviewDeckCardOrder, setOverviewDeckCardOrder] = useState<string[]>([
+    "next-action",
+    "next-settlement",
+    "settlements",
+    "refund-failures",
+    "method-mix",
+  ])
   const [selectedTableDetail, setSelectedTableDetail] = useState<TableRowDetail | null>(null)
   const [transactionTypeFilter, setTransactionTypeFilter] = useState("all")
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
+  const [transactionDetailTab, setTransactionDetailTab] = useState<"timeline" | "events">("timeline")
+  const [selectedTimelineAttemptId, setSelectedTimelineAttemptId] = useState<string | null>(null)
   const [refundSheetOpen, setRefundSheetOpen] = useState(false)
   const [refundType, setRefundType] = useState<"full" | "partial">("full")
   const [partialRefundAmount, setPartialRefundAmount] = useState("")
@@ -956,6 +1257,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
   const [selectedRefundId, setSelectedRefundId] = useState<string | null>(null)
   const [refundDetailSheetOpen, setRefundDetailSheetOpen] = useState(false)
   const [selectedDisputeId, setSelectedDisputeId] = useState<string | null>(null)
+  const [disputeListingView, setDisputeListingView] = useState<DisputeListingView>("pending action")
   const [disputeActionType, setDisputeActionType] = useState<DisputeActionType>("defend")
   const [disputeActionStep, setDisputeActionStep] = useState<"form" | "confirm" | "success">("form")
   const [disputeDefendAmount, setDisputeDefendAmount] = useState("")
@@ -1034,6 +1336,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
   useEffect(() => {
     setSelectedTableDetail(null)
     setSelectedTransactionId(null)
+    setSelectedTimelineAttemptId(null)
     setSelectedDisputeId(null)
     setRefundSheetOpen(false)
     setRefundType("full")
@@ -1045,6 +1348,8 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     setRefundType("full")
     setPartialRefundAmount("")
     setRefundStep("form")
+    setTransactionDetailTab("timeline")
+    setSelectedTimelineAttemptId(null)
   }, [selectedTransactionId])
 
   useEffect(() => {
@@ -1151,84 +1456,61 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     const timeout = window.setTimeout(() => setReportToast(""), 3200)
     return () => window.clearTimeout(timeout)
   }, [reportToast])
-  const configuredProducts = useMemo(
-    () => [...configuredProductNames],
-    []
+  const overviewPaymentRows = allProductTransactionRows.filter(
+    (row) => row.transactionType.toLowerCase() === "payment"
   )
+  const overviewSuccessfulPaymentRows = overviewPaymentRows.filter(
+    (row) => row.paymentStatus.toLowerCase() === "success"
+  )
+  const overviewCollectedAmount = overviewSuccessfulPaymentRows.reduce((sum, row) => sum + row.amount, 0)
+  const overviewOrdersCount = allProductTransactionRows.filter(
+    (row) => row.transactionType.toLowerCase() === "order"
+  ).length
+  const overviewRefundCount = allProductRefundRows.length
+  const overviewRefundFailureCount = allProductRefundRows.filter(
+    (row) => row.refundStatus.toLowerCase() === "failed"
+  ).length
+  const overviewRefundVolume = allProductRefundRows.reduce((sum, row) => sum + row.amount, 0)
+  const overviewPaymentSuccessRate = overviewPaymentRows.length
+    ? (overviewSuccessfulPaymentRows.length / overviewPaymentRows.length) * 100
+    : 0
 
-  const overviewWidgets = useMemo<AnalyticsWidget[]>(
-    () => [
-      {
-        id: "gross-volume",
-        title: "Gross volume",
-        value: "₹8.6M",
-        delta: "+12.4% vs prev period",
-        hint: "Across all configured products",
-        chart: [6.1, 6.4, 6.2, 6.8, 7.1, 7.4, 8.6],
-        compareChart: [5.4, 5.6, 5.8, 6.0, 6.2, 6.5, 6.8],
-        views: ["all", "checkout", "pos-terminal", "payment-links"],
-        defaultWidth: "wide",
-        chartType: "area",
-      },
-      {
-        id: "transactions",
-        title: "Total transactions",
-        value: "94,210",
-        delta: "+8.1%",
-        hint: "Successful attempts only",
-        chart: [11800, 12120, 12940, 13180, 13620, 14040, 14510],
-        compareChart: [11020, 11350, 11620, 12010, 12380, 12720, 13310],
-        views: ["all", "checkout", "pos-terminal", "payment-links"],
-        chartType: "column",
-      },
-      {
-        id: "payment-mix",
-        title: "Payment mix",
-        value: "UPI 44%",
-        delta: "Cards 34% · POS 22%",
-        hint: "Channel composition this period",
-        chartType: "pie",
-        chartLabels: ["UPI", "Cards", "POS"],
-        chart: [44, 34, 22],
-        views: ["all", "checkout", "payment-links"],
-        defaultWidth: "compact",
-      },
-      {
-        id: "settlement-reliability",
-        title: "Settlement reliability",
-        value: "99.2%",
-        delta: "2 delayed batches",
-        hint: "T+1 and T+2 compliance",
-        chart: [98.7, 98.9, 99.0, 99.1, 99.2, 99.1, 99.2],
-        compareChart: [98.5, 98.6, 98.8, 98.9, 98.9, 99.0, 99.0],
-        views: ["all", "checkout", "pos-terminal"],
-        chartType: "line",
-      },
-      {
-        id: "configured-products",
-        title: "Configured products live",
-        value: `${configuredProducts.length}`,
-        delta: configuredProducts.join(" • "),
-        hint: "Products enabled in this workspace",
-        chart: [1, 1, 2, 2, 2, 2, configuredProducts.length || 1],
-        views: ["all"],
-        chartType: "bar",
-        defaultWidth: "compact",
-      },
-      {
-        id: "refund-and-dispute-risk",
-        title: "Refund and dispute risk",
-        value: "₹21.2k at risk",
-        delta: "6 active cases",
-        hint: "Total exposure requiring follow-up",
-        chart: [34, 29, 26, 24, 23, 22, 21.2],
-        compareChart: [36, 33, 31, 29, 27, 25, 24.1],
-        views: ["all", "checkout", "pos-terminal", "payment-links"],
-        chartType: "line",
-      },
-    ],
-    [configuredProducts]
+  const methodBuckets = {
+    "Credit cards": 0,
+    UPI: 0,
+    Netbanking: 0,
+    Others: 0,
+  }
+
+  overviewSuccessfulPaymentRows.forEach((row) => {
+    const paymentMode = row.paymentMethod.split("·")[0]?.trim().toLowerCase() ?? ""
+    if (paymentMode.includes("upi")) {
+      methodBuckets.UPI += 1
+      return
+    }
+    if (paymentMode.includes("card")) {
+      methodBuckets["Credit cards"] += 1
+      return
+    }
+    if (paymentMode.includes("netbanking")) {
+      methodBuckets.Netbanking += 1
+      return
+    }
+    methodBuckets.Others += 1
+  })
+
+  const methodLabels = Object.keys(methodBuckets)
+  const totalMethodEvents = Object.values(methodBuckets).reduce((sum, count) => sum + count, 0)
+  const methodSharePercentages = methodLabels.map((label) => {
+    const count = methodBuckets[label as keyof typeof methodBuckets]
+    return totalMethodEvents > 0 ? Number(((count / totalMethodEvents) * 100).toFixed(1)) : 0
+  })
+  const topMethodIndex = methodSharePercentages.reduce(
+    (bestIndex, value, index, values) => (value > values[bestIndex] ? index : bestIndex),
+    0
   )
+  const topMethodLabel = methodLabels[topMethodIndex] ?? "UPI"
+  const topMethodShare = methodSharePercentages[topMethodIndex] ?? 0
 
   const productFilterOptions = [
     { label: "Checkout", value: "Checkout" },
@@ -1321,8 +1603,86 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
       ? allProductDisputeRows.find((row) => row.disputeId === selectedDisputeId) ?? null
       : null
   const selectedDisputeTimeline = selectedDispute ? disputeTimelineById[selectedDispute.disputeId] ?? [] : []
-  const disputeDefendAmountValue = Number(disputeDefendAmount || 0)
-  const selectedDisputeAmount = selectedDispute?.amount ?? 0
+  const selectedTransactionAttempts = useMemo(() => {
+    if (!selectedTransaction) return []
+    return transactionAttemptsById[selectedTransaction.transactionId] ?? buildFallbackTransactionAttempts(selectedTransaction)
+  }, [selectedTransaction])
+
+  const selectedTimelineAttempt = useMemo(
+    () =>
+      selectedTransactionAttempts.find((attempt) => attempt.id === selectedTimelineAttemptId) ??
+      selectedTransactionAttempts[0] ??
+      null,
+    [selectedTimelineAttemptId, selectedTransactionAttempts]
+  )
+
+  const selectedTimelineAttemptSections = useMemo(
+    () => getAttemptDetailSections(selectedTimelineAttempt?.details),
+    [selectedTimelineAttempt]
+  )
+
+  useEffect(() => {
+    if (!selectedTransactionAttempts.length) {
+      if (selectedTimelineAttemptId !== null) {
+        setSelectedTimelineAttemptId(null)
+      }
+      return
+    }
+    if (
+      selectedTimelineAttemptId &&
+      selectedTransactionAttempts.some((attempt) => attempt.id === selectedTimelineAttemptId)
+    ) {
+      return
+    }
+    setSelectedTimelineAttemptId(selectedTransactionAttempts[0].id)
+  }, [selectedTimelineAttemptId, selectedTransactionAttempts])
+
+  const transactionAmount = selectedTransaction?.amount ?? 0
+  const transactionAmountLabel = `₹${transactionAmount.toLocaleString("en-IN")}`
+  const totalRefundedAmount = selectedTransaction?.refundedAmount ?? 0
+  const netAmount = Math.max(0, transactionAmount - totalRefundedAmount)
+  const transactionStatus = selectedTransaction?.paymentStatus ?? "Initiated"
+  const transactionMethodLabel = selectedTransaction?.paymentMethod ?? "Card"
+  const paymentMethodCategory = transactionMethodLabel.split("·")[0]?.trim() ?? "Card"
+  const paymentMethodProvider = transactionMethodLabel.split("·")[1]?.trim() ?? ""
+  const transactionLink =
+    selectedTransaction?.product === "Payment Links"
+      ? `https://pay.pine.one/${selectedTransaction.orderId.toLowerCase()}`
+      : null
+  const transactionStatusToneClass =
+    transactionStatus === "Success"
+      ? "border-success/35 bg-success/12 text-success"
+      : transactionStatus === "Failed"
+        ? "border-destructive/35 bg-destructive/12 text-destructive"
+        : transactionStatus === "Pending"
+          ? "border-warning/35 bg-warning/15 text-warning"
+          : "border-primary/35 bg-primary/12 text-primary"
+  const PaymentMethodIcon =
+    paymentMethodCategory === "UPI"
+      ? Smartphone
+      : paymentMethodCategory === "Payment Link"
+        ? Link2
+        : paymentMethodCategory === "Netbanking"
+          ? Landmark
+          : CreditCard
+  const transactionEventItems = [
+    {
+      title: `The payment ${selectedTransaction?.transactionId ?? "TXN-990020"} for ${transactionAmountLabel} has ${transactionStatus.toLowerCase()}.`,
+      timestamp: selectedTransaction?.createdAt ?? "15 Apr 2026, 11:30 AM",
+      status: transactionStatus,
+    },
+    {
+      title: `Order ${selectedTransaction?.orderId ?? "ORD-41020"} linked to merchant reference ${selectedTransaction?.merchantOrderId ?? "M-ACM-9018"}.`,
+      timestamp: "15 Apr 2026, 11:29 AM",
+      status: "Metadata enriched",
+    },
+    {
+      title: `Source channel tagged as ${selectedTransaction?.product ?? "Checkout"} with method ${transactionMethodLabel}.`,
+      timestamp: "15 Apr 2026, 11:28 AM",
+      status: "Routed",
+    },
+  ]
+
   const hasAllDisputeDocuments =
     Boolean(disputeDocuments.voiceDelivery) &&
     Boolean(disputeDocuments.rebuttalLetter) &&
@@ -1330,12 +1690,8 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     Boolean(disputeDocuments.additionalDocuments)
   const canSubmitDisputeAction =
     selectedDispute?.status === "Pending action" &&
-    (disputeActionType === "accept" ||
-      (hasAllDisputeDocuments &&
-        disputeComment.trim().length > 0 &&
-        (disputeActionType === "defend" ||
-          (disputeDefendAmountValue > 0 &&
-            disputeDefendAmountValue <= selectedDisputeAmount))))
+    hasAllDisputeDocuments &&
+    disputeComment.trim().length > 0
   const activeReportFieldGroups = reportFieldLibrary[activeReportType]
   const activeReportAllFields = getUniqueReportFields(activeReportType)
   const selectedFieldsForGeneration =
@@ -1426,7 +1782,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     { id: "amount", header: "Amount", accessorKey: "amount", width: 120, align: "right" },
   ]
 
-  const disputeColumns: DataTableColumn<(typeof allProductDisputeRows)[number]>[] = [
+  const disputeBaseColumns: DataTableColumn<(typeof allProductDisputeRows)[number]>[] = [
     { id: "disputeId", header: "Dispute ID", accessorKey: "disputeId", width: 130, pinnable: true },
     { id: "paymentId", header: "Payment ID", accessorKey: "paymentId", width: 145 },
     {
@@ -1493,30 +1849,44 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
       ],
       getFilterValue: (row) => row.recoveryStatus.toLowerCase(),
     },
-    {
-      id: "action",
-      header: "Action",
-      width: 130,
-      cell: (row) =>
-        row.status === "Pending action" ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-[11px]"
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              setSelectedDisputeId(row.disputeId)
-              primeDisputeActionFlow(row, "defend")
-            }}
-          >
-            Take action
-          </Button>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        ),
-    },
   ]
+
+  const disputeActionColumn: DataTableColumn<(typeof allProductDisputeRows)[number]> = {
+    id: "action",
+    header: "Action",
+    width: 114,
+    align: "center",
+    cell: (row) => (
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-7 text-[11px]"
+        onClick={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          setSelectedDisputeId(row.disputeId)
+          primeDisputeActionFlow(row, "defend")
+        }}
+      >
+        Defend
+      </Button>
+    ),
+  }
+
+  const disputeRowsForView = useMemo(() => {
+    if (disputeListingView === "pending action") {
+      return allProductDisputeRows.filter((row) => row.status === "Pending action")
+    }
+    if (disputeListingView === "in review") {
+      return allProductDisputeRows.filter((row) => row.status === "In review")
+    }
+    return allProductDisputeRows.filter((row) => row.status === "Win" || row.status === "Loss")
+  }, [disputeListingView])
+
+  const disputeColumns: DataTableColumn<(typeof allProductDisputeRows)[number]>[] =
+    disputeListingView === "pending action"
+      ? [...disputeBaseColumns, disputeActionColumn]
+      : disputeBaseColumns
 
   const refundColumns: DataTableColumn<(typeof allProductRefundRows)[number]>[] = [
     { id: "orderId", header: "Order ID", accessorKey: "orderId", width: 130, pinnable: true },
@@ -1810,11 +2180,602 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     0
   )
   const settlementInProgress = allProductSettlementRows.filter((row) => row.state !== "Completed").length
+  const disputesPendingAction = allProductDisputeRows.filter((row) => row.status === "Pending action").length
   const disputeUnderReviewCount = allProductDisputeRows.filter((row) => row.status === "In review").length
   const disputeAmountUnderReview = allProductDisputeRows
     .filter((row) => row.status === "In review" || row.status === "Pending action")
     .reduce((sum, row) => sum + row.amount, 0)
   const refundExposure = filteredRefundRows.reduce((sum, row) => sum + row.amount, 0)
+
+  const nextAction = disputesPendingAction > 0
+    ? {
+        title: "Disputes need action today",
+        description: `${disputesPendingAction} dispute${disputesPendingAction === 1 ? "" : "s"} are waiting for evidence submission before SLA.`,
+        ctaLabel: "Review disputes",
+        href: "/disputes",
+      }
+    : {
+        title: "Drive the next payment milestone",
+        description: "Share payment links and track conversion in one place to grow collections this week.",
+        ctaLabel: "Open payment links",
+        href: "/payment-links",
+      }
+
+  const overviewNudges = [
+    {
+      id: "settlements",
+      title: `${settlementInProgress} settlement batch${settlementInProgress === 1 ? "" : "es"} in progress`,
+      detail: "Monitor batches to avoid payout delays.",
+      actionLabel: "View settlements",
+      href: "/settlements",
+      tone: "default" as const,
+    },
+    {
+      id: "refund-failures",
+      title: `${overviewRefundFailureCount} refund failure${overviewRefundFailureCount === 1 ? "" : "s"} need attention`,
+      detail: "Follow up to reduce support escalations.",
+      actionLabel: "Review refunds",
+      href: "/refunds",
+      tone: "warning" as const,
+    },
+    {
+      id: "method-mix",
+      title: `${topMethodLabel} is leading at ${topMethodShare.toFixed(1)}%`,
+      detail: "Tune offers and checkout journey to improve conversion.",
+      actionLabel: "Open online payments",
+      href: "/online-payments",
+      tone: "default" as const,
+    },
+  ]
+
+  const overviewWindowScale: Record<typeof overviewDateRange, number> = {
+    "last-7-days": 1,
+    "last-30-days": 1.34,
+    "last-90-days": 1.82,
+  }
+  const snapshotScale = overviewWindowScale[overviewDateRange]
+  const snapshotProductLabel = overviewProductFilter === "all" ? "All products" : overviewProductFilter
+
+  const overviewScopedTransactions = allProductTransactionRows.filter(
+    (row) => overviewProductFilter === "all" || row.product === overviewProductFilter
+  )
+  const overviewScopedSettlements = allProductSettlementRows.filter(
+    (row) => overviewProductFilter === "all" || row.product === overviewProductFilter
+  )
+  const overviewScopedRefunds = allProductRefundRows.filter(
+    (row) => overviewProductFilter === "all" || row.product === overviewProductFilter
+  )
+  const overviewScopedDisputes = allProductDisputeRows.filter(
+    (row) => overviewProductFilter === "all" || row.product === overviewProductFilter
+  )
+
+  const scaleCount = (value: number) => Math.max(0, Math.round(value * snapshotScale))
+  const scaleAmount = (value: number) => Math.max(0, Math.round(value * snapshotScale))
+
+  const snapshotTransactionCount = scaleCount(overviewScopedTransactions.length)
+  const snapshotTransactionAmount = scaleAmount(
+    overviewScopedTransactions.reduce((sum, row) => sum + row.amount, 0)
+  )
+  const snapshotSuccessfulTransactionCount = scaleCount(
+    overviewScopedTransactions.filter((row) => row.paymentStatus === "Success").length
+  )
+  const snapshotFailedTransactionCount = scaleCount(
+    overviewScopedTransactions.filter((row) => row.paymentStatus === "Failed").length
+  )
+  const snapshotPendingTransactionCount = scaleCount(
+    overviewScopedTransactions.filter((row) => row.paymentStatus === "Pending").length
+  )
+  const snapshotInitiatedTransactionCount = scaleCount(
+    overviewScopedTransactions.filter((row) => row.paymentStatus === "Initiated").length
+  )
+  const snapshotSuccessfulTransactionAmount = scaleAmount(
+    overviewScopedTransactions
+      .filter((row) => row.paymentStatus === "Success")
+      .reduce((sum, row) => sum + row.amount, 0)
+  )
+  const snapshotFailedTransactionAmount = scaleAmount(
+    overviewScopedTransactions
+      .filter((row) => row.paymentStatus === "Failed")
+      .reduce((sum, row) => sum + row.amount, 0)
+  )
+  const snapshotPendingTransactionAmount = scaleAmount(
+    overviewScopedTransactions
+      .filter((row) => row.paymentStatus === "Pending")
+      .reduce((sum, row) => sum + row.amount, 0)
+  )
+  const snapshotInitiatedTransactionAmount = scaleAmount(
+    overviewScopedTransactions
+      .filter((row) => row.paymentStatus === "Initiated")
+      .reduce((sum, row) => sum + row.amount, 0)
+  )
+
+  const snapshotSettlementCount = scaleCount(overviewScopedSettlements.length)
+  const snapshotSettlementAmount = scaleAmount(
+    overviewScopedSettlements.reduce((sum, row) => sum + parseInr(row.amount), 0)
+  )
+  const snapshotNextSettlementRows = overviewScopedSettlements.filter((row) => row.state !== "Completed")
+  const snapshotNextSettlementCount = scaleCount(snapshotNextSettlementRows.length)
+  const snapshotNextSettlementAmount = scaleAmount(
+    snapshotNextSettlementRows.reduce((sum, row) => sum + parseInr(row.amount), 0)
+  )
+  const snapshotNextSettlementDate = snapshotNextSettlementRows[0]?.settlementDate ?? "16 Apr 2026, 07:30 PM"
+  const snapshotNextSettlementBankAccount = snapshotNextSettlementRows[0]?.bankAccount ?? "HDFC Bank •••• 4821"
+  const overviewTopDeckCards = [
+    {
+      id: "next-action",
+      title: nextAction.title,
+      detail: nextAction.description,
+      actionLabel: nextAction.ctaLabel,
+      href: nextAction.href,
+      tone: "default" as const,
+      ctaVariant: "outline" as const,
+      icon: "check" as const,
+      showArrow: true,
+    },
+    {
+      id: "next-settlement",
+      title: `Next settlement on ${snapshotNextSettlementDate}`,
+      detail: `₹${snapshotNextSettlementAmount.toLocaleString("en-IN")} across ${snapshotNextSettlementCount.toLocaleString("en-IN")} batches to ${snapshotNextSettlementBankAccount}`,
+      actionLabel: "View settlements",
+      href: "/settlements",
+      tone: "default" as const,
+      ctaVariant: "outline" as const,
+      icon: "settlement" as const,
+      showArrow: false,
+    },
+    ...overviewNudges.map((item) => ({
+      id: item.id,
+      title: item.title,
+      detail: item.detail,
+      actionLabel: item.actionLabel,
+      href: item.href,
+      tone: item.tone,
+      ctaVariant: "outline" as const,
+      icon: item.tone === "warning" ? ("warning" as const) : ("check" as const),
+      showArrow: false,
+    })),
+  ]
+  const overviewTopDeckCardIds = overviewTopDeckCards.map((card) => card.id)
+  useEffect(() => {
+    setOverviewDeckCardOrder((current) => {
+      const retained = current.filter((id) => overviewTopDeckCardIds.includes(id))
+      const missing = overviewTopDeckCardIds.filter((id) => !retained.includes(id))
+      return [...retained, ...missing]
+    })
+  }, [overviewTopDeckCardIds.join("|")])
+
+  const overviewOrderedDeckCards = overviewDeckCardOrder
+    .map((id) => overviewTopDeckCards.find((card) => card.id === id))
+    .filter((card): card is (typeof overviewTopDeckCards)[number] => Boolean(card))
+
+  const cycleOverviewDeckCard = (cardId: string) => {
+    setOverviewDeckCardOrder((current) => {
+      const cardIndex = current.indexOf(cardId)
+      if (cardIndex === -1) return current
+      return [...current.slice(0, cardIndex), ...current.slice(cardIndex + 1), cardId]
+    })
+  }
+
+  const snapshotRefundCount = scaleCount(overviewScopedRefunds.length)
+  const snapshotRefundAmount = scaleAmount(
+    overviewScopedRefunds.reduce((sum, row) => sum + row.amount, 0)
+  )
+
+  const snapshotDisputeCount = scaleCount(overviewScopedDisputes.length)
+  const snapshotDisputeAmount = scaleAmount(
+    overviewScopedDisputes.reduce((sum, row) => sum + row.amount, 0)
+  )
+  const snapshotSlaBreachAmount = scaleAmount(
+    overviewScopedDisputes
+      .filter((row) => row.slaHoursRemaining > 0 && row.slaHoursRemaining <= 24)
+      .reduce((sum, row) => sum + row.amount, 0)
+  )
+
+  const snapshotRefundShare = snapshotTransactionAmount > 0
+    ? (snapshotRefundAmount / snapshotTransactionAmount) * 100
+    : 0
+  const snapshotWindowLabel =
+    overviewDateRange === "last-7-days"
+      ? "Last 7 days"
+      : overviewDateRange === "last-30-days"
+        ? "Last 30 days"
+        : "Last 90 days"
+
+  const snapshotBranchFailedCount = Math.min(snapshotTransactionCount, snapshotFailedTransactionCount)
+  const snapshotBranchPendingCount = Math.min(
+    Math.max(0, snapshotTransactionCount - snapshotBranchFailedCount),
+    snapshotPendingTransactionCount
+  )
+  const snapshotBranchInitiatedCount = Math.min(
+    Math.max(0, snapshotTransactionCount - snapshotBranchFailedCount - snapshotBranchPendingCount),
+    snapshotInitiatedTransactionCount
+  )
+  const snapshotBranchSuccessCount = Math.max(
+    0,
+    snapshotTransactionCount - snapshotBranchFailedCount - snapshotBranchPendingCount - snapshotBranchInitiatedCount
+  )
+
+  const completedSettlementRatio = overviewScopedSettlements.length
+    ? overviewScopedSettlements.filter((row) => row.state === "Completed").length / overviewScopedSettlements.length
+    : 0.78
+  const snapshotRefundDemandCount = Math.min(snapshotBranchSuccessCount, snapshotRefundCount)
+  const snapshotBaselineSettledCount = Math.min(
+    snapshotBranchSuccessCount,
+    Math.round(snapshotBranchSuccessCount * completedSettlementRatio)
+  )
+  const snapshotSettledTransactionCount = Math.max(
+    snapshotBaselineSettledCount,
+    snapshotRefundDemandCount
+  )
+  const snapshotAwaitingSettlementCount = Math.max(0, snapshotBranchSuccessCount - snapshotSettledTransactionCount)
+  const snapshotSettledAmount =
+    snapshotBranchSuccessCount > 0
+      ? Math.min(
+          snapshotSuccessfulTransactionAmount,
+          Math.round((snapshotSuccessfulTransactionAmount * snapshotSettledTransactionCount) / snapshotBranchSuccessCount)
+        )
+      : 0
+  const snapshotAwaitingAmount = Math.max(0, snapshotSuccessfulTransactionAmount - snapshotSettledAmount)
+
+  const snapshotBranchRefundedCount = Math.min(snapshotSettledTransactionCount, snapshotRefundDemandCount)
+  const snapshotBranchClosedCount = Math.max(
+    0,
+    snapshotSettledTransactionCount - snapshotBranchRefundedCount
+  )
+  const snapshotBranchRefundedAmount = Math.min(snapshotSettledAmount, snapshotRefundAmount)
+  const snapshotBranchClosedAmount = Math.max(0, snapshotSettledAmount - snapshotBranchRefundedAmount)
+
+  const refundSuccessRatio = overviewScopedRefunds.length
+    ? overviewScopedRefunds.filter((row) => row.refundStatus === "Success").length / overviewScopedRefunds.length
+    : 0.65
+  const snapshotRefundSuccessfulCount = Math.min(
+    snapshotBranchRefundedCount,
+    Math.round(snapshotBranchRefundedCount * refundSuccessRatio)
+  )
+  const snapshotRefundOpenCount = Math.max(0, snapshotBranchRefundedCount - snapshotRefundSuccessfulCount)
+  const snapshotRefundSuccessfulAmount =
+    snapshotBranchRefundedCount > 0
+      ? Math.min(
+          snapshotBranchRefundedAmount,
+          Math.round((snapshotBranchRefundedAmount * snapshotRefundSuccessfulCount) / snapshotBranchRefundedCount)
+        )
+      : 0
+  const snapshotRefundOpenAmount = Math.max(0, snapshotBranchRefundedAmount - snapshotRefundSuccessfulAmount)
+
+  const snapshotTrendLabels =
+    overviewDateRange === "last-7-days"
+      ? ["Apr 16", "Apr 17", "Apr 18", "Apr 19", "Apr 20", "Apr 21", "Apr 22"]
+      : overviewDateRange === "last-30-days"
+        ? ["W1", "W2", "W3", "W4", "W5", "W6", "W7"]
+        : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"]
+  const snapshotTrendFactors = [0.52, 0.61, 0.68, 0.74, 0.83, 0.91, 1]
+  const buildAmountTrend = (amount: number) =>
+    snapshotTrendFactors.map((factor, index) =>
+      Math.max(
+        0,
+        Math.round(amount * (index === 0 ? Math.max(0.38, factor - 0.08) : factor))
+      )
+    )
+
+  const buildCountTrend = (count: number) =>
+    snapshotTrendFactors.map((factor, index) =>
+      Math.max(0, Math.round(count * (index === 0 ? Math.max(0.4, factor - 0.12) : factor)))
+    )
+  const getSnapshotChartHeight = (seriesCount: number) => 224 + seriesCount * 30
+
+  const snapshotTransactionTrendOptions = useMemo(
+    () => ({
+      chart: {
+        type: "line",
+        height: getSnapshotChartHeight(1),
+        marginBottom: 46,
+        marginLeft: 40,
+        marginRight: 12,
+        marginTop: 10,
+      },
+      xAxis: {
+        categories: snapshotTrendLabels,
+        labels: { enabled: true },
+        lineWidth: 1,
+        tickLength: 0,
+        tickWidth: 0,
+        lineColor: "var(--color-border)",
+        tickColor: "var(--color-border)",
+      },
+      yAxis: {
+        min: 0,
+        title: { text: undefined },
+        opposite: false,
+        labels: { enabled: true },
+        gridLineWidth: 1,
+        gridLineColor: "var(--color-border)",
+        lineWidth: 0,
+        tickAmount: 4,
+      },
+      legend: { enabled: false },
+      tooltip: { valueSuffix: " txns", valueDecimals: 0 },
+      series: [
+        {
+          type: "line",
+          name: snapshotTransactionTrendMode === "failed" ? "Failed transactions" : "Successful transactions",
+          data: buildCountTrend(
+            snapshotTransactionTrendMode === "failed"
+              ? snapshotFailedTransactionCount
+              : snapshotSuccessfulTransactionCount
+          ),
+          color: snapshotTransactionTrendMode === "failed" ? "var(--color-destructive)" : "var(--color-success)",
+          lineWidth: 2.4,
+          marker: { enabled: true, radius: 2.6, lineWidth: 0 },
+        },
+      ],
+    }),
+    [snapshotFailedTransactionCount, snapshotSuccessfulTransactionCount, snapshotTransactionTrendMode, snapshotTrendLabels]
+  )
+
+  const snapshotSettlementTrendOptions = useMemo(
+    () => ({
+      chart: {
+        type: "line",
+        height: getSnapshotChartHeight(2),
+        marginBottom: 46,
+        marginLeft: 40,
+        marginRight: 12,
+        marginTop: 10,
+      },
+      xAxis: {
+        categories: snapshotTrendLabels,
+        labels: { enabled: true },
+        lineWidth: 1,
+        tickLength: 0,
+        tickWidth: 0,
+        lineColor: "var(--color-border)",
+        tickColor: "var(--color-border)",
+      },
+      yAxis: {
+        min: 0,
+        title: { text: undefined },
+        opposite: false,
+        labels: { enabled: true },
+        gridLineWidth: 1,
+        gridLineColor: "var(--color-border)",
+        lineWidth: 0,
+        tickAmount: 4,
+      },
+      legend: { enabled: false },
+      tooltip: { shared: true, valuePrefix: "₹", valueDecimals: 0 },
+      series: [
+        {
+          type: "line",
+          name: "Overall",
+          data: buildAmountTrend(snapshotSettlementAmount),
+          color: "var(--color-primary)",
+          lineWidth: 2.2,
+          marker: { enabled: true, radius: 2.4, lineWidth: 0 },
+        },
+        {
+          type: "line",
+          name: "Next cycle",
+          data: buildAmountTrend(snapshotNextSettlementAmount),
+          color: "var(--color-chart-3)",
+          lineWidth: 2,
+          dashStyle: "ShortDot",
+          marker: { enabled: true, radius: 2.2, lineWidth: 0 },
+        },
+      ],
+    }),
+    [snapshotNextSettlementAmount, snapshotSettlementAmount, snapshotTrendLabels]
+  )
+
+  const snapshotRefundTrendOptions = useMemo(
+    () => ({
+      chart: {
+        type: "line",
+        height: getSnapshotChartHeight(1),
+        marginBottom: 46,
+        marginLeft: 40,
+        marginRight: 12,
+        marginTop: 10,
+      },
+      xAxis: {
+        categories: snapshotTrendLabels,
+        labels: { enabled: true },
+        lineWidth: 1,
+        tickLength: 0,
+        tickWidth: 0,
+        lineColor: "var(--color-border)",
+        tickColor: "var(--color-border)",
+      },
+      yAxis: {
+        min: 0,
+        title: { text: undefined },
+        opposite: false,
+        labels: { enabled: true },
+        gridLineWidth: 1,
+        gridLineColor: "var(--color-border)",
+        lineWidth: 0,
+        tickAmount: 4,
+      },
+      legend: { enabled: false },
+      tooltip: { valuePrefix: "₹", valueDecimals: 0 },
+      series: [
+        {
+          type: "line",
+          name: "Refund amount",
+          data: buildAmountTrend(snapshotRefundAmount),
+          color: "var(--color-chart-3)",
+          lineWidth: 2.2,
+          marker: { enabled: true, radius: 2.4, lineWidth: 0 },
+        },
+      ],
+    }),
+    [snapshotRefundAmount, snapshotTrendLabels]
+  )
+
+  const snapshotDisputeTrendOptions = useMemo(
+    () => ({
+      chart: {
+        type: "line",
+        height: getSnapshotChartHeight(2),
+        marginBottom: 46,
+        marginLeft: 40,
+        marginRight: 12,
+        marginTop: 10,
+      },
+      xAxis: {
+        categories: snapshotTrendLabels,
+        labels: { enabled: true },
+        lineWidth: 1,
+        tickLength: 0,
+        tickWidth: 0,
+        lineColor: "var(--color-border)",
+        tickColor: "var(--color-border)",
+      },
+      yAxis: {
+        min: 0,
+        title: { text: undefined },
+        opposite: false,
+        labels: { enabled: true },
+        gridLineWidth: 1,
+        gridLineColor: "var(--color-border)",
+        lineWidth: 0,
+        tickAmount: 4,
+      },
+      legend: { enabled: false },
+      tooltip: { shared: true, valuePrefix: "₹", valueDecimals: 0 },
+      series: [
+        {
+          type: "line",
+          name: "In dispute",
+          data: buildAmountTrend(snapshotDisputeAmount),
+          color: "var(--color-primary)",
+          lineWidth: 2.2,
+          marker: { enabled: true, radius: 2.4, lineWidth: 0 },
+        },
+        {
+          type: "line",
+          name: "Breaching SLA",
+          data: buildAmountTrend(snapshotSlaBreachAmount),
+          color: "var(--color-destructive)",
+          lineWidth: 2,
+          dashStyle: "ShortDash",
+          marker: { enabled: true, radius: 2.2, lineWidth: 0 },
+        },
+      ],
+    }),
+    [snapshotDisputeAmount, snapshotSlaBreachAmount, snapshotTrendLabels]
+  )
+
+  const transactionStateRootChildren = [
+    snapshotBranchSuccessCount > 0 ? "success" : null,
+    snapshotBranchFailedCount > 0 ? "failed" : null,
+    snapshotBranchPendingCount > 0 ? "pending" : null,
+    snapshotBranchInitiatedCount > 0 ? "initiated" : null,
+  ].filter((nodeId): nodeId is string => Boolean(nodeId))
+
+  const transactionStateSuccessChildren = ["settled", "awaiting"]
+
+  const transactionStateSettledChildren = [
+    snapshotBranchClosedCount > 0 ? "closed" : null,
+    snapshotBranchRefundedCount > 0 ? "refunded" : null,
+  ].filter((nodeId): nodeId is string => Boolean(nodeId))
+
+  const transactionStateRefundChildren = [
+    snapshotRefundSuccessfulCount > 0 ? "refundSuccess" : null,
+    snapshotRefundOpenCount > 0 ? "refundOpen" : null,
+  ].filter((nodeId): nodeId is string => Boolean(nodeId))
+
+  const snapshotTransactionStateFlowNodes: BranchFlowNode[] = [
+    {
+      id: "created",
+      label: "Transactions",
+      value: snapshotTransactionCount,
+      amount: snapshotTransactionAmount,
+      tone: "primary",
+      hint: snapshotWindowLabel,
+      children: transactionStateRootChildren,
+    },
+    {
+      id: "success",
+      label: "Successful",
+      value: snapshotBranchSuccessCount,
+      amount: snapshotSuccessfulTransactionAmount,
+      tone: "success",
+      children: transactionStateSuccessChildren,
+    },
+    {
+      id: "failed",
+      label: "Failed",
+      value: snapshotBranchFailedCount,
+      amount: snapshotFailedTransactionAmount,
+      tone: "destructive"
+    },
+    {
+      id: "pending",
+      label: "Pending",
+      value: snapshotBranchPendingCount,
+      amount: snapshotPendingTransactionAmount,
+      tone: "warning"
+    },
+    {
+      id: "initiated",
+      label: "Initiated",
+      value: snapshotBranchInitiatedCount,
+      amount: snapshotInitiatedTransactionAmount,
+      tone: "muted"
+    },
+    {
+      id: "settled",
+      label: "Settled",
+      value: snapshotSettledTransactionCount,
+      amount: snapshotSettledAmount,
+      tone: "accent",
+      children: transactionStateSettledChildren,
+    },
+    {
+      id: "awaiting",
+      label: "Awaiting settlement",
+      value: snapshotAwaitingSettlementCount,
+      amount: snapshotAwaitingAmount,
+      tone: "muted"
+    },
+    {
+      id: "closed",
+      label: "Closed",
+      value: snapshotBranchClosedCount,
+      amount: snapshotBranchClosedAmount,
+      tone: "success"
+    },
+    {
+      id: "refunded",
+      label: "Refunded",
+      value: snapshotBranchRefundedCount,
+      amount: snapshotBranchRefundedAmount,
+      tone: "accent",
+      children: transactionStateRefundChildren,
+    },
+    {
+      id: "refundSuccess",
+      label: "Refund success",
+      value: snapshotRefundSuccessfulCount,
+      amount: snapshotRefundSuccessfulAmount,
+      tone: "success"
+    },
+    {
+      id: "refundOpen",
+      label: "Refund pending/failed",
+      value: snapshotRefundOpenCount,
+      amount: snapshotRefundOpenAmount,
+      tone: "warning"
+    },
+  ]
+
+  const overviewSnapshotCards = [
+    { id: "transactions", label: "Transactions" },
+    { id: "transaction-state-flow", label: "Transaction state flow" },
+    { id: "settlements", label: "Settlements" },
+    { id: "refunds", label: "Refunds" },
+    { id: "disputes", label: "Disputes" },
+  ]
 
   const transactionSummaryMetrics: SectionSummaryMetric[] = [
     { label: "Total transactions", value: `${filteredTransactionRows.length}` },
@@ -1855,6 +2816,27 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     ],
   }
 
+  const recoveryLedgerRows = [
+    { id: "LED-201", type: "Gateway fee adjustment", amount: 2340, direction: "Deduction", cycle: "16 Apr - 22 Apr" },
+    { id: "LED-202", type: "Chargeback recovery", amount: 1800, direction: "Recovery", cycle: "16 Apr - 22 Apr" },
+    { id: "LED-203", type: "Tax withholding", amount: 920, direction: "Deduction", cycle: "16 Apr - 22 Apr" },
+  ]
+
+  const recoveryLedgerColumns: DataTableColumn<(typeof recoveryLedgerRows)[number]>[] = [
+    { id: "id", header: "Ledger ID", accessorKey: "id", width: 120, pinnable: true },
+    { id: "type", header: "Type", accessorKey: "type", width: 220 },
+    { id: "direction", header: "Direction", accessorKey: "direction", width: 120 },
+    { id: "cycle", header: "Cycle", accessorKey: "cycle", width: 140 },
+    {
+      id: "amount",
+      header: "Amount",
+      getValue: (row) => row.amount,
+      align: "right",
+      width: 120,
+      cell: (row) => `₹${row.amount.toLocaleString("en-IN")}`,
+    },
+  ]
+
   const headerTitleBySection: Partial<Record<ProductWorkspaceSection, string>> = {
     overview: "Overview",
     transactions: "Transactions",
@@ -1867,8 +2849,8 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
 
   const headerActionsBySection: Partial<Record<ProductWorkspaceSection, React.ReactNode>> = {
     overview: (
-      <Button size="sm" className="h-8 text-xs" onClick={() => setOverviewCustomizeOpen(true)}>
-        Customize
+      <Button asChild size="sm" className="h-8 text-xs">
+        <Link href="/transactions">View transactions</Link>
       </Button>
     ),
     transactions: (
@@ -1888,7 +2870,8 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     ),
     settlements: (
       <>
-        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Download MPR</Button>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Customize MPR</Button>
         <Button size="sm" className="h-8 text-xs">Run settlement</Button>
       </>
     ),
@@ -1924,7 +2907,14 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
   )
 
   const centerMain = (
-    <div className="h-full overflow-y-auto space-y-4 p-4">
+    <div
+      className={cn(
+        "p-4",
+        navSection === "overview"
+          ? "flex min-h-[calc(100vh-8rem)] items-center justify-center"
+          : "h-full overflow-y-auto space-y-4"
+      )}
+    >
       {reportToast ? (
         <Alert className="rounded-lg border-success/35 bg-success/10">
           <CheckCircle2 className="size-4 text-success" />
@@ -1932,82 +2922,519 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
         </Alert>
       ) : null}
       {navSection === "overview" ? (
-        <OverviewAnalyticsCanvas
-          scopeId="dashboard-overall-overview"
-          configuredProducts={configuredProducts}
-          widgets={overviewWidgets}
-          viewOptions={[
-            { label: "All", value: "all" },
-            { label: "Checkout", value: "checkout" },
-            { label: "POS Terminal", value: "pos-terminal" },
-            { label: "Payment Links", value: "payment-links" },
-          ]}
-          dateOptions={["Today", "Last 7 days", "Last 30 days", "This quarter"]}
-          compareOptions={["Yesterday", "Previous period", "Last week"]}
-          showViewOptions
-          viewSelectorVariant="dropdown"
-          showConfiguredProductsBadge={false}
-          showAutoRefreshControl={false}
-          showCustomizeControl={false}
-          toolbarSurface="plain"
-          customizeOpen={overviewCustomizeOpen}
-          onCustomizeOpenChange={setOverviewCustomizeOpen}
-        />
+        <>
+          <section className="w-full max-w-[1120px] space-y-6">
+            <h3 className="text-[30px] font-semibold leading-[1.05] text-foreground">overview</h3>
+
+            <OverviewDetailCards />
+
+            <div className="hidden space-y-3">
+              {!overviewHiddenSnapshotCards.includes("transaction-state-flow") ? (
+                <article className="rounded-2xl border border-border/70 bg-card/80">
+                  <div className="border-b border-border/60 px-4 py-3">
+                    <p className="text-[16px] font-semibold text-foreground">Transaction state flow</p>
+                  </div>
+
+                  <TransactionStateBranchFlow
+                    rootId="created"
+                    nodes={snapshotTransactionStateFlowNodes}
+                    initialExpandedNodeIds={["created", "success"]}
+                    className="px-2 py-3"
+                  />
+                </article>
+              ) : null}
+
+              {!overviewHiddenSnapshotCards.includes("transactions") ? (
+                <OverviewSnapshotChartCard
+                  title="Transactions"
+                  actionHref="/transactions"
+                  actionLabel="Transactions"
+                  chartOptions={snapshotTransactionTrendOptions}
+                  headerActions={
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Failed trend</span>
+                      <Switch
+                        checked={snapshotTransactionTrendMode === "failed"}
+                        onCheckedChange={(checked) => setSnapshotTransactionTrendMode(checked ? "failed" : "successful")}
+                        aria-label="Toggle failed transaction trend"
+                      />
+                    </div>
+                  }
+                  metrics={
+                    <div className="grid gap-3 px-4 pt-4 pb-5 sm:grid-cols-2 xl:grid-cols-2">
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Total transaction volume</p>
+                        <AnimatedNumberText
+                          value={`₹${snapshotTransactionAmount.toLocaleString("en-IN")}`}
+                          className="text-[24px] leading-none font-semibold text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Total transactions</p>
+                        <AnimatedNumberText
+                          value={snapshotTransactionCount.toLocaleString("en-IN")}
+                          className="text-[24px] leading-none font-semibold text-foreground"
+                        />
+                      </div>
+                    </div>
+                  }
+                />
+              ) : null}
+
+              {!overviewHiddenSnapshotCards.includes("settlements") ? (
+                <OverviewSnapshotChartCard
+                  title="Settlements"
+                  actionHref="/settlements"
+                  actionLabel="Settlements"
+                  chartOptions={snapshotSettlementTrendOptions}
+                  metrics={
+                    <div className="grid gap-3 px-4 pt-4 pb-5 sm:grid-cols-2 xl:grid-cols-3">
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Settled amount</p>
+                        <AnimatedNumberText
+                          value={`₹${snapshotSettlementAmount.toLocaleString("en-IN")}`}
+                          className="text-[24px] leading-none font-semibold text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Overall settlements</p>
+                        <AnimatedNumberText
+                          value={snapshotSettlementCount.toLocaleString("en-IN")}
+                          className="text-[24px] leading-none font-semibold text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Next settlement cycle</p>
+                        <AnimatedNumberText
+                          value={`₹${snapshotNextSettlementAmount.toLocaleString("en-IN")} · ${snapshotNextSettlementCount.toLocaleString("en-IN")} batches`}
+                          className="text-[24px] leading-none font-semibold text-foreground"
+                        />
+                      </div>
+                    </div>
+                  }
+                />
+              ) : null}
+
+              {!overviewHiddenSnapshotCards.includes("refunds") ? (
+                <OverviewSnapshotChartCard
+                  title="Refunds"
+                  actionHref="/refunds"
+                  actionLabel="Refunds"
+                  chartOptions={snapshotRefundTrendOptions}
+                  metrics={
+                    <div className="grid gap-3 px-4 pt-4 pb-5 sm:grid-cols-2 xl:grid-cols-3">
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Overall refund amount</p>
+                        <AnimatedNumberText
+                          value={`₹${snapshotRefundAmount.toLocaleString("en-IN")}`}
+                          className="text-[24px] leading-none font-semibold text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Refund requests</p>
+                        <AnimatedNumberText
+                          value={snapshotRefundCount.toLocaleString("en-IN")}
+                          className="text-[24px] leading-none font-semibold text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Refund share</p>
+                        <AnimatedNumberText
+                          value={`${snapshotRefundShare.toFixed(1)}%`}
+                          className="text-[24px] leading-none font-semibold text-foreground"
+                        />
+                      </div>
+                    </div>
+                  }
+                />
+              ) : null}
+
+              {!overviewHiddenSnapshotCards.includes("disputes") ? (
+                <OverviewSnapshotChartCard
+                  title="Disputes"
+                  actionHref="/disputes"
+                  actionLabel="Disputes"
+                  chartOptions={snapshotDisputeTrendOptions}
+                  metrics={
+                    <div className="grid gap-3 px-4 pt-4 pb-5 sm:grid-cols-2 xl:grid-cols-3">
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Total disputes</p>
+                        <AnimatedNumberText
+                          value={snapshotDisputeCount.toLocaleString("en-IN")}
+                          className="text-[24px] leading-none font-semibold text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Amount in dispute</p>
+                        <AnimatedNumberText
+                          value={`₹${snapshotDisputeAmount.toLocaleString("en-IN")}`}
+                          className="text-[24px] leading-none font-semibold text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Amount breaching SLA</p>
+                        <AnimatedNumberText
+                          value={`₹${snapshotSlaBreachAmount.toLocaleString("en-IN")}`}
+                          className="text-[24px] leading-none font-semibold text-destructive"
+                        />
+                      </div>
+                    </div>
+                  }
+                />
+              ) : null}
+            </div>
+
+            <Sheet open={overviewSnapshotCustomizeOpen} onOpenChange={setOverviewSnapshotCustomizeOpen}>
+              <SheetContent
+                side="right"
+                showCloseButton={false}
+                a11yTitle="Customize Overall Snapshot Cards"
+                a11yDescription="Show or hide overview cards."
+                className="w-full border-l border-border/60 bg-background p-0 sm:max-w-[380px]"
+              >
+                <div className="flex h-full flex-col">
+                  <div className="border-b border-border/60 bg-muted/25 px-4 py-3">
+                    <h4 className="text-sm font-semibold text-foreground">Customize cards</h4>
+                    <p className="mt-1 text-xs text-muted-foreground">Toggle card visibility for the overall snapshot section.</p>
+                  </div>
+                  <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+                    {overviewSnapshotCards.map((card) => {
+                      const visible = !overviewHiddenSnapshotCards.includes(card.id)
+                      return (
+                        <div key={card.id} className="flex items-center justify-between rounded-lg border border-border/60 bg-card px-3 py-3">
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{card.label}</p>
+                            <p className="text-[11px] text-muted-foreground">{visible ? "Visible" : "Hidden"}</p>
+                          </div>
+                          <Switch
+                            checked={visible}
+                            onCheckedChange={(checked) => {
+                              setOverviewHiddenSnapshotCards((current) => {
+                                if (checked) return current.filter((id) => id !== card.id)
+                                if (current.includes(card.id)) return current
+                                return [...current, card.id]
+                              })
+                            }}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </section>
+
+        </>
       ) : navSection === "transactions" ? (
         selectedTransaction ? (
-          <div className="space-y-4">
-            <section className="rounded-lg border border-border/70 bg-card p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Transaction snapshot</p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {[
-                  ["Order ID", selectedTransaction.orderId],
-                  ["Transaction ID", selectedTransaction.transactionId],
-                  ["Merchant Order ID", selectedTransaction.merchantOrderId],
-                  ["Paid via", selectedTransaction.product],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <p className="text-[11px] text-muted-foreground">{label}</p>
-                    <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
+          <div className="space-y-8 pb-8">
+            <div className="grid gap-10 xl:grid-cols-[minmax(0,7fr)_minmax(0,3fr)] xl:items-start">
+              <div className="min-w-0 space-y-0">
+                <section className="py-8">
+                  <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-3">
+                    <h2 className="text-[16px] font-semibold text-foreground">Activity</h2>
+                    <div className="inline-flex items-center rounded-md border border-border/70 bg-muted/20 p-1">
+                      <button
+                        type="button"
+                        onClick={() => setTransactionDetailTab("timeline")}
+                        className={cn(
+                          "rounded px-3 py-1.5 text-sm transition-colors",
+                          transactionDetailTab === "timeline"
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        Timeline
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTransactionDetailTab("events")}
+                        className={cn(
+                          "rounded px-3 py-1.5 text-sm transition-colors",
+                          transactionDetailTab === "events"
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        Events and logs
+                      </button>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </section>
 
-            <section className="rounded-lg border border-border/70 bg-card p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Payment details</p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {[
-                  ["Amount", `₹${selectedTransaction.amount.toLocaleString("en-IN")}`],
-                  ["Status", selectedTransaction.paymentStatus],
-                  ["Payment mode / method", selectedTransaction.paymentMethod],
-                  ["Transaction type", selectedTransaction.transactionType],
-                  ["Creation date", selectedTransaction.createdAt],
-                  ["Refunded amount", `₹${selectedTransaction.refundedAmount.toLocaleString("en-IN")}`],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <p className="text-[11px] text-muted-foreground">{label}</p>
-                    <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  {transactionDetailTab === "timeline" ? (
+                    <div className="space-y-0">
+                      {selectedTransactionAttempts.map((attempt, index) => {
+                        const isSelected = selectedTimelineAttempt?.id === attempt.id
+                        return (
+                          <div key={attempt.id} className="relative pl-8 pb-6 last:pb-0">
+                            {index < selectedTransactionAttempts.length - 1 ? (
+                              <span className="absolute left-2.5 top-7 h-[calc(100%-12px)] w-px bg-border/70" />
+                            ) : null}
+                            <span
+                              className={cn(
+                                "absolute left-0 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border",
+                                attempt.tone === "success" && "border-success/40 bg-success/15 text-success",
+                                attempt.tone === "failed" && "border-destructive/40 bg-destructive/15 text-destructive",
+                                attempt.tone === "neutral" && "border-primary/40 bg-primary/10 text-primary",
+                                attempt.tone === "pending" && "border-border bg-background text-muted-foreground"
+                              )}
+                            >
+                              {attempt.tone === "success" || attempt.tone === "neutral" ? (
+                                <Check className="h-3 w-3" />
+                              ) : attempt.tone === "failed" ? (
+                                <XCircle className="h-3 w-3" />
+                              ) : (
+                                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                              )}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTimelineAttemptId(attempt.id)}
+                              className={cn(
+                                "w-full rounded-md px-2 py-1 text-left transition-colors",
+                                isSelected ? "bg-muted/35" : "hover:bg-muted/20"
+                              )}
+                            >
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-medium text-foreground">{attempt.statusLabel}</p>
+                                <p className="text-sm text-muted-foreground">{attempt.timestamp}</p>
+                              </div>
+                              <p className="mt-0.5 text-sm text-muted-foreground">{attempt.method}</p>
+                              {attempt.detail ? (
+                                <p className="mt-1 text-sm font-medium text-foreground">{attempt.detail}</p>
+                              ) : null}
+                            </button>
+                          </div>
+                        )
+                      })}
+                      {selectedTimelineAttempt ? (
+                        <div className="mt-3 rounded-lg border border-border/70 bg-card/40 p-4 sm:p-5">
+                          <div className="mb-4 flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-semibold text-foreground">Attempt details</p>
+                            <Badge variant="outline" className="h-6 rounded-full px-2.5 text-xs">
+                              {selectedTimelineAttempt.method}
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "h-6 rounded-full px-2.5 text-xs",
+                                selectedTimelineAttempt.tone === "success" && "border-success/35 bg-success/12 text-success",
+                                selectedTimelineAttempt.tone === "failed" && "border-destructive/35 bg-destructive/12 text-destructive",
+                                selectedTimelineAttempt.tone === "pending" && "border-warning/35 bg-warning/15 text-warning",
+                                selectedTimelineAttempt.tone === "neutral" && "border-primary/35 bg-primary/12 text-primary"
+                              )}
+                            >
+                              {selectedTimelineAttempt.statusLabel}
+                            </Badge>
+                          </div>
+                          <div className="space-y-4">
+                            {selectedTimelineAttemptSections.map((section) => (
+                              <div key={section.key} className="space-y-2">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                                  {section.label}
+                                </p>
+                                <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
+                                  {section.fields.map((field) => (
+                                    <div key={field.key} className="space-y-1">
+                                      <p className="text-sm text-muted-foreground">{field.label}</p>
+                                      <p className="inline-flex items-start gap-1.5 break-words text-sm font-medium text-foreground">
+                                        <span>{field.value}</span>
+                                        {field.copyable ? <Copy className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" /> : null}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className="grid gap-6 lg:grid-cols-[minmax(0,6fr)_minmax(0,4fr)]">
+                      <div className="space-y-4 border-r border-border/70 pr-0 lg:pr-6">
+                        <p className="text-sm font-medium text-muted-foreground">ALL ACTIVITY</p>
+                        {transactionEventItems.map((event, index) => (
+                          <div
+                            key={`${event.status}-${event.timestamp}`}
+                            className={cn(
+                              "relative border-l-2 pl-4",
+                              index === 0 ? "border-primary" : "border-border/70"
+                            )}
+                          >
+                            <p className="text-sm text-foreground">{event.title}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">{event.timestamp}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="space-y-4">
+                        <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                          <ArrowUpRight className="h-4 w-4" />
+                          From Pine One
+                        </p>
+                        <p className="text-[16px] font-semibold text-foreground">
+                          payment_intent.{transactionStatus.toLowerCase()}
+                        </p>
+                        <p className="text-sm text-primary">Inspect event detail in workbench</p>
+                        <Separator className="bg-border/70" />
+                        <p className="text-sm font-medium text-muted-foreground">Event data</p>
+                        <pre className="overflow-x-auto text-sm leading-relaxed text-muted-foreground">
+{`{
+  "id": "${selectedTransaction.transactionId}",
+  "object": "payment_intent",
+  "status": "${transactionStatus.toLowerCase()}",
+  "amount": ${transactionAmount},
+  "amount_refunded": ${totalRefundedAmount},
+  "payment_method": "${transactionMethodLabel}",
+  "merchant_order_id": "${selectedTransaction.merchantOrderId}"
+}`}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </section>
+                <Separator className="bg-border/70" />
 
-            <section className="rounded-lg border border-border/70 bg-card p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Operational metadata</p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                {[
-                  ["Gateway trace", `GW-${selectedTransaction.transactionId.slice(-6)}`],
-                  ["Settlement cycle", "T+1"],
-                  ["Risk flag", selectedTransaction.paymentStatus === "Failed" ? "Needs review" : "Clear"],
-                  ["Customer communication", selectedTransaction.paymentStatus === "Pending" ? "Awaiting confirmation" : "Delivered"],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <p className="text-[11px] text-muted-foreground">{label}</p>
-                    <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
+                <section className="py-8">
+                  <h2 className="mb-5 text-[16px] font-semibold text-foreground">Payment breakdown</h2>
+                  <div className="space-y-0">
+                    <div className="flex items-center justify-between py-3">
+                      <p className="text-sm text-muted-foreground">Payment amount</p>
+                      <p className="text-sm font-medium text-foreground">{transactionAmountLabel}</p>
+                    </div>
+                    <Separator className="bg-border/70" />
+                    <div className="flex items-center justify-between py-3">
+                      <p className="text-sm text-muted-foreground">Refunded amount</p>
+                      <p className="text-sm font-medium text-foreground">{`- ₹${totalRefundedAmount.toLocaleString("en-IN")}`}</p>
+                    </div>
+                    <Separator className="bg-border/70" />
+                    <div className="flex items-center justify-between py-3">
+                      <p className="text-sm font-semibold text-foreground">Net amount</p>
+                      <p className="text-sm font-semibold text-foreground">{`₹${netAmount.toLocaleString("en-IN")}`}</p>
+                    </div>
                   </div>
-                ))}
+                </section>
+                <Separator className="bg-border/70" />
+
+                <section className="py-8">
+                  <h2 className="mb-5 text-[16px] font-semibold text-foreground">Payment method</h2>
+                  <div className="grid gap-y-3 sm:grid-cols-2 sm:gap-x-8">
+                    {[
+                      ["Payment ID", selectedTransaction.transactionId],
+                      ["Method category", paymentMethodCategory],
+                      ["Provider", paymentMethodProvider || "NA"],
+                      ["Masked number", paymentMethodCategory === "Card" ? "•••• 4111" : "NA"],
+                      ["Issuer", paymentMethodCategory === "Card" ? "HDFC" : "NA"],
+                      ["Network", paymentMethodCategory === "Card" ? paymentMethodProvider || "VISA" : "NA"],
+                      ["Card category", paymentMethodCategory === "Card" ? "Super Premium" : "NA"],
+                      ["CVC check", paymentMethodCategory === "Card" ? "Passed" : "NA"],
+                    ].map(([label, value]) => (
+                      <div key={label} className="space-y-1">
+                        <p className="text-sm text-muted-foreground">{label}</p>
+                        <p className="text-sm font-medium text-foreground">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+                <Separator className="bg-border/70" />
+
+                <section className="py-8">
+                  <h2 className="mb-5 text-[16px] font-semibold text-foreground">Operational signals</h2>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {[
+                      { label: "Settlement status", value: "Completed", tone: "success" },
+                      {
+                        label: "Refund status",
+                        value: totalRefundedAmount > 0 ? "Partial refund issued" : "No refunds",
+                        tone: totalRefundedAmount > 0 ? "warning" : "neutral",
+                      },
+                      { label: "Risk evaluation", value: "Normal", tone: "success" },
+                      { label: "Source", value: "Dashboard initiated", tone: "neutral" },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-center justify-between gap-3 border-b border-border/70 pb-2">
+                        <p className="text-sm text-muted-foreground">{item.label}</p>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "h-6 rounded-full px-2.5 text-sm font-medium",
+                            item.tone === "success" && "border-success/35 bg-success/12 text-success",
+                            item.tone === "warning" && "border-warning/35 bg-warning/15 text-warning",
+                            item.tone === "neutral" && "border-primary/35 bg-primary/12 text-primary"
+                          )}
+                        >
+                          {item.value}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               </div>
-            </section>
+
+              <aside className="xl:sticky xl:top-4 xl:border-l xl:border-border/70 xl:pl-8">
+                <section className="space-y-4 py-1">
+                  <h2 className="text-[16px] font-semibold text-foreground">Details</h2>
+                  <Separator className="bg-border/70" />
+                  {[
+                    ["Payment ID", selectedTransaction.transactionId],
+                    ["Order ID", selectedTransaction.orderId],
+                    ["Merchant Order ID", selectedTransaction.merchantOrderId],
+                    ["Payment method", transactionMethodLabel],
+                    ["Description", "Admin fee"],
+                    ["Statement descriptor", "PINEONE.COM"],
+                    ["Last updated", selectedTransaction.createdAt],
+                    ["Source", "Manually entered from Dashboard"],
+                  ].map(([label, value]) => (
+                    <div key={label} className="space-y-1">
+                      <p className="text-sm text-muted-foreground">{label}</p>
+                      <p className="text-sm font-medium text-foreground">{value}</p>
+                    </div>
+                  ))}
+                </section>
+                <Separator className="my-6 bg-border/70" />
+                <section className="space-y-4">
+                  <h2 className="text-[16px] font-semibold text-foreground">Customer</h2>
+                  <Separator className="bg-border/70" />
+                  {[
+                    ["ID", "cus_RLKFqz68EhCJdl"],
+                    ["Name", "Leonard Kim"],
+                    ["Email", "srv.pritika@pinelabs.com"],
+                    ["Mobile", "86198*****"],
+                    ["VPA", paymentMethodCategory === "UPI" ? "srv*****kaoksbi" : "NA"],
+                  ].map(([label, value]) => (
+                    <div key={label} className="space-y-1">
+                      <p className="text-sm text-muted-foreground">{label}</p>
+                      <p className="text-sm font-medium text-foreground">{value}</p>
+                    </div>
+                  ))}
+                </section>
+                <Separator className="my-6 bg-border/70" />
+                <section className="space-y-4 pb-4">
+                  <h2 className="text-[16px] font-semibold text-foreground">Risk and metadata</h2>
+                  <Separator className="bg-border/70" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm text-muted-foreground">Risk evaluation</p>
+                      <Badge variant="outline" className="h-6 rounded-full border-success/35 bg-success/12 px-2.5 text-sm text-success">
+                        Normal
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm text-muted-foreground">Capture status</p>
+                      <Badge variant="outline" className="h-6 rounded-full border-success/35 bg-success/12 px-2.5 text-sm text-success">
+                        Captured
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm text-muted-foreground">Metadata</p>
+                      <Badge variant="outline" className="h-6 rounded-full px-2.5 text-sm">
+                        None
+                      </Badge>
+                    </div>
+                  </div>
+                </section>
+              </aside>
+            </div>
           </div>
         ) : (
           <>
@@ -2085,6 +3512,20 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
       ) : navSection === "settlements" ? (
         <>
           <SectionSummaryStrip metrics={summaryBySection.settlements ?? []} />
+          <section className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-border/70 bg-card/80 p-3.5">
+              <p className="text-xs text-muted-foreground">Recoveries</p>
+              <p className="mt-1 text-lg font-semibold text-foreground">₹1,800</p>
+            </div>
+            <div className="rounded-lg border border-border/70 bg-card/80 p-3.5">
+              <p className="text-xs text-muted-foreground">Deductions</p>
+              <p className="mt-1 text-lg font-semibold text-foreground">₹3,260</p>
+            </div>
+            <div className="rounded-lg border border-border/70 bg-card/80 p-3.5">
+              <p className="text-xs text-muted-foreground">Net payout impact</p>
+              <p className="mt-1 text-lg font-semibold text-foreground">₹1,460</p>
+            </div>
+          </section>
           <DataTable
             data={allProductSettlementRows}
             columns={settlementColumns}
@@ -2105,34 +3546,42 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
             searchPlaceholder="Search settlements..."
             initialPinnedColumnIds={["id"]}
           />
+          <DataTable
+            data={recoveryLedgerRows}
+            columns={recoveryLedgerColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search recoveries and deductions..."
+            initialPinnedColumnIds={["id"]}
+          />
         </>
       ) : navSection === "disputes" ? (
         <>
           <SectionSummaryStrip metrics={summaryBySection.disputes ?? []} />
           <DataTable
-            data={allProductDisputeRows}
+            data={disputeRowsForView}
             columns={disputeColumns}
             rowId={(row) => row.disputeId}
             selectedRowId={selectedDisputeId}
             onRowClick={(row) => {
               setSelectedDisputeId(row.disputeId)
-              if (row.status === "Pending action") {
-                primeDisputeActionFlow(row, "defend")
-              } else {
-                resetDisputeActionFlow()
-              }
+              resetDisputeActionFlow()
               setSelectedTableDetail(null)
             }}
             searchPlaceholder="Search by dispute ID or payment ID..."
             initialPinnedColumnIds={["disputeId"]}
-            statusColumnId="status"
+            statusAsViewOnly
+            includeAllStatusOption={false}
             statusOptions={[
-              { label: "All", value: "all" },
               { label: "Pending action", value: "pending action" },
               { label: "In review", value: "in review" },
-              { label: "Win", value: "win" },
-              { label: "Loss", value: "loss" },
+              { label: "Closed", value: "closed" },
             ]}
+            statusValue={disputeListingView}
+            onStatusChange={(value) => {
+              setDisputeListingView(value as DisputeListingView)
+              setSelectedDisputeId(null)
+              resetDisputeActionFlow()
+            }}
           />
         </>
       ) : navSection === "refunds" ? (
@@ -2209,33 +3658,6 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
         </>
       ) : navSection === "reports" ? (
         <>
-          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {quickReportCards.map((card) => (
-              <div key={card.type} className="rounded-lg border border-border/70 bg-card p-3.5">
-                <p className="text-sm font-semibold text-foreground">{card.title}</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{card.description}</p>
-                <div className="mt-3 flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs"
-                    onClick={() => openGenerateReport(card.type)}
-                  >
-                    Generate
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-2.5 text-xs text-muted-foreground"
-                    onClick={() => openScheduleReport(card.type)}
-                  >
-                    Schedule
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </section>
-
           {reportsTableView === "report" ? (
             <>
               <DataTable
@@ -2608,21 +4030,62 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     refundAmountValue <= refundableAmount
 
   const pageHeaderTitle = isTransactionDetailView
-    ? selectedTransaction?.transactionId ?? "Transaction detail"
+    ? transactionAmountLabel
     : headerTitleBySection[navSection] ?? "Dashboard"
   const pageHeaderSubtitle = isTransactionDetailView
-    ? selectedTransaction?.orderId
+    ? `${paymentMethodCategory}${paymentMethodProvider ? ` • ${paymentMethodProvider}` : ""} • Transaction ${selectedTransaction?.transactionId ?? "NA"} • ${selectedTransaction?.createdAt ?? ""}`
     : "All Products"
+  const pageHeaderLeading = isTransactionDetailView ? (
+    <div className="flex h-11 w-11 items-center justify-center rounded-md border border-border/70 bg-muted/25">
+      <PaymentMethodIcon className="h-5 w-5 text-primary" />
+    </div>
+  ) : null
+  const pageHeaderContentClassName = isTransactionDetailView ? "flex-col items-start gap-3" : undefined
+  const pageHeaderTitleRowClassName = isTransactionDetailView ? "items-center gap-2.5" : undefined
+  const pageHeaderMeta = isTransactionDetailView ? (
+    <div className="space-y-1 text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <span>Product: {selectedTransaction?.product ?? "Payments"}</span>
+        <span>Order ID: {selectedTransaction?.orderId ?? "NA"}</span>
+        <span>Captured: ₹{netAmount.toLocaleString("en-IN")}</span>
+        <span>Refunded: ₹{totalRefundedAmount.toLocaleString("en-IN")}</span>
+      </div>
+      {transactionLink ? (
+        <p className="inline-flex items-center gap-1.5 text-sm text-primary">
+          <Link2 className="h-3.5 w-3.5" />
+          <span className="truncate">{transactionLink}</span>
+        </p>
+      ) : null}
+    </div>
+  ) : null
+  const pageHeaderBadges = isTransactionDetailView ? (
+    <>
+      <Badge
+        variant="outline"
+        className={cn("h-6 rounded-full px-2.5 text-sm font-medium", transactionStatusToneClass)}
+      >
+        {transactionStatus}
+      </Badge>
+    </>
+  ) : null
   const selectedRefundTimeline = selectedRefund ? refundTimelineById[selectedRefund.refundId] ?? [] : []
   const pageHeaderActions = isTransactionDetailView ? (
-    <Button
-      size="sm"
-      className="h-8 text-xs"
-      onClick={() => setRefundSheetOpen(true)}
-      disabled={!refundableAmount}
-    >
-      Refund transaction
-    </Button>
+    <>
+      <Button variant="outline" size="sm" className="h-9 px-3 text-sm">
+        View receipt
+      </Button>
+      <Button
+        size="sm"
+        className="h-9 px-3 text-sm"
+        onClick={() => setRefundSheetOpen(true)}
+        disabled={refundableAmount <= 0}
+      >
+        Refund
+      </Button>
+      <Button variant="outline" size="icon-sm" className="h-9 w-9" aria-label="More actions">
+        <MoreHorizontal className="h-4 w-4" />
+      </Button>
+    </>
   ) : (
     headerActionsBySection[navSection]
   )
@@ -3020,20 +4483,156 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
 
   return (
     <>
-      <PageHeader
-        title={pageHeaderTitle}
-        subtitle={pageHeaderSubtitle}
-        actions={pageHeaderActions}
-        onBack={isTransactionDetailView ? () => setSelectedTransactionId(null) : undefined}
-        backLabel="Back to transactions"
-      />
+      {navSection === "overview" ? null : (
+        <PageHeader
+          title={pageHeaderTitle}
+          leading={pageHeaderLeading}
+          contentClassName={pageHeaderContentClassName}
+          titleRowClassName={pageHeaderTitleRowClassName}
+          subtitle={pageHeaderSubtitle}
+          meta={pageHeaderMeta}
+          badges={pageHeaderBadges}
+          actions={pageHeaderActions}
+          onBack={isTransactionDetailView ? () => setSelectedTransactionId(null) : undefined}
+          backLabel="Back to transactions"
+        />
+      )}
       <WorkspaceShell
         leftContext={leftContext}
         showLeftContext={false}
         centerMain={centerMain}
         rightContext={rightContext}
-        showRightContext={Boolean(selectedTableDetail) || Boolean(selectedDispute)}
+        showRightContext={Boolean(selectedTableDetail)}
       />
+      <DetailSidepanelShell
+        open={Boolean(selectedDispute)}
+        onOpenChange={(open) => {
+          if (open) return
+          setSelectedDisputeId(null)
+          resetDisputeActionFlow()
+        }}
+        title="Dispute details"
+      >
+        {selectedDispute ? (
+          <div className="space-y-6 p-6">
+            <section className="space-y-3">
+              {[
+                ["Dispute ID", selectedDispute.disputeId],
+                ["Payment ID", selectedDispute.paymentId],
+                ["Amount", `₹${selectedDispute.amount.toLocaleString("en-IN")}`],
+                ["Due date", selectedDispute.dueDate],
+                ["Status", selectedDispute.status],
+                ["Recovery status", selectedDispute.recoveryStatus],
+              ].map(([label, value]) => (
+                <div key={label} className="flex items-center justify-between gap-4">
+                  <span className="text-xs text-muted-foreground">{label}</span>
+                  <span className="text-xs font-medium text-foreground text-right">{value}</span>
+                </div>
+              ))}
+              {selectedDispute.status === "Pending action" ? (
+                <div className="rounded-md bg-warning/10 px-3 py-2 text-[11px] text-warning">
+                  SLA breach in {selectedDispute.slaHoursRemaining}h. If no action is taken before due date, dispute may be auto-lost.
+                </div>
+              ) : null}
+            </section>
+
+            {selectedDispute.status === "Pending action" ? (
+              <section className="space-y-3 rounded-lg border border-border/70 bg-card p-3.5">
+                <p className="text-xs font-semibold text-foreground">Defend dispute</p>
+                {disputeActionStep === "success" ? (
+                  <div className="space-y-3 rounded-md border border-success/30 bg-success/5 p-3">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-success" />
+                      <div>
+                        <p className="text-xs font-medium text-foreground">Defense submitted</p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Defense documents were submitted for review.
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => resetDisputeActionFlow()}
+                    >
+                      Reset form
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-2 rounded-md border border-border/70 bg-muted/20 p-2.5">
+                      <p className="text-[11px] font-medium text-foreground">Required documents</p>
+                      {[
+                        { key: "voiceDelivery", label: "Voice delivery" },
+                        { key: "rebuttalLetter", label: "Rebuttal letter" },
+                        { key: "refundDetails", label: "Refund details" },
+                        { key: "additionalDocuments", label: "Additional documents" },
+                      ].map((item) => (
+                        <label key={item.key} className="block space-y-1">
+                          <span className="text-[11px] text-muted-foreground">{item.label}</span>
+                          <Input
+                            type="file"
+                            onChange={(event) =>
+                              handleDisputeDocumentPicked(
+                                item.key as keyof typeof disputeDocuments,
+                                event
+                              )
+                            }
+                            className="h-9"
+                          />
+                          {disputeDocuments[item.key as keyof typeof disputeDocuments] ? (
+                            <p className="text-[11px] text-muted-foreground">
+                              {disputeDocuments[item.key as keyof typeof disputeDocuments]}
+                            </p>
+                          ) : null}
+                        </label>
+                      ))}
+                      <div className="space-y-1">
+                        <p className="text-[11px] text-muted-foreground">Additional comments</p>
+                        <Textarea
+                          value={disputeComment}
+                          onChange={(event) => setDisputeComment(event.target.value)}
+                          rows={3}
+                          placeholder="Provide context for the issuer review team."
+                          className="text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      className="h-8 w-full text-xs"
+                      disabled={!canSubmitDisputeAction}
+                      onClick={() => setDisputeActionStep("success")}
+                    >
+                      Defend
+                    </Button>
+                  </>
+                )}
+              </section>
+            ) : null}
+
+            <Separator />
+            <section>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Status timeline</p>
+              <div className="mt-3 space-y-0">
+                {selectedDisputeTimeline.map((event, index) => (
+                  <div key={`${event.status}-${event.timestamp}`} className="relative pl-6 pb-4 last:pb-0">
+                    {index < selectedDisputeTimeline.length - 1 ? (
+                      <span className="absolute left-[7px] top-4 h-[calc(100%-8px)] w-px bg-border" />
+                    ) : null}
+                    <span className="absolute left-0 top-1.5 h-4 w-4 rounded-full border border-primary/35 bg-background" />
+                    <p className="text-xs font-medium text-foreground">{event.status}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">{event.timestamp}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{event.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        ) : null}
+      </DetailSidepanelShell>
       <Sheet
         open={scheduleReportSheetOpen}
         onOpenChange={(open) => {

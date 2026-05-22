@@ -1,281 +1,285 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
-  BadgeIndianRupee,
-  Banknote,
-  Clock3,
+  ArrowLeft,
+  ArrowUpDown,
+  Building2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  CircleCheck,
+  Columns3,
+  Copy,
+  Download,
   Info,
-  Landmark,
-  Rocket,
-  Sun,
-  TimerReset,
-  WalletCards,
-  X,
-  Zap,
+  Loader2,
+  Plus,
+  QrCode,
+  CreditCard,
+  Smartphone,
+  Search,
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Switch } from "@/components/ui/switch"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { PageHeader } from "@/components/ui/panels"
-import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
-type SettlementType = "on-demand" | "same-day" | "t-plus"
 type SettlementStatus = "Processing" | "Settled"
+type BankName = "HDFC" | "AXIS"
 
-type SettlementBatch = {
-  id: string
-  utr: string
-  bankReference: string
-  settlementDate: string
-  settlementAmount: number
-  transactionAmount: number
-  deductions: number
-  finalSettlementAmount: number
-  paymentMethods: string
-  paymentMethodGroup: "UPI-led" | "Card-led" | "Mixed"
-  bankName: string
-  bankCode: string
-  bankLast4: string
-  initiationDate: string
-  transactionCount: number
-  status: SettlementStatus
-  eta?: string
-  type: SettlementType
-  cycleLabel: string
-}
-
-type SettlementTransaction = {
+type SettlementRow = {
   id: string
   batchId: string
-  transactionId: string
+  utr: string
+  bankReference: string
+  settlementAmount: number
+  accountLabel: string
+  bankName: BankName
+  settlementDatePrimary: string
+  settlementDateSecondary: string
+  initiationDatePrimary: string
+  initiationDateSecondary: string
+  status: SettlementStatus
+  typeIcon?: "lightning" | "timer"
+}
+
+type SettlementDetailTransaction = {
+  id: string
   storeName: string
-  paymentMethod: string
+  paymentMethodLabel: string
+  paymentMethodSubLabel: string
+  paymentMethod: "upi" | "card" | "netbanking"
   transactionAmount: number
-  payoutAmount: number
+  settlementAmount: number
   deductions: number
-  customerVpa: string
-  orderId: string
-  status: "Settled" | "Processing"
+  paymentDate: string
+  paymentTime: string
 }
 
-const settlementTypeConfig: Record<
-  SettlementType,
-  { label: string; icon: typeof Rocket; iconClassName: string }
-> = {
-  "on-demand": {
-    label: "On-demand settlement",
-    icon: Rocket,
-    iconClassName: "text-muted-foreground/90",
-  },
-  "same-day": {
-    label: "Same day settlement",
-    icon: Sun,
-    iconClassName: "text-muted-foreground/90",
-  },
-  "t-plus": {
-    label: "T+1 settlement",
-    icon: TimerReset,
-    iconClassName: "text-muted-foreground/90",
-  },
-}
+type ColumnKey =
+  | "utr"
+  | "bankReference"
+  | "settlementAmount"
+  | "bankAccount"
+  | "settlementDate"
+  | "initiationDate"
+  | "status"
 
-const settlementBatches: SettlementBatch[] = [
+const rows: SettlementRow[] = [
   {
-    id: "SET-BATCH-2105",
-    utr: "HDFC240416A1782",
-    bankReference: "BR-9981021",
-    settlementDate: "16 Apr 2026",
-    settlementAmount: 286500,
-    transactionAmount: 295240,
-    deductions: 8740,
-    finalSettlementAmount: 286500,
-    paymentMethods: "UPI, Cards, Netbanking",
-    paymentMethodGroup: "Mixed",
-    bankName: "HDFC Bank",
-    bankCode: "HDFC",
-    bankLast4: "4821",
-    initiationDate: "16 Apr 2026, 09:05 AM",
-    transactionCount: 312,
-    status: "Settled",
-    type: "same-day",
-    cycleLabel: "Same day",
-  },
-  {
-    id: "SET-BATCH-2104",
-    utr: "ICIC240416C2284",
-    bankReference: "BR-9980974",
-    settlementDate: "16 Apr 2026",
-    settlementAmount: 131820,
-    transactionAmount: 136990,
-    deductions: 5170,
-    finalSettlementAmount: 131820,
-    paymentMethods: "UPI, Payment links",
-    paymentMethodGroup: "UPI-led",
-    bankName: "ICICI Bank",
-    bankCode: "ICICI",
-    bankLast4: "6632",
-    initiationDate: "16 Apr 2026, 12:40 PM",
-    transactionCount: 146,
+    id: "set-1",
+    batchId: "SLT-11101",
+    utr: "UTR-5161",
+    bankReference: "BR-5161",
+    settlementAmount: 20000,
+    accountLabel: "XX9898",
+    bankName: "HDFC",
+    settlementDatePrimary: "Expected by 10 Aug 2026",
+    settlementDateSecondary: "10:10 PM",
+    initiationDatePrimary: "10 Aug 2026",
+    initiationDateSecondary: "10:10 PM",
     status: "Processing",
-    eta: "Estimated by 03:15 PM",
-    type: "on-demand",
-    cycleLabel: "On-demand",
+    typeIcon: "lightning",
   },
   {
-    id: "SET-BATCH-2103",
-    utr: "AXIS240415T1093",
-    bankReference: "BR-9980412",
-    settlementDate: "15 Apr 2026",
-    settlementAmount: 128560,
-    transactionAmount: 133010,
-    deductions: 4450,
-    finalSettlementAmount: 128560,
-    paymentMethods: "Cards, POS",
-    paymentMethodGroup: "Card-led",
-    bankName: "Axis Bank",
-    bankCode: "AXIS",
-    bankLast4: "1904",
-    initiationDate: "15 Apr 2026, 08:15 PM",
-    transactionCount: 121,
+    id: "set-2",
+    batchId: "SLT-11102",
+    utr: "UTR-5163",
+    bankReference: "BR-5163",
+    settlementAmount: 10000,
+    accountLabel: "XX9898",
+    bankName: "AXIS",
+    settlementDatePrimary: "18 Aug 2026",
+    settlementDateSecondary: "9:30 PM",
+    initiationDatePrimary: "18 Aug 2026",
+    initiationDateSecondary: "9:30 PM",
     status: "Settled",
-    type: "t-plus",
-    cycleLabel: "T+1",
+  },
+  {
+    id: "set-3",
+    batchId: "SLT-11103",
+    utr: "UTR-5161",
+    bankReference: "BR-5164",
+    settlementAmount: 25000,
+    accountLabel: "XX9898",
+    bankName: "AXIS",
+    settlementDatePrimary: "Expected by 10 Aug 2026",
+    settlementDateSecondary: "10:10 PM",
+    initiationDatePrimary: "10 Aug 2026",
+    initiationDateSecondary: "10:10 PM",
+    status: "Processing",
+    typeIcon: "lightning",
+  },
+  {
+    id: "set-4",
+    batchId: "SLT-11104",
+    utr: "UTR-5165",
+    bankReference: "BR-5165",
+    settlementAmount: 30000,
+    accountLabel: "XX9898",
+    bankName: "HDFC",
+    settlementDatePrimary: "Expected by 10 Aug 2026",
+    settlementDateSecondary: "10:10 PM",
+    initiationDatePrimary: "10 Aug 2026",
+    initiationDateSecondary: "10:10 PM",
+    status: "Processing",
+    typeIcon: "lightning",
+  },
+  {
+    id: "set-5",
+    batchId: "SLT-11105",
+    utr: "UTR-5166",
+    bankReference: "BR-5166",
+    settlementAmount: 35000,
+    accountLabel: "XX9898",
+    bankName: "HDFC",
+    settlementDatePrimary: "19 Aug 2026",
+    settlementDateSecondary: "2:45 PM",
+    initiationDatePrimary: "19 Aug 2026",
+    initiationDateSecondary: "2:45 PM",
+    status: "Settled",
+  },
+  {
+    id: "set-6",
+    batchId: "SLT-11106",
+    utr: "UTR-5161",
+    bankReference: "BR-5167",
+    settlementAmount: 40000,
+    accountLabel: "XX9898",
+    bankName: "AXIS",
+    settlementDatePrimary: "22 Aug 2026",
+    settlementDateSecondary: "4:30 PM",
+    initiationDatePrimary: "22 Aug 2026",
+    initiationDateSecondary: "4:30 PM",
+    status: "Settled",
+    typeIcon: "timer",
+  },
+  {
+    id: "set-7",
+    batchId: "SLT-11107",
+    utr: "UTR-5168",
+    bankReference: "BR-5168",
+    settlementAmount: 45000,
+    accountLabel: "XX9898",
+    bankName: "HDFC",
+    settlementDatePrimary: "17 Aug 2026",
+    settlementDateSecondary: "11:15 AM",
+    initiationDatePrimary: "17 Aug 2026",
+    initiationDateSecondary: "11:15 AM",
+    status: "Settled",
+  },
+  {
+    id: "set-8",
+    batchId: "SLT-11108",
+    utr: "UTR-5169",
+    bankReference: "BR-5169",
+    settlementAmount: 50000,
+    accountLabel: "XX9898",
+    bankName: "HDFC",
+    settlementDatePrimary: "25 Aug 2026",
+    settlementDateSecondary: "8:00 AM",
+    initiationDatePrimary: "25 Aug 2026",
+    initiationDateSecondary: "8:00 AM",
+    status: "Settled",
+  },
+  {
+    id: "set-9",
+    batchId: "SLT-11109",
+    utr: "UTR-5170",
+    bankReference: "BR-5170",
+    settlementAmount: 55000,
+    accountLabel: "XX9898",
+    bankName: "HDFC",
+    settlementDatePrimary: "24 Aug 2026",
+    settlementDateSecondary: "6:00 PM",
+    initiationDatePrimary: "24 Aug 2026",
+    initiationDateSecondary: "6:00 PM",
+    status: "Settled",
+  },
+  {
+    id: "set-10",
+    batchId: "SLT-11110",
+    utr: "UTR-5171",
+    bankReference: "BR-5171",
+    settlementAmount: 60000,
+    accountLabel: "XX9898",
+    bankName: "HDFC",
+    settlementDatePrimary: "23 Aug 2026",
+    settlementDateSecondary: "5:15 PM",
+    initiationDatePrimary: "23 Aug 2026",
+    initiationDateSecondary: "5:15 PM",
+    status: "Settled",
   },
 ]
 
-const settlementTransactions: SettlementTransaction[] = [
-  {
-    id: "TRX-4011982",
-    batchId: "SET-BATCH-2105",
-    transactionId: "TXN-9917281",
-    storeName: "Pine Store · Indiranagar",
-    paymentMethod: "UPI · PhonePe",
-    transactionAmount: 3499,
-    payoutAmount: 3443,
-    deductions: 56,
-    customerVpa: "tirth@okaxis",
-    orderId: "ORD-882712",
-    status: "Settled",
-  },
-  {
-    id: "TRX-4011983",
-    batchId: "SET-BATCH-2105",
-    transactionId: "TXN-9917282",
-    storeName: "Pine Store · Koramangala",
-    paymentMethod: "Card · Visa",
-    transactionAmount: 7100,
-    payoutAmount: 6980,
-    deductions: 120,
-    customerVpa: "card",
-    orderId: "ORD-882715",
-    status: "Settled",
-  },
-  {
-    id: "TRX-4011984",
-    batchId: "SET-BATCH-2104",
-    transactionId: "TXN-9917210",
-    storeName: "Pine Kiosk · Phoenix Mall",
-    paymentMethod: "Payment Link · SMS",
-    transactionAmount: 9400,
-    payoutAmount: 9250,
-    deductions: 150,
-    customerVpa: "link",
-    orderId: "ORD-882611",
-    status: "Processing",
-  },
-  {
-    id: "TRX-4011985",
-    batchId: "SET-BATCH-2104",
-    transactionId: "TXN-9917213",
-    storeName: "Pine Store · MG Road",
-    paymentMethod: "UPI · GPay",
-    transactionAmount: 1750,
-    payoutAmount: 1722,
-    deductions: 28,
-    customerVpa: "name@okhdfc",
-    orderId: "ORD-882620",
-    status: "Processing",
-  },
-  {
-    id: "TRX-4011986",
-    batchId: "SET-BATCH-2103",
-    transactionId: "TXN-9917002",
-    storeName: "Pine Store · Whitefield",
-    paymentMethod: "Card · RuPay",
-    transactionAmount: 2890,
-    payoutAmount: 2842,
-    deductions: 48,
-    customerVpa: "card",
-    orderId: "ORD-882442",
-    status: "Settled",
-  },
+const settlementDetailTransactions: SettlementDetailTransaction[] = [
+  { id: "TXN-5161", storeName: "PineLabs - Indiranagar", paymentMethodLabel: "GPay", paymentMethodSubLabel: "UPI", paymentMethod: "upi", transactionAmount: 20000, settlementAmount: 19000, deductions: 1000, paymentDate: "16 Aug 2026", paymentTime: "10:10 PM" },
+  { id: "TXN-5163", storeName: "PineLabs - BTM Layout", paymentMethodLabel: "Visa XX6765", paymentMethodSubLabel: "Card", paymentMethod: "card", transactionAmount: 10000, settlementAmount: 25000, deductions: 1200, paymentDate: "18 Aug 2026", paymentTime: "9:30 PM" },
+  { id: "TXN-5164", storeName: "PineLabs - MG Road", paymentMethodLabel: "Mastercard XX6765", paymentMethodSubLabel: "Card", paymentMethod: "card", transactionAmount: 25000, settlementAmount: 24500, deductions: 950, paymentDate: "20 Aug 2026", paymentTime: "3:00 PM" },
+  { id: "TXN-5165", storeName: "PineLabs - Whitefield", paymentMethodLabel: "Rupay XX6765", paymentMethodSubLabel: "Card", paymentMethod: "card", transactionAmount: 30000, settlementAmount: 22000, deductions: 1389, paymentDate: "21 Aug 2026", paymentTime: "1:00 PM" },
+  { id: "TXN-5166", storeName: "PineLabs - Jayanagar", paymentMethodLabel: "HDFC XX6765", paymentMethodSubLabel: "Net banking", paymentMethod: "netbanking", transactionAmount: 35000, settlementAmount: 19000, deductions: 983, paymentDate: "19 Aug 2026", paymentTime: "2:45 PM" },
+  { id: "TXN-5167", storeName: "PineLabs - Marathahalli", paymentMethodLabel: "Axis XX9892", paymentMethodSubLabel: "Net banking", paymentMethod: "netbanking", transactionAmount: 40000, settlementAmount: 27500, deductions: 1750, paymentDate: "22 Aug 2026", paymentTime: "4:30 PM" },
+  { id: "TXN-5168", storeName: "PineLabs - Koramangala", paymentMethodLabel: "CRED", paymentMethodSubLabel: "UPI", paymentMethod: "upi", transactionAmount: 45000, settlementAmount: 26000, deductions: 2000, paymentDate: "17 Aug 2026", paymentTime: "11:15 AM" },
+  { id: "TXN-5169", storeName: "PineLabs - Ulsoor", paymentMethodLabel: "PhonePe", paymentMethodSubLabel: "UPI", paymentMethod: "upi", transactionAmount: 50000, settlementAmount: 23000, deductions: 1500, paymentDate: "25 Aug 2026", paymentTime: "8:00 AM" },
+  { id: "TXN-5170", storeName: "PineLabs - Indiranagar", paymentMethodLabel: "PayTm", paymentMethodSubLabel: "UPI", paymentMethod: "upi", transactionAmount: 55000, settlementAmount: 21500, deductions: 800, paymentDate: "24 Aug 2026", paymentTime: "6:00 PM" },
+  { id: "TXN-5171", storeName: "PineLabs - HSR Layout", paymentMethodLabel: "PhonePe", paymentMethodSubLabel: "UPI", paymentMethod: "upi", transactionAmount: 60000, settlementAmount: 20000, deductions: 1000, paymentDate: "23 Aug 2026", paymentTime: "5:15 PM" },
 ]
 
 function inr(value: number) {
-  return `₹${value.toLocaleString("en-IN")}`
+  return `₹ ${value.toLocaleString("en-IN")}`
 }
 
-function SettlementTypeIcon({ type }: { type: SettlementType }) {
-  const config = settlementTypeConfig[type]
-  const Icon = config.icon
+function StatusBadge({ status }: { status: SettlementStatus }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex items-center justify-center">
-          <Icon className={`h-4 w-4 ${config.iconClassName}`} />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="text-xs">
-        {config.label}
-      </TooltipContent>
-    </Tooltip>
+    <span className="inline-flex h-7 items-center gap-1 rounded-full border border-border/70 bg-background px-2.5 text-xs text-foreground">
+      {status === "Processing" ? (
+        <Loader2 className="h-3 w-3 text-warning" />
+      ) : (
+        <CircleCheck className="h-3 w-3 text-success" />
+      )}
+      {status}
+    </span>
   )
 }
 
-function InfoAmount({
-  triggerLabel,
-  gross,
-  deductions,
-  finalAmount,
-}: {
-  triggerLabel: string
-  gross: number
-  deductions: number
-  finalAmount: number
-}) {
-  return (
-    <div className="inline-flex items-center gap-1.5">
-      <span>{triggerLabel}</span>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button type="button" aria-label="View settlement amount breakdown" className="inline-flex">
-            <Info className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-64 text-xs">
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between gap-4">
-              <span>Total amount picked</span>
-              <span className="font-medium">{inr(gross)}</span>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <span>Deductions</span>
-              <span className="font-medium">- {inr(deductions)}</span>
-            </div>
-            <div className="flex items-center justify-between gap-4 border-t border-border/60 pt-1.5">
-              <span>Final settlement amount</span>
-              <span className="font-semibold">{inr(finalAmount)}</span>
-            </div>
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </div>
-  )
+function RowTypeIcon({ typeIcon }: { typeIcon?: SettlementRow["typeIcon"] }) {
+  if (!typeIcon) return null
+  return <span className="text-muted-foreground">{typeIcon === "timer" ? "◌" : "⚡"}</span>
+}
+
+function getSettlementStatusGradientClass(status?: SettlementStatus) {
+  if (status === "Settled") return "from-success/25 via-success/10 to-background"
+  return "from-warning/25 via-warning/10 to-background"
 }
 
 interface V3SettlementsContentProps {
@@ -284,515 +288,579 @@ interface V3SettlementsContentProps {
 
 export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentProps) {
   const router = useRouter()
-  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
+  const isDetailMode = Boolean(initialBatchId)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"all" | "processing" | "settled">("all")
+  const [dateFilter, setDateFilter] = useState<"today" | "all">("today")
+  const [bankFilter, setBankFilter] = useState<"all" | "hdfc" | "axis">("all")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [page, setPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [preferencesOpen, setPreferencesOpen] = useState(false)
   const [onDemandEnabled, setOnDemandEnabled] = useState(false)
   const [sameDayEnabled, setSameDayEnabled] = useState(false)
-  const [pendingMode, setPendingMode] = useState<Exclude<SettlementType, "t-plus"> | null>(null)
-  const [modeConfirmed, setModeConfirmed] = useState(false)
+  const [settlementPaused, setSettlementPaused] = useState(false)
+  const [visibleColumns, setVisibleColumns] = useState<Record<ColumnKey, boolean>>({
+    utr: true,
+    bankReference: true,
+    settlementAmount: true,
+    bankAccount: true,
+    settlementDate: true,
+    initiationDate: true,
+    status: true,
+  })
+  const [detailRowsPerPage, setDetailRowsPerPage] = useState(10)
+  const [detailPage, setDetailPage] = useState(1)
 
-  const selectedBatch = useMemo(
-    () => (initialBatchId ? settlementBatches.find((batch) => batch.id === initialBatchId) ?? null : null),
-    [initialBatchId],
-  )
+  const filteredDetailRows = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return settlementDetailTransactions
+    return settlementDetailTransactions.filter((row) => {
+      return (
+        row.id.toLowerCase().includes(query) ||
+        row.storeName.toLowerCase().includes(query) ||
+        row.paymentMethodLabel.toLowerCase().includes(query) ||
+        row.paymentMethodSubLabel.toLowerCase().includes(query)
+      )
+    })
+  }, [searchQuery])
 
-  const batchTransactions = useMemo(
-    () =>
-      selectedBatch
-        ? settlementTransactions.filter((transaction) => transaction.batchId === selectedBatch.id)
-        : [],
-    [selectedBatch],
-  )
+  const detailTotalPages = Math.max(1, Math.ceil(filteredDetailRows.length / detailRowsPerPage))
+  const detailClampedPage = Math.min(detailPage, detailTotalPages)
+  const detailPagedRows = useMemo(() => {
+    const start = (detailClampedPage - 1) * detailRowsPerPage
+    return filteredDetailRows.slice(start, start + detailRowsPerPage)
+  }, [detailClampedPage, detailRowsPerPage, filteredDetailRows])
+  const currentSettlement = useMemo(() => {
+    if (!initialBatchId) return null
+    return rows.find((row) => row.batchId === initialBatchId) ?? null
+  }, [initialBatchId])
 
-  const selectedTransaction = useMemo(
-    () =>
-      selectedTransactionId
-        ? settlementTransactions.find((transaction) => transaction.id === selectedTransactionId) ?? null
-        : null,
-    [selectedTransactionId],
-  )
+  const filteredRows = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
 
-  const todaysPayoutAmount = settlementBatches
-    .filter((batch) => batch.settlementDate === "16 Apr 2026")
-    .reduce((sum, batch) => sum + batch.finalSettlementAmount, 0)
-  const todaysGrossAmount = settlementBatches
-    .filter((batch) => batch.settlementDate === "16 Apr 2026")
-    .reduce((sum, batch) => sum + batch.transactionAmount, 0)
-  const todaysDeductions = settlementBatches
-    .filter((batch) => batch.settlementDate === "16 Apr 2026")
-    .reduce((sum, batch) => sum + batch.deductions, 0)
+    return rows
+      .filter((row) => {
+        if (!query) return true
+        return (
+          row.utr.toLowerCase().includes(query) ||
+          row.bankReference.toLowerCase().includes(query) ||
+          row.accountLabel.toLowerCase().includes(query) ||
+          row.bankName.toLowerCase().includes(query)
+        )
+      })
+      .filter((row) => (statusFilter === "all" ? true : row.status.toLowerCase() === statusFilter))
+      .filter((row) => {
+        if (bankFilter === "all") return true
+        return row.bankName.toLowerCase() === bankFilter
+      })
+      .filter((row) => {
+        if (dateFilter === "all") return true
+        return ["set-1", "set-2", "set-3", "set-4"].includes(row.id)
+      })
+      .sort((a, b) => (sortDirection === "asc" ? a.settlementAmount - b.settlementAmount : b.settlementAmount - a.settlementAmount))
+  }, [bankFilter, dateFilter, searchQuery, sortDirection, statusFilter])
 
-  const settledTransactionCount = settlementBatches.reduce((sum, batch) => sum + batch.transactionCount, 0)
-  const completedBatchCount = settlementBatches.filter((batch) => batch.status === "Settled").length
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage))
+  const clampedPage = Math.min(page, totalPages)
+  const pagedRows = useMemo(() => {
+    const start = (clampedPage - 1) * rowsPerPage
+    return filteredRows.slice(start, start + rowsPerPage)
+  }, [clampedPage, filteredRows, rowsPerPage])
 
-  const settlementColumns: DataTableColumn<SettlementBatch>[] = [
-    {
-      id: "utr",
-      header: "UTR",
-      accessorKey: "utr",
-      width: 220,
-      pinnable: true,
-      cell: (row) => (
-        <div className="flex items-center gap-2">
-          <p className="text-xs font-medium text-foreground">{row.utr}</p>
-          <SettlementTypeIcon type={row.type} />
-        </div>
-      ),
-      getSearchValue: (row) => `${row.utr} ${row.cycleLabel}`,
-    },
-    { id: "bankReference", header: "Bank reference", accessorKey: "bankReference", width: 160 },
-    {
-      id: "settlementDate",
-      header: "Settlement date",
-      accessorKey: "settlementDate",
-      width: 130,
-      filterOptions: [
-        { label: "Today", value: "today" },
-        { label: "Previous day", value: "previous-day" },
-      ],
-      getFilterValue: (row) => (row.settlementDate === "16 Apr 2026" ? "today" : "previous-day"),
-    },
-    {
-      id: "settlementAmount",
-      header: "Settlement amount",
-      width: 165,
-      align: "right",
-      getValue: (row) => row.settlementAmount,
-      cell: (row) => (
-        <InfoAmount
-          triggerLabel={inr(row.settlementAmount)}
-          gross={row.transactionAmount}
-          deductions={row.deductions}
-          finalAmount={row.finalSettlementAmount}
-        />
-      ),
-    },
-    { id: "paymentMethods", header: "Payment methods", accessorKey: "paymentMethods", width: 220 },
-    {
-      id: "paymentMethodGroup",
-      header: "Method group",
-      accessorKey: "paymentMethodGroup",
-      width: 130,
-      filterOptions: [
-        { label: "UPI-led", value: "upi-led" },
-        { label: "Card-led", value: "card-led" },
-        { label: "Mixed", value: "mixed" },
-      ],
-      getFilterValue: (row) => row.paymentMethodGroup.toLowerCase(),
-    },
-    {
-      id: "transactionAmount",
-      header: "Transaction amount",
-      width: 145,
-      align: "right",
-      getValue: (row) => row.transactionAmount,
-      cell: (row) => inr(row.transactionAmount),
-    },
-    {
-      id: "bankAccount",
-      header: "Bank account",
-      width: 220,
-      filterOptions: [
-        { label: "HDFC Bank", value: "hdfc bank" },
-        { label: "ICICI Bank", value: "icici bank" },
-        { label: "Axis Bank", value: "axis bank" },
-      ],
-      getFilterValue: (row) => row.bankName.toLowerCase(),
-      cell: (row) => (
-        <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-muted text-[9px] font-semibold text-muted-foreground">
-            {row.bankCode.slice(0, 2)}
-          </div>
-          <p className="text-xs text-foreground">{row.bankName} · •••• {row.bankLast4}</p>
-        </div>
-      ),
-      getSearchValue: (row) => `${row.bankName} ${row.bankLast4}`,
-    },
-    { id: "initiationDate", header: "Initiation date", accessorKey: "initiationDate", width: 190 },
-    {
-      id: "transactionCount",
-      header: "No. of transactions",
-      accessorKey: "transactionCount",
-      width: 160,
-      align: "right",
-      getValue: (row) => row.transactionCount,
-      cell: (row) => row.transactionCount.toLocaleString("en-IN"),
-    },
-    {
-      id: "status",
-      header: "Status",
-      accessorKey: "status",
-      width: 110,
-      filterOptions: [
-        { label: "Processing", value: "processing" },
-        { label: "Settled", value: "settled" },
-      ],
-      getFilterValue: (row) => row.status.toLowerCase(),
-      cell: (row) => (
-        <Badge variant="outline" className={row.status === "Settled" ? "bg-success/15 border-success/30 text-foreground text-[10px]" : "bg-warning/15 border-warning/30 text-foreground text-[10px]"}>
-          {row.status}
-        </Badge>
-      ),
-    },
-    {
-      id: "eta",
-      header: "ETA",
-      accessorKey: "eta",
-      width: 160,
-      cell: (row) =>
-        row.status === "Processing" ? (
-          <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Clock3 className="h-3.5 w-3.5" />
-            {row.eta ?? "Pending"}
-          </div>
-        ) : (
-          <span className="text-xs text-muted-foreground">-</span>
-        ),
-    },
-  ]
-
-  const transactionColumns: DataTableColumn<SettlementTransaction>[] = [
-    { id: "transactionId", header: "Transaction ID", accessorKey: "transactionId", width: 165, pinnable: true },
-    { id: "storeName", header: "Store name", accessorKey: "storeName", width: 220 },
-    { id: "paymentMethod", header: "Payment method", accessorKey: "paymentMethod", width: 180 },
-    {
-      id: "transactionAmount",
-      header: "Transaction amount",
-      width: 150,
-      align: "right",
-      getValue: (row) => row.transactionAmount,
-      cell: (row) => inr(row.transactionAmount),
-    },
-    {
-      id: "payoutAmount",
-      header: "Payout amount",
-      width: 140,
-      align: "right",
-      getValue: (row) => row.payoutAmount,
-      cell: (row) => inr(row.payoutAmount),
-    },
-    {
-      id: "deductions",
-      header: "Deductions",
-      width: 120,
-      align: "right",
-      getValue: (row) => row.deductions,
-      cell: (row) => inr(row.deductions),
-    },
-  ]
-
-  const handleModeToggle = (mode: Exclude<SettlementType, "t-plus">) => {
-    if (mode === "on-demand" && onDemandEnabled) {
-      setOnDemandEnabled(false)
-      return
-    }
-    if (mode === "same-day" && sameDayEnabled) {
-      setSameDayEnabled(false)
-      return
-    }
-    setPendingMode(mode)
-    setModeConfirmed(false)
+  function exportFilteredCsv() {
+    const header = [
+      "UTR",
+      "Bank reference",
+      "Settlement amount",
+      "Bank account",
+      "Settlement date",
+      "Initiation date",
+      "Status",
+    ]
+    const csvRows = filteredRows.map((row) =>
+      [
+        row.utr,
+        row.bankReference,
+        row.settlementAmount,
+        `${row.accountLabel} ${row.bankName}`,
+        `${row.settlementDatePrimary} ${row.settlementDateSecondary}`,
+        `${row.initiationDatePrimary} ${row.initiationDateSecondary}`,
+        row.status,
+      ].join(","),
+    )
+    const blob = new Blob([[header.join(","), ...csvRows].join("\n")], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement("a")
+    anchor.href = url
+    anchor.download = "settlements-filtered.csv"
+    anchor.click()
+    URL.revokeObjectURL(url)
   }
 
-  const pendingModeConfig = pendingMode ? settlementTypeConfig[pendingMode] : null
-  const pendingRequestedAmount = pendingMode === "same-day" ? 95000 : 120000
-  const pendingFee = pendingMode === "same-day" ? 190 : 420
-  const pendingGst = pendingMode === "same-day" ? 34 : 76
-  const pendingNetPayout = pendingRequestedAmount - pendingFee - pendingGst
-
-  const pageHeaderActions = selectedBatch ? (
-    <>
-      <Badge variant="outline" className="text-xs">
-        {selectedBatch.cycleLabel}
-      </Badge>
-      <Badge variant="outline" className="text-xs">
-        {selectedBatch.bankName} · •••• {selectedBatch.bankLast4}
-      </Badge>
-      <Badge variant="outline" className="text-xs">
-        {selectedBatch.transactionCount.toLocaleString("en-IN")} transactions
-      </Badge>
-    </>
-  ) : (
-    <div className="flex items-center gap-2">
-      <div className="flex h-8 items-center gap-2 rounded-md border border-border/70 bg-card px-2.5">
-        <Rocket className="h-3.5 w-3.5" />
-        <span className="text-xs font-medium text-foreground">On-demand</span>
-        <Switch
-          checked={onDemandEnabled}
-          onCheckedChange={(checked) => {
-            if (checked) {
-              handleModeToggle("on-demand")
-              return
-            }
-            setOnDemandEnabled(false)
-          }}
-          aria-label="Toggle on-demand settlement"
-          className="data-[state=checked]:bg-primary"
+  if (isDetailMode) {
+    return (
+      <div className="relative pb-8">
+        <div
+          className={`pointer-events-none absolute inset-x-0 top-0 h-[301px] bg-gradient-to-b ${getSettlementStatusGradientClass(currentSettlement?.status)}`}
         />
-      </div>
-      <div className="flex h-8 items-center gap-2 rounded-md border border-border/70 bg-card px-2.5">
-        <Sun className="h-3.5 w-3.5" />
-        <span className="text-xs font-medium text-foreground">Same day</span>
-        <Switch
-          checked={sameDayEnabled}
-          onCheckedChange={(checked) => {
-            if (checked) {
-              handleModeToggle("same-day")
-              return
-            }
-            setSameDayEnabled(false)
-          }}
-          aria-label="Toggle same day settlement"
-          className="data-[state=checked]:bg-primary"
-        />
-      </div>
-    </div>
-  )
-
-  const rightContext = selectedTransaction ? (
-    <div className="h-full overflow-y-auto p-5 space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Transaction details</p>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="h-7 w-7 rounded-md"
-          onClick={() => setSelectedTransactionId(null)}
-          aria-label="Close transaction details panel"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-      <div className="rounded-lg border border-border/70 bg-card/80 p-4 space-y-3">
-        {[
-          ["Transaction ID", selectedTransaction.transactionId],
-          ["Order ID", selectedTransaction.orderId],
-          ["Store", selectedTransaction.storeName],
-          ["Payment method", selectedTransaction.paymentMethod],
-          ["Customer", selectedTransaction.customerVpa],
-          ["Transaction amount", inr(selectedTransaction.transactionAmount)],
-          ["Payout amount", inr(selectedTransaction.payoutAmount)],
-          ["Deductions", inr(selectedTransaction.deductions)],
-          ["Status", selectedTransaction.status],
-        ].map(([label, value]) => (
-          <div key={label} className="flex items-center justify-between gap-4 text-xs">
-            <span className="text-muted-foreground">{label}</span>
-            <span className="font-medium text-foreground text-right">{value}</span>
+        <div className="relative z-10 space-y-8 px-8 py-8">
+          <div className="flex h-8 items-center">
+            <Button asChild variant="ghost" className="h-8 px-2 text-xs hover:bg-background/20">
+              <Link href="/settlements">
+                <ArrowLeft className="mr-1 h-4 w-4" />
+                Back
+              </Link>
+            </Button>
           </div>
-        ))}
-      </div>
-    </div>
-  ) : null
 
-  const centerMain = selectedBatch ? (
-    <div className="h-full overflow-y-auto p-4 space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border border-border/70 bg-card/80 p-3">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Settlement amount</p>
-          <p className="mt-1 text-base font-semibold text-foreground">{inr(selectedBatch.settlementAmount)}</p>
-        </div>
-        <div className="rounded-lg border border-border/70 bg-card/80 p-3">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Transaction amount</p>
-          <p className="mt-1 text-base font-semibold text-foreground">{inr(selectedBatch.transactionAmount)}</p>
-        </div>
-        <div className="rounded-lg border border-border/70 bg-card/80 p-3">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Deductions</p>
-          <p className="mt-1 text-base font-semibold text-foreground">{inr(selectedBatch.deductions)}</p>
-        </div>
-        <div className="rounded-lg border border-border/70 bg-card/80 p-3">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Status</p>
-          <p className="mt-1 text-base font-semibold text-foreground">{selectedBatch.status}</p>
-        </div>
-      </div>
-
-      <DataTable
-        data={batchTransactions}
-        columns={transactionColumns}
-        rowId={(row) => row.id}
-        selectedRowId={selectedTransactionId}
-        onRowClick={(row) => setSelectedTransactionId(row.id)}
-        searchPlaceholder="Search settlement transactions..."
-        initialPinnedColumnIds={["transactionId"]}
-      />
-    </div>
-  ) : (
-    <div className="h-full overflow-y-auto p-4 space-y-4">
-      <section className="rounded-lg border border-primary/30 bg-primary/8 p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/15">
-              <Zap className="h-4 w-4 text-primary" />
+          <div className="w-full space-y-6">
+            <div className="space-y-4">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#ff4a32]">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-[6px] bg-white">
+                  <Plus className="h-5 w-5 text-[#ff4a32]" />
+                </span>
+              </span>
+              <div className="flex items-center gap-2">
+                <p className="text-[30px] font-semibold leading-[36px] text-foreground">₹1,20,000</p>
+                <span className="inline-flex items-center p-1.5">
+                  <Info className="h-6 w-6 text-muted-foreground" />
+                </span>
+                <span className="inline-flex h-6 items-center gap-1 rounded-full border border-border/80 bg-background pl-2 pr-3 text-xs leading-none text-foreground">
+                  {currentSettlement?.status === "Processing" ? (
+                    <Loader2 className="h-3 w-3 text-warning" />
+                  ) : (
+                    <CircleCheck className="h-3 w-3 text-success" />
+                  )}
+                  {currentSettlement?.status ?? "Processing"}
+                </span>
+              </div>
+              <div className="flex items-start gap-4 text-base leading-6 text-muted-foreground">
+                <span>Bank: xx4989, {currentSettlement?.bankName ?? "HDFC"} bank</span>
+                <span className="h-6 w-px bg-border/70" />
+                <span>Transactions: 32 transactions</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="inline-flex h-6 items-center gap-1 rounded-full border border-border/80 bg-background px-2 text-xs leading-none text-foreground">
+                  Settlement batch ID: {currentSettlement?.batchId ?? initialBatchId}
+                  <Copy className="h-3 w-3 text-muted-foreground" />
+                </span>
+                <span className="inline-flex h-6 items-center gap-1 rounded-full border border-border/80 bg-background px-2 text-xs leading-none text-foreground">
+                  Merchant ID: MCT-11101
+                  <Copy className="h-3 w-3 text-muted-foreground" />
+                </span>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground">On-demand settlement available</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                You are eligible for on-demand settlement up to{" "}
-                <span className="font-semibold text-foreground">{inr(120000)}</span> today.
-              </p>
+
+            <div className="h-px w-full bg-border/70" />
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" className="h-8">All mode <ChevronDown className="h-4 w-4" /></Button>
+                <Button variant="outline" size="sm" className="h-8">Today <ChevronDown className="h-4 w-4" /></Button>
+                <Button variant="outline" size="sm" className="h-8">More filters</Button>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="sm" className="h-8 px-2.5 text-sm">Reset</Button>
+                <div className="h-6 w-px bg-border/70" />
+                <Button variant="ghost" size="icon-sm" className="h-8 w-[51px]"><ArrowUpDown className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon-sm" className="h-8 w-[51px]"><Columns3 className="h-4 w-4" /></Button>
+                <div className="h-6 w-px bg-border/70" />
+                <div className="relative w-[229px]">
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search transaction"
+                    value={searchQuery}
+                    onChange={(event) => {
+                      setSearchQuery(event.target.value)
+                      setDetailPage(1)
+                    }}
+                    className="h-8 rounded-md pl-8"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="overflow-hidden rounded-md border border-border/70">
+                <div className="overflow-x-auto">
+                  <Table className="min-w-[1120px]">
+                    <TableHeader>
+                      <TableRow className="h-10 border-border/70">
+                        <TableHead className="px-3 text-sm font-medium text-muted-foreground">Transaction ID</TableHead>
+                        <TableHead className="px-3 text-sm font-medium text-muted-foreground">Store name</TableHead>
+                        <TableHead className="px-3 text-sm font-medium text-muted-foreground">Payment mode</TableHead>
+                        <TableHead className="px-3 text-right text-sm font-medium text-muted-foreground">Transaction amount</TableHead>
+                        <TableHead className="px-3 text-right text-sm font-medium text-muted-foreground">Settlement amount</TableHead>
+                        <TableHead className="px-3 text-right text-sm font-medium text-muted-foreground">Deductions</TableHead>
+                        <TableHead className="px-3 text-sm font-medium text-muted-foreground">Payment date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {detailPagedRows.map((row) => {
+                        const Icon = row.paymentMethod === "upi" ? QrCode : row.paymentMethod === "card" ? CreditCard : Smartphone
+                        return (
+                          <TableRow key={row.id} className="h-[72px] border-border/70">
+                            <TableCell className="px-3 text-sm text-foreground">{row.id}</TableCell>
+                            <TableCell className="px-3 text-sm text-foreground">{row.storeName}</TableCell>
+                            <TableCell className="px-3">
+                              <div className="flex items-start gap-2">
+                                <Icon className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <p className="text-sm text-foreground">{row.paymentMethodLabel}</p>
+                                  <p className="text-sm text-muted-foreground">{row.paymentMethodSubLabel}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="px-3 text-right text-sm text-foreground">{inr(row.transactionAmount)}</TableCell>
+                            <TableCell className="px-3 text-right text-sm text-foreground">{inr(row.settlementAmount)}</TableCell>
+                            <TableCell className="px-3 text-right text-sm text-foreground">₹ {row.deductions}</TableCell>
+                            <TableCell className="px-3">
+                              <p className="text-sm text-foreground">{row.paymentDate}</p>
+                              <p className="text-sm text-muted-foreground">{row.paymentTime}</p>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <p>0 of {filteredDetailRows.length} row(s) selected.</p>
+                <div className="flex items-center gap-8">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">Rows per page</span>
+                    <Select value={String(detailRowsPerPage)} onValueChange={(value) => { setDetailRowsPerPage(Number(value)); setDetailPage(1) }}>
+                      <SelectTrigger size="sm" className="h-8 w-[70px] rounded-lg text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="25">25</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <span className="text-sm font-medium text-foreground">Page {detailClampedPage} of {detailTotalPages}</span>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md border-border/60 bg-background/80" disabled={detailClampedPage <= 1} onClick={() => setDetailPage(1)}><ChevronsLeft className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md border-border/60 bg-background/80" disabled={detailClampedPage <= 1} onClick={() => setDetailPage((current) => Math.max(1, current - 1))}><ChevronLeft className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md border-border/60 bg-background/80" disabled={detailClampedPage >= detailTotalPages} onClick={() => setDetailPage((current) => Math.min(detailTotalPages, current + 1))}><ChevronRight className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md border-border/60 bg-background/80" disabled={detailClampedPage >= detailTotalPages} onClick={() => setDetailPage(detailTotalPages)}><ChevronsRight className="h-4 w-4" /></Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="pb-8">
+      <div className="space-y-6 px-8 py-8">
+        <div className="rounded-xl border border-border bg-card px-4 py-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-[5px] bg-muted">
+                <Building2 className="h-4 w-4 text-foreground" />
+              </span>
+              <div>
+                <p className="text-sm font-medium text-foreground">₹20,00,000 upcoming settlement on 7 Aug 2026, 10:00 AM</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">Amount will be settled in HDFC, xx8989 bank account</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSettlementPaused((current) => !current)}>
+              {settlementPaused ? "Resume settlement" : "Pause settlement"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-[30px] font-semibold leading-[32px] tracking-[-0.4px] text-foreground">Settlements</h1>
+          <div className="flex items-center gap-3">
+            <div className="relative w-[229px]">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search settlements"
+                value={searchQuery}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value)
+                  setPage(1)
+                }}
+                className="h-8 rounded-md pl-8"
+              />
+            </div>
+            <Button variant="outline" size="sm" className="h-8" onClick={() => setPreferencesOpen(true)}>
+              Change settlement preferences
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8">All Status <ChevronDown className="h-4 w-4" /></Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-40">
+                <DropdownMenuRadioGroup value={statusFilter} onValueChange={(value) => { setStatusFilter(value as typeof statusFilter); setPage(1) }}>
+                  <DropdownMenuRadioItem value="all">All Status</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="processing">Processing</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="settled">Settled</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8">Today <ChevronDown className="h-4 w-4" /></Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-40">
+                <DropdownMenuRadioGroup value={dateFilter} onValueChange={(value) => { setDateFilter(value as typeof dateFilter); setPage(1) }}>
+                  <DropdownMenuRadioItem value="today">Today</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="all">All dates</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8">More filters</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-44">
+                <DropdownMenuLabel>Bank account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup value={bankFilter} onValueChange={(value) => { setBankFilter(value as typeof bankFilter); setPage(1) }}>
+                  <DropdownMenuRadioItem value="all">All banks</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="hdfc">HDFC</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="axis">AXIS</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon-sm" className="h-8 w-[51px]" onClick={() => setSortDirection((current) => (current === "asc" ? "desc" : "asc"))}>
+              <ArrowUpDown className="h-4 w-4" />
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex h-8 w-[51px] items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground"
+                >
+                  <Columns3 className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {([
+                  ["utr", "UTR"],
+                  ["bankReference", "Bank reference"],
+                  ["settlementAmount", "Settlement amount"],
+                  ["bankAccount", "Bank account"],
+                  ["settlementDate", "Settlement date"],
+                  ["initiationDate", "Initiation date"],
+                  ["status", "Status"],
+                ] as Array<[ColumnKey, string]>).map(([key, label]) => (
+                  <DropdownMenuCheckboxItem
+                    key={key}
+                    checked={visibleColumns[key]}
+                    onCheckedChange={(checked) => {
+                      setVisibleColumns((current) => {
+                        const next = { ...current, [key]: checked === true }
+                        if (Object.values(next).filter(Boolean).length === 0) return current
+                        return next
+                      })
+                    }}
+                    onSelect={(event) => event.preventDefault()}
+                  >
+                    {label}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="h-6 w-px bg-border/70" />
+
+            <Button variant="ghost" size="sm" className="h-8 gap-1.5" onClick={exportFilteredCsv}>
+              <Download className="h-4 w-4" />Export filtered
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-y border-border/60 px-8 py-8">
+        <div className="grid grid-cols-4 gap-2">
+          <div>
+            <p className="text-sm text-muted-foreground">Settled amount</p>
+            <p className="mt-2 text-2xl font-semibold leading-6 tracking-[-0.4px] text-foreground">₹ 10,30,329</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Processing amount</p>
+            <p className="mt-2 text-2xl font-semibold leading-6 tracking-[-0.4px] text-foreground">₹ 30,329</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">No of transaction settled</p>
+            <p className="mt-2 text-2xl font-semibold leading-6 tracking-[-0.4px] text-foreground">3000</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Total deductions</p>
+            <p className="mt-2 text-2xl font-semibold leading-6 tracking-[-0.4px] text-foreground">₹ 10,000</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 px-8 py-8">
+        <div className="overflow-hidden rounded-md border border-border/70">
+          <div className="overflow-x-auto">
+            <Table className="min-w-[1120px]">
+              <TableHeader>
+                <TableRow className="h-10 border-border/70">
+                  {visibleColumns.utr ? <TableHead className="px-3 text-sm font-medium text-muted-foreground">UTR</TableHead> : null}
+                  {visibleColumns.bankReference ? <TableHead className="px-3 text-sm font-medium text-muted-foreground">Bank reference</TableHead> : null}
+                  {visibleColumns.settlementAmount ? <TableHead className="px-3 text-right text-sm font-medium text-muted-foreground">Settlement amount</TableHead> : null}
+                  {visibleColumns.bankAccount ? <TableHead className="px-3 text-sm font-medium text-muted-foreground">Bank account</TableHead> : null}
+                  {visibleColumns.settlementDate ? <TableHead className="px-3 text-sm font-medium text-muted-foreground">Settlement date</TableHead> : null}
+                  {visibleColumns.initiationDate ? <TableHead className="px-3 text-sm font-medium text-muted-foreground">Initiation date</TableHead> : null}
+                  {visibleColumns.status ? <TableHead className="px-3 text-sm font-medium text-muted-foreground">Status</TableHead> : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                  {pagedRows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    className="h-[72px] cursor-pointer border-border/70 hover:bg-muted/20"
+                    onClick={() => router.push(`/settlements/${row.batchId}`)}
+                  >
+                    {visibleColumns.utr ? (
+                      <TableCell className="px-3">
+                        <div className="flex items-center gap-2 text-sm text-foreground">
+                          <span>{row.utr}</span>
+                          <RowTypeIcon typeIcon={row.typeIcon} />
+                        </div>
+                      </TableCell>
+                    ) : null}
+                    {visibleColumns.bankReference ? <TableCell className="px-3 text-sm text-foreground">{row.bankReference}</TableCell> : null}
+                    {visibleColumns.settlementAmount ? <TableCell className="px-3 text-right text-sm text-foreground">{inr(row.settlementAmount)}</TableCell> : null}
+                    {visibleColumns.bankAccount ? (
+                      <TableCell className="px-3">
+                        <div className="flex items-start gap-2">
+                          <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-sm bg-muted text-[10px] font-semibold text-foreground">
+                            {row.bankName === "HDFC" ? "H" : "A"}
+                          </span>
+                          <div>
+                            <p className="text-sm text-foreground">{row.accountLabel}</p>
+                            <p className="text-sm text-muted-foreground">{row.bankName}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                    ) : null}
+                    {visibleColumns.settlementDate ? (
+                      <TableCell className="px-3">
+                        <p className="text-sm text-foreground">{row.settlementDatePrimary}</p>
+                        <p className="text-sm text-muted-foreground">{row.settlementDateSecondary}</p>
+                      </TableCell>
+                    ) : null}
+                    {visibleColumns.initiationDate ? (
+                      <TableCell className="px-3">
+                        <p className="text-sm text-foreground">{row.initiationDatePrimary}</p>
+                        <p className="text-sm text-muted-foreground">{row.initiationDateSecondary}</p>
+                      </TableCell>
+                    ) : null}
+                    {visibleColumns.status ? (
+                      <TableCell className="px-3">
+                        <StatusBadge status={row.status} />
+                      </TableCell>
+                    ) : null}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <p>0 of {filteredRows.length} row(s) selected.</p>
+          <div className="flex items-center gap-8">
             <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                className="h-8 text-xs"
-                onClick={() => {
-                  setPendingMode("on-demand")
-                  setModeConfirmed(false)
+              <span className="text-sm font-medium text-foreground">Rows per page</span>
+              <Select
+                value={String(rowsPerPage)}
+                onValueChange={(value) => {
+                  setRowsPerPage(Number(value))
+                  setPage(1)
                 }}
               >
-                Settle now
+                <SelectTrigger size="sm" className="h-8 w-[70px] rounded-lg text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <span className="text-sm font-medium text-foreground">Page {clampedPage} of {totalPages}</span>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md border-border/60 bg-background/80" disabled={clampedPage <= 1} onClick={() => setPage(1)}>
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md border-border/60 bg-background/80" disabled={clampedPage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md border-border/60 bg-background/80" disabled={clampedPage >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md border-border/60 bg-background/80" disabled={clampedPage >= totalPages} onClick={() => setPage(totalPages)}>
+                <ChevronsRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </div>
-      </section>
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-border/70 bg-card/80 p-3">
-          <p className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-            <WalletCards className="h-3.5 w-3.5" />
-            Today&apos;s payout
-          </p>
-          <div className="mt-1 text-[18px] font-semibold text-foreground">
-            <InfoAmount
-              triggerLabel={inr(todaysPayoutAmount)}
-              gross={todaysGrossAmount}
-              deductions={todaysDeductions}
-              finalAmount={todaysPayoutAmount}
-            />
-          </div>
-        </div>
-        <div className="rounded-lg border border-border/70 bg-card/80 p-3">
-          <p className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-            <BadgeIndianRupee className="h-3.5 w-3.5" />
-            No. of transactions settled
-          </p>
-          <p className="mt-1 text-[18px] font-semibold text-foreground">{settledTransactionCount.toLocaleString("en-IN")}</p>
-        </div>
-        <div className="rounded-lg border border-border/70 bg-card/80 p-3">
-          <p className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-            <Landmark className="h-3.5 w-3.5" />
-            Settlement batches completed
-          </p>
-          <p className="mt-1 text-[18px] font-semibold text-foreground">{completedBatchCount}</p>
-        </div>
       </div>
 
-      <DataTable
-        data={settlementBatches}
-        columns={settlementColumns}
-        rowId={(row) => row.id}
-        onRowClick={(row) => router.push(`/settlements/${row.id}`)}
-        searchPlaceholder="Search by UTR, reference, bank..."
-        initialPinnedColumnIds={["utr"]}
-        statusColumnId="status"
-        statusOptions={[
-          { label: "Processing", value: "processing" },
-          { label: "Settled", value: "settled" },
-        ]}
-      />
-    </div>
-  )
-
-  return (
-    <>
-      <PageHeader
-        title={selectedBatch ? selectedBatch.id : "Settlements"}
-        subtitle={selectedBatch ? selectedBatch.utr : "Default cycle is T+1 day"}
-        actions={pageHeaderActions}
-        onBack={selectedBatch ? () => router.push("/settlements") : undefined}
-        backLabel="Back to settlement batches"
-      />
-
-      <WorkspaceShell
-        centerMain={centerMain}
-        rightContext={rightContext}
-        showRightContext={Boolean(selectedTransaction)}
-      />
-
-      <Sheet
-        open={Boolean(pendingMode)}
-        onOpenChange={(open) => {
-          if (!open) {
-            setPendingMode(null)
-            setModeConfirmed(false)
-          }
-        }}
-      >
+      <Sheet open={preferencesOpen} onOpenChange={setPreferencesOpen}>
         <SheetContent
           side="right"
-          a11yTitle={`${pendingModeConfig?.label ?? "Settlement"} charge confirmation`}
-          a11yDescription="Review additional charges for this settlement mode and confirm."
-          className="w-full border-l border-border/70 bg-background p-0 sm:max-w-[430px]"
+          a11yTitle="Settlement preferences"
+          a11yDescription="Manage settlement mode preferences for your account."
+          className="w-full border-l border-border/60 bg-background p-0 sm:max-w-[420px]"
         >
           <div className="flex h-full flex-col">
-            <div className="border-b border-border/60 px-4 py-3">
-              <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                {pendingModeConfig ? <pendingModeConfig.icon className="h-4 w-4 text-primary" /> : null}
-                {pendingModeConfig?.label ?? "Settlement mode"}
-              </p>
-              <p className="text-xs text-muted-foreground">This mode has additional charges compared to default T+1 settlement.</p>
+            <div className="border-b border-border/60 bg-muted/25 px-4 py-3">
+              <p className="text-sm font-semibold text-foreground">Settlement preferences</p>
+              <p className="text-xs text-muted-foreground">Choose which settlement modes are enabled.</p>
             </div>
-            <div className="flex-1 space-y-4 overflow-y-auto p-4">
-              {!modeConfirmed ? (
-                <>
-                  <div className="rounded-lg border border-border/70 bg-card/80 p-4 space-y-2">
-                    <p className="text-xs font-medium text-foreground">Charge breakdown</p>
-                    <div className="space-y-1.5 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Requested amount</span>
-                        <span className="font-medium text-foreground">{inr(pendingRequestedAmount)}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">{pendingMode === "same-day" ? "Same-day fee (0.20%)" : "On-demand fee (0.35%)"}</span>
-                        <span className="font-medium text-foreground">- {inr(pendingFee)}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">GST on fee</span>
-                        <span className="font-medium text-foreground">- {inr(pendingGst)}</span>
-                      </div>
-                      <div className="flex items-center justify-between border-t border-border/60 pt-1.5">
-                        <span className="text-foreground">Net payout</span>
-                        <span className="font-semibold text-foreground">{inr(pendingNetPayout)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    className="w-full"
-                    onClick={() => {
-                      if (pendingMode === "on-demand") setOnDemandEnabled(true)
-                      if (pendingMode === "same-day") setSameDayEnabled(true)
-                      setModeConfirmed(true)
-                    }}
-                  >
-                    Enable {pendingMode === "same-day" ? "same day" : "on-demand"}
-                  </Button>
-                </>
-              ) : (
-                <div className="rounded-lg border border-success/30 bg-card/80 p-4 space-y-3">
-                  <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                    <Banknote className="h-4 w-4 text-success" />
-                    Mode enabled
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {pendingMode === "same-day" ? "Same day settlement" : "On-demand settlement"} is enabled for eligible payouts.
-                  </p>
-                  <Button
-                    className="w-full"
-                    onClick={() => {
-                      setPendingMode(null)
-                      setModeConfirmed(false)
-                    }}
-                  >
-                    Done
-                  </Button>
+            <div className="flex-1 space-y-3 p-4">
+              <div className="flex items-center justify-between rounded-lg border border-border/70 bg-card p-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">On-demand settlement</p>
+                  <p className="text-xs text-muted-foreground">Additional fee applies</p>
                 </div>
-              )}
+                <Switch checked={onDemandEnabled} onCheckedChange={setOnDemandEnabled} aria-label="Toggle on-demand settlement" />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border/70 bg-card p-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Same day settlement</p>
+                  <p className="text-xs text-muted-foreground">Faster payout cycle</p>
+                </div>
+                <Switch checked={sameDayEnabled} onCheckedChange={setSameDayEnabled} aria-label="Toggle same day settlement" />
+              </div>
+            </div>
+            <div className="border-t border-border/60 p-4">
+              <Button className="w-full" onClick={() => setPreferencesOpen(false)}>Save preferences</Button>
             </div>
           </div>
         </SheetContent>
       </Sheet>
-    </>
+    </div>
   )
 }

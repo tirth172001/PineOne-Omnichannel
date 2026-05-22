@@ -1,10 +1,10 @@
-import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
-import { PaymentLinksContent } from "@/components/payment-links/payment-links-content"
+import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
+import { PaymentLinksListingContent } from "@/components/payment-links/payment-links-listing-content"
 
 export default function PaymentLinksPage() {
   return (
-    <V2DashboardLayout>
-      <PaymentLinksContent />
-    </V2DashboardLayout>
+    <TransactionsPlatformShell>
+      <PaymentLinksListingContent />
+    </TransactionsPlatformShell>
   )
 }

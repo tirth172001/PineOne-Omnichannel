@@ -274,18 +274,27 @@ export function OfflinePaymentsContent({
             : weeklyData.map((d) => d.tap + d.chip + d.swipe),
     [transactionView]
   )
-  const filteredDevices = deviceRows
-    .filter((d) => {
-      if (deviceSegment === "all") return true
-      if (deviceSegment === "offline") return d.status === "offline"
-      if (deviceSegment === "a920-pro") return d.model === "A920 Pro"
-      if (deviceSegment === "p2-lite") return d.model === "P2 Lite"
-      if (deviceSegment === "a80") return d.model === "A80"
-      return true
-    })
+  const filteredDevices = useMemo(
+    () =>
+      deviceRows.filter((d) => {
+        if (deviceSegment === "all") return true
+        if (deviceSegment === "offline") return d.status === "offline"
+        if (deviceSegment === "a920-pro") return d.model === "A920 Pro"
+        if (deviceSegment === "p2-lite") return d.model === "P2 Lite"
+        if (deviceSegment === "a80") return d.model === "A80"
+        return true
+      }),
+    [deviceRows, deviceSegment]
+  )
   useEffect(() => {
     const validDeviceIds = new Set(filteredDevices.map((device) => device.id))
-    setSelectedDeviceIds((current) => current.filter((id) => validDeviceIds.has(id)))
+    setSelectedDeviceIds((current) => {
+      const next = current.filter((id) => validDeviceIds.has(id))
+      if (next.length === current.length && next.every((id, index) => id === current[index])) {
+        return current
+      }
+      return next
+    })
   }, [filteredDevices])
   const allFilteredSelected =
     filteredDevices.length > 0 && filteredDevices.every((device) => selectedDeviceIds.includes(device.id))

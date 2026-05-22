@@ -21,6 +21,7 @@ import {
   writeDemoSettings,
   type DemoSettings,
 } from "@/lib/demo-settings"
+import { ROUTES } from "@/lib/navigation/routes"
 import { cn } from "@/lib/utils"
 
 const FAB_POSITION_KEY = "pine-one-demo-fab-position"
@@ -30,14 +31,14 @@ const FAB_MARGIN = 12
 const MAX_WIDTH_PRESETS = [1100, 1440, 1680] as const
 
 const CASE_LINKS = [
-  { label: "Overview", href: "/" },
-  { label: "Transactions", href: "/transactions" },
-  { label: "Settlements", href: "/settlements" },
-  { label: "Disputes", href: "/disputes" },
-  { label: "Refunds", href: "/refunds" },
-  { label: "Reports", href: "/reports" },
-  { label: "Products", href: "/products" },
-  { label: "Support", href: "/support" },
+  { label: "Overview", href: ROUTES.home },
+  { label: "Transactions", href: ROUTES.transactions.root },
+  { label: "Settlements", href: ROUTES.settlements.root },
+  { label: "Disputes", href: ROUTES.disputes.root },
+  { label: "Refunds", href: ROUTES.refunds.root },
+  { label: "Reports", href: ROUTES.reports.root },
+  { label: "Products", href: ROUTES.products.root },
+  { label: "Support", href: ROUTES.support.root },
 ]
 
 type Position = {

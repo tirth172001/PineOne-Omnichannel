@@ -98,8 +98,14 @@ export function PageHeader({
   title,
   description,
   subtitle,
+  meta,
   badges,
   actions,
+  leading,
+  contentClassName,
+  titleRowClassName,
+  titleClassName,
+  subtitleClassName,
   backHref,
   onBack,
   backLabel = "Back",
@@ -109,8 +115,14 @@ export function PageHeader({
   title: string
   description?: string
   subtitle?: string
+  meta?: React.ReactNode
   badges?: React.ReactNode
   actions?: React.ReactNode
+  leading?: React.ReactNode
+  contentClassName?: string
+  titleRowClassName?: string
+  titleClassName?: string
+  subtitleClassName?: string
   backHref?: string
   onBack?: () => void
   backLabel?: string
@@ -131,7 +143,7 @@ export function PageHeader({
         className="mx-auto flex w-full flex-wrap items-start gap-3 px-4 py-3"
         style={{ maxWidth: "var(--dashboard-center-max-width, 1440px)" }}
       >
-        <div className="min-w-0 flex flex-1 items-start gap-2.5">
+        <div className={cn("min-w-0 flex flex-1 items-start gap-2.5", contentClassName)}>
           {isInternal ? (
             backHref ? (
               <Button asChild variant="ghost" size="icon-sm" className="mt-0.5 h-8 w-8 rounded-lg">
@@ -146,16 +158,26 @@ export function PageHeader({
             )
           ) : null}
 
+          {leading ? <div className="mt-0.5 shrink-0">{leading}</div> : null}
+
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="break-words text-[18px] font-semibold leading-tight text-foreground sm:truncate">{title}</h1>
+            <div className={cn("flex flex-wrap items-center gap-2", titleRowClassName)}>
+              <h1
+                className={cn(
+                  "break-words text-[18px] font-semibold leading-tight text-foreground sm:truncate",
+                  titleClassName
+                )}
+              >
+                {title}
+              </h1>
               {badges ? <div className="flex flex-wrap items-center gap-1.5">{badges}</div> : null}
             </div>
             {(subtitle || description) && (
-              <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
+              <p className={cn("mt-1 text-[14px] leading-snug text-muted-foreground", subtitleClassName)}>
                 {subtitle ?? description}
               </p>
             )}
+            {meta ? <div className="mt-2">{meta}</div> : null}
           </div>
         </div>
 

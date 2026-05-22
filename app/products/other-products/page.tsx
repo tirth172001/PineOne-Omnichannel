@@ -1,13 +1,10 @@
-import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
-import { ThirdPartyOffersContent } from "@/components/products/third-party-offers-content"
+import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
+import { SubscriptionsListingContent } from "@/components/subscriptions/subscriptions-listing-content"
 
 export default function OtherProductsPage() {
   return (
-    <V2DashboardLayout>
-      <ThirdPartyOffersContent
-        title="Other products"
-        subtitle="Explore 3rd-party products and add-on services for your business."
-      />
-    </V2DashboardLayout>
+    <TransactionsPlatformShell>
+      <SubscriptionsListingContent />
+    </TransactionsPlatformShell>
   )
 }

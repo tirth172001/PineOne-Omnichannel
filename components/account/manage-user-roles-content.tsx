@@ -3,9 +3,7 @@
 import { useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SectionSummaryStrip, type SectionSummaryMetric } from "@/components/dashboard/section-summary-strip"
+import { TransactionStyleTable } from "@/components/shared/transaction-style-table"
 import { PageHeader } from "@/components/ui/panels"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -147,17 +146,17 @@ function SectionCard({
   children: React.ReactNode
 }) {
   return (
-    <Card className="rounded-2xl border border-border/70 bg-card/90 shadow-none">
-      <CardHeader className="px-6 pb-4">
-        <CardTitle className="text-[16px] font-semibold text-foreground">{title}</CardTitle>
-        {description ? (
-          <CardDescription className="text-[13px] leading-relaxed text-muted-foreground">
-            {description}
-          </CardDescription>
-        ) : null}
-      </CardHeader>
-      <CardContent className="px-6 pb-6">{children}</CardContent>
-    </Card>
+    <section className="border-y border-border/70">
+      <div className="px-0 py-4">
+        <div className="space-y-1 pb-4">
+          <h2 className="text-[16px] font-semibold text-foreground">{title}</h2>
+          {description ? (
+            <p className="text-[13px] leading-relaxed text-muted-foreground">{description}</p>
+          ) : null}
+        </div>
+        <div>{children}</div>
+      </div>
+    </section>
   )
 }
 
@@ -202,65 +201,7 @@ export function ManageUserRolesContent() {
     description: "",
     selectedPermissions: [] as string[],
   })
-
-  const roleColumns = useMemo<DataTableColumn<RoleRecord>[]>(
-    () => [
-      {
-        id: "roleName",
-        header: "ROLE NAME",
-        accessorKey: "roleName",
-        cell: (row) => (
-          <div className="space-y-0.5">
-            <p className="text-xs font-medium text-foreground">{row.roleName}</p>
-            <p className="text-[11px] text-muted-foreground">{row.scope}</p>
-          </div>
-        ),
-        getSearchValue: (row) => `${row.roleName} ${row.scope}`,
-      },
-      {
-        id: "permissions",
-        header: "PERMISSIONS",
-        cell: (row) => renderPermissionChips(row.permissions),
-        getSearchValue: (row) => row.permissions.join(" "),
-      },
-      {
-        id: "usersAssigned",
-        header: "USERS ASSIGNED",
-        accessorKey: "usersAssigned",
-      },
-      {
-        id: "createdOn",
-        header: "CREATED ON",
-        accessorKey: "createdOn",
-      },
-      {
-        id: "lastModifiedOn",
-        header: "LAST MODIFIED ON",
-        accessorKey: "lastModifiedOn",
-      },
-      {
-        id: "action",
-        header: "ACTION",
-        cell: (row) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-lg">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 rounded-lg">
-              <DropdownMenuItem>View permissions</DropdownMenuItem>
-              <DropdownMenuItem>Edit role</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">Deactivate role</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ),
-        searchable: false,
-      },
-    ],
-    []
-  )
+  const [roleSearchQuery, setRoleSearchQuery] = useState("")
 
   const summary = useMemo(() => {
     const totalRoles = roles.length
@@ -301,6 +242,79 @@ export function ManageUserRolesContent() {
       Support: [],
     })
   }, [filteredPermissions])
+  const filteredRoles = useMemo(() => {
+    const query = roleSearchQuery.trim().toLowerCase()
+    if (!query) return roles
+    return roles.filter((role) =>
+      [role.roleName, role.scope, role.permissions.join(" "), role.createdBy, role.createdOn, role.lastModifiedOn]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    )
+  }, [roleSearchQuery, roles])
+  const roleColumns = useMemo(
+    () => [
+      {
+        key: "roleName",
+        header: "ROLE NAME",
+        headerClassName: "h-10 min-w-[180px] px-3 text-sm font-medium text-muted-foreground",
+        render: (row: RoleRecord) => (
+          <div className="space-y-0.5">
+            <p className="text-xs font-medium text-foreground">{row.roleName}</p>
+            <p className="text-[11px] text-muted-foreground">{row.scope}</p>
+          </div>
+        ),
+      },
+      {
+        key: "permissions",
+        header: "PERMISSIONS",
+        headerClassName: "h-10 min-w-[180px] px-3 text-sm font-medium text-muted-foreground",
+        render: (row: RoleRecord) => renderPermissionChips(row.permissions),
+      },
+      {
+        key: "usersAssigned",
+        header: "USERS ASSIGNED",
+        headerClassName: "h-10 min-w-[140px] px-3 text-sm font-medium text-muted-foreground",
+        render: (row: RoleRecord) => row.usersAssigned,
+      },
+      {
+        key: "createdOn",
+        header: "CREATED ON",
+        headerClassName: "h-10 min-w-[160px] px-3 text-sm font-medium text-muted-foreground",
+        render: (row: RoleRecord) => row.createdOn,
+      },
+      {
+        key: "lastModifiedOn",
+        header: "LAST MODIFIED ON",
+        headerClassName: "h-10 min-w-[180px] px-3 text-sm font-medium text-muted-foreground",
+        render: (row: RoleRecord) => row.lastModifiedOn,
+      },
+      {
+        key: "action",
+        header: "ACTION",
+        headerClassName: "h-10 min-w-[100px] px-3 text-right text-sm font-medium text-muted-foreground",
+        cellClassName: "px-3 text-right",
+        render: (_row: RoleRecord) => (
+          <div className="flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-lg">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 rounded-lg">
+                <DropdownMenuItem>View permissions</DropdownMenuItem>
+                <DropdownMenuItem>Edit role</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive">Deactivate role</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ),
+      },
+    ],
+    []
+  )
 
   function togglePermission(permissionKey: string, checked: boolean) {
     setNewRoleDraft((prev) => ({
@@ -361,10 +375,7 @@ export function ManageUserRolesContent() {
           </Button>
         }
       />
-      <div
-        className="mx-auto w-full space-y-4 px-4 pb-6"
-        style={{ maxWidth: "var(--dashboard-center-max-width, 1440px)" }}
-      >
+      <div className="mx-auto w-full space-y-4 px-8 pb-8" style={{ maxWidth: "var(--dashboard-center-max-width, 1440px)" }}>
         <SectionCard
           title="Role summary"
           description="Visibility over role definitions and permission coverage."
@@ -376,16 +387,27 @@ export function ManageUserRolesContent() {
           title="Role permissions"
           description="All available roles and their permission sets."
         >
-          <DataTable
-            data={roles}
-            columns={roleColumns}
-            rowId={(row) => row.id}
-            searchPlaceholder="Search roles or permissions..."
-            defaultRowsPerPage={10}
-            rowsPerPageOptions={[10, 25, 50]}
-            className="rounded-lg border border-border/70"
-            tableClassName="rounded-lg"
-          />
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <div className="relative w-[260px]">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={roleSearchQuery}
+                  onChange={(event) => setRoleSearchQuery(event.target.value)}
+                  placeholder="Search roles or permissions"
+                  className="h-8 rounded-md border-input pl-8 pr-3 text-sm"
+                />
+              </div>
+            </div>
+            <TransactionStyleTable
+              rows={filteredRoles}
+              rowKey={(row) => row.id}
+              columns={roleColumns}
+              minWidthClassName="min-w-[1080px]"
+              selectedCount={0}
+              totalRowsLabel={filteredRoles.length}
+            />
+          </div>
         </SectionCard>
       </div>
 

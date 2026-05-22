@@ -1,10 +1,10 @@
-import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
+import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
 import { TransactionsAnalyticsContent } from "@/components/transactions/transactions-analytics-content"
 
 export default function TransactionsAnalyticsPage() {
   return (
-    <V2DashboardLayout>
+    <TransactionsPlatformShell>
       <TransactionsAnalyticsContent />
-    </V2DashboardLayout>
+    </TransactionsPlatformShell>
   )
 }

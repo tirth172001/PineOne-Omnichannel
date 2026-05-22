@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
+import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
@@ -20,7 +20,7 @@ export default async function KnowledgeTopicPage({ params }: PageProps) {
   if (!item) notFound()
 
   return (
-    <V2DashboardLayout>
+    <TransactionsPlatformShell>
       <PageHeader
         title={item.title}
         subtitle={item.description}
@@ -90,6 +90,6 @@ export default async function KnowledgeTopicPage({ params }: PageProps) {
           </div>
         }
       />
-    </V2DashboardLayout>
+    </TransactionsPlatformShell>
   )
 }

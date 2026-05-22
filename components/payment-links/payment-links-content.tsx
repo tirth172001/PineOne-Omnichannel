@@ -1,1471 +1,550 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { Link2, Plus, Copy, CheckCircle2, X, XCircle, Clock, Download, Mail, MessageSquare } from "lucide-react"
+import { type ComponentType, useEffect, useMemo, useState } from "react"
+import {
+  ArrowDownUp,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  CircleDot,
+  Clock3,
+  Columns3,
+  Copy,
+  Download,
+  Search,
+  XCircle,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PanelEmpty, PageHeader } from "@/components/ui/panels"
-import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
-import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
-import { ProductWorkspaceNav, type ProductWorkspaceSection } from "@/components/dashboard/product-workspace-nav"
-import { OverviewAnalyticsCanvas, type AnalyticsWidget } from "@/components/dashboard/overview-analytics-canvas"
-import { SectionSummaryStrip, type SectionSummaryMetric } from "@/components/dashboard/section-summary-strip"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { cn } from "@/lib/utils"
 
-type LinkSection = "overview" | "active" | "paid" | "expired" | "failed"
-type LinkNavSection = ProductWorkspaceSection
-type VasItem = { id: string; name: string; detail: string; enabled: boolean; requiresConfig: boolean }
-type VasConfig = { label: string; cadence: string; owner: string }
-type PaymentLinkConfigStatus = "success" | "expired" | "failed"
-type PaymentLinkConfigRow = {
+type PaymentLinkStatus = "Expired" | "Success" | "Initiated" | "Failed"
+type StatusFilter = "all" | "expired" | "success" | "initiated" | "failed"
+type DateFilter = "today" | "7d" | "all"
+type SortDirection = "asc" | "desc"
+type ColumnKey = "creationDate" | "paymentLink" | "transactionId" | "amount" | "expiryDate" | "status"
+
+type PaymentLinkRow = {
   id: string
+  creationDate: string
+  creationTime: string
+  paymentLink: string
+  transactionId: string
   amount: number
-  createdAt: string
-  txnId: string
-  expiresAt: string
-  status: PaymentLinkConfigStatus
-  linkRefId: string
-  contactPhone: string
-  contactEmail: string
-  initiatedAt: string
-  sentAt: string
-  finalisedAt: string
-}
-type TableDetail = {
-  title: string
-  description: string
-  value: string
-  rows: Array<{ label: string; value: string }>
+  expiryDate: string
+  expiryTime: string
+  status: PaymentLinkStatus
 }
 
-const links = [
-  {
-    id: "PL-001",
-    transactionId: "6908904733",
-    name: "Anniversary Sale — 20% off",
-    amount: 2499,
-    status: "paid",
-    created: "28 Feb 2026, 07:37 PM",
-    expires: "Paid",
-    revenue: "₹2,499",
-    paymentMethod: "********4767",
-    paymentRail: "Credit · Diners",
-    channel: "SMS",
-    invoiceNo: "124",
-    merchantName: "Future World Apple",
-    storeName: "Future World Retail Pvt Ltd",
-    acquirer: "ICICI Lyra",
-    cardIssuer: "HDFC Bank",
-    product: "Pay by Link",
-    transactionType: "Sale",
-    terminalId: "PL042255",
-    batchNo: "194",
-    hardwareModel: "Virtual Link",
-    contactPhone: "+91 9886186111",
-    contactEmail: "buyer+anniversary@sample.com",
-  },
-  {
-    id: "PL-002",
-    transactionId: "6908904734",
-    name: "Custom Order — Laptop Stand",
-    amount: 3200,
-    status: "active",
-    created: "01 Mar 2026, 10:04 AM",
-    expires: "14 days",
-    revenue: "₹0",
-    paymentMethod: "UPI Collect",
-    paymentRail: "UPI · Intent",
-    channel: "SMS",
-    invoiceNo: "203",
-    merchantName: "Studio Merchants",
-    storeName: "Studio Merchants Koramangala",
-    acquirer: "HDFC SmartGateway",
-    cardIssuer: "NA",
-    product: "Pay by Link",
-    transactionType: "Pending",
-    terminalId: "PL063118",
-    batchNo: "221",
-    hardwareModel: "Virtual Link",
-    contactPhone: "+91 9886154032",
-    contactEmail: "stark.tony@gmail.com",
-  },
-  {
-    id: "PL-003",
-    transactionId: "6908904735",
-    name: "Bulk Office Supplies",
-    amount: 12500,
-    status: "paid",
-    created: "01 Mar 2026, 11:51 AM",
-    expires: "Paid",
-    revenue: "₹12,500",
-    paymentMethod: "********9231",
-    paymentRail: "Credit · Visa",
-    channel: "Email",
-    invoiceNo: "422",
-    merchantName: "Procure Hub",
-    storeName: "Procure Hub B2B Central",
-    acquirer: "Axis eCom",
-    cardIssuer: "ICICI Bank",
-    product: "Pay by Link",
-    transactionType: "Sale",
-    terminalId: "PL078411",
-    batchNo: "319",
-    hardwareModel: "Virtual Link",
-    contactPhone: "+91 9822055511",
-    contactEmail: "procurement@officegroup.com",
-  },
-  {
-    id: "PL-004",
-    transactionId: "6908904736",
-    name: "Website Redesign Deposit",
-    amount: 25000,
-    status: "failed",
-    created: "01 Mar 2026, 02:18 PM",
-    expires: "10 days",
-    revenue: "₹0",
-    paymentMethod: "Netbanking",
-    paymentRail: "NB · SBI",
-    channel: "Email",
-    invoiceNo: "621",
-    merchantName: "Brand Studio",
-    storeName: "Brand Studio Operations",
-    acquirer: "Razorpay",
-    cardIssuer: "NA",
-    product: "Pay by Link",
-    transactionType: "Failed",
-    terminalId: "PL098221",
-    batchNo: "404",
-    hardwareModel: "Virtual Link",
-    contactPhone: "+91 9988776655",
-    contactEmail: "ops@brandstudio.io",
-  },
-  {
-    id: "PL-005",
-    transactionId: "6908904737",
-    name: "Product Photography Pack",
-    amount: 8000,
-    status: "expired",
-    created: "02 Mar 2026, 09:12 AM",
-    expires: "Expired",
-    revenue: "₹0",
-    paymentMethod: "UPI Collect",
-    paymentRail: "UPI · QR",
-    channel: "SMS",
-    invoiceNo: "701",
-    merchantName: "Marketverse",
-    storeName: "Marketverse Creative",
-    acquirer: "PayU",
-    cardIssuer: "NA",
-    product: "Pay by Link",
-    transactionType: "Expired",
-    terminalId: "PL105632",
-    batchNo: "512",
-    hardwareModel: "Virtual Link",
-    contactPhone: "+91 9012345678",
-    contactEmail: "creative@marketverse.in",
-  },
+const pageOneRows: PaymentLinkRow[] = [
+  { id: "pl-1", creationDate: "16 Aug 2026", creationTime: "10:10 PM", paymentLink: "/payment-1129919", transactionId: "TXN-5161", amount: 20000, expiryDate: "16 Aug 2026", expiryTime: "10:10 PM", status: "Expired" },
+  { id: "pl-2", creationDate: "18 Aug 2026", creationTime: "9:30 PM", paymentLink: "/payment-1129919", transactionId: "TXN-5163", amount: 10000, expiryDate: "18 Aug 2026", expiryTime: "9:30 PM", status: "Success" },
+  { id: "pl-3", creationDate: "20 Aug 2026", creationTime: "3:00 PM", paymentLink: "/payment-1129919", transactionId: "TXN-5164", amount: 25000, expiryDate: "20 Aug 2026", expiryTime: "3:00 PM", status: "Initiated" },
+  { id: "pl-4", creationDate: "21 Aug 2026", creationTime: "1:00 PM", paymentLink: "/payment-1129919", transactionId: "TXN-5165", amount: 30000, expiryDate: "21 Aug 2026", expiryTime: "1:00 PM", status: "Failed" },
+  { id: "pl-5", creationDate: "19 Aug 2026", creationTime: "2:45 PM", paymentLink: "/payment-1129919", transactionId: "TXN-5166", amount: 35000, expiryDate: "19 Aug 2026", expiryTime: "2:45 PM", status: "Success" },
+  { id: "pl-6", creationDate: "22 Aug 2026", creationTime: "4:30 PM", paymentLink: "/payment-1129919", transactionId: "TXN-5167", amount: 40000, expiryDate: "22 Aug 2026", expiryTime: "4:30 PM", status: "Initiated" },
+  { id: "pl-7", creationDate: "17 Aug 2026", creationTime: "11:15 AM", paymentLink: "/payment-1129919", transactionId: "TXN-5168", amount: 45000, expiryDate: "17 Aug 2026", expiryTime: "11:15 AM", status: "Success" },
+  { id: "pl-8", creationDate: "25 Aug 2026", creationTime: "8:00 AM", paymentLink: "/payment-1129919", transactionId: "TXN-5169", amount: 50000, expiryDate: "25 Aug 2026", expiryTime: "8:00 AM", status: "Failed" },
+  { id: "pl-9", creationDate: "24 Aug 2026", creationTime: "6:00 PM", paymentLink: "/payment-1129919", transactionId: "TXN-5170", amount: 55000, expiryDate: "24 Aug 2026", expiryTime: "6:00 PM", status: "Initiated" },
+  { id: "pl-10", creationDate: "23 Aug 2026", creationTime: "5:15 PM", paymentLink: "/payment-1129919", transactionId: "TXN-5171", amount: 60000, expiryDate: "23 Aug 2026", expiryTime: "5:15 PM", status: "Expired" },
 ]
 
-const settlementRows = [
-  { id: "LST-401", title: "Collected today", amount: "₹48,300", state: "Completed" },
-  { id: "LST-400", title: "Pending collection", amount: "₹18,900", state: "In progress" },
-]
+const allRows: PaymentLinkRow[] = Array.from({ length: 100 }, (_, index) => {
+  const source = pageOneRows[index % pageOneRows.length]
+  const cycle = Math.floor(index / pageOneRows.length)
+  const txnBase = Number(source.transactionId.replace("TXN-", ""))
+  const linkBase = Number(source.paymentLink.replace("/payment-", ""))
 
-const disputeRows = [
-  { id: "LNK-884", state: "Customer reversed transfer", amount: "₹2,400" },
-  { id: "LNK-871", state: "Payer bank timeout", amount: "₹1,800" },
-]
+  return {
+    ...source,
+    id: `pl-${index + 1}`,
+    paymentLink: `/payment-${linkBase + cycle}`,
+    transactionId: `TXN-${txnBase + cycle * 10}`,
+  }
+})
 
-const refundRows = [
-  { id: "PLR-392", state: "Refund completed", amount: "₹999" },
-  { id: "PLR-381", state: "Waiting bank confirmation", amount: "₹1,850" },
-]
-
-const reportRows = [
-  { id: "RPT-71", title: "Link conversion report", cadence: "Daily", owner: "Collections Ops" },
-  { id: "RPT-72", title: "Collection velocity report", cadence: "Weekly", owner: "Finance Ops" },
-  { id: "RPT-73", title: "Channel performance report", cadence: "Weekly", owner: "Growth Team" },
-]
-
-const paymentLinkConfigurationSeed: PaymentLinkConfigRow[] = [
-  { id: "235476", amount: 18000, createdAt: "26 Sep 2025, 01:47 PM", txnId: "302738452", expiresAt: "26 Dec 2025, 01:12 PM", status: "success", linkRefId: "PL-001", contactPhone: "+91 9886186111", contactEmail: "buyer+anniversary@sample.com", initiatedAt: "26 Sep 2025, 01:47 PM", sentAt: "26 Sep 2025, 01:55 PM", finalisedAt: "26 Sep 2025, 02:12 PM" },
-  { id: "325476", amount: 13000, createdAt: "28 Sep 2025, 01:47 PM", txnId: "834738452", expiresAt: "28 Dec 2025, 02:47 PM", status: "success", linkRefId: "PL-002", contactPhone: "+91 9886154032", contactEmail: "stark.tony@gmail.com", initiatedAt: "28 Sep 2025, 01:47 PM", sentAt: "28 Sep 2025, 01:57 PM", finalisedAt: "28 Sep 2025, 02:18 PM" },
-  { id: "824572", amount: 7000, createdAt: "26 Sep 2025, 01:47 PM", txnId: "291738452", expiresAt: "26 Dec 2025, 02:47 PM", status: "expired", linkRefId: "PL-005", contactPhone: "+91 9012345678", contactEmail: "creative@marketverse.in", initiatedAt: "26 Sep 2025, 01:47 PM", sentAt: "26 Sep 2025, 01:57 PM", finalisedAt: "26 Sep 2025, 02:59 PM" },
-  { id: "234234", amount: 8000, createdAt: "24 Sep 2025, 01:47 PM", txnId: "593738452", expiresAt: "24 Dec 2025, 02:47 PM", status: "failed", linkRefId: "PL-004", contactPhone: "+91 9445566677", contactEmail: "events@cityhall.co", initiatedAt: "24 Sep 2025, 01:47 PM", sentAt: "24 Sep 2025, 01:57 PM", finalisedAt: "24 Sep 2025, 02:09 PM" },
-  { id: "234235", amount: 500, createdAt: "22 Sep 2025, 01:47 PM", txnId: "201738452", expiresAt: "22 Dec 2025, 02:47 PM", status: "failed", linkRefId: "PL-004", contactPhone: "+91 9876543210", contactEmail: "finance@advisory.one", initiatedAt: "22 Sep 2025, 01:47 PM", sentAt: "22 Sep 2025, 01:57 PM", finalisedAt: "22 Sep 2025, 02:05 PM" },
-]
-
-const defaultVasItems: VasItem[] = [
-  { id: "smart-reminders", name: "Smart reminders", detail: "Auto-send follow-ups based on payer intent windows.", enabled: true, requiresConfig: true },
-  { id: "brand-templates", name: "Branded templates", detail: "Use custom themes and dynamic fields for link pages.", enabled: false, requiresConfig: true },
-  { id: "partial-payments", name: "Partial payments", detail: "Allow split collections with due-date milestones.", enabled: false, requiresConfig: false },
-]
-
-const defaultVasConfig: Record<string, VasConfig> = {
-  "smart-reminders": { label: "Reminder workflow", cadence: "24", owner: "Collections Team" },
-  "brand-templates": { label: "Branded checkout", cadence: "0", owner: "Design Ops" },
-  "partial-payments": { label: "Split collection", cadence: "48", owner: "Finance Ops" },
+function parseDate(date: string, time: string) {
+  const value = new Date(`${date} ${time}`)
+  if (!Number.isNaN(value.getTime())) return value
+  return new Date(0)
 }
 
-const vasGroups = [
-  { id: "collection", title: "Collection acceleration", itemIds: ["smart-reminders", "partial-payments"] },
-  { id: "branding", title: "Experience and branding", itemIds: ["brand-templates"] },
-] as const
-
-const statusMap = {
-  active: { Icon: Clock, badge: "bg-primary/18 text-foreground border-primary/35", label: "Active" },
-  paid: { Icon: CheckCircle2, badge: "bg-success/20 text-foreground border-success/35", label: "Paid" },
-  expired: { Icon: XCircle, badge: "bg-muted text-muted-foreground border-border", label: "Expired" },
-  failed: { Icon: X, badge: "bg-destructive/15 text-destructive border-destructive/20", label: "Failed" },
+function formatInr(amount: number) {
+  return `₹ ${amount.toLocaleString("en-IN")}`
 }
 
-const paymentLinkConfigStatusMap: Record<PaymentLinkConfigStatus, { label: string; badge: string }> = {
-  success: { label: "Success", badge: "bg-success/20 text-foreground border-success/35" },
-  expired: { label: "Expired", badge: "bg-muted text-muted-foreground border-border" },
-  failed: { label: "Failed", badge: "bg-destructive/15 text-destructive border-destructive/20" },
+function toCsvField(value: string | number) {
+  const text = String(value)
+  if (!/[",\n]/.test(text)) return text
+  return `"${text.replace(/"/g, '""')}"`
 }
 
-function parseInr(value: string) {
-  return Number(value.replace(/[^\d.-]/g, ""))
+const statusMeta: Record<PaymentLinkStatus, { icon: ComponentType<{ className?: string }>; iconClassName: string }> = {
+  Expired: { icon: Clock3, iconClassName: "text-muted-foreground" },
+  Success: { icon: CheckCircle2, iconClassName: "text-emerald-500" },
+  Initiated: { icon: CircleDot, iconClassName: "text-sky-500" },
+  Failed: { icon: XCircle, iconClassName: "text-red-500" },
 }
 
-function LinkDetail({ link }: { link: typeof links[0] }) {
-  const { Icon, badge, label } = statusMap[link.status as keyof typeof statusMap]
+function StatusBadge({ status }: { status: PaymentLinkStatus }) {
+  const Icon = statusMeta[status].icon
 
   return (
-    <div className="p-5 space-y-5">
-      <div>
-        <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Transaction ID</p>
-        <p className="mt-1 text-[22px] font-semibold leading-tight text-foreground">{link.transactionId}</p>
-      </div>
-
-      <div className="rounded-lg bg-muted/35 p-3">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Transaction amount</p>
-            <p className="mt-1 text-2xl font-bold text-foreground">₹{link.amount.toLocaleString("en-IN")}</p>
-          </div>
-          <Badge variant="outline" className={`text-xs ${badge}`}>
-            {label}
-          </Badge>
-        </div>
-        <div className="mt-3 flex items-center justify-between gap-2 text-xs">
-          <div>
-            <p className="font-medium text-foreground">{link.paymentMethod}</p>
-            <p className="text-muted-foreground">{link.paymentRail}</p>
-          </div>
-          <p className="text-right text-muted-foreground">{link.created}</p>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Payment status</p>
-        <div className="flex items-center justify-between rounded-lg bg-muted/35 p-3">
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card text-foreground">
-              <Icon className="h-3.5 w-3.5" />
-            </span>
-            <div>
-              <p className="text-sm font-medium text-foreground">{label}</p>
-              <p className="text-xs text-muted-foreground">{link.created}</p>
-            </div>
-          </div>
-          <Badge variant="outline" className={`text-[10px] ${badge}`}>{label}</Badge>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Transaction details</p>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg bg-muted/20 p-3">
-          {[
-            ["Invoice no", link.invoiceNo],
-            ["Payment Link ID", link.id],
-            ["Merchant name", link.merchantName],
-            ["Store name", link.storeName],
-            ["Acquirer", link.acquirer],
-            ["Card issuer", link.cardIssuer],
-            ["Product", link.product],
-            ["Transaction type", link.transactionType],
-            ["Batch no", link.batchNo],
-            ["Terminal ID", link.terminalId],
-            ["Channel", link.channel],
-            ["Recipient", link.contactPhone || link.contactEmail],
-          ].map(([k, v]) => (
-            <div key={k}>
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{k}</p>
-              <p className="mt-1 text-xs font-medium text-foreground">{v}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Charge slip</p>
-          <Button variant="ghost" size="xs" className="h-6 gap-1 px-2">
-            <Download className="h-3 w-3" />Download
-          </Button>
-        </div>
-        <Tabs defaultValue="customer" className="w-full">
-          <TabsList variant="line" className="w-full justify-start rounded-md bg-muted/60 p-1">
-            <TabsTrigger value="customer" className="text-xs">Customer copy</TabsTrigger>
-            <TabsTrigger value="merchant" className="text-xs">Merchant copy</TabsTrigger>
-          </TabsList>
-          <TabsContent value="customer">
-            <div className="rounded-lg border border-border bg-card/60 p-3 text-xs">
-              <p className="font-semibold text-foreground">Pine Labs — Customer copy</p>
-              <p className="mt-2 text-muted-foreground">Txn ID: {link.transactionId}</p>
-              <p className="text-muted-foreground">Amount: ₹{link.amount.toLocaleString("en-IN")}</p>
-              <p className="text-muted-foreground">Method: {link.paymentMethod}</p>
-              <p className="text-muted-foreground">Date: {link.created}</p>
-            </div>
-          </TabsContent>
-          <TabsContent value="merchant">
-            <div className="rounded-lg border border-border bg-card/60 p-3 text-xs">
-              <p className="font-semibold text-foreground">Pine Labs — Merchant copy</p>
-              <p className="mt-2 text-muted-foreground">Merchant: {link.merchantName}</p>
-              <p className="text-muted-foreground">Invoice: {link.invoiceNo}</p>
-              <p className="text-muted-foreground">Acquirer: {link.acquirer}</p>
-              <p className="text-muted-foreground">Status: {label}</p>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {link.status === "active" && (
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="flex-1 gap-1.5"><Mail className="h-3.5 w-3.5" />Email receipt</Button>
-          <Button variant="outline" size="sm" className="flex-1 gap-1.5"><MessageSquare className="h-3.5 w-3.5" />SMS receipt</Button>
-          <Button variant="ghost" size="sm" className="flex-1 gap-1.5 text-destructive hover:text-destructive">
-            Deactivate
-          </Button>
-        </div>
-      )}
-    </div>
+    <span className="inline-flex h-6 items-center gap-1 rounded-full border border-border/70 bg-background px-2 pr-3 text-xs font-normal leading-none text-foreground">
+      <Icon className={cn("h-3 w-3", statusMeta[status].iconClassName)} />
+      {status}
+    </span>
   )
 }
 
-function CreateLinkForm({
-  form,
-  onFieldChange,
-  onCreate,
-  disabled,
-}: {
-  form: { contactNumber: string; amount: string; name: string; email: string }
-  onFieldChange: (key: "contactNumber" | "amount" | "name" | "email", value: string) => void
-  onCreate: () => void
-  disabled: boolean
-}) {
-  return (
-    <div className="p-5 space-y-4">
-      <p className="text-sm font-semibold text-foreground">New Payment Link</p>
-      <div className="space-y-3">
-        <div>
-          <Label className="text-xs text-muted-foreground mb-1.5 block">Contact Number *</Label>
-          <Input
-            value={form.contactNumber}
-            onChange={(event) => onFieldChange("contactNumber", event.target.value)}
-            placeholder="+91 9886154032"
-            className="h-9 text-sm bg-muted border-border"
-          />
-        </div>
-        <div>
-          <Label className="text-xs text-muted-foreground mb-1.5 block">Amount (INR) *</Label>
-          <Input
-            value={form.amount}
-            onChange={(event) => onFieldChange("amount", event.target.value)}
-            placeholder="2000.00"
-            type="number"
-            className="h-9 text-sm bg-muted border-border"
-          />
-        </div>
-        <div>
-          <Label className="text-xs text-muted-foreground mb-1.5 block">Name</Label>
-          <Input
-            value={form.name}
-            onChange={(event) => onFieldChange("name", event.target.value)}
-            placeholder="Tony Stark"
-            className="h-9 text-sm bg-muted border-border"
-          />
-        </div>
-        <div>
-          <Label className="text-xs text-muted-foreground mb-1.5 block">Email</Label>
-          <Input
-            value={form.email}
-            onChange={(event) => onFieldChange("email", event.target.value)}
-            placeholder="stark.tony@gmail.com"
-            type="email"
-            className="h-9 text-sm bg-muted border-border"
-          />
-        </div>
-        <Button className="w-full gap-1.5" onClick={onCreate} disabled={disabled}>
-          <Plus className="h-4 w-4" /> Create Payment Link
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-function CreateLinkSuccess({
-  url,
-  recipient,
-  copied,
+function PaymentLinksTable({
+  rows,
+  visibleColumns,
+  copiedRowId,
   onCopy,
-  onBack,
 }: {
-  url: string
-  recipient: string
-  copied: boolean
-  onCopy: () => void
-  onBack: () => void
+  rows: PaymentLinkRow[]
+  visibleColumns: Record<ColumnKey, boolean>
+  copiedRowId: string | null
+  onCopy: (row: PaymentLinkRow) => void
 }) {
-  return (
-    <div className="p-5 space-y-4">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success/20 text-success">
-        <CheckCircle2 className="h-7 w-7" />
-      </div>
-      <div className="space-y-1 text-center">
-        <h3 className="text-base font-semibold text-foreground">Link Created Successfully</h3>
-        <p className="text-xs text-muted-foreground">Shared to {recipient}</p>
-      </div>
-      <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2">
-        <p className="flex-1 truncate font-mono text-xs text-foreground">{url}</p>
-        <Button variant="secondary" size="xs" className="gap-1" onClick={onCopy}>
-          <Copy className="h-3 w-3" />
-          {copied ? "Copied" : "Copy"}
-        </Button>
-      </div>
-      <Button className="w-full" onClick={onBack}>
-        Go back to payment link
-      </Button>
-    </div>
-  )
-}
-
-function ConfigurationLifecycleProgress({ row }: { row: PaymentLinkConfigRow }) {
-  const stageThreeTitle =
-    row.status === "success" ? "Payment completed" : row.status === "expired" ? "Payment link expired" : "Payment failed"
-  const stageThreeTone = row.status === "success" ? "success" : row.status === "expired" ? "expired" : "failed"
-  const recipientLabel = row.contactPhone || row.contactEmail || "recipient"
-
-  const steps = [
-    { title: "Payment initiated", time: row.initiatedAt, tone: "done" as const },
-    { title: `Link sent to ${recipientLabel}`, time: row.sentAt, tone: "done" as const },
-    { title: stageThreeTitle, time: row.finalisedAt, tone: stageThreeTone },
-  ]
+  const columnCount = Object.values(visibleColumns).filter(Boolean).length
 
   return (
-    <div className="space-y-2">
-      {steps.map((step, index) => {
-        const isDone = step.tone === "done" || step.tone === "success"
-        const isFailed = step.tone === "failed"
-        const isExpired = step.tone === "expired"
-        const connectorDone = index === 0 || (index === 1 && stageThreeTone === "success")
-        return (
-          <div key={step.title} className="flex items-start gap-3">
-            <div className="flex flex-col items-center pt-0.5">
-              <div
-                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
-                  isDone
-                    ? "border-success bg-success text-success-foreground"
-                    : isFailed
-                      ? "border-destructive bg-destructive text-destructive-foreground"
-                      : isExpired
-                        ? "border-muted-foreground/40 bg-muted text-muted-foreground"
-                        : "border-border bg-card text-muted-foreground"
-                }`}
-              >
-                {isFailed ? <X className="h-3.5 w-3.5" /> : isExpired ? <Clock className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-              </div>
-              {index < steps.length - 1 ? (
-                <div className={`mt-1 h-10 w-px ${connectorDone ? "bg-success/60" : "bg-border"}`} />
+    <section className="overflow-hidden rounded-md border border-border/70">
+      <div className="overflow-x-auto">
+        <Table className="min-w-[1120px]">
+          <TableHeader>
+            <TableRow className="border-border/70">
+              {visibleColumns.creationDate ? (
+                <TableHead className="h-10 min-w-[168px] px-3 text-sm font-medium text-muted-foreground">Creation date</TableHead>
               ) : null}
-            </div>
-            <div className="flex-1 pb-2">
-              <p className="text-xs font-medium leading-snug text-foreground">{step.title}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">{step.time}</p>
-            </div>
-          </div>
-        )
-      })}
-    </div>
+              {visibleColumns.paymentLink ? (
+                <TableHead className="h-10 min-w-[279px] px-3 text-sm font-medium text-muted-foreground">Payment link</TableHead>
+              ) : null}
+              {visibleColumns.transactionId ? (
+                <TableHead className="h-10 min-w-[151px] px-3 text-sm font-medium text-muted-foreground">Transaction ID</TableHead>
+              ) : null}
+              {visibleColumns.amount ? (
+                <TableHead className="h-10 min-w-[146px] px-3 text-right text-sm font-medium text-muted-foreground">Amount</TableHead>
+              ) : null}
+              {visibleColumns.expiryDate ? (
+                <TableHead className="h-10 min-w-[256px] px-3 text-sm font-medium text-muted-foreground">Expiry date</TableHead>
+              ) : null}
+              {visibleColumns.status ? (
+                <TableHead className="h-10 min-w-[120px] px-3 text-sm font-medium text-muted-foreground">Status</TableHead>
+              ) : null}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 ? (
+              <TableRow className="h-[72px] border-border/70">
+                <TableCell colSpan={Math.max(1, columnCount)} className="px-3 text-sm text-muted-foreground">
+                  No payment links found for current filters.
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((row) => (
+                <TableRow key={row.id} className="h-[72px] border-border/70">
+                  {visibleColumns.creationDate ? (
+                    <TableCell className="px-3 py-4">
+                      <p className="text-sm font-medium leading-5 text-foreground">{row.creationDate}</p>
+                      <p className="text-sm leading-5 text-muted-foreground">{row.creationTime}</p>
+                    </TableCell>
+                  ) : null}
+                  {visibleColumns.paymentLink ? (
+                    <TableCell className="px-3 py-4">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium leading-5 text-foreground">{row.paymentLink}</p>
+                        <button
+                          type="button"
+                          className="inline-flex h-5 w-5 items-center justify-center text-muted-foreground transition hover:text-foreground"
+                          onClick={() => onCopy(row)}
+                          aria-label={`Copy ${row.paymentLink}`}
+                        >
+                          {copiedRowId === row.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
+                    </TableCell>
+                  ) : null}
+                  {visibleColumns.transactionId ? <TableCell className="px-3 py-4 text-sm text-foreground">{row.transactionId}</TableCell> : null}
+                  {visibleColumns.amount ? <TableCell className="px-3 py-4 text-right text-sm text-foreground">{formatInr(row.amount)}</TableCell> : null}
+                  {visibleColumns.expiryDate ? (
+                    <TableCell className="px-3 py-4">
+                      <p className="text-sm font-medium leading-5 text-foreground">{row.expiryDate}</p>
+                      <p className="text-sm leading-5 text-muted-foreground">{row.expiryTime}</p>
+                    </TableCell>
+                  ) : null}
+                  {visibleColumns.status ? (
+                    <TableCell className="px-3 py-2">
+                      <StatusBadge status={row.status} />
+                    </TableCell>
+                  ) : null}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </section>
   )
 }
 
-function ConfigurationDetail({ row, link }: { row: PaymentLinkConfigRow; link?: (typeof links)[0] }) {
-  const statusLabel = paymentLinkConfigStatusMap[row.status].label
-
-  return (
-    <div className="p-5 space-y-5">
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
-          <Link2 className="h-5 w-5 text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-base font-semibold text-foreground">Payment Link {row.id}</p>
-          <p className="text-2xl font-bold text-foreground mt-0.5">₹{row.amount.toLocaleString("en-IN")}</p>
-          <Badge variant="outline" className={`mt-1.5 text-xs ${paymentLinkConfigStatusMap[row.status].badge}`}>
-            {statusLabel}
-          </Badge>
-        </div>
-      </div>
-
-      <Separator />
-
-      <div className="rounded-lg bg-muted/35 p-3">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Payment progress</p>
-        <ConfigurationLifecycleProgress row={row} />
-      </div>
-
-      <Separator />
-
-      <div className="space-y-3">
-        {[
-          ["Link ID", row.id],
-          ["Txn ID", row.txnId],
-          ["Created", row.createdAt],
-          ["Expiry", row.expiresAt],
-          ["Phone", row.contactPhone || link?.contactPhone || "—"],
-          ["Email", row.contactEmail || link?.contactEmail || "—"],
-        ].map(([label, value]) => (
-          <div key={label} className="flex items-center justify-between gap-4">
-            <span className="text-xs text-muted-foreground">{label}</span>
-            <span className="text-xs font-medium text-foreground text-right">{value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-export function PaymentLinksContent({ initialSection }: { initialSection?: LinkNavSection } = {}) {
-  const showInternalBack = initialSection !== undefined
-  const [navSection, setNavSection] = useState<LinkNavSection>(initialSection ?? "overview")
-  const [overviewCustomizeOpen, setOverviewCustomizeOpen] = useState(false)
-  const [selected, setSelected] = useState<string | null>(null)
-  const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null)
-  const [section, setSection] = useState<LinkSection>("overview")
-  const [rightTab, setRightTab] = useState<"detail" | "create">("detail")
-  const [selectedTableDetail, setSelectedTableDetail] = useState<TableDetail | null>(null)
-  const [configurationRows, setConfigurationRows] = useState<PaymentLinkConfigRow[]>(paymentLinkConfigurationSeed)
-  const [createStep, setCreateStep] = useState<"form" | "success">("form")
-  const [createdLinkUrl, setCreatedLinkUrl] = useState("")
-  const [copiedCreatedLink, setCopiedCreatedLink] = useState(false)
-  const [newLinkForm, setNewLinkForm] = useState({
-    contactNumber: "",
-    amount: "",
-    name: "",
-    email: "",
-  })
-  const [vasItems, setVasItems] = useState<VasItem[]>(defaultVasItems)
-  const [selectedVasId, setSelectedVasId] = useState<string | null>(null)
-  const [vasConfigById, setVasConfigById] = useState<Record<string, VasConfig>>(defaultVasConfig)
-  const [vasPreferences, setVasPreferences] = useState({
-    reminderDigest: true,
-    approvalGuardrails: true,
-    autoPublish: false,
+export function PaymentLinksContent() {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
+  const [dateFilter, setDateFilter] = useState<DateFilter>("today")
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [page, setPage] = useState(1)
+  const [copiedRowId, setCopiedRowId] = useState<string | null>(null)
+  const [visibleColumns, setVisibleColumns] = useState<Record<ColumnKey, boolean>>({
+    creationDate: true,
+    paymentLink: true,
+    transactionId: true,
+    amount: true,
+    expiryDate: true,
+    status: true,
   })
 
-  const selectedLink = links.find(l => l.id === selected)
-  const selectedConfiguration = configurationRows.find((row) => row.id === selectedConfigId) ?? null
-  const selectedVas = vasItems.find((item) => item.id === selectedVasId) ?? null
-  const selectedVasConfig = selectedVas ? vasConfigById[selectedVas.id] : null
+  const latestDate = useMemo(() => {
+    return allRows.reduce<Date | null>((latest, row) => {
+      const current = parseDate(row.creationDate, row.creationTime)
+      if (!latest || current > latest) return current
+      return latest
+    }, null)
+  }, [])
+
+  const filteredRows = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase()
+
+    const rangeStart =
+      dateFilter === "all" || !latestDate
+        ? null
+        : (() => {
+            const start = new Date(latestDate)
+            if (dateFilter === "today") {
+              start.setHours(0, 0, 0, 0)
+            } else {
+              start.setDate(start.getDate() - 6)
+              start.setHours(0, 0, 0, 0)
+            }
+            return start
+          })()
+
+    return allRows
+      .filter((row) => {
+        if (statusFilter !== "all" && row.status.toLowerCase() !== statusFilter) return false
+
+        if (rangeStart) {
+          const createdAt = parseDate(row.creationDate, row.creationTime)
+          if (createdAt < rangeStart || createdAt > latestDate!) return false
+        }
+
+        if (!normalizedQuery) return true
+
+        const value = [
+          row.creationDate,
+          row.creationTime,
+          row.paymentLink,
+          row.transactionId,
+          row.amount,
+          row.expiryDate,
+          row.expiryTime,
+          row.status,
+        ]
+          .join(" ")
+          .toLowerCase()
+
+        return value.includes(normalizedQuery)
+      })
+      .sort((a, b) => {
+        const first = parseDate(a.creationDate, a.creationTime).getTime()
+        const second = parseDate(b.creationDate, b.creationTime).getTime()
+        return sortDirection === "asc" ? first - second : second - first
+      })
+  }, [dateFilter, latestDate, searchQuery, sortDirection, statusFilter])
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage))
 
   useEffect(() => {
-    setSelectedTableDetail(null)
-  }, [navSection])
-  const filteredLinks = useMemo(
-    () =>
-      links.filter((l) => {
-        if (section === "overview") return true
-        return l.status === section
-      }),
-    [section]
-  )
-  const paidLinks = filteredLinks.filter((link) => link.status === "paid")
-  const activeLinks = filteredLinks.filter((link) => link.status === "active")
-  const failedLinks = filteredLinks.filter((link) => link.status === "failed")
-  const expiredLinks = filteredLinks.filter((link) => link.status === "expired")
-  const convertedValue = paidLinks.reduce((sum, link) => sum + link.amount, 0)
-  const expectedValue = filteredLinks.reduce((sum, link) => sum + link.amount, 0)
-  const conversionRate = filteredLinks.length ? (paidLinks.length / filteredLinks.length) * 100 : 0
-  const averageLinkValue = filteredLinks.length ? Math.round(expectedValue / filteredLinks.length) : 0
-  const linkAnalyticsSeries = useMemo(
-    () => [
-      Math.max(1, filteredLinks.length + 2),
-      Math.max(1, filteredLinks.length + 1),
-      Math.max(1, filteredLinks.length + 3),
-      Math.max(1, filteredLinks.length + 4),
-      Math.max(1, filteredLinks.length + 2),
-      Math.max(1, filteredLinks.length + 5),
-      Math.max(1, filteredLinks.length + 4),
-    ],
-    [filteredLinks.length]
-  )
-  const conversionSeries = useMemo(
-    () => [
-      Number((Math.max(15, conversionRate - 6)).toFixed(1)),
-      Number((Math.max(15, conversionRate - 4)).toFixed(1)),
-      Number((Math.max(15, conversionRate - 3)).toFixed(1)),
-      Number((Math.max(15, conversionRate - 2)).toFixed(1)),
-      Number((Math.max(15, conversionRate - 1)).toFixed(1)),
-      Number((Math.max(15, conversionRate - 0.4)).toFixed(1)),
-      Number(conversionRate.toFixed(1)),
-    ],
-    [conversionRate]
-  )
-  const linkOverviewWidgets = useMemo<AnalyticsWidget[]>(
-    () => [
-      {
-        id: "link-expected-value",
-        title: "Expected collection value",
-        value: `₹${expectedValue.toLocaleString("en-IN")}`,
-        delta: `${filteredLinks.length} active or historical links`,
-        hint: "Projected from visible links",
-        chart: linkAnalyticsSeries,
-        compareChart: linkAnalyticsSeries.map((point) => Number((point * 0.88).toFixed(2))),
-        defaultWidth: "wide",
-      },
-      {
-        id: "link-converted-value",
-        title: "Converted value",
-        value: `₹${convertedValue.toLocaleString("en-IN")}`,
-        delta: `${paidLinks.length} links paid`,
-        hint: "Successful collections",
-        chart: [1200, 1800, 2400, 3200, 4800, 5600, convertedValue || 2500],
-      },
-      {
-        id: "link-conversion-rate",
-        title: "Conversion rate",
-        value: `${conversionRate.toFixed(1)}%`,
-        delta: `${activeLinks.length} links still active`,
-        hint: "Paid vs total visible links",
-        chart: conversionSeries,
-      },
-      {
-        id: "link-avg-value",
-        title: "Average link value",
-        value: `₹${averageLinkValue.toLocaleString("en-IN")}`,
-        delta: section === "overview" ? "Across all link statuses" : `Filtered by ${section}`,
-        hint: "Average ask amount",
-        chart: [1300, 1500, 1720, 1910, 2080, 2240, averageLinkValue || 1800],
-      },
-      {
-        id: "link-followups",
-        title: "Follow-up required",
-        value: `${activeLinks.length + failedLinks.length}`,
-        delta: `${failedLinks.length} failed, ${activeLinks.length} awaiting payment`,
-        hint: "Collection intervention queue",
-        chart: [7, 6, 8, 9, 7, 8, activeLinks.length + failedLinks.length || 5],
-      },
-      {
-        id: "link-expiry-risk",
-        title: "Expiry risk",
-        value: `${expiredLinks.length}`,
-        delta: expiredLinks.length ? "Consider auto-reminders" : "No links expired in view",
-        hint: "Prevent collection leakage",
-        chart: [3, 4, 4, 3, 2, 2, expiredLinks.length],
-      },
-    ],
-    [
-      activeLinks.length,
-      averageLinkValue,
-      conversionRate,
-      conversionSeries,
-      convertedValue,
-      expectedValue,
-      expiredLinks.length,
-      failedLinks.length,
-      filteredLinks.length,
-      linkAnalyticsSeries,
-      paidLinks.length,
-      section,
-    ]
-  )
-  const configuredLinkProducts = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          filteredLinks
-            .map((link) => link.channel)
-            .concat(vasItems.filter((item) => item.enabled).map((item) => item.name))
-        )
-      ),
-    [filteredLinks, vasItems]
-  )
-  const createRecipientText = [newLinkForm.contactNumber, newLinkForm.email].filter(Boolean).join(" & ")
+    setPage(1)
+  }, [filteredRows, rowsPerPage])
 
-  const resetCreateLinkFlow = () => {
-    setCreateStep("form")
-    setCreatedLinkUrl("")
-    setCopiedCreatedLink(false)
-    setNewLinkForm({
-      contactNumber: "",
-      amount: "",
-      name: "",
-      email: "",
-    })
-  }
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
 
-  const handleCreateLink = () => {
-    if (!newLinkForm.contactNumber.trim() || !newLinkForm.amount.trim()) {
-      return
+  const pagedRows = useMemo(() => {
+    const startIndex = (page - 1) * rowsPerPage
+    return filteredRows.slice(startIndex, startIndex + rowsPerPage)
+  }, [filteredRows, page, rowsPerPage])
+
+  useEffect(() => {
+    if (!copiedRowId) return
+    const timeout = window.setTimeout(() => setCopiedRowId(null), 1400)
+    return () => window.clearTimeout(timeout)
+  }, [copiedRowId])
+
+  function copyPaymentLink(row: PaymentLinkRow) {
+    const text = row.paymentLink
+
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {
+        // no-op fallback below
+      })
     }
 
-    const now = new Date()
-    const createdAt = now.toLocaleString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    })
-    const expiryDate = new Date(now)
-    expiryDate.setDate(expiryDate.getDate() + 90)
-    const expiresAt = expiryDate.toLocaleString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    })
-    const generatedId = `${Math.floor(100000 + Math.random() * 900000)}`
-    const generatedTxnId = `${Math.floor(100000000 + Math.random() * 900000000)}`
-    const amountValue = Number(newLinkForm.amount)
-    const nextLinkUrl = `https://pyn.onl/PLUTUS/${generatedId}`
-    const sentAtDate = new Date(now)
-    sentAtDate.setMinutes(sentAtDate.getMinutes() + 10)
-    const finalisedDate = new Date(now)
-    finalisedDate.setHours(finalisedDate.getHours() + 24)
-
-    const sentAt = sentAtDate.toLocaleString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    })
-    const finalisedAt = finalisedDate.toLocaleString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    })
-
-    setConfigurationRows((current) => [
-      {
-        id: generatedId,
-        amount: Number.isFinite(amountValue) ? amountValue : 0,
-        createdAt,
-        txnId: generatedTxnId,
-        expiresAt,
-        status: "success",
-        linkRefId: "PL-001",
-        contactPhone: newLinkForm.contactNumber,
-        contactEmail: newLinkForm.email,
-        initiatedAt: createdAt,
-        sentAt,
-        finalisedAt,
-      },
-      ...current,
-    ])
-    setCreatedLinkUrl(nextLinkUrl)
-    setCreateStep("success")
-  }
-
-  const handleCopyCreatedLink = async () => {
-    if (!createdLinkUrl) return
-    try {
-      await navigator.clipboard.writeText(createdLinkUrl)
-      setCopiedCreatedLink(true)
-      setTimeout(() => setCopiedCreatedLink(false), 1500)
-    } catch {
-      setCopiedCreatedLink(false)
+    if (typeof document !== "undefined") {
+      const input = document.createElement("input")
+      input.value = text
+      document.body.appendChild(input)
+      input.select()
+      try {
+        document.execCommand("copy")
+      } catch {
+        // no-op
+      }
+      document.body.removeChild(input)
     }
+
+    setCopiedRowId(row.id)
   }
 
-  const linkColumns: DataTableColumn<(typeof links)[number]>[] = [
-    { id: "transactionId", header: "Transaction ID", accessorKey: "transactionId", width: 150, pinnable: true },
-    { id: "id", header: "Payment Link ID", accessorKey: "id", width: 140 },
-    { id: "name", header: "Purpose", accessorKey: "name", width: 220 },
-    {
-      id: "recipient",
-      header: "Recipient",
-      getValue: (link) => link.contactPhone || link.contactEmail,
-      getSearchValue: (link) => `${link.contactPhone} ${link.contactEmail}`,
-      width: 170,
-      cell: (link) => <span className="text-xs text-foreground">{link.contactPhone || link.contactEmail}</span>,
-    },
-    {
-      id: "status",
-      header: "Status",
-      accessorKey: "status",
-      width: 110,
-      filterOptions: [
-        { label: "Active", value: "active" },
-        { label: "Paid", value: "paid" },
-        { label: "Expired", value: "expired" },
-        { label: "Failed", value: "failed" },
-      ],
-      cell: (link) => {
-        const { badge, label } = statusMap[link.status as keyof typeof statusMap]
-        return (
-          <Badge variant="outline" className={`text-[10px] ${badge}`}>
-            {label}
-          </Badge>
-        )
-      },
-    },
-    {
-      id: "amount",
-      header: "Amount",
-      getValue: (link) => link.amount,
-      align: "right",
-      width: 120,
-      cell: (link) => <span className="font-medium tabular-nums">₹{link.amount.toLocaleString("en-IN")}</span>,
-    },
-    { id: "paymentMethod", header: "Payment Method", accessorKey: "paymentMethod", width: 140 },
-    {
-      id: "channel",
-      header: "Channel",
-      accessorKey: "channel",
-      width: 90,
-      filterOptions: [
-        { label: "SMS", value: "SMS" },
-        { label: "Email", value: "Email" },
-      ],
-    },
-    { id: "created", header: "Created", accessorKey: "created", width: 170 },
-    { id: "expires", header: "Expiry", accessorKey: "expires", width: 120 },
-  ]
-
-  const configurationColumns: DataTableColumn<PaymentLinkConfigRow>[] = [
-    { id: "id", header: "Payment Link ID", accessorKey: "id", width: 150, pinnable: true },
-    {
-      id: "amount",
-      header: "Amount",
-      getValue: (row) => row.amount,
-      align: "right",
-      width: 130,
-      cell: (row) => <span className="font-medium tabular-nums">₹{row.amount.toLocaleString("en-IN")}</span>,
-    },
-    { id: "createdAt", header: "Link Creation Date", accessorKey: "createdAt", width: 190 },
-    { id: "txnId", header: "Txn ID", accessorKey: "txnId", width: 140 },
-    { id: "expiresAt", header: "Expiry Date", accessorKey: "expiresAt", width: 190 },
-    {
-      id: "status",
-      header: "Status",
-      accessorKey: "status",
-      width: 120,
-      filterOptions: [
-        { label: "Success", value: "success" },
-        { label: "Expired", value: "expired" },
-        { label: "Failed", value: "failed" },
-      ],
-      cell: (row) => {
-        const mappedStatus = paymentLinkConfigStatusMap[row.status]
-        return (
-          <Badge variant="outline" className={`text-[10px] ${mappedStatus.badge}`}>
-            {mappedStatus.label}
-          </Badge>
-        )
-      },
-    },
-  ]
-
-  const settlementColumns: DataTableColumn<(typeof settlementRows)[number]>[] = [
-    { id: "id", header: "Batch", accessorKey: "id", width: 110, pinnable: true },
-    { id: "title", header: "Settlement", accessorKey: "title", width: 220 },
-    {
-      id: "state",
-      header: "State",
-      accessorKey: "state",
-      width: 130,
-      filterOptions: [
-        { label: "Completed", value: "Completed" },
-        { label: "In progress", value: "In progress" },
-      ],
-    },
-    { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
-  ]
-
-  const disputeColumns: DataTableColumn<(typeof disputeRows)[number]>[] = [
-    { id: "id", header: "Case ID", accessorKey: "id", width: 120, pinnable: true },
-    { id: "state", header: "Status", accessorKey: "state", width: 220 },
-    { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
-  ]
-
-  const refundColumns: DataTableColumn<(typeof refundRows)[number]>[] = [
-    { id: "id", header: "Refund ID", accessorKey: "id", width: 120, pinnable: true },
-    { id: "state", header: "State", accessorKey: "state", width: 220 },
-    { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
-  ]
-
-  const reportColumns: DataTableColumn<(typeof reportRows)[number]>[] = [
-    { id: "id", header: "Report ID", accessorKey: "id", width: 110, pinnable: true },
-    { id: "title", header: "Report", accessorKey: "title", width: 260 },
-    { id: "cadence", header: "Cadence", accessorKey: "cadence", width: 120 },
-    { id: "owner", header: "Owner", accessorKey: "owner", width: 140 },
-  ]
-
-  const leftContext = (
-    <ProductWorkspaceNav
-      title="Pay By Link"
-      value={navSection}
-      showConfigurations
-      configurationsLabel="Manage all links"
-      onChange={(nextSection) => {
-        setNavSection(nextSection)
-        setSection("overview")
-        setSelected(null)
-        setSelectedConfigId(null)
-        setSelectedVasId(null)
-        setRightTab("detail")
-      }}
-    />
-  )
-
-  const collectedValue = paidLinks.reduce((sum, link) => sum + link.amount, 0)
-  const pendingCollection = activeLinks.reduce((sum, link) => sum + link.amount, 0)
-  const settlementInProgress = settlementRows.filter((row) => row.state !== "Completed").length
-  const disputeValue = disputeRows.reduce((sum, row) => sum + parseInr(row.amount), 0)
-  const refundValue = refundRows.reduce((sum, row) => sum + parseInr(row.amount), 0)
-  const configurationProcessedValue = configurationRows.reduce((sum, row) => sum + row.amount, 0)
-  const configurationSuccessCount = configurationRows.filter((row) => row.status === "success").length
-  const configurationFailedCount = configurationRows.filter((row) => row.status === "failed").length
-  const configurationExpiredCount = configurationRows.filter((row) => row.status === "expired").length
-
-  const summaryBySection: Partial<Record<LinkNavSection, SectionSummaryMetric[]>> = {
-    transactions: [
-      { label: "Visible links", value: `${filteredLinks.length}`, delta: "Current filter" },
-      { label: "Collected value", value: `₹${collectedValue.toLocaleString("en-IN")}`, delta: `${paidLinks.length} paid` },
-      { label: "Pending collection", value: `₹${pendingCollection.toLocaleString("en-IN")}`, delta: `${activeLinks.length} active` },
-      { label: "Conversion rate", value: `${conversionRate.toFixed(1)}%`, delta: "Paid vs visible" },
-    ],
-    settlements: [
-      { label: "Total batches", value: `${settlementRows.length}`, delta: "Link collections" },
-      { label: "In progress", value: `${settlementInProgress}`, delta: "Awaiting completion" },
-      {
-        label: "Settlement amount",
-        value: `₹${settlementRows.reduce((sum, row) => sum + parseInr(row.amount), 0).toLocaleString("en-IN")}`,
-        delta: "Across listed batches",
-      },
-    ],
-    disputes: [
-      { label: "Open disputes", value: `${disputeRows.length}`, delta: "Requires action" },
-      { label: "Exposure", value: `₹${disputeValue.toLocaleString("en-IN")}`, delta: "Disputed amount" },
-      { label: "Bank timeout", value: `${disputeRows.filter((row) => /timeout/i.test(row.state)).length}`, delta: "Investigate rail" },
-    ],
-    refunds: [
-      { label: "Open refunds", value: `${refundRows.length}`, delta: "Current queue" },
-      { label: "Refund value", value: `₹${refundValue.toLocaleString("en-IN")}`, delta: "Potential payout" },
-      { label: "Completed", value: `${refundRows.filter((row) => /completed/i.test(row.state)).length}`, delta: "Closed items" },
-    ],
-    reports: [
-      { label: "Scheduled reports", value: `${reportRows.length}`, delta: "Active schedules" },
-      { label: "Daily reports", value: `${reportRows.filter((row) => row.cadence === "Daily").length}`, delta: "Run every day" },
-      { label: "Weekly reports", value: `${reportRows.filter((row) => row.cadence === "Weekly").length}`, delta: "Run weekly" },
-    ],
-    configurations: [
-      { label: "Rows in view", value: `${configurationRows.length}`, delta: "Configuration records" },
-      { label: "Success", value: `${configurationSuccessCount}`, delta: "Completed link flows" },
-      { label: "Failed", value: `${configurationFailedCount}`, delta: "Needs retry" },
-      { label: "Expired", value: `${configurationExpiredCount}`, delta: "Past expiry window" },
-      { label: "Processed value", value: `₹${configurationProcessedValue.toLocaleString("en-IN")}`, delta: "Across listed rows" },
-    ],
-  }
-
-  const headerTitleBySection: Partial<Record<LinkNavSection, string>> = {
-    overview: "Overview",
-    transactions: "Transactions",
-    settlements: "Settlements",
-    disputes: "Disputes",
-    refunds: "Refunds",
-    reports: "Reports",
-    configurations: "Manage all links",
-    vas: "Value Added Services",
-  }
-
-  const headerActionsBySection: Partial<Record<LinkNavSection, React.ReactNode>> = {
-    overview: (
-      <Button size="sm" className="h-8 text-xs" onClick={() => setOverviewCustomizeOpen(true)}>
-        Customize
-      </Button>
-    ),
-    transactions: (
-      <>
-        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
-        <Button variant="outline" size="sm" className="h-8 text-xs">More actions</Button>
-        <Button size="sm" className="h-8 text-xs">Create link</Button>
-      </>
-    ),
-    settlements: (
-      <>
-        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
-        <Button size="sm" className="h-8 text-xs">Run settlement</Button>
-      </>
-    ),
-    disputes: (
-      <>
-        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
-        <Button size="sm" className="h-8 text-xs">Resolve dispute</Button>
-      </>
-    ),
-    refunds: (
-      <>
-        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
-        <Button size="sm" className="h-8 text-xs">Issue refund</Button>
-      </>
-    ),
-    reports: (
-      <>
-        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
-        <Button size="sm" className="h-8 text-xs">Generate report</Button>
-      </>
-    ),
-    configurations: (
-      <Button size="sm" className="h-8 text-xs">Create New Payment Link</Button>
-    ),
-  }
-
-  const pageHeader = (
-    <PageHeader
-      title={headerTitleBySection[navSection] ?? "Payment Links"}
-      subtitle="Payment Links"
-      actions={headerActionsBySection[navSection]}
-      backHref={showInternalBack ? "/payment-links" : undefined}
-      backLabel="Back to Payment Links"
-    />
-  )
-
-  const centerMain = (
-    <div className="h-full overflow-y-auto p-4 space-y-4">
-      {navSection === "overview" && (
-        <OverviewAnalyticsCanvas
-          scopeId="payment-links-overview"
-          widgets={linkOverviewWidgets}
-          configuredProducts={configuredLinkProducts}
-          dateOptions={["Today", "Last 7 days", "Last 30 days", "This quarter"]}
-          compareOptions={["Yesterday", "Previous period", "Last week"]}
-          showViewOptions={false}
-          showConfiguredProductsBadge={false}
-          showAutoRefreshControl={false}
-          showCustomizeControl={false}
-          toolbarSurface="plain"
-          customizeOpen={overviewCustomizeOpen}
-          onCustomizeOpenChange={setOverviewCustomizeOpen}
-        />
-      )}
-
-      {navSection === "transactions" && (
-        <>
-          <SectionSummaryStrip metrics={summaryBySection.transactions ?? []} />
-
-          <DataTable
-            data={filteredLinks}
-            columns={linkColumns}
-            rowId={(link) => link.id}
-            selectedRowId={selected}
-            onRowClick={(link) => {
-              setSelected(link.id)
-              setSelectedConfigId(null)
-              setSelectedTableDetail(null)
-              setRightTab("detail")
-            }}
-            searchPlaceholder="Search payment links..."
-            emptyText="No payment links found"
-            initialPinnedColumnIds={["id"]}
-          />
-        </>
-      )}
-
-      {navSection === "configurations" && (
-        <>
-          <SectionSummaryStrip metrics={summaryBySection.configurations ?? []} />
-          <DataTable
-            data={configurationRows}
-            columns={configurationColumns}
-            rowId={(row) => row.id}
-            selectedRowId={selectedConfigId}
-            onRowClick={(row) => {
-              setSelectedConfigId(row.id)
-              setSelected(row.linkRefId)
-              setSelectedTableDetail(null)
-              setRightTab("detail")
-            }}
-            searchPlaceholder="Search by payment link id, amount or txn id..."
-            emptyText="No payment-link configuration records found"
-            initialPinnedColumnIds={["id"]}
-          />
-        </>
-      )}
-
-      {navSection === "settlements" && (
-        <>
-          <SectionSummaryStrip metrics={summaryBySection.settlements ?? []} />
-          <DataTable
-            data={settlementRows}
-            columns={settlementColumns}
-            rowId={(row) => row.id}
-            searchPlaceholder="Search settlements..."
-            emptyText="No settlements found"
-            initialPinnedColumnIds={["id"]}
-            onRowClick={(row) => {
-              setSelected(null)
-              setSelectedConfigId(null)
-              setSelectedTableDetail({
-                title: row.id,
-                description: "Settlement detail and collection state.",
-                value: row.amount,
-                rows: [
-                  { label: "Title", value: row.title },
-                  { label: "State", value: row.state },
-                ],
-              })
-              setRightTab("detail")
-            }}
-          />
-        </>
-      )}
-
-      {navSection === "disputes" && (
-        <>
-          <SectionSummaryStrip metrics={summaryBySection.disputes ?? []} />
-          <DataTable
-            data={disputeRows}
-            columns={disputeColumns}
-            rowId={(row) => row.id}
-            searchPlaceholder="Search disputes..."
-            emptyText="No disputes found"
-            initialPinnedColumnIds={["id"]}
-            onRowClick={(row) => {
-              setSelected(null)
-              setSelectedConfigId(null)
-              setSelectedTableDetail({
-                title: row.id,
-                description: "Dispute detail and resolution context.",
-                value: row.amount,
-                rows: [{ label: "Current state", value: row.state }],
-              })
-              setRightTab("detail")
-            }}
-          />
-        </>
-      )}
-
-      {navSection === "reports" && (
-        <>
-          <SectionSummaryStrip metrics={summaryBySection.reports ?? []} />
-          <DataTable
-            data={reportRows}
-            columns={reportColumns}
-            rowId={(row) => row.id}
-            searchPlaceholder="Search reports..."
-            emptyText="No reports found"
-            initialPinnedColumnIds={["id"]}
-            onRowClick={(row) => {
-              setSelected(null)
-              setSelectedConfigId(null)
-              setSelectedTableDetail({
-                title: row.id,
-                description: "Report schedule and owner detail.",
-                value: row.title,
-                rows: [
-                  { label: "Cadence", value: row.cadence },
-                  { label: "Owner", value: row.owner },
-                ],
-              })
-              setRightTab("detail")
-            }}
-          />
-        </>
-      )}
-
-      {navSection === "refunds" && (
-        <>
-          <SectionSummaryStrip metrics={summaryBySection.refunds ?? []} />
-          <DataTable
-            data={refundRows}
-            columns={refundColumns}
-            rowId={(row) => row.id}
-            searchPlaceholder="Search refunds..."
-            emptyText="No refunds found"
-            initialPinnedColumnIds={["id"]}
-            onRowClick={(row) => {
-              setSelected(null)
-              setSelectedConfigId(null)
-              setSelectedTableDetail({
-                title: row.id,
-                description: "Refund detail and payout status.",
-                value: row.amount,
-                rows: [{ label: "Current state", value: row.state }],
-              })
-              setRightTab("detail")
-            }}
-          />
-        </>
-      )}
-
-      {navSection === "vas" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Value Added Services</p>
-          <div className="space-y-4">
-            {vasGroups.map((group) => {
-              const groupItems = vasItems.filter((item) => group.itemIds.some((groupId) => groupId === item.id))
-              return (
-                <div key={group.id}>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">{group.title}</p>
-                  <div className="divide-y divide-border border border-border rounded-lg overflow-hidden">
-                    {groupItems.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between px-4 py-3 gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">{item.detail}</p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {item.requiresConfig && (
-                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setSelectedVasId(item.id)}>
-                              Configure
-                            </Button>
-                          )}
-                          <Switch
-                            checked={item.enabled}
-                            onCheckedChange={(checked) =>
-                              setVasItems((current) =>
-                                current.map((entry) => (entry.id === item.id ? { ...entry, enabled: checked } : entry)),
-                              )
-                            }
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          <Separator className="my-4" />
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Operational preferences</p>
-            <div className="divide-y divide-border border border-border rounded-lg overflow-hidden">
-              {[
-                {
-                  key: "reminderDigest",
-                  label: "Reminder digest",
-                  desc: "Share daily reminder effectiveness across active links.",
-                },
-                {
-                  key: "approvalGuardrails",
-                  label: "Approval guardrails",
-                  desc: "Require review before high-value VAS changes are applied.",
-                },
-                {
-                  key: "autoPublish",
-                  label: "Auto publish templates",
-                  desc: "Automatically publish approved branded templates.",
-                },
-              ].map((pref) => (
-                <div key={pref.key} className="flex items-center justify-between px-4 py-3 gap-3">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{pref.label}</p>
-                    <p className="text-xs text-muted-foreground">{pref.desc}</p>
-                  </div>
-                  <Switch
-                    checked={vasPreferences[pref.key as keyof typeof vasPreferences]}
-                    onCheckedChange={(checked) =>
-                      setVasPreferences((current) => ({ ...current, [pref.key]: checked }))
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-    </div>
-  )
-
-  const rightContextBody = selectedVas ? (
-    <div className="p-6 space-y-5">
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Value-added service</p>
-        <h4 className="mt-1 text-[18px] font-semibold text-foreground">{selectedVas.name}</h4>
-      </div>
-      <p className="text-sm leading-relaxed text-muted-foreground">{selectedVas.detail}</p>
-      {selectedVasConfig && (
-        <div className="space-y-3 rounded-md olive-surface-chip p-3">
-          <div>
-            <p className="text-xs text-muted-foreground">Configuration label</p>
-            <Input
-              value={selectedVasConfig.label}
-              onChange={(event) =>
-                setVasConfigById((current) => ({
-                  ...current,
-                  [selectedVas.id]: { ...current[selectedVas.id], label: event.target.value },
-                }))
-              }
-              className="mt-1 h-8 bg-background/50 text-xs"
-            />
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Reminder cadence (hours)</p>
-            <Input
-              value={selectedVasConfig.cadence}
-              onChange={(event) =>
-                setVasConfigById((current) => ({
-                  ...current,
-                  [selectedVas.id]: { ...current[selectedVas.id], cadence: event.target.value },
-                }))
-              }
-              className="mt-1 h-8 bg-background/50 text-xs"
-            />
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Owner team</p>
-            <Input
-              value={selectedVasConfig.owner}
-              onChange={(event) =>
-                setVasConfigById((current) => ({
-                  ...current,
-                  [selectedVas.id]: { ...current[selectedVas.id], owner: event.target.value },
-                }))
-              }
-              className="mt-1 h-8 bg-background/50 text-xs"
-            />
-          </div>
-        </div>
-      )}
-      <div className="space-y-2">
-        <Button
-          className="w-full"
-          variant={selectedVas.enabled ? "secondary" : "default"}
-          onClick={() =>
-            setVasItems((current) =>
-              current.map((entry) => (entry.id === selectedVas.id ? { ...entry, enabled: !entry.enabled } : entry)),
-            )
-          }
-        >
-          {selectedVas.enabled ? "Disable service" : "Enable service"}
-        </Button>
-        <Button className="w-full" onClick={() => setSelectedVasId(null)}>Save details</Button>
-        <Button variant="outline" className="w-full" onClick={() => setSelectedVasId(null)}>Cancel</Button>
-      </div>
-    </div>
-  ) : rightTab === "create" ? (
-    createStep === "form" ? (
-      <CreateLinkForm
-        form={newLinkForm}
-        onFieldChange={(key, value) => setNewLinkForm((current) => ({ ...current, [key]: value }))}
-        onCreate={handleCreateLink}
-        disabled={!newLinkForm.contactNumber.trim() || !newLinkForm.amount.trim()}
-      />
-    ) : (
-      <CreateLinkSuccess
-        url={createdLinkUrl}
-        recipient={createRecipientText || "customer"}
-        copied={copiedCreatedLink}
-        onCopy={handleCopyCreatedLink}
-        onBack={() => {
-          resetCreateLinkFlow()
-          setRightTab("detail")
-          setSelected(null)
-          setSelectedConfigId(null)
-          setSelectedTableDetail(null)
-          setNavSection("configurations")
-        }}
-      />
+  function exportAllRows() {
+    const header = ["Creation Date", "Creation Time", "Payment Link", "Transaction ID", "Amount", "Expiry Date", "Expiry Time", "Status"]
+    const body = filteredRows.map((row) =>
+      [
+        row.creationDate,
+        row.creationTime,
+        row.paymentLink,
+        row.transactionId,
+        row.amount,
+        row.expiryDate,
+        row.expiryTime,
+        row.status,
+      ]
+        .map(toCsvField)
+        .join(",")
     )
-  ) : navSection === "configurations" && selectedConfiguration ? (
-    <ConfigurationDetail row={selectedConfiguration} link={selectedLink ?? undefined} />
-  ) : selectedTableDetail ? (
-    <div className="p-5 space-y-5">
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Record detail</p>
-        <h4 className="mt-1 text-[18px] font-semibold text-foreground">{selectedTableDetail.title}</h4>
-      </div>
-      <div>
-        <p className="text-xs text-muted-foreground">Current value</p>
-        <p className="text-[20px] font-semibold text-foreground">{selectedTableDetail.value}</p>
-      </div>
-      <Separator />
-      <p className="text-sm text-muted-foreground">{selectedTableDetail.description}</p>
-      <div className="space-y-2">
-        {selectedTableDetail.rows.map((row) => (
-          <div key={row.label} className="flex items-center justify-between gap-4">
-            <span className="text-xs text-muted-foreground">{row.label}</span>
-            <span className="text-xs font-medium text-foreground text-right">{row.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  ) : selectedLink ? <LinkDetail link={selectedLink} /> : (
-    <PanelEmpty icon={Link2} title="Select a payment link" description="Click a link to open contextual actions like sharing, QR, and lifecycle controls." />
-  )
 
-  const rightContext = (
-    <div className="h-full overflow-y-auto">
-      <div className="flex items-center justify-between px-6 py-4">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Context</p>
-          <p className="text-[16px] font-semibold text-foreground">
-            {selectedVas
-              ? "Service configuration"
-              : rightTab === "create"
-                ? "Create link"
-                : navSection === "configurations"
-                  ? "Configuration detail"
-                  : "Transaction detail"}
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="h-8 w-8"
-          aria-label="Close contextual panel"
-          onClick={() => {
-            setSelectedVasId(null)
-            setSelected(null)
-            setSelectedConfigId(null)
-            setSelectedTableDetail(null)
-            setRightTab("detail")
-            resetCreateLinkFlow()
-          }}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-      <Separator />
-      {rightContextBody}
-    </div>
-  )
+    const csv = [[...header].map(toCsvField).join(","), ...body].join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const href = URL.createObjectURL(blob)
+    const anchor = document.createElement("a")
+    anchor.href = href
+    anchor.download = "payment-links.csv"
+    anchor.click()
+    URL.revokeObjectURL(href)
+  }
 
   return (
-    <>
-      {pageHeader}
-      <WorkspaceShell
-        leftContext={leftContext}
-        showLeftContext={false}
-        centerMain={centerMain}
-        rightContext={rightContext}
-        showRightContext={
-          Boolean(selectedVas) ||
-          rightTab === "create" ||
-          Boolean(selectedLink) ||
-          Boolean(selectedConfiguration) ||
-          Boolean(selectedTableDetail)
-        }
-        leftWidth={248}
-        leftMaxWidth={300}
-      />
-    </>
+    <div className="pb-8">
+      <div className="space-y-6 px-8 py-8">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <h1 className="text-[30px] font-semibold leading-8 tracking-[-0.4px] text-foreground">Payment links or QR codes</h1>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative w-[229px]">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search payment link"
+                className="h-8 rounded-md border-input pl-8 pr-3 text-sm"
+              />
+            </div>
+
+            <Button variant="outline" className="h-8 rounded-md px-2.5 text-sm font-medium">
+              Configure page UI
+            </Button>
+            <Button variant="outline" className="h-8 rounded-md px-2.5 text-sm font-medium">
+              Manage pay modes
+            </Button>
+            <Button className="h-8 rounded-md px-2.5 text-sm font-medium">Create new link</Button>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap items-center gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium">
+                  {statusFilter === "all" ? "All status" : statusFilter[0].toUpperCase() + statusFilter.slice(1)}
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuLabel>Status</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
+                  <DropdownMenuRadioItem value="all">All status</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="expired">Expired</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="success">Success</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="initiated">Initiated</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="failed">Failed</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium">
+                  {dateFilter === "today" ? "Today" : dateFilter === "7d" ? "Last 7 days" : "All time"}
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuLabel>Date</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup value={dateFilter} onValueChange={(value) => setDateFilter(value as DateFilter)}>
+                  <DropdownMenuRadioItem value="today">Today</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="7d">Last 7 days</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="all">All dates</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button variant="outline" className="h-8 rounded-md px-2.5 text-sm font-medium">
+              More filters
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="h-8 w-[51px] rounded-md"
+              onClick={() => setSortDirection((current) => (current === "asc" ? "desc" : "asc"))}
+              aria-label="Sort rows"
+            >
+              <ArrowDownUp className="h-4 w-4" />
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon-sm" className="h-8 w-[51px] rounded-md" aria-label="Select columns">
+                  <Columns3 className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {([
+                  ["creationDate", "Creation date"],
+                  ["paymentLink", "Payment link"],
+                  ["transactionId", "Transaction ID"],
+                  ["amount", "Amount"],
+                  ["expiryDate", "Expiry date"],
+                  ["status", "Status"],
+                ] as Array<[ColumnKey, string]>).map(([key, label]) => (
+                  <DropdownMenuCheckboxItem
+                    key={key}
+                    checked={visibleColumns[key]}
+                    onCheckedChange={(checked) => {
+                      setVisibleColumns((current) => {
+                        const next = { ...current, [key]: checked === true }
+                        const visibleCount = Object.values(next).filter(Boolean).length
+                        return visibleCount === 0 ? current : next
+                      })
+                    }}
+                    onSelect={(event) => event.preventDefault()}
+                  >
+                    {label}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="h-6 w-px bg-border/70" />
+            <Button variant="ghost" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium" onClick={exportAllRows}>
+              <Download className="h-4 w-4" />
+              Export all
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-8 pb-6">
+        <PaymentLinksTable rows={pagedRows} visibleColumns={visibleColumns} copiedRowId={copiedRowId} onCopy={copyPaymentLink} />
+
+        <div className="mt-4 flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm">0 of {allRows.length} row(s) selected.</p>
+
+          <div className="flex flex-wrap items-center gap-8">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">Rows per page</span>
+              <Select value={String(rowsPerPage)} onValueChange={(value) => setRowsPerPage(Number(value))}>
+                <SelectTrigger size="sm" className="h-8 w-[70px] rounded-lg text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <span className="text-sm font-medium text-foreground">Page {page} of {totalPages}</span>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon-sm"
+                className="h-8 w-8 rounded-md border-border/60 bg-background/80"
+                disabled={page <= 1}
+                onClick={() => setPage(1)}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                className="h-8 w-8 rounded-md border-border/60 bg-background/80"
+                disabled={page <= 1}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                className="h-8 w-8 rounded-md border-border/60 bg-background/80"
+                disabled={page >= totalPages}
+                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                className="h-8 w-8 rounded-md border-border/60 bg-background/80"
+                disabled={page >= totalPages}
+                onClick={() => setPage(totalPages)}
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

@@ -1,16 +1,10 @@
-import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
-import { OfflinePaymentsContent } from "@/components/offline-payments/offline-payments-content"
+import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
+import { PosTerminalsListingContent } from "@/components/offline-payments/pos-terminals-listing-content"
 
-export default function OfflinePaymentsManageDevicesPage({
-  searchParams,
-}: {
-  searchParams?: { model?: string | string[] }
-}) {
-  const model = Array.isArray(searchParams?.model) ? searchParams?.model[0] : searchParams?.model
-
+export default async function OfflinePaymentsManageDevicesPage() {
   return (
-    <V2DashboardLayout>
-      <OfflinePaymentsContent initialSection="manage-devices" initialModel={model} />
-    </V2DashboardLayout>
+    <TransactionsPlatformShell>
+      <PosTerminalsListingContent />
+    </TransactionsPlatformShell>
   )
 }

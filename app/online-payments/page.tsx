@@ -1,10 +1,10 @@
-import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
-import { OnlinePaymentsContent } from "@/components/online-payments/online-payments-content"
+import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
+import { PaymentGatewayListingContent } from "@/components/online-payments/payment-gateway-listing-content"
 
 export default function OnlinePaymentsPage() {
   return (
-    <V2DashboardLayout>
-      <OnlinePaymentsContent />
-    </V2DashboardLayout>
+    <TransactionsPlatformShell>
+      <PaymentGatewayListingContent />
+    </TransactionsPlatformShell>
   )
 }

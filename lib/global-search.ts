@@ -1,4 +1,5 @@
 import { configuredProductNames } from "@/lib/products-data"
+import { ROUTES } from "@/lib/navigation/routes"
 
 export type GlobalSearchItem = {
   id: string
@@ -15,7 +16,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "home",
     title: "Overview Dashboard",
     description: "Business health and key metrics",
-    href: "/",
+    href: ROUTES.home,
     keywords: ["overview", "home", "dashboard", "summary", "kpi"],
     kind: "page",
     priority: 10,
@@ -24,7 +25,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "online",
     title: "Checkout",
     description: "Transactions, disputes, refunds, and reports",
-    href: "/online-payments",
+    href: ROUTES.onlinePayments.root,
     keywords: ["checkout", "online", "gateway", "transaction", "refund", "report"],
     kind: "page",
     priority: 9,
@@ -33,7 +34,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "checkout-configuration",
     title: "Checkout Configuration",
     description: "Whitelabel checkout setup and value-added services",
-    href: "/online-payments/configuration",
+    href: ROUTES.onlinePayments.configuration,
     keywords: ["checkout", "configuration", "white label", "smart routing", "vas"],
     kind: "config",
     priority: 10,
@@ -42,7 +43,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "offline",
     title: "POS Terminal",
     description: "POS and in-store transaction performance",
-    href: "/offline-payments",
+    href: ROUTES.offlinePayments.root,
     keywords: ["pos", "terminal", "offline", "store", "devices"],
     kind: "page",
     priority: 9,
@@ -51,7 +52,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "manage-devices",
     title: "Manage Devices",
     description: "Device health, connectivity, and terminal operations",
-    href: "/offline-payments/manage-devices",
+    href: ROUTES.offlinePayments.manageDevices,
     keywords: ["manage devices", "pos", "terminal", "device", "offline"],
     kind: "page",
     priority: 9,
@@ -60,16 +61,43 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "payment-links",
     title: "Payment Links",
     description: "Create and track pay-by-link journeys",
-    href: "/payment-links",
+    href: ROUTES.paymentLinks.root,
     keywords: ["link", "collect", "invoice", "share"],
     kind: "page",
     priority: 9,
   },
   {
+    id: "cross-border",
+    title: "Cross Border",
+    description: "PACB operations, uploads, and document workflows",
+    href: ROUTES.crossBorder.root,
+    keywords: ["cross border", "pacb", "invoice", "awb", "customs", "uploads"],
+    kind: "page",
+    priority: 10,
+  },
+  {
+    id: "cross-border-uploads",
+    title: "Cross Border Uploads",
+    description: "Invoice and AWB bulk upload center",
+    href: ROUTES.crossBorder.uploads,
+    keywords: ["cross border uploads", "invoice upload", "awb upload", "bulk operations"],
+    kind: "action",
+    priority: 10,
+  },
+  {
+    id: "merchant-settings",
+    title: "Merchant Settings",
+    description: "Credentials, webhooks, checkout styling, and paymodes",
+    href: ROUTES.settings.root,
+    keywords: ["settings", "credentials", "webhooks", "checkout styling", "paymodes"],
+    kind: "config",
+    priority: 10,
+  },
+  {
     id: "account-profile",
     title: "Profile",
     description: "Personal details about the signed-in user",
-    href: "/account/profile",
+    href: ROUTES.account.profile,
     keywords: ["profile", "personal", "account", "user"],
     kind: "config",
     priority: 8,
@@ -78,7 +106,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "account-business",
     title: "Business details",
     description: "Business profile, documents, and bank accounts",
-    href: "/account/business-details",
+    href: ROUTES.account.businessDetails,
     keywords: ["business", "details", "documents", "bank", "kyc"],
     kind: "config",
     priority: 8,
@@ -87,7 +115,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "account-users",
     title: "Users management",
     description: "Team members, roles, and invitations",
-    href: "/account/users",
+    href: ROUTES.account.users,
     keywords: ["users", "team", "roles", "invite", "admin"],
     kind: "config",
     priority: 8,
@@ -96,7 +124,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "account-preferences",
     title: "Preferences",
     description: "Language, notifications, and working defaults",
-    href: "/account/preferences",
+    href: ROUTES.account.preferences,
     keywords: ["preferences", "language", "notifications", "defaults"],
     kind: "config",
     priority: 8,
@@ -105,7 +133,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "account-security",
     title: "Security",
     description: "Password, sessions, and authentication controls",
-    href: "/account/security",
+    href: ROUTES.account.security,
     keywords: ["security", "password", "sessions", "2fa"],
     kind: "config",
     priority: 8,
@@ -114,7 +142,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "account-feedback",
     title: "Feedback",
     description: "Share platform feedback with the product team",
-    href: "/account/feedback",
+    href: ROUTES.account.feedback,
     keywords: ["feedback", "share", "product", "request"],
     kind: "config",
     priority: 7,
@@ -123,7 +151,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "products-online-payments",
     title: "Products · Online payment",
     description: "Configure checkout and payment-link products",
-    href: "/products/online-payments",
+    href: ROUTES.products.onlinePayments,
     keywords: ["products", "online payment", "checkout", "payment links", "configure"],
     kind: "config",
     priority: 9,
@@ -132,7 +160,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "products-in-store",
     title: "Products · In-store payment",
     description: "POS device configuration and setup",
-    href: "/products/in-store-payments",
+    href: ROUTES.products.inStorePayments,
     keywords: ["products", "in-store", "pos", "a891", "mini", "go", "duo", "voice pod"],
     kind: "config",
     priority: 9,
@@ -141,7 +169,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "products-upi-qr-sticker",
     title: "UPI QR Sticker Configuration",
     description: "Store-linked QR design, print controls, and UPI transaction routing.",
-    href: "/products/in-store-payments/upi-qr-sticker",
+    href: ROUTES.products.inStoreQrSticker,
     keywords: ["upi qr", "qr sticker", "qr configuration", "store qr", "print qr", "upi id"],
     kind: "config",
     priority: 9,
@@ -150,7 +178,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "products-other",
     title: "Products · Other products",
     description: "Third-party and additional products",
-    href: "/products/other-products",
+    href: ROUTES.products.otherProducts,
     keywords: ["products", "other", "third party", "offers", "lending"],
     kind: "page",
     priority: 8,
@@ -159,7 +187,7 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
     id: "support",
     title: "Support Center",
     description: "Tickets, help articles, and escalations",
-    href: "/support",
+    href: ROUTES.support.root,
     keywords: ["support", "ticket", "help", "issue"],
     kind: "page",
     priority: 8,
@@ -167,36 +195,44 @@ const BASE_SEARCH_ITEMS: GlobalSearchItem[] = [
 ]
 
 function getRouteLabel(pathname: string) {
-  if (pathname === "/") return "Overview"
-  if (pathname.startsWith("/online-payments")) return "Checkout"
-  if (pathname.startsWith("/offline-payments")) return "POS Terminal"
-  if (pathname.startsWith("/payment-links")) return "Payment Links"
-  if (pathname.startsWith("/products")) return "Products"
-  if (pathname.startsWith("/support")) return "Support"
+  if (pathname === ROUTES.home) return "Overview"
+  if (pathname.startsWith(ROUTES.onlinePayments.root)) return "Checkout"
+  if (pathname.startsWith(ROUTES.offlinePayments.root)) return "POS Terminal"
+  if (pathname.startsWith(ROUTES.paymentLinks.root)) return "Payment Links"
+  if (pathname.startsWith(ROUTES.crossBorder.root)) return "Cross Border"
+  if (pathname.startsWith(ROUTES.products.root)) return "Products"
+  if (pathname.startsWith(ROUTES.support.root)) return "Support"
+  if (pathname.startsWith(ROUTES.settings.root)) return "Settings"
   if (pathname.startsWith("/account")) return "Account"
   return "Workspace"
 }
 
 function getPrimaryAction(pathname: string) {
-  if (pathname.startsWith("/payment-links")) {
-    return { label: "Create Link", href: "/payment-links/all" }
+  if (pathname.startsWith(ROUTES.paymentLinks.root)) {
+    return { label: "Create Link", href: ROUTES.paymentLinks.all }
   }
-  if (pathname.startsWith("/support")) {
-    return { label: "New Ticket", href: "/support" }
+  if (pathname.startsWith(ROUTES.support.root)) {
+    return { label: "New Ticket", href: ROUTES.support.root }
   }
   if (pathname.startsWith("/account")) {
-    return { label: "Open profile", href: "/account/profile" }
+    return { label: "Open profile", href: ROUTES.account.profile }
   }
-  if (pathname.startsWith("/products")) {
-    return { label: "Open Products", href: "/products" }
+  if (pathname.startsWith(ROUTES.products.root)) {
+    return { label: "Open Products", href: ROUTES.products.root }
   }
-  if (pathname.startsWith("/online-payments")) {
-    return { label: "View Reports", href: "/online-payments/reports" }
+  if (pathname.startsWith(ROUTES.crossBorder.root)) {
+    return { label: "Open Uploads", href: ROUTES.crossBorder.uploads }
   }
-  if (pathname.startsWith("/offline-payments")) {
-    return { label: "View Reports", href: "/offline-payments/reports" }
+  if (pathname.startsWith(ROUTES.settings.root)) {
+    return { label: "Open credentials", href: `${ROUTES.settings.root}?module=credentials` }
   }
-  return { label: "Open Products", href: "/products" }
+  if (pathname.startsWith(ROUTES.onlinePayments.root)) {
+    return { label: "View Reports", href: ROUTES.onlinePayments.reports }
+  }
+  if (pathname.startsWith(ROUTES.offlinePayments.root)) {
+    return { label: "View Reports", href: ROUTES.offlinePayments.reports }
+  }
+  return { label: "Open Products", href: ROUTES.products.root }
 }
 
 function getSearchScore(item: GlobalSearchItem, query: string, pathname: string, role: string) {
@@ -241,7 +277,7 @@ export function getGlobalSearchItems({
     id: `configured-${name}`,
     title: `${name} configuration`,
     description: `Shortcuts and setup guidance for ${name}`,
-    href: "/products",
+    href: ROUTES.products.root,
     keywords: [name.toLowerCase(), "configuration", "product", "setup"],
     kind: "config",
     priority: 11,

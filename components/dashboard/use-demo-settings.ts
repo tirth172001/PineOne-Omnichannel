@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import {
+  DEFAULT_DEMO_SETTINGS,
   DEMO_SETTINGS_CHANGED_EVENT,
   getResolvedMaxWidth,
   readDemoSettings,
@@ -9,7 +10,8 @@ import {
 } from "@/lib/demo-settings"
 
 export function useDemoSettingsState() {
-  const [settings, setSettings] = useState<DemoSettings>(readDemoSettings)
+  // Start from a deterministic snapshot so SSR and first client render match.
+  const [settings, setSettings] = useState<DemoSettings>(DEFAULT_DEMO_SETTINGS)
 
   useEffect(() => {
     const sync = () => setSettings(readDemoSettings())

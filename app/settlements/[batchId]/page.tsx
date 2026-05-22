@@ -1,17 +1,21 @@
-import { V2DashboardLayout } from "@/components/dashboard/v2-dashboard-layout"
+import { notFound } from "next/navigation"
 import { SettlementsRouteContent } from "@/components/settlements/settlements-route-content"
+import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
 
-export default async function SettlementBatchPage({
-  params,
-}: {
+type PageProps = {
   params: Promise<{ batchId: string }>
-}) {
-  const { batchId } = await params
-
-  return (
-    <V2DashboardLayout>
-      <SettlementsRouteContent batchId={batchId} />
-    </V2DashboardLayout>
-  )
 }
 
+export default async function SettlementDetailPage({ params }: PageProps) {
+  const { batchId } = await params
+
+  if (!batchId) {
+    notFound()
+  }
+
+  return (
+    <TransactionsPlatformShell>
+      <SettlementsRouteContent batchId={batchId} />
+    </TransactionsPlatformShell>
+  )
+}

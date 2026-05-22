@@ -1,7 +1,7 @@
 "use client"
 
-import { HomeContent } from "@/components/home/home-content"
+import { DisputesContent } from "./disputes-content"
 
 export function DisputesRouteContent() {
-  return <HomeContent initialSection="disputes" />
+  return <DisputesContent />
 }
