@@ -22,6 +22,7 @@ import {
   type DemoSettings,
 } from "@/lib/demo-settings"
 import { ROUTES } from "@/lib/navigation/routes"
+import { setThemeWithTransition } from "@/lib/theme-transition"
 import { cn } from "@/lib/utils"
 
 const FAB_POSITION_KEY = "pine-one-demo-fab-position"
@@ -333,7 +334,7 @@ export function FloatingDemoFab() {
                   variant={themeValue === "light" ? "secondary" : "outline"}
                   size="sm"
                   className="h-8 text-xs"
-                  onClick={() => setTheme("light")}
+                  onClick={() => setThemeWithTransition(setTheme, "light")}
                 >
                   <Sun className="h-3.5 w-3.5" />
                   Light
@@ -343,7 +344,7 @@ export function FloatingDemoFab() {
                   variant={themeValue === "dark" ? "secondary" : "outline"}
                   size="sm"
                   className="h-8 text-xs"
-                  onClick={() => setTheme("dark")}
+                  onClick={() => setThemeWithTransition(setTheme, "dark")}
                 >
                   <Moon className="h-3.5 w-3.5" />
                   Dark

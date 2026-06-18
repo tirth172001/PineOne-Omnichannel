@@ -204,7 +204,7 @@ export function TransactionsContent() {
   const [mode, setMode] = useState<ListingMode>("in-store")
   const [onlineView, setOnlineView] = useState<OnlineView>("order")
   const [search, setSearch] = useState("")
-  const [dateFilter, setDateFilter] = useState<DateFilter>("today")
+  const [dateFilter, setDateFilter] = useState<DateFilter>("30d")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [paymentModeFilter, setPaymentModeFilter] = useState<"all" | "upi" | "card" | "netbanking">("all")
   const [providerFilter, setProviderFilter] = useState<string>("all")
@@ -373,7 +373,7 @@ export function TransactionsContent() {
           : datePresetApplied === "30d"
             ? "Last 30 days"
             : "Custom"
-  const paginationEnabled = dateFilter === "30d"
+  const paginationEnabled = true
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage))
 
@@ -869,7 +869,7 @@ export function TransactionsContent() {
     <TransactionsPlatformShell>
       <div className="tx-light-theme mx-auto w-full max-w-[1512px] bg-[var(--tx-surface-page,var(--background))]">
         <ListingPageHeader
-          title="Transactions"
+          title="Payments"
           toggles={[
             { label: "In-store payments", value: "in-store" },
             { label: "Online payment", value: "online" },
@@ -1058,28 +1058,28 @@ export function TransactionsContent() {
           <ListingSummaryCards className="px-0 py-0" cards={summaryCards} />
 
           <section className="space-y-6">
-            <div className="overflow-hidden rounded-[8px] border border-[var(--tx-border-subtle,var(--border))] bg-[var(--tx-surface-panel,var(--background))]">
+            <div className="overflow-hidden rounded-[8px] border border-border bg-card">
               <div className="overflow-x-auto">
                 <Table className="min-w-[1100px]">
                   <TableHeader>
-                    <TableRow className="h-10 border-[var(--tx-border-subtle,var(--border))] bg-[var(--tx-surface-header,var(--surface-header))] hover:bg-[var(--tx-surface-header,var(--surface-header))] [&>th:first-child]:rounded-tl-[8px] [&>th:last-child]:rounded-tr-[8px]">
-                      <TableHead className="px-4 text-sm font-medium text-[var(--tx-text-secondary,var(--muted-foreground))]">Order ID</TableHead>
-                      <TableHead className="px-4 text-sm font-medium text-[var(--tx-text-secondary,var(--muted-foreground))]">Merchant ID</TableHead>
+                    <TableRow className="h-10 [&>th:first-child]:rounded-tl-[8px] [&>th:last-child]:rounded-tr-[8px]">
+                      <TableHead className="px-4 text-sm font-medium text-muted-foreground">Order ID</TableHead>
+                      <TableHead className="px-4 text-sm font-medium text-muted-foreground">Merchant ID</TableHead>
                       {isOnlineByPayments ? (
-                        <TableHead className="px-4 text-sm font-medium text-[var(--tx-text-secondary,var(--muted-foreground))]">Transaction ID</TableHead>
+                        <TableHead className="px-4 text-sm font-medium text-muted-foreground">Transaction ID</TableHead>
                       ) : null}
-                      <TableHead className="px-4 text-sm font-medium text-[var(--tx-text-secondary,var(--muted-foreground))]">Transaction type</TableHead>
-                      <TableHead className="px-4 text-right text-sm font-medium text-[var(--tx-text-secondary,var(--muted-foreground))]">Amount</TableHead>
-                      <TableHead className="px-4 text-sm font-medium text-[var(--tx-text-secondary,var(--muted-foreground))]">Payment mode</TableHead>
-                      <TableHead className="px-4 text-sm font-medium text-[var(--tx-text-secondary,var(--muted-foreground))]">Created on</TableHead>
-                      <TableHead className="px-4 text-sm font-medium text-[var(--tx-text-secondary,var(--muted-foreground))]">Status</TableHead>
+                      <TableHead className="px-4 text-sm font-medium text-muted-foreground">Transaction type</TableHead>
+                      <TableHead className="px-4 text-right text-sm font-medium text-muted-foreground">Amount</TableHead>
+                      <TableHead className="px-4 text-sm font-medium text-muted-foreground">Payment mode</TableHead>
+                      <TableHead className="px-4 text-sm font-medium text-muted-foreground">Created on</TableHead>
+                      <TableHead className="px-4 text-sm font-medium text-muted-foreground">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {visibleRows.map((row) => (
                       <TableRow
                         key={row.transactionId}
-                        className="h-[72px] cursor-pointer border-[var(--tx-border-subtle,var(--border))] hover:bg-[var(--tx-surface-hover,var(--muted))]"
+                        className="h-[72px] cursor-pointer"
                         onClick={() =>
                           router.push(
                             `/transactions/${row.transactionId}?channel=${mode === "online" ? "online" : "in-store"}`
@@ -1112,8 +1112,8 @@ export function TransactionsContent() {
                     ))}
 
                     {!visibleRows.length ? (
-                      <TableRow className="h-16 border-[var(--tx-border-subtle,var(--border))]">
-                        <TableCell colSpan={tableColCount} className="px-4 text-sm text-[var(--tx-text-secondary,var(--muted-foreground))]">
+                      <TableRow className="h-16">
+                        <TableCell colSpan={tableColCount} className="px-4 text-sm text-muted-foreground">
                           No transactions found.
                         </TableCell>
                       </TableRow>

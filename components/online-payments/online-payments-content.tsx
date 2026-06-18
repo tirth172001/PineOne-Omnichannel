@@ -84,36 +84,58 @@ const methodOrder: Array<{ key: SectionKey; label: string }> = [
   { key: "wallets", label: "Wallets" },
 ]
 
-const recentTxns = [
-  { id: "TXN-9201", method: "UPI", label: "Google Pay", amount: 2450, status: "success", time: "2m ago", merchant: "Rahul Sharma" },
-  { id: "TXN-9200", method: "Card", label: "Visa •• 4242", amount: 8900, status: "success", time: "8m ago", merchant: "Priya Nair" },
-  { id: "TXN-9199", method: "UPI", label: "PhonePe", amount: 1200, status: "failed", time: "15m ago", merchant: "Arjun Mehta" },
-  { id: "TXN-9198", method: "EMI", label: "Bajaj Fin", amount: 45000, status: "success", time: "22m ago", merchant: "Sneha Patel" },
-  { id: "TXN-9197", method: "Wallet", label: "Paytm", amount: 600, status: "pending", time: "31m ago", merchant: "Kiran Rao" },
-  { id: "TXN-9196", method: "Card", label: "MC •• 1234", amount: 3200, status: "success", time: "45m ago", merchant: "Neha Joshi" },
-]
+const onlineTxnMethods = [
+  { method: "UPI", label: "Google Pay" },
+  { method: "Card", label: "Visa •• 4242" },
+  { method: "EMI", label: "Bajaj Fin" },
+  { method: "Wallet", label: "Paytm" },
+] as const
 
-const settlementRows = [
-  { id: "STL-2081", title: "Today's settlement", amount: "₹84,120", state: "Completed" },
-  { id: "STL-2080", title: "T+1 batch", amount: "₹1,42,330", state: "Processing" },
-  { id: "STL-2079", title: "Holdback review", amount: "₹12,490", state: "Needs action" },
-]
+const onlineTxnStatuses = ["success", "success", "pending", "failed"] as const
+const onlineTxnMerchants = ["Rahul Sharma", "Priya Nair", "Arjun Mehta", "Sneha Patel", "Kiran Rao", "Neha Joshi"] as const
 
-const disputeRows = [
-  { id: "DP-3342", state: "Chargeback initiated", amount: "₹4,300" },
-  { id: "DP-3337", state: "Evidence required", amount: "₹12,500" },
-]
+const recentTxns = Array.from({ length: 48 }, (_, index) => {
+  const methodMeta = onlineTxnMethods[index % onlineTxnMethods.length]
+  return {
+    id: `TXN-${9201 + index}`,
+    method: methodMeta.method,
+    label: methodMeta.label,
+    amount: 900 + ((index * 1375) % 52000),
+    status: onlineTxnStatuses[index % onlineTxnStatuses.length],
+    time: `${(index + 1) * 2}m ago`,
+    merchant: onlineTxnMerchants[index % onlineTxnMerchants.length],
+  }
+})
 
-const refundRows = [
-  { id: "RF-1202", state: "Auto-approved", amount: "₹1,200" },
-  { id: "RF-1197", state: "Manual review", amount: "₹4,400" },
-]
+const settlementRows = Array.from({ length: 14 }, (_, index) => {
+  const state = index % 3 === 0 ? "Completed" : index % 3 === 1 ? "Processing" : "Needs action"
+  const title = state === "Completed" ? "Today's settlement" : state === "Processing" ? "T+1 batch" : "Holdback review"
+  return {
+    id: `STL-${2081 + index}`,
+    title,
+    amount: `₹${(84120 + index * 2175).toLocaleString("en-IN")}`,
+    state,
+  }
+})
 
-const reportRows = [
-  { id: "RPT-201", title: "Gateway success report", cadence: "Daily", owner: "Payments Ops" },
-  { id: "RPT-202", title: "Method mix report", cadence: "Weekly", owner: "Growth Team" },
-  { id: "RPT-203", title: "Settlement variance report", cadence: "Daily", owner: "Finance Ops" },
-]
+const disputeRows = Array.from({ length: 14 }, (_, index) => ({
+  id: `DP-${3342 + index}`,
+  state: index % 2 === 0 ? "Chargeback initiated" : "Evidence required",
+  amount: `₹${(4300 + index * 640).toLocaleString("en-IN")}`,
+}))
+
+const refundRows = Array.from({ length: 14 }, (_, index) => ({
+  id: `RF-${1202 + index}`,
+  state: index % 2 === 0 ? "Auto-approved" : "Manual review",
+  amount: `₹${(1200 + index * 420).toLocaleString("en-IN")}`,
+}))
+
+const reportRows = Array.from({ length: 14 }, (_, index) => ({
+  id: `RPT-${201 + index}`,
+  title: index % 3 === 0 ? "Gateway success report" : index % 3 === 1 ? "Method mix report" : "Settlement variance report",
+  cadence: index % 2 === 0 ? "Daily" : "Weekly",
+  owner: index % 2 === 0 ? "Payments Ops" : "Growth Team",
+}))
 
 const defaultVasItems: VasItem[] = [
   { id: "smart-routing", name: "Smart routing", detail: "Route by success likelihood across gateways.", enabled: true, requiresConfig: true },

@@ -449,7 +449,7 @@ export function UpiQrStickerContent() {
             <section className="overflow-hidden rounded-md border border-border/70">
               <Table className="min-w-[1120px]">
                 <TableHeader>
-                  <TableRow className="h-10 border-border/70 hover:bg-transparent">
+                  <TableRow className="h-10 border-border/70 bg-muted/35 hover:bg-muted/35">
                     {visibleColumns.creationDate ? (
                       <TableHead className="h-10 w-[168px] px-3 text-sm font-medium text-muted-foreground">Creation date</TableHead>
                     ) : null}
@@ -467,7 +467,7 @@ export function UpiQrStickerContent() {
                     </TableRow>
                   ) : (
                     pagedRows.map((row) => (
-                      <TableRow key={row.id} className="h-[72px] border-border/70 hover:bg-transparent">
+                      <TableRow key={row.id} className="h-[72px] border-border/70 hover:bg-accent/35">
                         {visibleColumns.creationDate ? (
                           <TableCell className="px-3">
                             <p className="text-sm leading-5 text-foreground">{row.creationDate}</p>

@@ -21,6 +21,7 @@ import {
   writeLanguagePreference,
 } from "@/lib/language-settings"
 import { readDummyAuthSession, writeDummyAuthSession } from "@/lib/dummy-auth"
+import { setThemeWithTransition } from "@/lib/theme-transition"
 
 const imgLine = "https://www.figma.com/api/mcp/asset/1c3d4486-78bf-42f4-bc1e-1a5ece78800e"
 const imgVector3 = "https://www.figma.com/api/mcp/asset/7964ee79-a0f1-4c95-b33b-37968f22bfb5"
@@ -169,7 +170,7 @@ export default function LoginPage() {
               <button
                 className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-foreground transition-colors hover:bg-accent"
                 type="button"
-                onClick={() => setTheme(isDark ? "light" : "dark")}
+                onClick={() => setThemeWithTransition(setTheme, isDark ? "light" : "dark")}
                 aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
               >
                 {isDark ? <Sun size={16} weight="regular" /> : <Moon size={16} weight="regular" />}

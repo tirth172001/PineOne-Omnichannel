@@ -55,15 +55,28 @@ const initialDevices: DeviceRow[] = [
   { id: "POS-008", hardwareId: "000002944210", hardwareModel: "Touch | A920", posId: "2581108", storeName: "BANGALORE RETAIL HUB", storeAddress: "Old Airport Road, Bengaluru", installationDate: "12 Dec, 2023", mode: "Standalone", name: "Mobile Dept", location: "First Floor", status: "online", today: "₹45,600", txns: 37, model: "P2 Lite", lastSeen: "5 min ago" },
   { id: "POS-009", hardwareId: "000003112278", hardwareModel: "Duo | A80", posId: "2581129", storeName: "PINE CASH & CARRY", storeAddress: "MG Road, Bengaluru", installationDate: "05 Nov, 2023", mode: "Standalone", name: "Customer Svc", location: "Entry", status: "offline", today: "₹0", txns: 0, model: "A80", lastSeen: "46 min ago" },
   { id: "POS-010", hardwareId: "000003118456", hardwareModel: "Go | A50", posId: "2581194", storeName: "WAREHOUSE COLLECTION POINT", storeAddress: "Electronic City, Bengaluru", installationDate: "21 Jan, 2024", mode: "Standalone", name: "Warehouse", location: "Basement", status: "online", today: "₹11,600", txns: 10, model: "P2 Lite", lastSeen: "14 min ago" },
+  { id: "POS-011", hardwareId: "000003245109", hardwareModel: "Touch | A920", posId: "2581440", storeName: "CITY RETAIL SOUTH", storeAddress: "Koramangala, Bengaluru", installationDate: "11 Feb, 2024", mode: "Standalone", name: "Counter 4", location: "Ground Floor", status: "online", today: "₹63,900", txns: 51, model: "A920 Pro", lastSeen: "Now" },
+  { id: "POS-012", hardwareId: "000003245110", hardwareModel: "Touch | A920", posId: "2581441", storeName: "CITY RETAIL SOUTH", storeAddress: "Koramangala, Bengaluru", installationDate: "11 Feb, 2024", mode: "Standalone", name: "Counter 5", location: "Ground Floor", status: "online", today: "₹58,200", txns: 47, model: "A920 Pro", lastSeen: "3 min ago" },
+  { id: "POS-013", hardwareId: "000003245210", hardwareModel: "Go | A50", posId: "2581522", storeName: "NORTH HYPERMART", storeAddress: "Yelahanka, Bengaluru", installationDate: "20 Feb, 2024", mode: "Standalone", name: "Self Checkout 1", location: "Entry", status: "online", today: "₹14,700", txns: 16, model: "P2 Lite", lastSeen: "6 min ago" },
+  { id: "POS-014", hardwareId: "000003245211", hardwareModel: "Go | A50", posId: "2581523", storeName: "NORTH HYPERMART", storeAddress: "Yelahanka, Bengaluru", installationDate: "20 Feb, 2024", mode: "Standalone", name: "Self Checkout 2", location: "Entry", status: "offline", today: "₹0", txns: 0, model: "P2 Lite", lastSeen: "1 hr ago" },
+  { id: "POS-015", hardwareId: "000003310001", hardwareModel: "Duo | A80", posId: "2581810", storeName: "PINE FRESH MART", storeAddress: "HSR Layout, Bengaluru", installationDate: "03 Mar, 2024", mode: "Standalone", name: "Fresh Produce", location: "Left Wing", status: "online", today: "₹27,400", txns: 28, model: "A80", lastSeen: "11 min ago" },
+  { id: "POS-016", hardwareId: "000003310002", hardwareModel: "Duo | A80", posId: "2581811", storeName: "PINE FRESH MART", storeAddress: "HSR Layout, Bengaluru", installationDate: "03 Mar, 2024", mode: "Standalone", name: "Dairy Counter", location: "Left Wing", status: "online", today: "₹24,950", txns: 23, model: "A80", lastSeen: "9 min ago" },
 ]
 
-const offlineTransactionRows = [
-  { id: "TXN-89012", device: "POS-001", amount: "₹2,450", method: "Tap", status: "Success", time: "11:42 AM", location: "Main Floor" },
-  { id: "TXN-89011", device: "POS-004", amount: "₹850", method: "Chip", status: "Success", time: "11:39 AM", location: "Ground Floor" },
-  { id: "TXN-89010", device: "POS-007", amount: "₹5,200", method: "Tap", status: "Success", time: "11:30 AM", location: "First Floor" },
-  { id: "TXN-89009", device: "POS-005", amount: "₹1,100", method: "Swipe", status: "Failed", time: "11:18 AM", location: "Ground Floor" },
-  { id: "TXN-89008", device: "POS-006", amount: "₹3,300", method: "Tap", status: "Success", time: "11:05 AM", location: "First Floor" },
-]
+const offlineTransactionRows = Array.from({ length: 36 }, (_, index) => {
+  const method = index % 3 === 0 ? "Tap" : index % 3 === 1 ? "Chip" : "Swipe"
+  const status = index % 6 === 0 ? "Failed" : "Success"
+  const deviceNumber = String((index % 16) + 1).padStart(3, "0")
+  return {
+    id: `TXN-${89008 + index}`,
+    device: `POS-${deviceNumber}`,
+    amount: `₹${(850 + index * 410).toLocaleString("en-IN")}`,
+    method,
+    status,
+    time: `${(9 + (index % 12)).toString().padStart(2, "0")}:${(index * 7 % 60).toString().padStart(2, "0")} ${index % 2 === 0 ? "AM" : "PM"}`,
+    location: index % 3 === 0 ? "Main Floor" : index % 3 === 1 ? "Ground Floor" : "First Floor",
+  }
+})
 
 const weeklyData = [
   { day: "Mon", tap: 127, chip: 76, swipe: 42 },
@@ -87,27 +100,31 @@ const deviceTxns = [
   { id: "TXN-D197", amount: 3300, method: "Tap", status: "success", time: "52m ago", card: "Amex •• 3388" },
 ]
 
-const settlementRows = [
-  { id: "STL-901", title: "Today's settlement", amount: "₹1,12,300", state: "Completed" },
-  { id: "STL-900", title: "Pending reconciliation", amount: "₹23,400", state: "Processing" },
-  { id: "STL-899", title: "Holdback reserve", amount: "₹9,800", state: "Review" },
-]
+const settlementRows = Array.from({ length: 14 }, (_, index) => ({
+  id: `STL-${901 + index}`,
+  title: index % 3 === 0 ? "Today's settlement" : index % 3 === 1 ? "Pending reconciliation" : "Holdback reserve",
+  amount: `₹${(112300 + index * 1850).toLocaleString("en-IN")}`,
+  state: index % 3 === 0 ? "Completed" : index % 3 === 1 ? "Processing" : "Review",
+}))
 
-const disputeRows = [
-  { id: "DSP-112", state: "Chargeback requested", amount: "₹2,300" },
-  { id: "DSP-109", state: "Waiting for evidence", amount: "₹5,900" },
-]
+const disputeRows = Array.from({ length: 14 }, (_, index) => ({
+  id: `DSP-${109 + index}`,
+  state: index % 2 === 0 ? "Chargeback requested" : "Waiting for evidence",
+  amount: `₹${(2300 + index * 530).toLocaleString("en-IN")}`,
+}))
 
-const refundRows = [
-  { id: "RFD-611", state: "POS refund approved", amount: "₹780" },
-  { id: "RFD-603", state: "Pending manager review", amount: "₹2,240" },
-]
+const refundRows = Array.from({ length: 14 }, (_, index) => ({
+  id: `RFD-${603 + index}`,
+  state: index % 2 === 0 ? "POS refund approved" : "Pending manager review",
+  amount: `₹${(780 + index * 240).toLocaleString("en-IN")}`,
+}))
 
-const reportRows = [
-  { id: "RPT-301", title: "Terminal uptime report", cadence: "Daily", owner: "Terminal Ops" },
-  { id: "RPT-302", title: "Card mode mix report", cadence: "Weekly", owner: "Store Ops" },
-  { id: "RPT-303", title: "Offline settlement report", cadence: "Daily", owner: "Finance Ops" },
-]
+const reportRows = Array.from({ length: 14 }, (_, index) => ({
+  id: `RPT-${301 + index}`,
+  title: index % 3 === 0 ? "Terminal uptime report" : index % 3 === 1 ? "Card mode mix report" : "Offline settlement report",
+  cadence: index % 2 === 0 ? "Daily" : "Weekly",
+  owner: index % 2 === 0 ? "Terminal Ops" : "Store Ops",
+}))
 
 const defaultVasItems: VasItem[] = [
   { id: "amex-enable", name: "AMEX acceptance", detail: "Enable American Express card acceptance across terminals.", enabled: false, requiresConfig: true },

@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils"
 import { clearDummyAuthSession, readDummyAuthSession } from "@/lib/dummy-auth"
 import { getConfiguredProductNames, getGlobalSearchItems } from "@/lib/global-search"
 import { ROUTES } from "@/lib/navigation/routes"
+import { setThemeWithTransition } from "@/lib/theme-transition"
 import {
   DEFAULT_LANGUAGE,
   SUPPORTED_LANGUAGES,
@@ -310,7 +311,7 @@ export function V2Topbar({ pathname, onMenuClick, isMobile = false }: V2TopbarPr
             variant="ghost"
             size="icon-sm"
             className="h-9 w-9 text-foreground hover:bg-primary/10"
-            onClick={() => setTheme(isDark ? "light" : "dark")}
+            onClick={() => setThemeWithTransition(setTheme, isDark ? "light" : "dark")}
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

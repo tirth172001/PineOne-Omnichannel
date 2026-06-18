@@ -448,7 +448,7 @@ export function TransactionDetailContent({
                           {[1, 2, 3].map((index) => (
                             <div
                               key={index}
-                              className="flex items-center justify-between rounded-[8px] border border-border/60 px-4 py-3"
+                              className="flex items-center justify-between rounded-[8px] border border-border px-4 py-3"
                             >
                               <p className="text-sm text-foreground">Product: GU9838238</p>
                               <button
@@ -611,7 +611,7 @@ export function TransactionDetailContent({
 
           <div className="space-y-4 px-6 py-6">
             {refundSubmitted ? (
-              <div className="rounded-lg border border-border/70 bg-card p-4">
+              <div className="rounded-lg border border-border bg-card p-4">
                 <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-success/20 text-success">
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
@@ -636,7 +636,7 @@ export function TransactionDetailContent({
                   />
                 </div>
                 {isPartialRefund ? (
-                  <p className="rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-xs text-foreground">
+                  <p className="rounded-md border border-border bg-muted/20 px-3 py-2 text-xs text-foreground">
                     You are initiating a partial refund of {formatInr(refundAmount)}.
                   </p>
                 ) : null}
@@ -666,7 +666,7 @@ export function TransactionDetailContent({
 
             <div className="flex-1 px-6 py-6">
               <TabsContent value="customer" className="h-full">
-                <div className="h-full overflow-hidden rounded-md border border-border/70 bg-background">
+                <div className="h-full overflow-hidden rounded-md border border-border bg-background">
                   <iframe
                     src="/charge-slips/customer-slip.pdf#toolbar=0&navpanes=0&scrollbar=0"
                     className="h-full w-full"
@@ -676,7 +676,7 @@ export function TransactionDetailContent({
               </TabsContent>
 
               <TabsContent value="merchant" className="h-full">
-                <div className="h-full overflow-hidden rounded-md border border-border/70 bg-background">
+                <div className="h-full overflow-hidden rounded-md border border-border bg-background">
                   <iframe
                     src="/charge-slips/merchant-slip.pdf#toolbar=0&navpanes=0&scrollbar=0"
                     className="h-full w-full"

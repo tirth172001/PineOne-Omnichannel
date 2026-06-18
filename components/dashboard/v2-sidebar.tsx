@@ -28,15 +28,17 @@ function NavGroup({
 
   // Leaf item (no children) — renders as a link
   if (!hasSubItems && item.href) {
+    const isDeemphasized = item.label === "More"
     return (
       <Link
         href={item.href}
         onClick={onNavigate}
         className={cn(
-          "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+          "flex h-8 items-center gap-2 rounded-md px-2 text-sm leading-none transition-colors",
           isActive
-            ? "bg-muted/55 text-foreground font-semibold shadow-[inset_0_0_0_1px_hsl(var(--border)/0.45)]"
-            : "text-muted-foreground/90 hover:bg-muted/70 hover:text-foreground"
+            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+          isDeemphasized && "opacity-70"
         )}
       >
         <Icon className="h-4 w-4 shrink-0" />
@@ -68,10 +70,10 @@ function NavGroup({
       <button
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+          "flex h-8 w-full items-center gap-2 rounded-md px-2 text-sm leading-none transition-colors",
           isActive
-            ? "text-foreground"
-            : "text-muted-foreground/90 hover:bg-muted/70 hover:text-foreground"
+            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         )}
       >
         <Icon className="h-4 w-4 shrink-0" />
@@ -85,7 +87,7 @@ function NavGroup({
       </button>
 
       {open && (
-        <div className="relative mt-0.5 flex flex-col gap-0.5 pb-1 pt-1">
+        <div className="relative mt-1 flex flex-col gap-1">
           {activeSubIndex >= 0 && (
             <svg
               aria-hidden
@@ -120,10 +122,10 @@ function NavGroup({
                 href={sub.href}
                 onClick={onNavigate}
                 className={cn(
-                  "flex h-[34px] w-full items-center rounded-lg px-3 pl-[38px] text-[13px] transition-colors",
+                  "flex h-8 w-full items-center rounded-md px-2 pl-9 text-sm leading-none transition-colors",
                   subActive
-                    ? "bg-muted/55 text-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
               >
                 <span className="truncate">{sub.label}</span>
@@ -154,27 +156,29 @@ type V2SidebarContentProps = {
 
 function V2SidebarContent({ pathname, navSections, mobile = false, onNavigate }: V2SidebarContentProps) {
   const navClassName = mobile
-    ? "flex max-h-[76dvh] flex-col gap-5 overflow-y-auto px-3 py-3"
-    : "flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4"
+    ? "flex max-h-[76dvh] flex-col gap-2 overflow-y-auto p-0"
+    : "flex flex-1 flex-col gap-2 overflow-y-auto p-0"
 
   if (mobile) {
     return (
       <nav className={navClassName}>
         {navSections.map((section, si) => (
-          <div key={si} className={cn("flex flex-col gap-0.5", si > 0 ? "border-t border-border/35 pt-4" : "")}>
+          <div key={si} className="flex flex-col px-2 py-2">
             {section.label && (
-              <p className="mb-1 px-3 text-[12px] font-semibold tracking-[0.01em] text-muted-foreground/80">
+              <p className="flex items-center px-2 py-2 text-xs font-medium leading-4 text-muted-foreground/70">
                 {section.label}
               </p>
             )}
-            {section.items.map((item, ii) => (
-              <NavGroup
-                key={`${si}-${ii}-${item.href ?? item.label}`}
-                item={item}
-                pathname={pathname}
-                onNavigate={onNavigate}
-              />
-            ))}
+            <div className="flex flex-col gap-1">
+              {section.items.map((item, ii) => (
+                <NavGroup
+                  key={`${si}-${ii}-${item.href ?? item.label}`}
+                  item={item}
+                  pathname={pathname}
+                  onNavigate={onNavigate}
+                />
+              ))}
+            </div>
           </div>
         ))}
       </nav>
@@ -185,15 +189,17 @@ function V2SidebarContent({ pathname, navSections, mobile = false, onNavigate }:
     <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-60 shrink-0 self-start flex-col bg-sidebar md:flex">
       <nav className={navClassName}>
         {navSections.map((section, si) => (
-          <div key={si} className={cn("flex flex-col gap-0.5", si > 0 ? "border-t border-border/35 pt-4" : "")}>
+          <div key={si} className="flex flex-col px-2 py-2">
             {section.label && (
-              <p className="mb-1 px-3 text-[12px] font-semibold tracking-[0.01em] text-muted-foreground/80">
+              <p className="flex items-center px-2 py-2 text-xs font-medium leading-4 text-muted-foreground/70">
                 {section.label}
               </p>
             )}
-            {section.items.map((item, ii) => (
-              <NavGroup key={`${si}-${ii}-${item.href ?? item.label}`} item={item} pathname={pathname} onNavigate={onNavigate} />
-            ))}
+            <div className="flex flex-col gap-1">
+              {section.items.map((item, ii) => (
+                <NavGroup key={`${si}-${ii}-${item.href ?? item.label}`} item={item} pathname={pathname} onNavigate={onNavigate} />
+              ))}
+            </div>
           </div>
         ))}
       </nav>

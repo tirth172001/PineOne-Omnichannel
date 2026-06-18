@@ -182,6 +182,35 @@ export function HighchartsPanelChart({
   className?: string
   fillParent?: boolean
 }) {
+  const requestedChartType = ((options.chart as Highcharts.ChartOptions | undefined)?.type ?? "spline") as string
+  const needsSankey = requestedChartType === "sankey"
+  const sankeyAlreadyLoaded = Boolean(
+    (Highcharts as unknown as { SeriesRegistry?: { seriesTypes?: Record<string, unknown> } }).SeriesRegistry?.seriesTypes?.sankey
+  )
+  const [sankeyReady, setSankeyReady] = React.useState(!needsSankey || sankeyAlreadyLoaded)
+
+  React.useEffect(() => {
+    if (!needsSankey || sankeyReady) return
+
+    let mounted = true
+    import("highcharts/modules/sankey").then((module) => {
+      const initSankey = module.default
+      const hasSankey = Boolean(
+        (Highcharts as unknown as { SeriesRegistry?: { seriesTypes?: Record<string, unknown> } }).SeriesRegistry?.seriesTypes?.sankey
+      )
+
+      if (typeof initSankey === "function" && !hasSankey) {
+        initSankey(Highcharts)
+      }
+
+      if (mounted) setSankeyReady(true)
+    })
+
+    return () => {
+      mounted = false
+    }
+  }, [needsSankey, sankeyReady])
+
   const themed = React.useMemo(() => withChartTheme(options), [options])
   const panelSafeThemed = React.useMemo(() => {
     const chartType = ((themed.chart as Highcharts.ChartOptions | undefined)?.type ?? "spline") as string
@@ -325,6 +354,10 @@ export function HighchartsPanelChart({
       outerRect.style.display = "none"
     }
   }, [])
+
+  if (needsSankey && !sankeyReady) {
+    return <div className={cn(fillParent ? "h-full w-full" : "w-full", className)} />
+  }
 
   return (
     <HighchartsReact

@@ -30,15 +30,16 @@
   --chart-3: oklch(0.398 0.066 227.392);
   --chart-4: oklch(0.837 0.164 84.429);
   --chart-5: oklch(0.769 0.165 70.080);
-  --sidebar: oklch(0.970 0.000 0.000);
-  --sidebar-foreground: oklch(0.145 0.000 0.000);
+  --sidebar: #f5f5f5;
+  --sidebar-foreground: #0a0a0a;
   --sidebar-primary: oklch(0.205 0.000 0.000);
   --sidebar-primary-foreground: oklch(0.985 0.000 0.000);
-  --sidebar-accent: oklch(0.922 0.000 0.000);
-  --sidebar-accent-foreground: oklch(0.205 0.000 0.000);
-  --sidebar-border: oklch(0.922 0.000 0.000);
+  --sidebar-accent: #e5e5e5;
+  --sidebar-accent-foreground: #171717;
+  --sidebar-border: #e5e5e5;
   --sidebar-ring: oklch(0.715 0.000 0.000);
-  --font-sans: InterDisplay, "Inter Display", Inter, sans-serif;
+  --app-shell-surface: #f5f5f5;
+  --font-sans: "Inter Display", Inter, sans-serif;
   --font-mono: Geist Mono, monospace;
   --radius: 0.625rem;
 
@@ -122,14 +123,15 @@
   --chart-3: oklch(0.769 0.165 70.080);
   --chart-4: oklch(0.627 0.233 303.900);
   --chart-5: oklch(0.645 0.215 16.439);
-  --sidebar: oklch(0.205 0.000 0.000);
-  --sidebar-foreground: oklch(0.985 0.000 0.000);
-  --sidebar-primary: oklch(0.488 0.217 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0.000 0.000);
-  --sidebar-accent: oklch(0.269 0.000 0.000);
-  --sidebar-accent-foreground: oklch(0.985 0.000 0.000);
-  --sidebar-border: oklch(1.000 0.000 0.000 / 0.1);
+  --sidebar: #171717;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #262626;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #262626;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #ffffff1a;
   --sidebar-ring: oklch(0.439 0.000 0.000);
+  --app-shell-surface: #171717;
 
   --success: oklch(0.621 0.145 144);
   --success-foreground: oklch(0.985 0.005 110);
@@ -285,6 +287,27 @@
   }
   html {
     @apply font-sans;
+  }
+
+  html.theme-switching,
+  html.theme-switching *,
+  html.theme-switching *::before,
+  html.theme-switching *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  a[href],
+  button,
+  [role="button"],
+  [data-slot="button"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [data-slot="button"]:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
   }
 }
 

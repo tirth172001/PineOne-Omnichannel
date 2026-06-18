@@ -66,14 +66,14 @@ export function ListingPageHeader({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-4">
-              <h1 className="text-[30px] font-semibold leading-none text-foreground">{title}</h1>
+              <h1 className="text-3xl font-semibold leading-8 tracking-[-0.4px] text-foreground">{title}</h1>
               <Tabs value={activeToggle} onValueChange={onToggleChange}>
-                <TabsList className="rounded-[8px] border border-[var(--tx-border-strong,var(--border))] bg-[var(--tx-surface-chip,var(--olive-surface-main))] p-1">
+                <TabsList className="h-8 rounded-[8px] bg-muted p-1">
                   {toggles.map((toggle) => (
                     <TabsTrigger
                       key={toggle.value}
                       value={toggle.value}
-                      className="rounded-[8px] px-3 py-1.5 text-sm font-medium text-[var(--tx-text-secondary,var(--muted-foreground))] data-active:!rounded-[var(--radius-token-xs)] data-active:!bg-[var(--tx-tabs-active-bg,var(--accent-foreground))] data-active:!text-[var(--tx-tabs-active-fg,var(--background))]"
+                      className="h-6 rounded-[6px] border-transparent px-4 py-1 text-sm font-medium text-muted-foreground data-active:!border-transparent data-active:!bg-background data-active:!text-foreground"
                     >
                       {toggle.label}
                     </TabsTrigger>
@@ -97,7 +97,7 @@ function FilterControl({ filter }: { filter: ListingFilter }) {
   if (filter.type === "select") {
     return (
       <Select value={filter.value} onValueChange={filter.onValueChange}>
-        <SelectTrigger className="min-w-[120px] rounded-[8px] border-[var(--tx-border-strong,var(--border))] bg-[var(--tx-surface-panel,var(--background))] px-3">
+        <SelectTrigger className="h-8 min-w-[120px] rounded-[8px] border-input bg-background px-3 text-sm">
           {filter.icon}
           <SelectValue placeholder={filter.label} />
         </SelectTrigger>
@@ -117,8 +117,8 @@ function FilterControl({ filter }: { filter: ListingFilter }) {
       type="button"
       variant="outline"
       className={cn(
-        "rounded-[8px] border-[var(--tx-border-strong,var(--border))] bg-[var(--tx-surface-panel,var(--background))]",
-        filter.active ? "border-ring" : ""
+        "h-8 rounded-[8px] border-input bg-background text-sm shadow-xs",
+        filter.active ? "bg-accent text-accent-foreground" : ""
       )}
       onClick={filter.onClick}
     >
@@ -187,13 +187,13 @@ export function ListingToolbar({
       type="button"
       variant="outline"
       className={cn(
-        "shrink-0 rounded-[8px] border-[var(--tx-border-strong,var(--border))] bg-[var(--tx-surface-panel,var(--background))]",
-        moreFiltersActive ? "border-ring" : ""
+        "h-8 shrink-0 rounded-[8px] border-input bg-background text-sm shadow-xs",
+        moreFiltersActive ? "bg-accent text-accent-foreground" : ""
       )}
       onClick={moreFiltersContent ? undefined : onMoreFilters}
     >
       More filters
-      <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-[var(--tx-surface-chip,var(--olive-surface-main))] px-1.5 text-sm text-[var(--tx-text-primary,var(--foreground))]">
+      <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-secondary px-1.5 text-sm text-secondary-foreground">
         {displayMoreFiltersCount}
       </span>
       <CaretDownIcon className="size-4 text-muted-foreground" />
@@ -204,13 +204,13 @@ export function ListingToolbar({
     <section className={cn("px-8 py-4", className)}>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex max-w-full flex-nowrap items-center gap-3">
-          <div className="relative w-[300px] shrink-0">
+          <div className="relative w-[229px] shrink-0">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder={searchPlaceholder}
-              className="rounded-[8px] border-[var(--tx-border-strong,var(--border))] bg-[var(--tx-surface-panel,var(--background))] pl-10"
+              className="h-8 rounded-[8px] border-input bg-background pl-10 text-sm"
             />
           </div>
 
@@ -253,18 +253,18 @@ export function ListingSummaryCards({
 }) {
   return (
     <section className={cn("px-8 py-4", className)}>
-      <div className="rounded-[8px] border border-[var(--tx-border-subtle,var(--border))] bg-[var(--tx-surface-panel,var(--background))]">
+      <div className="rounded-[8px] border border-border bg-card">
       <div className={cn("grid", cards.length > 1 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
         {cards.map((card, index) => (
           <div
             key={card.label}
             className={cn(
               "h-[76px] px-4 pt-[12px] pb-[12px]",
-              index > 0 ? "border-l border-[var(--tx-border-subtle,var(--border))]" : "border-l-0"
+              index > 0 ? "border-l border-border" : "border-l-0"
             )}
           >
-            <p className="text-sm text-[var(--tx-text-secondary,var(--muted-foreground))]">{card.label}</p>
-            <p className="mt-1 text-[20px] font-semibold leading-none text-[var(--tx-text-primary,var(--foreground))]">{card.value}</p>
+            <p className="text-sm text-muted-foreground">{card.label}</p>
+            <p className="mt-1 text-xl font-semibold leading-7 text-foreground">{card.value}</p>
           </div>
         ))}
       </div>

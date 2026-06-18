@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils"
 export type StatusTone = "processing" | "success" | "initiated" | "failed"
 
 const toneIconClass: Record<StatusTone, string> = {
-  processing: "text-[var(--status-warning)]",
-  success: "text-[var(--status-success)]",
-  initiated: "text-[var(--status-info)]",
-  failed: "text-[var(--status-error)]",
+  processing: "text-amber-600 dark:text-amber-400",
+  success: "text-emerald-600 dark:text-emerald-400",
+  initiated: "text-sky-600 dark:text-sky-400",
+  failed: "text-red-600 dark:text-red-400",
 }
 
 const toneIcon: Record<StatusTone, ComponentType<{ className?: string }>> = {
@@ -32,7 +32,7 @@ export function StatusPill({ label, tone, className }: StatusPillProps) {
   return (
     <span
       className={cn(
-        "inline-flex h-6 items-center gap-1 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-control)] px-2 pr-3 text-xs font-normal leading-none text-foreground",
+        "inline-flex h-6 items-center gap-1 rounded-full border border-border bg-background px-2 pr-3 text-xs font-normal leading-none text-foreground",
         className
       )}
     >

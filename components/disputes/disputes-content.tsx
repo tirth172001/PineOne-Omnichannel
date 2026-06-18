@@ -8,6 +8,7 @@ import {
   ListingToolbar,
   type ListingFilter,
 } from "@/components/shared/listing-page-primitives"
+import { StatusPill, type StatusTone } from "@/components/shared/status-pill"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -42,6 +43,13 @@ const disputeRows = [
     action: "Closed",
   },
 ]
+
+function toDisputeTone(status: string): StatusTone {
+  const normalized = status.toLowerCase()
+  if (normalized.includes("closed")) return "success"
+  if (normalized.includes("review")) return "initiated"
+  return "processing"
+}
 
 export function DisputesContent() {
   const [search, setSearch] = useState("")
@@ -154,11 +162,11 @@ export function DisputesContent() {
         </section>
 
         <section className="space-y-6">
-          <div className="overflow-hidden rounded-[8px] border border-border/60 bg-background">
+          <div className="overflow-hidden rounded-[8px] border border-border bg-background">
             <div className="overflow-x-auto">
               <Table className="min-w-[1100px]">
                 <TableHeader>
-                  <TableRow className="h-10 border-border/60 bg-[var(--surface-header)] hover:bg-[var(--surface-header)] [&>th:first-child]:rounded-tl-[8px] [&>th:last-child]:rounded-tr-[8px]">
+                  <TableRow className="h-10 [&>th:first-child]:rounded-tl-[8px] [&>th:last-child]:rounded-tr-[8px]">
                     <TableHead className="px-4 text-sm font-medium text-muted-foreground">Created on</TableHead>
                     <TableHead className="px-4 text-sm font-medium text-muted-foreground">Dispute ID</TableHead>
                     <TableHead className="px-4 text-sm font-medium text-muted-foreground">Transaction ID</TableHead>
@@ -170,13 +178,15 @@ export function DisputesContent() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((row) => (
-                    <TableRow key={row.disputeId} className="h-[72px] border-border/60 hover:bg-muted/20">
+                    <TableRow key={row.disputeId} className="h-[72px]">
                       <TableCell className="px-4 text-sm text-foreground">{row.createdOn}</TableCell>
                       <TableCell className="px-4 text-sm text-foreground">{row.disputeId}</TableCell>
                       <TableCell className="px-4 text-sm text-foreground">{row.transactionId}</TableCell>
                       <TableCell className="px-4 text-sm text-foreground">{row.amount}</TableCell>
                       <TableCell className="px-4 text-sm text-foreground">{row.dueDate}</TableCell>
-                      <TableCell className="px-4 text-sm text-foreground">{row.status}</TableCell>
+                      <TableCell className="px-4 text-sm text-foreground">
+                        <StatusPill label={row.status} tone={toDisputeTone(row.status)} />
+                      </TableCell>
                       <TableCell className="px-4 text-sm text-foreground">{row.action}</TableCell>
                     </TableRow>
                   ))}

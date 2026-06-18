@@ -449,7 +449,7 @@ export function ManageDevicesContent({ initialModel }: { initialModel?: string }
           <section className="overflow-hidden rounded-md border border-border/70">
             <Table className="min-w-[1120px]">
               <TableHeader>
-                <TableRow className="h-10 border-border/70 hover:bg-transparent">
+                <TableRow className="h-10 border-border/70 bg-muted/35 hover:bg-muted/35">
                   <TableHead className="h-10 w-[85px] px-3">
                     <div className="flex items-center justify-center">
                       <Checkbox checked={allPageSelected} onCheckedChange={(checked) => handleTogglePageSelection(checked === true)} />
@@ -476,7 +476,7 @@ export function ManageDevicesContent({ initialModel }: { initialModel?: string }
                   </TableRow>
                 ) : (
                   pagedRows.map((row) => (
-                    <TableRow key={row.id} className="h-[72px] border-border/70 hover:bg-transparent">
+                    <TableRow key={row.id} className="h-[72px] border-border/70 hover:bg-accent/25">
                       <TableCell className="px-3">
                         <div className="flex items-center justify-center">
                           <Checkbox

@@ -9,6 +9,7 @@ import {
   ListingToolbar,
   type ListingFilter,
 } from "@/components/shared/listing-page-primitives"
+import { StatusPill, type StatusTone } from "@/components/shared/status-pill"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -45,6 +46,10 @@ const settlementRows = [
     status: "Settled",
   },
 ]
+
+function toSettlementTone(status: string): StatusTone {
+  return status.toLowerCase().includes("settled") ? "success" : "processing"
+}
 
 export function SettlementsContent() {
   const router = useRouter()
@@ -147,11 +152,11 @@ export function SettlementsContent() {
         </section>
 
         <section className="space-y-6">
-          <div className="overflow-hidden rounded-[8px] border border-border/60 bg-background">
+          <div className="overflow-hidden rounded-[8px] border border-border bg-background">
             <div className="overflow-x-auto">
               <Table className="min-w-[1100px]">
                 <TableHeader>
-                  <TableRow className="h-10 border-border/60 bg-[var(--surface-header)] hover:bg-[var(--surface-header)] [&>th:first-child]:rounded-tl-[8px] [&>th:last-child]:rounded-tr-[8px]">
+                  <TableRow className="h-10 [&>th:first-child]:rounded-tl-[8px] [&>th:last-child]:rounded-tr-[8px]">
                     <TableHead className="px-4 text-sm font-medium text-muted-foreground">UTR</TableHead>
                     <TableHead className="px-4 text-sm font-medium text-muted-foreground">Bank reference</TableHead>
                     <TableHead className="px-4 text-sm font-medium text-muted-foreground">Settlement amount</TableHead>
@@ -165,7 +170,7 @@ export function SettlementsContent() {
                   {rows.map((row) => (
                     <TableRow
                       key={row.utr}
-                      className="h-[72px] cursor-pointer border-border/60 hover:bg-muted/20"
+                      className="h-[72px] cursor-pointer"
                       onClick={() => router.push(`/settlements/${row.batchId}`)}
                     >
                       <TableCell className="px-4 text-sm text-foreground">{row.utr}</TableCell>
@@ -174,7 +179,9 @@ export function SettlementsContent() {
                       <TableCell className="px-4 text-sm text-foreground">{row.bankAccount}</TableCell>
                       <TableCell className="px-4 text-sm text-foreground">{row.settlementDate}</TableCell>
                       <TableCell className="px-4 text-sm text-foreground">{row.initiationDate}</TableCell>
-                      <TableCell className="px-4 text-sm text-foreground">{row.status}</TableCell>
+                      <TableCell className="px-4 text-sm text-foreground">
+                        <StatusPill label={row.status} tone={toSettlementTone(row.status)} />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

@@ -1,23 +1,20 @@
 "use client"
 
-import { type ComponentType, useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   ArrowDownUp,
   Check,
-  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  CircleDot,
-  Clock3,
   Columns3,
   Copy,
   Download,
   Search,
-  XCircle,
 } from "lucide-react"
+import { StatusPill, type StatusTone } from "@/components/shared/status-pill"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -32,7 +29,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { cn } from "@/lib/utils"
 
 type PaymentLinkStatus = "Expired" | "Success" | "Initiated" | "Failed"
 type StatusFilter = "all" | "expired" | "success" | "initiated" | "failed"
@@ -95,22 +91,11 @@ function toCsvField(value: string | number) {
   return `"${text.replace(/"/g, '""')}"`
 }
 
-const statusMeta: Record<PaymentLinkStatus, { icon: ComponentType<{ className?: string }>; iconClassName: string }> = {
-  Expired: { icon: Clock3, iconClassName: "text-muted-foreground" },
-  Success: { icon: CheckCircle2, iconClassName: "text-emerald-500" },
-  Initiated: { icon: CircleDot, iconClassName: "text-sky-500" },
-  Failed: { icon: XCircle, iconClassName: "text-red-500" },
-}
-
-function StatusBadge({ status }: { status: PaymentLinkStatus }) {
-  const Icon = statusMeta[status].icon
-
-  return (
-    <span className="inline-flex h-6 items-center gap-1 rounded-full border border-border/70 bg-background px-2 pr-3 text-xs font-normal leading-none text-foreground">
-      <Icon className={cn("h-3 w-3", statusMeta[status].iconClassName)} />
-      {status}
-    </span>
-  )
+function toPaymentLinkTone(status: PaymentLinkStatus): StatusTone {
+  if (status === "Success") return "success"
+  if (status === "Initiated") return "initiated"
+  if (status === "Expired") return "processing"
+  return "failed"
 }
 
 function PaymentLinksTable({
@@ -127,11 +112,11 @@ function PaymentLinksTable({
   const columnCount = Object.values(visibleColumns).filter(Boolean).length
 
   return (
-    <section className="overflow-hidden rounded-md border border-border/70">
+    <section className="overflow-hidden rounded-md border border-border">
       <div className="overflow-x-auto">
         <Table className="min-w-[1120px]">
           <TableHeader>
-            <TableRow className="border-border/70">
+            <TableRow className="h-10">
               {visibleColumns.creationDate ? (
                 <TableHead className="h-10 min-w-[168px] px-3 text-sm font-medium text-muted-foreground">Creation date</TableHead>
               ) : null}
@@ -154,14 +139,14 @@ function PaymentLinksTable({
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
-              <TableRow className="h-[72px] border-border/70">
+              <TableRow className="h-[72px]">
                 <TableCell colSpan={Math.max(1, columnCount)} className="px-3 text-sm text-muted-foreground">
                   No payment links found for current filters.
                 </TableCell>
               </TableRow>
             ) : (
               rows.map((row) => (
-                <TableRow key={row.id} className="h-[72px] border-border/70">
+                <TableRow key={row.id} className="h-[72px]">
                   {visibleColumns.creationDate ? (
                     <TableCell className="px-3 py-4">
                       <p className="text-sm font-medium leading-5 text-foreground">{row.creationDate}</p>
@@ -193,7 +178,7 @@ function PaymentLinksTable({
                   ) : null}
                   {visibleColumns.status ? (
                     <TableCell className="px-3 py-2">
-                      <StatusBadge status={row.status} />
+                      <StatusPill label={row.status} tone={toPaymentLinkTone(row.status)} />
                     </TableCell>
                   ) : null}
                 </TableRow>

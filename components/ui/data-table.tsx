@@ -997,8 +997,8 @@ export function DataTable<T>({
                       tabIndex={onRowClick ? 0 : undefined}
                       className={cn(
                         onRowClick &&
-                          "cursor-pointer transition-colors hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                        selected && "bg-muted/70"
+                          "cursor-pointer transition-colors hover:bg-accent/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                        selected && "bg-accent/45"
                       )}
                       onClick={() => onRowClick?.(row)}
                       onKeyDown={(event) => {
@@ -1026,7 +1026,7 @@ export function DataTable<T>({
                               "py-2.5 text-xs text-foreground",
                               column.align === "right" && "text-right",
                               column.align === "center" && "text-center",
-                              pinned && (selected ? "bg-muted/70" : "bg-card"),
+                              pinned && (selected ? "bg-accent/45" : "bg-card"),
                               column.className
                             )}
                           >

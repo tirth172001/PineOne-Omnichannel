@@ -45,6 +45,7 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { NavVisibilityProvider } from "@/components/dashboard/nav-visibility-context"
 import { clearDummyAuthSession, readDummyAuthSession } from "@/lib/dummy-auth"
+import { setThemeWithTransition } from "@/lib/theme-transition"
 import { cn } from "@/lib/utils"
 
 interface TransactionsPlatformShellProps {
@@ -133,16 +134,16 @@ function SidebarNav() {
   }, [pathname])
 
   return (
-    <aside className="sticky top-0 h-screen w-[220px] shrink-0 border-r border-border/60 bg-background lg:w-64">
-      <div className="flex h-16 items-center border-b border-border/60 px-3">
-        <span className="text-[28px] font-semibold tracking-tight text-foreground">ONE</span>
+    <aside className="sticky top-0 h-screen w-64 shrink-0 bg-sidebar">
+      <div className="flex h-16 items-center bg-sidebar px-2">
+        <span className="px-4 text-[36px] font-semibold leading-none tracking-[-0.02em] text-foreground">ONE</span>
       </div>
 
-      <nav className="h-[calc(100vh-4rem)] overflow-y-auto bg-background px-2 py-3">
+      <nav className="h-[calc(100vh-4rem)] overflow-y-auto bg-sidebar px-2 py-2">
         {navGroups.map((group, groupIndex) => (
-          <div key={`${group.label ?? "core"}-${groupIndex}`} className={cn(groupIndex > 0 && "mt-5")}>
+          <div key={`${group.label ?? "core"}-${groupIndex}`} className={cn(groupIndex > 0 && "mt-2")}>
             {group.label ? (
-              <p className="mb-1 px-2 text-[11px] font-medium text-muted-foreground">{group.label}</p>
+              <p className="mb-1 px-2 text-xs font-medium text-muted-foreground/90">{group.label}</p>
             ) : null}
             <div className="space-y-1">
               {group.items.map((item) => {
@@ -166,10 +167,10 @@ function SidebarNav() {
                                 key={subItem.href}
                                 href={subItem.href}
                                 className={cn(
-                                  "flex h-8 items-center gap-2 rounded-md px-2 text-[13px] transition-colors",
+                                  "flex h-8 items-center gap-2 rounded-md px-2 text-sm leading-none transition-colors",
                                   subActive
-                                    ? "bg-accent text-foreground"
-                                    : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+                                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                                    : "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                 )}
                               >
                                 <SubIcon className="h-3.5 w-3.5 shrink-0" />
@@ -189,8 +190,8 @@ function SidebarNav() {
                           }))
                         }
                         className={cn(
-                          "flex h-8 w-full items-center gap-2 rounded-md px-2 text-[13px] transition-colors",
-                          "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+                          "flex h-8 w-full items-center gap-2 rounded-md px-2 text-sm leading-none transition-colors",
+                          "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         )}
                         aria-expanded={expanded}
                       >
@@ -207,10 +208,10 @@ function SidebarNav() {
                     key={item.href ?? item.label}
                     href={item.href}
                     className={cn(
-                      "flex h-8 items-center gap-2 rounded-md px-2 text-[13px] transition-colors",
+                      "flex h-8 items-center gap-2 rounded-md px-2 text-sm leading-none transition-colors",
                       active
-                        ? "bg-accent text-foreground"
-                        : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     )}
                   >
                     <Icon className="h-3.5 w-3.5 shrink-0" />
@@ -248,21 +249,21 @@ function Topbar() {
   const isDark = mounted ? theme !== "light" : true
 
   return (
-    <header className="sticky top-0 z-30 h-16 border-b border-border/60 bg-background px-6">
-      <div className="flex h-full items-center justify-between gap-4">
+    <header className="sticky top-0 z-30 h-16 border-b border-border bg-background">
+      <div className="mx-auto flex h-full max-w-[1280px] items-center justify-between gap-4 px-8">
         <div className="relative w-full max-w-[373px]">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search pages, actions, products, and settings..."
-            className="h-8 rounded-lg border-border/60 bg-card pl-9 pr-12 text-sm"
+            className="h-8 rounded-[10px] border-input bg-background pl-9 pr-12 text-sm"
           />
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-border/70 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-sm bg-muted px-1 py-0 text-xs text-muted-foreground">
             ⌘K
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card px-2 py-1">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-[10px] border border-border bg-background px-2.5 py-1.5">
             <span className="text-xs text-foreground">Test mode</span>
             <Switch checked={false} aria-label="Toggle test mode" />
           </div>
@@ -270,19 +271,19 @@ function Topbar() {
           <Button
             variant="ghost"
             size="icon-sm"
-            className="h-8 w-8"
-            onClick={() => setTheme(isDark ? "light" : "dark")}
+            className="h-8 w-8 rounded-md"
+            onClick={() => setThemeWithTransition(setTheme, isDark ? "light" : "dark")}
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
           >
-            {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="icon-sm" className="h-8 w-8">
-            <Bell className="h-3.5 w-3.5" />
+          <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-md">
+            <Bell className="h-4 w-4" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-full border border-border/60 bg-card">
-                <UserCircle2 className="h-3.5 w-3.5" />
+              <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-full bg-muted text-sm font-medium text-muted-foreground hover:bg-muted">
+                TT
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -339,14 +340,16 @@ export function TransactionsPlatformShell({ children }: TransactionsPlatformShel
   return (
     <NavVisibilityProvider>
       <div
-        className="min-h-screen bg-background text-foreground"
+        className="min-h-screen bg-[var(--app-shell-surface)] text-foreground"
         style={{ "--dashboard-top-offset": "64px" } as CSSProperties}
       >
         <div className="flex min-h-screen w-full">
           <SidebarNav />
-          <div className="min-w-0 flex-1">
-            <Topbar />
-            <main className="min-w-0 overflow-x-hidden">{children}</main>
+          <div className="min-w-0 flex-1 bg-[var(--app-shell-surface)] p-2 pl-0">
+            <div className="flex min-h-[calc(100vh-16px)] flex-col overflow-hidden rounded-md bg-background">
+              <Topbar />
+              <main className="min-w-0 flex-1 overflow-x-hidden bg-background">{children}</main>
+            </div>
           </div>
         </div>
       </div>

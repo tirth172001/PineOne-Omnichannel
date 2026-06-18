@@ -73,11 +73,11 @@ export function TransactionStyleTable<T>({
 
   return (
     <div className="space-y-4">
-      <section className="overflow-hidden rounded-md border border-border/70">
+      <section className="overflow-hidden rounded-md border border-border">
         <div className="overflow-x-auto">
           <Table className={minWidthClassName}>
             <TableHeader>
-              <TableRow className="border-border/70">
+              <TableRow className="h-10">
                 {columns.map((column) => (
                   <TableHead
                     key={column.key}
@@ -90,14 +90,14 @@ export function TransactionStyleTable<T>({
             </TableHeader>
             <TableBody>
               {pagedRows.length === 0 ? (
-                <TableRow className="h-[62px] border-border/70">
+                <TableRow className="h-[62px]">
                   <TableCell className="px-3 text-sm text-muted-foreground" colSpan={columns.length}>
                     {emptyText}
                   </TableCell>
                 </TableRow>
               ) : (
                 pagedRows.map((row) => (
-                  <TableRow key={rowKey(row)} className="h-[62px] border-border/70">
+                  <TableRow key={rowKey(row)} className="h-[62px]">
                     {columns.map((column) => (
                       <TableCell key={`${rowKey(row)}-${column.key}`} className={column.cellClassName ?? "px-3 text-sm text-foreground"}>
                         {column.render(row)}

@@ -1,10 +1,25 @@
 import type { ComponentType } from "react"
 import {
+  ArrowsCounterClockwise,
+  ArrowUUpLeft,
+  Bank,
+  BookOpen as PhosphorBookOpen,
+  CashRegister,
+  Chats,
+  DotsThree,
+  FileMinus,
+  Gavel as PhosphorGavel,
+  Globe as PhosphorGlobe,
+  House,
+  Link as PhosphorLink,
+  MoneyWavy,
+  QrCode as PhosphorQrCode,
+} from "@phosphor-icons/react"
+import {
   Activity,
   ArrowLeftRight,
   BadgeIndianRupee,
   Braces,
-  BookOpen,
   CreditCard,
   FileUp,
   FileChartColumn,
@@ -12,14 +27,8 @@ import {
   Globe,
   Home,
   LayoutGrid,
-  MoreHorizontal,
-  MessageSquareText,
-  QrCode,
-  RefreshCcw,
   RotateCcw,
   ShieldAlert,
-  Store,
-  Link2,
   KeyRound,
   Settings2,
   Webhook,
@@ -58,7 +67,7 @@ const sharedSupportSection: NavSection = {
   items: [
     {
       label: "Knowledge hub",
-      icon: BookOpen,
+      icon: PhosphorBookOpen,
       href: ROUTES.support.knowledgeHub,
       matcher: (p) =>
         p.startsWith(ROUTES.support.knowledgeHub) ||
@@ -67,7 +76,7 @@ const sharedSupportSection: NavSection = {
     },
     {
       label: "Support queries",
-      icon: MessageSquareText,
+      icon: Chats,
       href: ROUTES.support.supportQueries,
       matcher: (p) =>
         p.startsWith(ROUTES.support.supportQueries) ||
@@ -82,13 +91,13 @@ const paymentsNavSections: NavSection[] = [
     items: [
       {
         label: "Overview",
-        icon: LayoutGrid,
+        icon: House,
         href: ROUTES.home,
         matcher: (p) => p === ROUTES.home,
       },
       {
-        label: "Transaction",
-        icon: ArrowLeftRight,
+        label: "Payments",
+        icon: MoneyWavy,
         href: ROUTES.transactions.root,
         matcher: (p) =>
           p === ROUTES.transactions.root ||
@@ -98,7 +107,7 @@ const paymentsNavSections: NavSection[] = [
       },
       {
         label: "Settlement",
-        icon: BadgeIndianRupee,
+        icon: Bank,
         href: ROUTES.settlements.root,
         matcher: (p) =>
           p === ROUTES.settlements.root ||
@@ -108,7 +117,7 @@ const paymentsNavSections: NavSection[] = [
       },
       {
         label: "Dispute cases",
-        icon: ShieldAlert,
+        icon: PhosphorGavel,
         href: ROUTES.disputes.root,
         matcher: (p) =>
           p === ROUTES.disputes.root ||
@@ -118,7 +127,7 @@ const paymentsNavSections: NavSection[] = [
       },
       {
         label: "Refunds",
-        icon: RotateCcw,
+        icon: ArrowUUpLeft,
         href: ROUTES.refunds.root,
         matcher: (p) =>
           p === ROUTES.refunds.root ||
@@ -128,7 +137,7 @@ const paymentsNavSections: NavSection[] = [
       },
       {
         label: "Reports",
-        icon: FileChartColumn,
+        icon: FileMinus,
         href: ROUTES.reports.root,
         matcher: (p) =>
           p === ROUTES.reports.root ||
@@ -143,7 +152,7 @@ const paymentsNavSections: NavSection[] = [
     items: [
       {
         label: "POS terminals",
-        icon: Store,
+        icon: CashRegister,
         href: ROUTES.offlinePayments.manageDevices,
         matcher: (p) =>
           p.startsWith(ROUTES.offlinePayments.manageDevices) ||
@@ -153,8 +162,8 @@ const paymentsNavSections: NavSection[] = [
           (p.startsWith(ROUTES.products.inStorePayments) && !p.startsWith(ROUTES.products.inStoreQrSticker)),
       },
       {
-        label: "Store QR codes",
-        icon: QrCode,
+        label: "Store QR stickers",
+        icon: PhosphorQrCode,
         href: ROUTES.products.inStoreQrSticker,
         matcher: (p) => p.startsWith(ROUTES.products.inStoreQrSticker),
       },
@@ -164,26 +173,26 @@ const paymentsNavSections: NavSection[] = [
     label: "Online payment",
     items: [
       {
-        label: "Checkout for website",
-        icon: Globe,
+        label: "Payment gateway",
+        icon: PhosphorGlobe,
         href: ROUTES.products.onlinePayments,
         matcher: (p) => p.startsWith(ROUTES.products.onlinePayments) || p.startsWith(ROUTES.onlinePayments.root),
       },
       {
-        label: "Payment links or QR codes",
-        icon: Link2,
+        label: "Payment links",
+        icon: PhosphorLink,
         href: ROUTES.paymentLinks.all,
         matcher: (p) => p.startsWith(ROUTES.paymentLinks.root),
       },
       {
         label: "Subscriptions",
-        icon: RefreshCcw,
+        icon: ArrowsCounterClockwise,
         href: `${ROUTES.onlinePayments.configuration}?feature=subscription`,
         matcher: (p) => p.startsWith(ROUTES.onlinePayments.configuration),
       },
       {
         label: "More",
-        icon: MoreHorizontal,
+        icon: DotsThree,
         href: ROUTES.products.otherProducts,
         matcher: (p) =>
           p.startsWith(ROUTES.products.otherProducts) ||

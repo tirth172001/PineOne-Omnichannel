@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { Download, Search } from "lucide-react"
 
 import { ListingSummaryCards } from "@/components/shared/listing-page-primitives"
+import { StatusPill, type StatusTone } from "@/components/shared/status-pill"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -41,6 +42,14 @@ const rows = [
   },
 ]
 
+function toRefundTone(status: string): StatusTone {
+  const normalized = status.toLowerCase()
+  if (normalized.includes("success")) return "success"
+  if (normalized.includes("pending")) return "processing"
+  if (normalized.includes("initiated")) return "initiated"
+  return "failed"
+}
+
 export function RefundsContent() {
   const [channel, setChannel] = useState("online")
   const [view, setView] = useState("payments")
@@ -66,16 +75,16 @@ export function RefundsContent() {
             <div className="flex flex-wrap items-center gap-4">
               <h1 className="text-[30px] font-semibold leading-none text-foreground">Refunds</h1>
               <Tabs value={channel} onValueChange={setChannel}>
-                <TabsList className="rounded-[8px] border border-border/70 bg-[var(--olive-surface-main)] p-1">
+                <TabsList className="h-8 rounded-[8px] bg-muted p-1">
                   <TabsTrigger
                     value="in-store"
-                    className="rounded-[8px] px-3 py-1.5 text-sm font-medium text-muted-foreground data-active:!rounded-[var(--radius-token-xs)] data-active:!bg-accent-foreground data-active:!text-background"
+                    className="h-6 rounded-[6px] border-transparent px-4 py-1 text-sm font-medium text-muted-foreground data-active:!border-transparent data-active:!bg-background data-active:!text-foreground"
                   >
                     In-store payments
                   </TabsTrigger>
                   <TabsTrigger
                     value="online"
-                    className="rounded-[8px] px-3 py-1.5 text-sm font-medium text-muted-foreground data-active:!rounded-[var(--radius-token-xs)] data-active:!bg-accent-foreground data-active:!text-background"
+                    className="h-6 rounded-[6px] border-transparent px-4 py-1 text-sm font-medium text-muted-foreground data-active:!border-transparent data-active:!bg-background data-active:!text-foreground"
                   >
                     Online payments
                   </TabsTrigger>
@@ -108,11 +117,11 @@ export function RefundsContent() {
               <Separator orientation="vertical" className="h-8" />
 
               <Tabs value={view} onValueChange={setView}>
-                <TabsList className="rounded-[8px] border border-border/70 bg-[var(--olive-surface-main)] p-1">
-                  <TabsTrigger value="orders" className="px-3">
+                <TabsList className="h-8 rounded-[8px] bg-muted p-1">
+                  <TabsTrigger value="orders" className="h-6 rounded-[6px] border-transparent px-4 py-1 text-sm font-medium text-muted-foreground data-active:!border-transparent data-active:!bg-background data-active:!text-foreground">
                     By orders
                   </TabsTrigger>
-                  <TabsTrigger value="payments" className="px-3">
+                  <TabsTrigger value="payments" className="h-6 rounded-[6px] border-transparent px-4 py-1 text-sm font-medium text-muted-foreground data-active:!border-transparent data-active:!bg-background data-active:!text-foreground">
                     By payments
                   </TabsTrigger>
                 </TabsList>
@@ -166,11 +175,11 @@ export function RefundsContent() {
         </section>
 
         <section className="space-y-6">
-          <div className="overflow-hidden rounded-[8px] border border-border/60 bg-background">
+          <div className="overflow-hidden rounded-[8px] border border-border bg-background">
             <div className="overflow-x-auto">
               <Table className="min-w-[1100px]">
                 <TableHeader>
-                  <TableRow className="h-10 border-border/60 bg-[var(--surface-header)] hover:bg-[var(--surface-header)] [&>th:first-child]:rounded-tl-[8px] [&>th:last-child]:rounded-tr-[8px]">
+                  <TableRow className="h-10 [&>th:first-child]:rounded-tl-[8px] [&>th:last-child]:rounded-tr-[8px]">
                     <TableHead className="px-4 text-sm font-medium text-muted-foreground">Order ID</TableHead>
                     <TableHead className="px-4 text-sm font-medium text-muted-foreground">Transaction ID</TableHead>
                     <TableHead className="px-4 text-sm font-medium text-muted-foreground">Merchant ID</TableHead>
@@ -182,14 +191,16 @@ export function RefundsContent() {
                 </TableHeader>
                 <TableBody>
                   {filtered.map((row) => (
-                    <TableRow key={row.transactionId} className="h-[72px] border-border/60 hover:bg-muted/20">
+                    <TableRow key={row.transactionId} className="h-[72px]">
                       <TableCell className="px-4 text-sm text-foreground">{row.orderId}</TableCell>
                       <TableCell className="px-4 text-sm text-foreground">{row.transactionId}</TableCell>
                       <TableCell className="px-4 text-sm text-foreground">{row.merchantId}</TableCell>
                       <TableCell className="px-4 text-sm text-foreground">{row.amount}</TableCell>
                       <TableCell className="px-4 text-sm text-foreground">{row.paymentMode}</TableCell>
                       <TableCell className="px-4 text-sm text-foreground">{row.paymentDate}</TableCell>
-                      <TableCell className="px-4 text-sm text-foreground">{row.refundStatus}</TableCell>
+                      <TableCell className="px-4 text-sm text-foreground">
+                        <StatusPill label={row.refundStatus} tone={toRefundTone(row.refundStatus)} />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

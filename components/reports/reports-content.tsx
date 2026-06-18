@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { Download } from "lucide-react"
 
 import { ListingToolbar, type ListingFilter } from "@/components/shared/listing-page-primitives"
+import { StatusPill, type StatusTone } from "@/components/shared/status-pill"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -72,6 +73,14 @@ const reportSections = [
     ],
   },
 ]
+
+function toReportTone(status: string): StatusTone {
+  const normalized = status.toLowerCase()
+  if (normalized.includes("completed") || normalized.includes("active")) return "success"
+  if (normalized.includes("processing")) return "processing"
+  if (normalized.includes("paused")) return "initiated"
+  return "failed"
+}
 
 export function ReportsContent() {
   const [topTab, setTopTab] = useState<"reports" | "history" | "schedule">("reports")
@@ -220,12 +229,12 @@ export function ReportsContent() {
             />
 
             <section className="space-y-6">
-              <div className="overflow-hidden rounded-[8px] border border-border/60 bg-background">
+              <div className="overflow-hidden rounded-[8px] border border-border bg-background">
                 <div className="overflow-x-auto">
                   <Table className="min-w-[1100px]">
                     <TableHeader>
                       {topTab === "history" ? (
-                        <TableRow className="h-10 border-border/60 bg-[var(--surface-header)] hover:bg-[var(--surface-header)] [&>th:first-child]:rounded-tl-[8px] [&>th:last-child]:rounded-tr-[8px]">
+                        <TableRow className="h-10 [&>th:first-child]:rounded-tl-[8px] [&>th:last-child]:rounded-tr-[8px]">
                           <TableHead className="px-4 text-sm font-medium text-muted-foreground">Report name</TableHead>
                           <TableHead className="px-4 text-sm font-medium text-muted-foreground">Created on</TableHead>
                           <TableHead className="px-4 text-sm font-medium text-muted-foreground">Date range</TableHead>
@@ -233,7 +242,7 @@ export function ReportsContent() {
                           <TableHead className="px-4 text-sm font-medium text-muted-foreground">Action</TableHead>
                         </TableRow>
                       ) : (
-                        <TableRow className="h-10 border-border/60 bg-[var(--surface-header)] hover:bg-[var(--surface-header)] [&>th:first-child]:rounded-tl-[8px] [&>th:last-child]:rounded-tr-[8px]">
+                        <TableRow className="h-10 [&>th:first-child]:rounded-tl-[8px] [&>th:last-child]:rounded-tr-[8px]">
                           <TableHead className="px-4 text-sm font-medium text-muted-foreground">Schedule & report name</TableHead>
                           <TableHead className="px-4 text-sm font-medium text-muted-foreground">Frequency</TableHead>
                           <TableHead className="px-4 text-sm font-medium text-muted-foreground">Format</TableHead>
@@ -246,21 +255,25 @@ export function ReportsContent() {
                     <TableBody>
                       {topTab === "history"
                         ? historyFiltered.map((row) => (
-                            <TableRow key={row.reportName} className="h-[72px] border-border/60 hover:bg-muted/20">
+                            <TableRow key={row.reportName} className="h-[72px]">
                               <TableCell className="px-4 text-sm text-foreground">{row.reportName}</TableCell>
                               <TableCell className="px-4 text-sm text-foreground">{row.createdOn}</TableCell>
                               <TableCell className="px-4 text-sm text-foreground">{row.dateRange}</TableCell>
-                              <TableCell className="px-4 text-sm text-foreground">{row.refundStatus}</TableCell>
+                              <TableCell className="px-4 text-sm text-foreground">
+                                <StatusPill label={row.refundStatus} tone={toReportTone(row.refundStatus)} />
+                              </TableCell>
                               <TableCell className="px-4 text-sm text-foreground">{row.action}</TableCell>
                             </TableRow>
                           ))
                         : scheduleFiltered.map((row) => (
-                            <TableRow key={row.name} className="h-[72px] border-border/60 hover:bg-muted/20">
+                            <TableRow key={row.name} className="h-[72px]">
                               <TableCell className="px-4 text-sm text-foreground">{row.name}</TableCell>
                               <TableCell className="px-4 text-sm text-foreground">{row.frequency}</TableCell>
                               <TableCell className="px-4 text-sm text-foreground">{row.format}</TableCell>
                               <TableCell className="px-4 text-sm text-foreground">{row.createdBy}</TableCell>
-                              <TableCell className="px-4 text-sm text-foreground">{row.status}</TableCell>
+                              <TableCell className="px-4 text-sm text-foreground">
+                                <StatusPill label={row.status} tone={toReportTone(row.status)} />
+                              </TableCell>
                               <TableCell className="px-4 text-sm text-foreground">{row.action}</TableCell>
                             </TableRow>
                           ))}
