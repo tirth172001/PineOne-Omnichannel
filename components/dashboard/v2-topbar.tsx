@@ -348,29 +348,29 @@ export function V2Topbar({ pathname, onMenuClick, isMobile = false }: V2TopbarPr
                 <p className="text-[11px] text-muted-foreground">{profileRole}</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => router.push("/account/profile")}>
+              <DropdownMenuItem onSelect={() => router.push(`${ROUTES.settings.root}?module=profile&panel=profile`)}>
                 <UserCircle2 className="mr-2 h-3.5 w-3.5" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => router.push("/account/business-details")}>
+              <DropdownMenuItem onSelect={() => router.push(`${ROUTES.settings.root}?module=business-details&panel=business-details`)}>
                 <Building2 className="mr-2 h-3.5 w-3.5" />
                 Business details
               </DropdownMenuItem>
               {isAdmin ? (
-                <DropdownMenuItem onSelect={() => router.push("/account/users")}>
+                <DropdownMenuItem onSelect={() => router.push(`${ROUTES.settings.root}?module=users&panel=users`)}>
                   <Users className="mr-2 h-3.5 w-3.5" />
                   Users management
                 </DropdownMenuItem>
               ) : null}
-              <DropdownMenuItem onSelect={() => router.push("/account/preferences")}>
+              <DropdownMenuItem onSelect={() => router.push(`${ROUTES.settings.root}?module=preferences&panel=preferences`)}>
                 <SlidersHorizontal className="mr-2 h-3.5 w-3.5" />
                 Preferences
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => router.push("/account/security")}>
+              <DropdownMenuItem onSelect={() => router.push(`${ROUTES.settings.root}?module=security&panel=security`)}>
                 <Shield className="mr-2 h-3.5 w-3.5" />
                 Security
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => router.push("/account/feedback")}>
+              <DropdownMenuItem onSelect={() => router.push(`${ROUTES.settings.root}?module=feedback&panel=feedback`)}>
                 <MessageSquareText className="mr-2 h-3.5 w-3.5" />
                 Feedback
               </DropdownMenuItem>

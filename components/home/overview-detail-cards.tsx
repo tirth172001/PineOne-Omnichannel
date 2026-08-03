@@ -66,7 +66,7 @@ const cards: OverviewDetailCard[] = [
       { label: "Closed", value: "7" },
     ],
     hasData: true,
-    href: "/disputes",
+    href: "/on-hold-disputes",
   },
 ]
 

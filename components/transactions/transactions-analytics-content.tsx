@@ -23,7 +23,7 @@ export function TransactionsAnalyticsContent() {
       {
         id: "total-payments-processed",
         title: "Total payments processed",
-        value: totalPaymentsProcessed.toLocaleString("en-IN"),
+        value: totalPaymentsProcessed.toLocaleString("en-MY"),
         delta: "+4.6% vs previous period",
         chart: [11140, 11390, 11680, 11820, 12110, 12340, 12720],
         compareChart: [10810, 10970, 11090, 11360, 11640, 11810, 12130],
@@ -33,7 +33,7 @@ export function TransactionsAnalyticsContent() {
       {
         id: "total-amount-paid",
         title: "Total amount paid",
-        value: `₹${totalAmountPaid.toLocaleString("en-IN")}`,
+        value: `₹${totalAmountPaid.toLocaleString("en-MY")}`,
         delta: "+6.2% vs previous period",
         chart: [164000, 169500, 172300, 178600, 182200, 188400, 193890],
         compareChart: [152200, 157800, 161500, 166900, 170600, 176300, 182900],
@@ -53,7 +53,7 @@ export function TransactionsAnalyticsContent() {
         id: "success-rate",
         title: "Successful payments from total attempted",
         value: `${successRate.toFixed(0)}%`,
-        delta: `${successfulPayments.toLocaleString("en-IN")} successful`,
+        delta: `${successfulPayments.toLocaleString("en-MY")} successful`,
         chart: [94, 94.4, 95, 95.4, 95.9, 96.2, Number(successRate.toFixed(0))],
         compareChart: [92.8, 93.4, 93.9, 94.1, 94.8, 95.1, 95.4],
         chartType: "area",
@@ -62,7 +62,7 @@ export function TransactionsAnalyticsContent() {
       {
         id: "error-split",
         title: "Error split",
-        value: `${failedPayments.toLocaleString("en-IN")} failed`,
+        value: `${failedPayments.toLocaleString("en-MY")} failed`,
         delta: "Business vs technical declines",
         chartType: "pie",
         chartLabels: ["Business decline", "Technical decline"],
@@ -123,7 +123,7 @@ export function TransactionsAnalyticsContent() {
       {
         id: "failed-count",
         title: "Count of failed payments",
-        value: failedPayments.toLocaleString("en-IN"),
+        value: failedPayments.toLocaleString("en-MY"),
         delta: "Decline stack monitored",
         chart: [240, 230, 215, 205, 198, 193, failedPayments],
         compareChart: [265, 258, 250, 241, 231, 220, 210],

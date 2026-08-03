@@ -162,12 +162,12 @@ export function withChartTheme(options: ChartSpec): Highcharts.Options {
   )
 }
 
-export function formatINR(value: number): string {
-  return `₹${value.toLocaleString("en-IN")}`
+export function formatRM(value: number): string {
+  return `₹${value.toLocaleString("en-MY")}`
 }
 
 export function formatCompact(value: number): string {
-  return new Intl.NumberFormat("en-IN", {
+  return new Intl.NumberFormat("en-MY", {
     notation: "compact",
     maximumFractionDigits: 1,
   }).format(value)

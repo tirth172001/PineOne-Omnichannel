@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-type TransactionStyleColumn<T> = {
+export type TransactionStyleColumn<T> = {
   key: string
   header: string
   headerClassName?: string
@@ -41,6 +41,8 @@ type TransactionStyleTableProps<T> = {
   rowsPerPageOptions?: number[]
   selectedCount?: number
   totalRowsLabel?: string | number
+  /** When false, the footer reads "Total N row(s)" instead of the row-selection summary. Defaults to true to preserve existing callers. */
+  showSelection?: boolean
 }
 
 export function TransactionStyleTable<T>({
@@ -52,6 +54,7 @@ export function TransactionStyleTable<T>({
   rowsPerPageOptions = [10, 25, 50],
   selectedCount = 0,
   totalRowsLabel,
+  showSelection = true,
 }: TransactionStyleTableProps<T>) {
   const [rowsPerPage, setRowsPerPage] = React.useState(rowsPerPageOptions[0] ?? 10)
   const [page, setPage] = React.useState(1)
@@ -113,7 +116,13 @@ export function TransactionStyleTable<T>({
 
       <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm">
-          {selectedCount} of {totalRowsLabel ?? rows.length} row(s) selected.
+          {showSelection ? (
+            <>
+              {selectedCount} of {totalRowsLabel ?? rows.length} row(s) selected.
+            </>
+          ) : (
+            <>Total {totalRowsLabel ?? rows.length} row(s)</>
+          )}
         </p>
         <div className="flex flex-wrap items-center gap-8">
           <div className="flex items-center gap-2">

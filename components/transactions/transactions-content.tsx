@@ -86,7 +86,7 @@ type MoreFilterOption = {
 type MoreFilterSelections = Record<MoreFilterCategoryKey, string[]>
 
 function formatInr(amount: number) {
-  return `₹ ${amount.toLocaleString("en-IN")}`
+  return `₹ ${amount.toLocaleString("en-MY")}`
 }
 
 function parseDisplayDate(date: string, time: string) {

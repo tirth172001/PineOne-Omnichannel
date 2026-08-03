@@ -65,7 +65,7 @@ export function TransactionStateBranchFlow({
   initialExpandedNodeIds?: string[]
   className?: string
 }) {
-  const formatInr = (value: number) => `₹${Math.max(0, Math.round(value)).toLocaleString("en-IN")}`
+  const formatInr = (value: number) => `₹${Math.max(0, Math.round(value)).toLocaleString("en-MY")}`
   const nodeMap = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes])
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(
     () => new Set(initialExpandedNodeIds?.length ? initialExpandedNodeIds : [rootId])
@@ -288,7 +288,7 @@ export function TransactionStateBranchFlow({
                     <div className="mt-2 flex items-end justify-between gap-2">
                       <div className="space-y-1">
                         <p className="text-[20px] font-semibold leading-none text-foreground">
-                          {node.value.toLocaleString("en-IN")} txns
+                          {node.value.toLocaleString("en-MY")} txns
                         </p>
                         {typeof node.amount === "number" ? (
                           <p className="text-[12px] font-medium text-muted-foreground">{formatInr(node.amount)}</p>

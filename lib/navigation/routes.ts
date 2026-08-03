@@ -11,7 +11,7 @@ export const ROUTES = {
     root: "/settlements",
   },
   disputes: {
-    root: "/disputes",
+    root: "/on-hold-disputes",
   },
   refunds: {
     root: "/refunds",

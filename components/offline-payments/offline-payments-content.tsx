@@ -70,7 +70,7 @@ const offlineTransactionRows = Array.from({ length: 36 }, (_, index) => {
   return {
     id: `TXN-${89008 + index}`,
     device: `POS-${deviceNumber}`,
-    amount: `₹${(850 + index * 410).toLocaleString("en-IN")}`,
+    amount: `₹${(850 + index * 410).toLocaleString("en-MY")}`,
     method,
     status,
     time: `${(9 + (index % 12)).toString().padStart(2, "0")}:${(index * 7 % 60).toString().padStart(2, "0")} ${index % 2 === 0 ? "AM" : "PM"}`,
@@ -103,20 +103,20 @@ const deviceTxns = [
 const settlementRows = Array.from({ length: 14 }, (_, index) => ({
   id: `STL-${901 + index}`,
   title: index % 3 === 0 ? "Today's settlement" : index % 3 === 1 ? "Pending reconciliation" : "Holdback reserve",
-  amount: `₹${(112300 + index * 1850).toLocaleString("en-IN")}`,
+  amount: `₹${(112300 + index * 1850).toLocaleString("en-MY")}`,
   state: index % 3 === 0 ? "Completed" : index % 3 === 1 ? "Processing" : "Review",
 }))
 
 const disputeRows = Array.from({ length: 14 }, (_, index) => ({
   id: `DSP-${109 + index}`,
   state: index % 2 === 0 ? "Chargeback requested" : "Waiting for evidence",
-  amount: `₹${(2300 + index * 530).toLocaleString("en-IN")}`,
+  amount: `₹${(2300 + index * 530).toLocaleString("en-MY")}`,
 }))
 
 const refundRows = Array.from({ length: 14 }, (_, index) => ({
   id: `RFD-${603 + index}`,
   state: index % 2 === 0 ? "POS refund approved" : "Pending manager review",
-  amount: `₹${(780 + index * 240).toLocaleString("en-IN")}`,
+  amount: `₹${(780 + index * 240).toLocaleString("en-MY")}`,
 }))
 
 const reportRows = Array.from({ length: 14 }, (_, index) => ({
@@ -210,7 +210,7 @@ function DeviceDetail({ device }: { device: DeviceRow }) {
                       <p className="text-xs font-medium text-foreground">{t.card}</p>
                       <p className="text-[10px] text-muted-foreground">{t.method} · {t.time}</p>
                     </div>
-                    <p className="text-xs font-semibold text-foreground">₹{t.amount.toLocaleString("en-IN")}</p>
+                    <p className="text-xs font-semibold text-foreground">₹{t.amount.toLocaleString("en-MY")}</p>
                   </div>
                 )
               })}
@@ -331,7 +331,7 @@ export function OfflinePaymentsContent({
       {
         id: "offline-processed-value",
         title: "Processed value",
-        value: `₹${totalOfflineValue.toLocaleString("en-IN")}`,
+        value: `₹${totalOfflineValue.toLocaleString("en-MY")}`,
         delta: transactionView === "all" ? "All terminal modes" : `${transactionView} mode`,
         hint: "Captured at POS terminals",
         chart: paymentModeSeries,
@@ -357,7 +357,7 @@ export function OfflinePaymentsContent({
       {
         id: "offline-avg-ticket",
         title: "Average ticket",
-        value: `₹${averageOfflineTicket.toLocaleString("en-IN")}`,
+        value: `₹${averageOfflineTicket.toLocaleString("en-MY")}`,
         delta: "In-store blended basket",
         hint: "Useful for staffing and campaign slots",
         chart: [1750, 1810, 1890, 1940, 2010, 2080, averageOfflineTicket || 2000],
@@ -673,7 +673,7 @@ export function OfflinePaymentsContent({
   const summaryBySection: Partial<Record<OfflineNavSection, SectionSummaryMetric[]>> = {
     transactions: [
       { label: "Total transactions", value: `${filteredOfflineTransactions.length}`, delta: `${successTransactions} successful` },
-      { label: "Processed value", value: `₹${transactionsAmount.toLocaleString("en-IN")}` },
+      { label: "Processed value", value: `₹${transactionsAmount.toLocaleString("en-MY")}` },
       { label: "Approval rate", value: `${offlineSuccessRate.toFixed(1)}%`, delta: "Card-present flow" },
       { label: "Active terminals", value: `${onlineCount}/${deviceRows.length}`, delta: `${offlineCount} offline` },
     ],
@@ -683,18 +683,18 @@ export function OfflinePaymentsContent({
       { label: "Completed", value: `${settlementRows.length - settlementInProgress}`, delta: "Reconciled" },
       {
         label: "Settlement amount",
-        value: `₹${settlementRows.reduce((sum, row) => sum + parseInr(row.amount), 0).toLocaleString("en-IN")}`,
+        value: `₹${settlementRows.reduce((sum, row) => sum + parseInr(row.amount), 0).toLocaleString("en-MY")}`,
         delta: "Across listed batches",
       },
     ],
     disputes: [
       { label: "Open disputes", value: `${disputeRows.length}`, delta: "Needs action" },
-      { label: "Exposure", value: `₹${disputeAmount.toLocaleString("en-IN")}`, delta: "Disputed amount" },
+      { label: "Exposure", value: `₹${disputeAmount.toLocaleString("en-MY")}`, delta: "Disputed amount" },
       { label: "Evidence pending", value: `${disputeRows.filter((row) => /evidence/i.test(row.state)).length}`, delta: "High priority" },
     ],
     refunds: [
       { label: "Open refunds", value: `${refundRows.length}`, delta: "Current queue" },
-      { label: "Refund value", value: `₹${refundAmount.toLocaleString("en-IN")}`, delta: "Potential payout" },
+      { label: "Refund value", value: `₹${refundAmount.toLocaleString("en-MY")}`, delta: "Potential payout" },
       { label: "Manual review", value: `${refundRows.filter((row) => /review/i.test(row.state)).length}`, delta: "Operator needed" },
     ],
     reports: [
@@ -829,7 +829,7 @@ export function OfflinePaymentsContent({
       {navSection === "manage-devices" && (
         <>
           <div className="grid grid-cols-4 gap-3">
-            {[{l:"Total Devices",v:`${deviceRows.length}`},{l:"Online",v:`${onlineCount}`},{l:"Revenue",v:"₹4.71L"},{l:"Alerts",v:"2 Offline"}].map(s => (
+            {[{l:"Total Devices",v:`${deviceRows.length}`},{l:"Online",v:`${onlineCount}`},{l:"Revenue",v:"₹471K"},{l:"Alerts",v:"2 Offline"}].map(s => (
               <div key={s.l} className="rounded-lg bg-card/80 p-3">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.l}</p>
                 <p className="mt-1 text-[15px] font-semibold text-foreground">{s.v}</p>

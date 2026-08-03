@@ -235,7 +235,7 @@ export function CrossBorderContent({ initialSection = "overview" }: { initialSec
       getValue: (row) => row.amount,
       width: 120,
       align: "right",
-      cell: (row) => <span className="font-medium">₹{row.amount.toLocaleString("en-IN")}</span>,
+      cell: (row) => <span className="font-medium">₹{row.amount.toLocaleString("en-MY")}</span>,
     },
     { id: "paymentStatus", header: "Payment", accessorKey: "paymentStatus", width: 110 },
     { id: "invoiceStatus", header: "Invoice status", accessorKey: "invoiceStatus", width: 120 },
@@ -264,7 +264,7 @@ export function CrossBorderContent({ initialSection = "overview" }: { initialSec
       getValue: (row) => row.grossAmount,
       align: "right",
       width: 120,
-      cell: (row) => `₹${row.grossAmount.toLocaleString("en-IN")}`,
+      cell: (row) => `₹${row.grossAmount.toLocaleString("en-MY")}`,
     },
     {
       id: "deductions",
@@ -272,7 +272,7 @@ export function CrossBorderContent({ initialSection = "overview" }: { initialSec
       getValue: (row) => row.deductions,
       align: "right",
       width: 120,
-      cell: (row) => `₹${row.deductions.toLocaleString("en-IN")}`,
+      cell: (row) => `₹${row.deductions.toLocaleString("en-MY")}`,
     },
     {
       id: "recoveries",
@@ -280,7 +280,7 @@ export function CrossBorderContent({ initialSection = "overview" }: { initialSec
       getValue: (row) => row.recoveries,
       align: "right",
       width: 120,
-      cell: (row) => `₹${row.recoveries.toLocaleString("en-IN")}`,
+      cell: (row) => `₹${row.recoveries.toLocaleString("en-MY")}`,
     },
     {
       id: "netPayout",
@@ -288,7 +288,7 @@ export function CrossBorderContent({ initialSection = "overview" }: { initialSec
       getValue: (row) => row.netPayout,
       align: "right",
       width: 120,
-      cell: (row) => <span className="font-medium">₹{row.netPayout.toLocaleString("en-IN")}</span>,
+      cell: (row) => <span className="font-medium">₹{row.netPayout.toLocaleString("en-MY")}</span>,
     },
     { id: "state", header: "State", accessorKey: "state", width: 100 },
   ]
@@ -484,7 +484,7 @@ export function CrossBorderContent({ initialSection = "overview" }: { initialSec
               <div>
                 <p className="text-xs text-muted-foreground">Next settlement cycle</p>
                 <p className="text-sm font-semibold text-foreground">
-                  {nextSettlement.cycle} · ₹{nextSettlement.netPayout.toLocaleString("en-IN")} to {nextSettlement.bankAccount}
+                  {nextSettlement.cycle} · ₹{nextSettlement.netPayout.toLocaleString("en-MY")} to {nextSettlement.bankAccount}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">

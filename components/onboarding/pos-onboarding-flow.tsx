@@ -272,10 +272,10 @@ export function POSOnboardingFlow() {
                     className="grid grid-cols-2 md:grid-cols-4 gap-3"
                   >
                     {[
-                      { value: "0-1lakh", label: "Under ₹1 Lakh" },
-                      { value: "1-5lakh", label: "₹1-5 Lakh" },
-                      { value: "5-10lakh", label: "₹5-10 Lakh" },
-                      { value: "10+lakh", label: "₹10+ Lakh" },
+                      { value: "0-1lakh", label: "Under ₹100,000" },
+                      { value: "1-5lakh", label: "₹100,000-500,000" },
+                      { value: "5-10lakh", label: "₹500,000-1,000,000" },
+                      { value: "10+lakh", label: "₹1,000,000+" },
                     ].map((option) => (
                       <div key={option.value}>
                         <RadioGroupItem

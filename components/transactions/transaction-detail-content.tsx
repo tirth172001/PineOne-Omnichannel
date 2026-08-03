@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 function formatInr(amount: number) {
-  return `₹${amount.toLocaleString("en-IN")}`
+  return `₹${amount.toLocaleString("en-MY")}`
 }
 
 function PaymentModeIcon({ mode }: { mode: TransactionRecord["paymentMode"] }) {
@@ -508,7 +508,7 @@ export function TransactionDetailContent({
                           { label: "Merchant VPA", value: "6352699747@ptyes" },
                           { label: "Host category", value: "1" },
                           { label: "Acquirer ID", value: "4" },
-                          { label: "Amt in INR", value: formatInr(transaction.amount) },
+                          { label: "Amt in ₹", value: formatInr(transaction.amount) },
                           { label: "Batch ID", value: "1" },
                           { label: "RRN", value: transaction.rrn },
                         ]}

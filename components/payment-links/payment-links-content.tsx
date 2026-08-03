@@ -82,7 +82,7 @@ function parseDate(date: string, time: string) {
 }
 
 function formatInr(amount: number) {
-  return `₹ ${amount.toLocaleString("en-IN")}`
+  return `₹ ${amount.toLocaleString("en-MY")}`
 }
 
 function toCsvField(value: string | number) {

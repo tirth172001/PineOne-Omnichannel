@@ -66,7 +66,7 @@ function TxnRow({ txn, selected, onClick }: { txn: typeof transactions[0]; selec
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-medium text-foreground truncate">{txn.merchant}</p>
           <AnimatedNumberText
-            value={`₹${txn.amount.toLocaleString("en-IN")}`}
+            value={`₹${txn.amount.toLocaleString("en-MY")}`}
             className="text-sm font-semibold text-foreground shrink-0"
           />
         </div>
@@ -90,7 +90,7 @@ function TxnDetail({ txn }: { txn: typeof transactions[0] }) {
         </div>
         <div>
           <AnimatedNumberText
-            value={`₹${txn.amount.toLocaleString("en-IN")}`}
+            value={`₹${txn.amount.toLocaleString("en-MY")}`}
             className="text-2xl font-bold text-foreground"
           />
           <p className="text-sm text-muted-foreground">{txn.merchant}</p>
@@ -278,7 +278,7 @@ export function PaymentsContent() {
       </div>
 
       <div className="grid grid-cols-4 gap-3">
-        {[{l:"Today",v:"₹2.34L"},{l:"Success",v:"96.7%"},{l:"Failed",v:"3.3%"},{l:"Txns",v:"234"}].map(s => (
+        {[{l:"Today",v:"₹234K"},{l:"Success",v:"96.7%"},{l:"Failed",v:"3.3%"},{l:"Txns",v:"234"}].map(s => (
           <div key={s.l} className="rounded-xl border border-border bg-card p-3">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.l}</p>
             <AnimatedNumberText value={s.v} className="text-base font-semibold text-foreground mt-1" />

@@ -275,7 +275,7 @@ export const partnerProducts: PartnerProduct[] = [
     description: "AWS cloud credits for startups and growing businesses",
     icon: Cloud,
     partnerName: "Amazon Web Services",
-    discount: "Up to $5,000 credits",
+    discount: "Up to ₹5,000 credits",
     benefits: [
       "Free tier services",
       "Technical support",

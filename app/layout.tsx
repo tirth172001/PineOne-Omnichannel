@@ -3,6 +3,7 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { ThemeProvider } from "@/components/theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { Toaster } from "@/components/ui/sonner"
 import { AgentationDevtools } from "@/components/dev/agentation-devtools"
 
 export const metadata: Metadata = {
@@ -46,6 +47,7 @@ export default function RootLayout({
             {children}
             <AgentationDevtools />
           </TooltipProvider>
+          <Toaster />
         </ThemeProvider>
         <Analytics />
       </body>

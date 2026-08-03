@@ -70,10 +70,10 @@ const weeklyData = [
 ]
 
 const methods = [
-  { key: "upi", label: "UPI", color: "var(--color-primary)", share: 42, amount: "₹3.6L" },
-  { key: "cards", label: "Cards", color: "var(--color-chart-2)", share: 38, amount: "₹3.3L" },
-  { key: "emi", label: "EMI", color: "var(--color-chart-4)", share: 12, amount: "₹1.0L" },
-  { key: "wallets", label: "Wallets", color: "var(--color-chart-3)", share: 8, amount: "₹0.7L" },
+  { key: "upi", label: "UPI", color: "var(--color-primary)", share: 42, amount: "₹360K" },
+  { key: "cards", label: "Cards", color: "var(--color-chart-2)", share: 38, amount: "₹330K" },
+  { key: "emi", label: "EMI", color: "var(--color-chart-4)", share: 12, amount: "₹100K" },
+  { key: "wallets", label: "Wallets", color: "var(--color-chart-3)", share: 8, amount: "₹70K" },
 ] as const
 
 const methodOrder: Array<{ key: SectionKey; label: string }> = [
@@ -113,7 +113,7 @@ const settlementRows = Array.from({ length: 14 }, (_, index) => {
   return {
     id: `STL-${2081 + index}`,
     title,
-    amount: `₹${(84120 + index * 2175).toLocaleString("en-IN")}`,
+    amount: `₹${(84120 + index * 2175).toLocaleString("en-MY")}`,
     state,
   }
 })
@@ -121,13 +121,13 @@ const settlementRows = Array.from({ length: 14 }, (_, index) => {
 const disputeRows = Array.from({ length: 14 }, (_, index) => ({
   id: `DP-${3342 + index}`,
   state: index % 2 === 0 ? "Chargeback initiated" : "Evidence required",
-  amount: `₹${(4300 + index * 640).toLocaleString("en-IN")}`,
+  amount: `₹${(4300 + index * 640).toLocaleString("en-MY")}`,
 }))
 
 const refundRows = Array.from({ length: 14 }, (_, index) => ({
   id: `RF-${1202 + index}`,
   state: index % 2 === 0 ? "Auto-approved" : "Manual review",
-  amount: `₹${(1200 + index * 420).toLocaleString("en-IN")}`,
+  amount: `₹${(1200 + index * 420).toLocaleString("en-MY")}`,
 }))
 
 const reportRows = Array.from({ length: 14 }, (_, index) => ({
@@ -265,7 +265,7 @@ export function OnlinePaymentsContent({
       {
         id: "processed-value",
         title: "Processed value",
-        value: `₹${processedValue.toLocaleString("en-IN")}`,
+        value: `₹${processedValue.toLocaleString("en-MY")}`,
         delta: `${section === "overview" ? "All methods" : selectedMethod?.label ?? "UPI"} scope`,
         hint: "Settled and authorized flow",
         chart: section === "overview" ? aggregateSeries : sectionSeries,
@@ -296,7 +296,7 @@ export function OnlinePaymentsContent({
       {
         id: "avg-ticket",
         title: "Average ticket",
-        value: `₹${averageTicket.toLocaleString("en-IN")}`,
+        value: `₹${averageTicket.toLocaleString("en-MY")}`,
         delta: section === "overview" ? "Blended ticket size" : `${selectedMethod?.label ?? "UPI"} ticket size`,
         hint: "Useful for pricing and incentives",
         chart: [750, 790, 810, 845, 880, 910, averageTicket || 880],
@@ -390,7 +390,7 @@ export function OnlinePaymentsContent({
       getValue: (txn) => txn.amount,
       align: "right",
       width: 120,
-      cell: (txn) => <span className="font-medium tabular-nums">₹{txn.amount.toLocaleString("en-IN")}</span>,
+      cell: (txn) => <span className="font-medium tabular-nums">₹{txn.amount.toLocaleString("en-MY")}</span>,
     },
     { id: "time", header: "Time", accessorKey: "time", width: 90, align: "right" },
   ]
@@ -468,7 +468,7 @@ export function OnlinePaymentsContent({
   const summaryBySection: Partial<Record<NavSection, SectionSummaryMetric[]>> = {
     transactions: [
       { label: "Total transactions", value: `${filteredTxns.length}`, delta: `${transactionSuccessCount} successful` },
-      { label: "Processed value", value: `₹${transactionValue.toLocaleString("en-IN")}`, delta: "Selected window" },
+      { label: "Processed value", value: `₹${transactionValue.toLocaleString("en-MY")}`, delta: "Selected window" },
       { label: "Success rate", value: `${transactionSuccessRate}%`, delta: "Including retries" },
       { label: "Pending or failed", value: `${filteredTxns.length - transactionSuccessCount}`, delta: "Needs review" },
     ],
@@ -478,18 +478,18 @@ export function OnlinePaymentsContent({
       { label: "Completed", value: `${settlementRows.length - settlementProcessingCount}`, delta: "Settled" },
       {
         label: "Settlement amount",
-        value: `₹${settlementRows.reduce((sum, row) => sum + parseInr(row.amount), 0).toLocaleString("en-IN")}`,
+        value: `₹${settlementRows.reduce((sum, row) => sum + parseInr(row.amount), 0).toLocaleString("en-MY")}`,
         delta: "Across listed batches",
       },
     ],
     disputes: [
       { label: "Open disputes", value: `${disputeRows.length}`, delta: "Requires action" },
-      { label: "Total exposure", value: `₹${disputeExposure.toLocaleString("en-IN")}`, delta: "At risk value" },
+      { label: "Total exposure", value: `₹${disputeExposure.toLocaleString("en-MY")}`, delta: "At risk value" },
       { label: "Evidence required", value: `${disputeRows.filter((row) => /evidence/i.test(row.state)).length}`, delta: "High priority" },
     ],
     refunds: [
       { label: "Open refunds", value: `${refundRows.length}`, delta: "Current requests" },
-      { label: "Refund value", value: `₹${refundExposure.toLocaleString("en-IN")}`, delta: "Potential payout" },
+      { label: "Refund value", value: `₹${refundExposure.toLocaleString("en-MY")}`, delta: "Potential payout" },
       { label: "Manual review", value: `${refundRows.filter((row) => /manual/i.test(row.state)).length}`, delta: "Needs operator" },
     ],
     reports: [
@@ -1114,7 +1114,7 @@ export function OnlinePaymentsContent({
           <CreditCard className="h-5 w-5 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-xl font-semibold text-foreground">₹{selectedTxn.amount.toLocaleString("en-IN")}</p>
+          <p className="text-xl font-semibold text-foreground">₹{selectedTxn.amount.toLocaleString("en-MY")}</p>
           <p className="text-sm text-muted-foreground">{selectedTxn.merchant}</p>
           <Badge variant="outline" className={`mt-1 text-xs ${statusBadge[selectedTxn.status]}`}>
             {selectedTxn.status}

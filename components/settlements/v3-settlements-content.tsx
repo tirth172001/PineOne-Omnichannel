@@ -4,7 +4,6 @@ import { useMemo, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
-  AlertTriangle,
   ArrowLeft,
   Building2,
   CalendarDays,
@@ -19,11 +18,15 @@ import {
   Copy,
   CreditCard,
   Download,
+  ExternalLink,
+  FastForward,
   Headphones,
   Hourglass,
+  Info,
   Mail,
   QrCode,
   ReceiptText,
+  RefreshCcw,
   Search,
   Settings2,
   Smartphone,
@@ -49,6 +52,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Table,
@@ -224,12 +233,26 @@ const detailRows: SettlementDetailTransaction[] = Array.from({ length: 96 }, (_,
   }
 })
 
-function inr(value: number) {
-  return `₹ ${value.toLocaleString("en-IN")}`
+function rm(value: number) {
+  return `₹ ${value.toLocaleString("en-MY")}`
 }
 
-function formatAmountWithPaise(value: number) {
-  return value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+function formatAmountWithSen(value: number) {
+  return value.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function formatAmount(value: number) {
+  return value.toLocaleString("en-MY", { maximumFractionDigits: 0 })
+}
+
+function AmountText({ value }: { value: number }) {
+  const [ringgit, sen] = formatAmountWithSen(value).split(".")
+  return (
+    <p className="text-xl font-semibold leading-7 text-foreground">
+      ₹{ringgit}
+      <span className="text-sm font-medium text-muted-foreground">.{sen}</span>
+    </p>
+  )
 }
 
 function channelLabel(channel: SettlementChannel) {
@@ -262,84 +285,36 @@ function PaymentIcon({ method }: { method: PaymentMethod }) {
 }
 
 function StatusBadge({ status }: { status: SettlementStatus }) {
-  const tone =
+  const dot =
     status === "Settled"
-      ? "bg-secondary text-secondary-foreground"
+      ? "bg-success"
       : status === "Failed"
-        ? "bg-destructive/10 text-destructive"
-        : "bg-muted text-muted-foreground"
+        ? "bg-destructive"
+        : status === "Initiated"
+          ? "bg-status-info"
+          : status === "Processing" || status === "On Hold"
+            ? "bg-warning"
+            : "bg-muted-foreground"
 
   return (
-    <span className={`inline-flex h-6 items-center rounded-md px-2 text-xs font-medium ${tone}`}>
+    <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-border bg-background px-2.5 text-xs font-medium text-foreground">
+      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
       {status}
     </span>
   )
 }
 
-function DetailMetaPill({ children }: { children: ReactNode }) {
+function BankMark({ bank, size = 16 }: { bank: BankName; size?: number }) {
+  if (bank === "HDFC") return <HdfcMark size={size} />
+  const color = bank === "ICICI" ? "#ae282e" : bank === "AXIS" ? "#97144d" : "#1f4e96"
   return (
-    <span className="inline-flex h-6 items-center gap-1 rounded-full border border-border/80 bg-background/80 px-2 text-xs text-foreground">
-      {children}
+    <span
+      aria-hidden
+      className="inline-flex shrink-0 items-center justify-center rounded-[3px] font-bold leading-none text-white"
+      style={{ width: size, height: size, backgroundColor: color, fontSize: size * 0.56 }}
+    >
+      {bank[0]}
     </span>
-  )
-}
-
-function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 className="text-xl font-medium leading-6 text-foreground">{children}</h2>
-}
-
-function DetailField({
-  label,
-  value,
-}: {
-  label: string
-  value: ReactNode
-}) {
-  return (
-    <div className="space-y-1.5">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <div className="text-sm text-foreground">{value}</div>
-    </div>
-  )
-}
-
-function DetailSection({
-  title,
-  fields,
-}: {
-  title: string
-  fields: Array<{ label: string; value: ReactNode }>
-}) {
-  return (
-    <section className="space-y-6">
-      <h3 className="text-xl font-medium leading-6 text-foreground">{title}</h3>
-      <div className="grid grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-3">
-        {fields.map((field) => (
-          <DetailField key={field.label} label={field.label} value={field.value} />
-        ))}
-      </div>
-    </section>
-  )
-}
-
-function SettlementActivityItem({
-  title,
-  subtitle,
-  detail,
-  icon,
-}: {
-  title: string
-  subtitle: string
-  detail?: string
-  icon: ReactNode
-}) {
-  return (
-    <div className="relative pl-8">
-      <div className="absolute left-0 top-0.5">{icon}</div>
-      <p className="text-sm text-foreground">{title}</p>
-      <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
-      {detail ? <p className="mt-1 text-xs font-medium text-primary">{detail}</p> : null}
-    </div>
   )
 }
 
@@ -402,7 +377,9 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
   const router = useRouter()
   const isDetailMode = Boolean(initialBatchId)
   const [channel, setChannel] = useState<SettlementChannel>("in-store")
-  const [summaryPeriod, setSummaryPeriod] = useState<"today" | "yesterday">("today")
+  const [summaryPeriod, setSummaryPeriod] = useState<"today" | "yesterday" | "7days">("today")
+  const [deductionsOpen, setDeductionsOpen] = useState(false)
+  const [showAllDeductions, setShowAllDeductions] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [dateFilter, setDateFilter] = useState<"today" | "all">("today")
   const [statusFilter, setStatusFilter] = useState<"all" | SettlementStatus>("all")
@@ -421,16 +398,33 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
   const summary = useMemo(() => {
     const settledRows = channelRows.filter((row) => row.status === "Settled")
     const openRows = channelRows.filter((row) => row.status !== "Settled")
+    const failedRows = channelRows.filter((row) => row.status === "Failed")
+    const onHoldRows = channelRows.filter((row) => row.status === "On Hold")
     const settledAmount = settledRows.reduce((total, row) => total + row.netAmount, 0)
     const unsettledAmount = openRows.reduce((total, row) => total + row.netAmount, 0)
+    const deductionsAmount = settledRows.reduce((total, row) => total + row.deductionsTotal, 0)
+    const grossAmount = settledRows.reduce((total, row) => total + row.grossAmount, 0)
+    const refundsAmount = settledRows.reduce((total, row) => total + row.refundAmount, 0)
+    const mdrAmount = settledRows.reduce((total, row) => total + row.mdrAmount, 0)
+    const gstAmount = settledRows.reduce((total, row) => total + row.gstAmount, 0)
+    const othersAmount = settledRows.reduce((total, row) => total + row.platformFees + row.recoveryAmount + row.chargebackAmount, 0)
     const settledCount = settledRows.reduce((total, row) => total + row.transactionCount, 0)
     const totalCount = channelRows.reduce((total, row) => total + row.transactionCount, 0)
     return {
       merchantBalance: settledAmount + unsettledAmount,
       settledAmount,
       unsettledAmount,
+      deductionsAmount,
+      grossAmount,
+      refundsAmount,
+      mdrAmount,
+      gstAmount,
+      othersAmount,
       settledCount,
       totalCount,
+      batchCount: settledRows.length,
+      failedCount: failedRows.length,
+      onHoldCount: onHoldRows.reduce((total, row) => total + row.transactionCount, 0),
       remainingCount: Math.max(totalCount - settledCount, 0),
       nextSettlementAt: openRows[0]?.nextSettlementAt ?? "6:00 PM Today",
     }
@@ -479,316 +473,164 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
     return settlementRows.find((row) => row.batchId === initialBatchId) ?? settlementRows[0]!
   }, [initialBatchId])
 
-  const detailBreakup = useMemo(() => {
-    const adjustments = currentSettlement.channel === "online" ? currentSettlement.platformFees : Math.round(currentSettlement.deductionsTotal * 0.14)
-    const loanRecovery = currentSettlement.channel === "online" ? currentSettlement.recoveryAmount : Math.round(currentSettlement.deductionsTotal * 0.12)
-    const other = Math.max(
-      currentSettlement.deductionsTotal -
-      currentSettlement.refundAmount -
-      currentSettlement.mdrAmount -
-      currentSettlement.gstAmount -
-      adjustments -
-      loanRecovery -
-      currentSettlement.chargebackAmount,
-      0
-    )
-
-    return {
-      grossAmount: currentSettlement.grossAmount,
-      refunds: currentSettlement.refundAmount,
-      mdr: currentSettlement.mdrAmount,
-      taxes: currentSettlement.gstAmount,
-      adjustments,
-      loanRecovery,
-      chargebacks: currentSettlement.chargebackAmount,
-      other,
-    }
-  }, [currentSettlement])
-
-  const detailDeductionRows = useMemo(() => {
-    return [
-      { label: "Refunds", value: detailBreakup.refunds },
-      { label: "MDR", value: detailBreakup.mdr },
-      { label: "Taxes", value: detailBreakup.taxes },
-      { label: "Adjustments", value: detailBreakup.adjustments },
-      { label: "Loan recovery", value: detailBreakup.loanRecovery },
-      ...(currentSettlement.channel === "online" ? [{ label: "Chargebacks", value: detailBreakup.chargebacks }] : []),
-      { label: "Other deductions", value: detailBreakup.other },
-    ].filter((item) => item.value > 0)
-  }, [currentSettlement.channel, detailBreakup])
-
-  const transactionSplit = useMemo(() => {
-    return ["Sale", "Refund", "Chargeback", "Recovery", "Adjustment"].map((type) => ({
-      type,
-      count: filteredDetailRows.filter((row) => row.transactionType === type).length,
-    }))
-  }, [filteredDetailRows])
-
   if (isDetailMode) {
-    const payoutLabel = currentSettlement.channel === "online" ? "Net settlement" : "Payout amount"
-    const settlementActivityItems = [
-      {
-        title: currentSettlement.status === "Settled" ? "Settlement completed" : "Settlement updated",
-        subtitle: `${currentSettlement.settlementDatePrimary}, ${currentSettlement.settlementDateSecondary}`,
-        detail: `UTR ${currentSettlement.utr}`,
-        icon:
-          currentSettlement.status === "Failed" ? (
-            <CircleAlert className="h-4 w-4 text-destructive" />
-          ) : currentSettlement.status === "Settled" ? (
-            <CheckCircle className="h-4 w-4 text-success" />
-          ) : (
-            <Clock3 className="h-4 w-4 text-warning" />
-          ),
-      },
-      {
-        title: "Payout initiated",
-        subtitle: `${currentSettlement.initiationDatePrimary}, ${currentSettlement.initiationDateSecondary}`,
-        detail: `${currentSettlement.bankName} bank, ${currentSettlement.accountLabel}`,
-        icon: <Building2 className="h-4 w-4 text-chart-4" />,
-      },
-      {
-        title: "Deductions reconciled",
-        subtitle: inr(currentSettlement.deductionsTotal),
-        detail: `${detailDeductionRows.length} deduction heads`,
-        icon: <ReceiptText className="h-4 w-4 text-muted-foreground" />,
-      },
-      {
-        title: "Transactions captured",
-        subtitle: `${currentSettlement.transactionCount} transactions`,
-        detail: currentSettlement.capturedRange,
-        icon: <WalletCards className="h-4 w-4 text-muted-foreground" />,
-      },
+    const cardDeductions = [
+      { label: "Refunds", value: currentSettlement.refundAmount },
+      { label: "Chargeback", value: currentSettlement.chargebackAmount },
+      { label: "Loan recovery", value: currentSettlement.recoveryAmount },
+      { label: "MSF / MDR", value: currentSettlement.mdrAmount },
+      { label: "MCF", value: currentSettlement.platformFees },
     ]
+    const extraDeductions = [{ label: "GST", value: currentSettlement.gstAmount }]
+    const visibleDeductions = showAllDeductions ? [...cardDeductions, ...extraDeductions] : cardDeductions
 
     return (
-      <div className="relative p-8">
-        <div
-          className={`pointer-events-none absolute inset-x-0 top-0 h-[301px] bg-gradient-to-b ${getSettlementStatusGradientClass(currentSettlement.status)}`}
-        />
-        <div className="relative z-10 mx-auto w-full max-w-[1440px]">
-          <div className="flex h-8 items-center justify-between">
-            <Button asChild variant="ghost" className="h-8 rounded-md px-2 text-xs text-foreground hover:bg-background/20">
-              <Link href="/settlements">
-                <ArrowLeft className="mr-1 h-4 w-4" />
-                Back
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" className="h-8 text-xs">
-              <Download className="h-4 w-4" />
-              Download receipt
-            </Button>
-          </div>
+      <div className="relative">
+        <div className={`pointer-events-none absolute inset-x-0 top-0 h-[300px] bg-gradient-to-b ${getSettlementStatusGradientClass(currentSettlement.status)}`} />
+        <div className="relative z-10 px-8 py-6">
+          <Button asChild variant="ghost" className="h-8 rounded-md px-2 text-sm text-foreground hover:bg-background/30">
+            <Link href="/settlements">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Back
+            </Link>
+          </Button>
 
-          <section className="mt-8 min-h-[180px]">
-            <HdfcMark size={48} />
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <h1 className="text-[36px] font-semibold leading-9 text-foreground">{inr(currentSettlement.netAmount)}</h1>
-              <StatusBadge status={currentSettlement.status} />
-            </div>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              {payoutLabel}: {currentSettlement.bankName} bank, {currentSettlement.accountLabel}{" "}
-              <span className="mx-2 text-border">|</span>
-              Settled on: {currentSettlement.settlementDatePrimary}, {currentSettlement.settlementDateSecondary}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <DetailMetaPill>
-                Batch ID: {currentSettlement.batchId}
-                <Copy className="h-3 w-3 text-muted-foreground" />
-              </DetailMetaPill>
-              <DetailMetaPill>
-                UTR: {currentSettlement.utr}
-                <Copy className="h-3 w-3 text-muted-foreground" />
-              </DetailMetaPill>
-              <DetailMetaPill>{currentSettlement.settlementCycle} cycle</DetailMetaPill>
-              <DetailMetaPill>{channelLabel(currentSettlement.channel)} payments</DetailMetaPill>
-            </div>
-          </section>
-
-          <div className="mt-6 h-px w-full bg-border/70" />
-
-          <div className="mt-6 grid gap-12 xl:grid-cols-[minmax(0,744px)_1px_minmax(280px,328px)]">
+          <div className="mt-6 grid gap-8 lg:grid-cols-2">
             <div className="min-w-0">
-              <DetailSection
-                title="Settlement details"
-                fields={[
-                  { label: "Settlement ID", value: currentSettlement.batchId },
-                  { label: "UTR", value: currentSettlement.utr },
-                  { label: "Settlement status", value: <StatusBadge status={currentSettlement.status} /> },
-                  { label: "Settlement type", value: currentSettlement.settlementType },
-                  { label: "Settlement cycle", value: currentSettlement.settlementCycle },
-                  { label: "Transaction count", value: currentSettlement.transactionCount.toLocaleString("en-IN") },
-                  { label: "Captured range", value: currentSettlement.capturedRange },
-                  { label: "Initiated on", value: `${currentSettlement.initiationDatePrimary}, ${currentSettlement.initiationDateSecondary}` },
-                  { label: "Completed on", value: `${currentSettlement.settlementDatePrimary}, ${currentSettlement.settlementDateSecondary}` },
-                ]}
-              />
-
-              <div className="my-8 h-px w-full bg-border/70" />
-
-              <DetailSection
-                title="Bank and payout details"
-                fields={[
-                  { label: "Payout account", value: `${currentSettlement.bankName} bank, ${currentSettlement.accountLabel}` },
-                  { label: "Acquiring bank", value: currentSettlement.acquiringBank },
-                  { label: "TID", value: currentSettlement.tid },
-                  { label: "Store", value: currentSettlement.store },
-                  { label: "Payment method", value: paymentMethodLabel(currentSettlement.paymentMethod) },
-                  { label: "Next settlement", value: currentSettlement.nextSettlementAt },
-                  { label: "Weekend settlement", value: currentSettlement.weekendSettlementEnabled ? "Enabled" : "Not enabled" },
-                  { label: "ODS", value: currentSettlement.odsEnabled ? `Enabled till ${currentSettlement.odsCutoff}` : "Not enabled" },
-                ]}
-              />
-
-              <div className="my-8 h-px w-full bg-border/70" />
-
-              <section className="space-y-6">
-                <SectionTitle>Settlement breakup</SectionTitle>
-                <div className="grid grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-3">
-                  <DetailField label="Gross amount" value={inr(detailBreakup.grossAmount)} />
-                  <DetailField label="Total deductions" value={inr(currentSettlement.deductionsTotal)} />
-                  <DetailField label={payoutLabel} value={inr(currentSettlement.netAmount)} />
-                </div>
-              </section>
-
-              <div className="my-8 h-px w-full bg-border/70" />
-
-              <section className="space-y-6">
-                <SectionTitle>Deduction details</SectionTitle>
-                <div className="grid grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-3">
-                  {detailDeductionRows.map((item) => (
-                    <DetailField key={item.label} label={item.label} value={inr(item.value)} />
-                  ))}
-                </div>
-              </section>
-
-              <div className="my-8 h-px w-full bg-border/70" />
-
-              <section className="flex items-center gap-2">
-                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted">
-                  <Headphones className="h-4 w-4 text-foreground" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium leading-4 text-foreground">Need help with this settlement?</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Contact support for deductions, UTR, bank retry, or risk on-hold queries.</p>
-                </div>
-                <Button variant="outline" size="sm" className="h-8 shrink-0">Contact us</Button>
-              </section>
+              <HdfcMark size={48} />
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <h1 className="text-[32px] font-semibold leading-9 text-foreground">{rm(currentSettlement.netAmount)}</h1>
+                <StatusBadge status={currentSettlement.status} />
+              </div>
+              <div className="mt-3 space-y-1 text-sm text-muted-foreground">
+                <p>Settled to: {currentSettlement.bankName} bank, {currentSettlement.accountLabel} on {currentSettlement.settlementDatePrimary}, {currentSettlement.settlementDateSecondary}</p>
+                <p>Initiated on: {currentSettlement.initiationDatePrimary}, {currentSettlement.initiationDateSecondary}</p>
+              </div>
+              <span className="mt-4 inline-flex h-6 items-center gap-1.5 rounded-full border border-border bg-background px-2.5 text-xs font-medium text-foreground">
+                UTR: {currentSettlement.utr}
+                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+              </span>
             </div>
 
-            <div className="hidden min-h-[760px] w-px bg-border/70 xl:block" />
-
-            <aside className="min-w-0 px-2 py-2">
-              <SectionTitle>Activity</SectionTitle>
-              <div className="relative mt-4 space-y-6">
-                <div className="absolute bottom-2 left-[7px] top-2 w-px bg-border/70" />
-                {settlementActivityItems.map((event) => (
-                  <SettlementActivityItem
-                    key={event.title}
-                    title={event.title}
-                    subtitle={event.subtitle}
-                    detail={event.detail}
-                    icon={event.icon}
-                  />
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
+              <div className="space-y-3 px-4 py-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Gross amount</span>
+                  <span className="font-medium text-foreground">₹{formatAmount(currentSettlement.grossAmount)}</span>
+                </div>
+                {visibleDeductions.map((item) => (
+                  <div key={item.label} className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">{item.label}</span>
+                    <span className="font-medium text-destructive">- ₹{formatAmount(item.value)}</span>
+                  </div>
                 ))}
+                <div className="pt-1 text-center">
+                  <Button variant="link" className="h-6 gap-1 p-0 text-sm text-primary" onClick={() => setShowAllDeductions((prev) => !prev)}>
+                    {showAllDeductions ? "View less" : "View all"}
+                    <ChevronDown className={`h-4 w-4 transition-transform ${showAllDeductions ? "rotate-180" : ""}`} />
+                  </Button>
+                </div>
               </div>
-            </aside>
+              <div className="flex items-center justify-between border-t border-border px-4 py-4 text-sm">
+                <span className="text-muted-foreground">Net settled amount</span>
+                <span className="font-semibold text-foreground">₹{formatAmount(currentSettlement.netAmount)}</span>
+              </div>
+            </div>
           </div>
 
-          <section className="mt-8 space-y-4">
+          <div className="-mx-8 mt-8 border-t border-border" />
+
+          <section className="mt-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-medium leading-6 text-foreground">Transactions settled</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {currentSettlement.channel === "online"
-                    ? "Search by transaction ID, merchant order ID, ARN, or RRN. Rows can open the transaction detail view."
-                    : "Count split by transaction type for this in-store settlement."}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                {transactionSplit.map((item) => (
-                  <span key={item.type} className="inline-flex h-8 items-center rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground">
-                    {item.type}: {item.count}
-                  </span>
-                ))}
+              <h2 className="text-xl font-semibold leading-7 text-foreground">{currentSettlement.transactionCount} Transactions included</h2>
+              <div className="flex items-center gap-3">
+                <div className="relative w-[229px]">
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by Trxn ID"
+                    value={searchQuery}
+                    onChange={(event) => { setSearchQuery(event.target.value); setDetailPage(1) }}
+                    className="h-8 rounded-md pl-8"
+                  />
+                </div>
+                <Button size="sm" className="h-8">
+                  <Download className="h-4 w-4" />
+                  Download
+                </Button>
               </div>
             </div>
 
-          <div className="overflow-hidden rounded-xl border border-border bg-card">
-            <div className="overflow-x-auto">
-              <Table className="min-w-[1104px]">
-                <TableHeader>
-                  <TableRow className="h-10">
-                    <TableHead className="px-3 text-sm font-medium text-muted-foreground">Transaction ID</TableHead>
-                    <TableHead className="px-3 text-sm font-medium text-muted-foreground">{currentSettlement.channel === "online" ? "Created on" : "Transaction date"}</TableHead>
-                    <TableHead className="px-3 text-sm font-medium text-muted-foreground">{currentSettlement.channel === "online" ? "Merchant order ID" : "Store"}</TableHead>
-                    <TableHead className="px-3 text-sm font-medium text-muted-foreground">{currentSettlement.channel === "online" ? "ARN / RRN" : "Payment mode"}</TableHead>
-                    <TableHead className="px-3 text-right text-sm font-medium text-muted-foreground">Transaction amount</TableHead>
-                    <TableHead className="px-3 text-right text-sm font-medium text-muted-foreground">{currentSettlement.channel === "online" ? "Net settlement" : "Payout amount"}</TableHead>
-                    <TableHead className="px-3 text-right text-sm font-medium text-muted-foreground">Deductions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {detailPagedRows.map((row, index) => (
-                    <TableRow key={`${row.id}-${index}`} className="h-16 cursor-pointer align-top" onClick={() => router.push(`/transactions/${row.id}`)}>
-                      <TableCell className="px-3 align-top text-sm font-medium text-foreground">{row.id}</TableCell>
-                      <TableCell className="px-3 align-top">
-                        <p className="text-sm font-medium text-foreground">{row.paymentDate}</p>
-                        <p className="text-sm text-muted-foreground">{row.paymentTime}</p>
-                      </TableCell>
-                      <TableCell className="px-3 align-top">
-                        {currentSettlement.channel === "online" ? (
-                          <>
-                            <p className="text-sm font-medium text-foreground">{row.merchantOrderId}</p>
-                            <p className="text-sm text-muted-foreground">{row.payoutStatus} payout</p>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-sm font-medium text-foreground">{row.storeName}</p>
-                            <p className="max-w-[224px] truncate text-sm text-muted-foreground">{row.storeAddress}</p>
-                            <p className="text-sm text-muted-foreground">{row.tid}</p>
-                          </>
-                        )}
-                      </TableCell>
-                      <TableCell className="px-3 align-top">
-                        {currentSettlement.channel === "online" ? (
-                          <>
-                            <p className="text-sm font-medium text-foreground">{row.arn}</p>
-                            <p className="text-sm text-muted-foreground">{row.rrn}</p>
-                          </>
-                        ) : (
+            <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card">
+              <div className="overflow-x-auto">
+                <Table className="min-w-[1000px]">
+                  <TableHeader>
+                    <TableRow className="h-10">
+                      <TableHead className="px-4 text-sm font-medium text-muted-foreground">Transaction ID</TableHead>
+                      <TableHead className="px-4 text-sm font-medium text-muted-foreground">Transaction date</TableHead>
+                      <TableHead className="px-4 text-sm font-medium text-muted-foreground">Store name</TableHead>
+                      <TableHead className="px-4 text-sm font-medium text-muted-foreground">Payment mode</TableHead>
+                      <TableHead className="px-4 text-right text-sm font-medium text-muted-foreground">Transaction amount</TableHead>
+                      <TableHead className="px-4 text-right text-sm font-medium text-muted-foreground">Deduction</TableHead>
+                      <TableHead className="px-4 text-right text-sm font-medium text-muted-foreground">Payout amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {detailPagedRows.map((row, index) => (
+                      <TableRow key={`${row.id}-${index}`} className="h-16 cursor-pointer align-top" onClick={() => router.push(`/transactions/${row.id}`)}>
+                        <TableCell className="px-4 align-top text-sm font-medium text-foreground">{row.id}</TableCell>
+                        <TableCell className="px-4 align-top">
+                          <p className="text-sm font-medium text-foreground">{row.paymentDate}</p>
+                          <p className="mt-0.5 text-sm text-muted-foreground">{row.paymentTime}</p>
+                        </TableCell>
+                        <TableCell className="px-4 align-top">
+                          <p className="text-sm font-medium text-foreground">{row.storeName}</p>
+                          <p className="mt-0.5 max-w-[224px] truncate text-sm text-muted-foreground">{row.storeAddress}</p>
+                        </TableCell>
+                        <TableCell className="px-4 align-top">
                           <div className="flex items-start gap-2">
                             <PaymentIcon method={row.paymentMethod} />
                             <div>
                               <p className="text-sm font-medium text-foreground">{row.paymentMethodLabel}</p>
-                              <p className="text-sm text-muted-foreground">{row.paymentMethodSubLabel}</p>
+                              <p className="mt-0.5 text-sm text-muted-foreground">{row.paymentMethodSubLabel}</p>
                             </div>
                           </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="px-3 text-right align-top"><p className="text-sm font-medium text-foreground">{inr(row.transactionAmount)}</p></TableCell>
-                      <TableCell className="px-3 text-right align-top"><p className="text-sm font-medium text-foreground">{inr(row.payoutAmount)}</p></TableCell>
-                      <TableCell className="px-3 text-right align-top">
-                        <p className="text-sm font-medium text-foreground">{inr(row.totalDeduction)}</p>
-                        {currentSettlement.channel === "online" ? <p className="text-sm text-muted-foreground">MDR {row.mdrRate} + GST</p> : null}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        </TableCell>
+                        <TableCell className="px-4 text-right align-top text-sm font-medium text-foreground">{rm(row.transactionAmount)}</TableCell>
+                        <TableCell className="px-4 text-right align-top text-sm font-medium text-foreground">{rm(row.totalDeduction)}</TableCell>
+                        <TableCell className="px-4 text-right align-top text-sm font-medium text-foreground">{rm(row.payoutAmount)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
-          </div>
 
-          <PaginationControls
-            page={detailClampedPage}
-            totalPages={detailTotalPages}
-            rowsPerPage={detailRowsPerPage}
-            totalRows={filteredDetailRows.length}
-            onPageChange={setDetailPage}
-            onRowsPerPageChange={(value) => {
-              setDetailRowsPerPage(value)
-              setDetailPage(1)
-            }}
-          />
+            <div className="mt-4">
+              <PaginationControls
+                page={detailClampedPage}
+                totalPages={detailTotalPages}
+                rowsPerPage={detailRowsPerPage}
+                totalRows={filteredDetailRows.length}
+                onPageChange={setDetailPage}
+                onRowsPerPageChange={(value) => {
+                  setDetailRowsPerPage(value)
+                  setDetailPage(1)
+                }}
+              />
+            </div>
+          </section>
+
+          <div className="-mx-8 mt-8 border-t border-border" />
+
+          <section className="mt-6 flex items-center gap-3">
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted">
+              <Headphones className="h-4 w-4 text-foreground" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground">Need help with this settlement?</p>
+              <p className="mt-1 text-sm text-muted-foreground">Our support team is available 24x7 to assist you with any questions</p>
+            </div>
+            <Button variant="outline" size="sm" className="h-8 shrink-0">Contact us</Button>
           </section>
         </div>
       </div>
@@ -813,36 +655,28 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
         </div>
         <Button asChild variant="outline" size="sm" className="h-8">
           <Link href="/settlements/preferences">
-            <Clock3 className="h-4 w-4" />
-            {channel === "online" ? "T+1 / T+2" : "T+1 standard"}
-            <span className="h-4 w-px bg-border" />
-            Settlement preferences
+            <Settings2 className="h-4 w-4" />
+            Change settlement preferences
           </Link>
         </Button>
       </section>
 
-
-      <section className="mt-7">
-        <div className="rounded-xl border border-border bg-card px-4 py-3">
-          <div className="flex items-center gap-3">
-            <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${channel === "online" ? "bg-muted text-foreground" : "bg-secondary text-secondary-foreground"}`}>
-              {channel === "online" ? <AlertTriangle className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground">{channel === "online" ? "Merchant action required" : `Enable faster settlements for ${channelLabel(channel)}`}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {channel === "online"
-                  ? "Pending payouts can include unprocessed, pending settlement, risk-on-hold, and bank-rejected payouts. Risk holds may release up to 120 days after capture."
-                  : "On Demand Settlement can be enabled for in-store payments. Pricing is configured separately for this channel."}
-              </p>
-            </div>
-            <Button variant="outline" size="sm" className="h-8 shrink-0">Enable ODS</Button>
-          </div>
-        </div>
+      <section className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <RefreshCcw className="h-4 w-4" />
+          Settlement cycle: <span className="font-medium text-foreground">{channel === "online" ? "T+1 / T+2 days" : "T+1 days"}</span>
+        </span>
+        <span className="h-4 w-px bg-border" />
+        <span className="inline-flex items-center gap-1.5">
+          <Building2 className="h-4 w-4" />
+          Settlement account: <HdfcMark size={14} /> <span className="font-medium text-foreground">HDFC bank, xx8787</span>
+        </span>
       </section>
 
-      <section className="mt-4 h-[200px] overflow-hidden rounded-lg border border-border bg-card">
-        <div className="grid h-full md:grid-cols-2">
+      <div className="-mx-8 mt-6 border-t border-border" />
+
+      <section className="mt-6 overflow-hidden rounded-lg border border-border bg-card">
+        <div className="grid md:grid-cols-2">
           <div className="flex min-w-0 flex-col border-b border-border md:border-r md:border-b-0">
             <div className="flex h-16 items-center justify-between border-b border-border px-4">
               <div className="flex items-center gap-2">
@@ -853,19 +687,18 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                 <TabsList className="h-8 rounded-[8px] bg-muted p-1">
                   <TabsTrigger value="today" className="h-6 rounded-[6px] border-transparent px-2 py-1 text-sm data-active:!border-transparent data-active:!bg-background">Today</TabsTrigger>
                   <TabsTrigger value="yesterday" className="h-6 rounded-[6px] border-transparent px-2 py-1 text-sm data-active:!border-transparent data-active:!bg-background">Yesterday</TabsTrigger>
+                  <TabsTrigger value="7days" className="h-6 rounded-[6px] border-transparent px-2 py-1 text-sm data-active:!border-transparent data-active:!bg-background">7 days</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
-            <div className="flex h-[136px] flex-col justify-between px-5 py-4">
+            <div className="flex min-h-[136px] flex-col gap-4 px-5 py-4">
               <div>
-                <p className="text-xl font-semibold leading-7 text-foreground">₹{formatAmountWithPaise(summary.settledAmount)}</p>
-                <p className="mt-2 text-sm font-medium text-muted-foreground">{summary.settledCount} / {summary.totalCount} payments settled</p>
+                <AmountText value={summary.settledAmount} />
+                <p className="mt-2 text-sm font-medium text-muted-foreground">{summary.settledCount} payments settled in {summary.batchCount} batches</p>
               </div>
-              <div className="flex items-center gap-4">
-                <p className="flex min-w-0 flex-1 items-center gap-1 text-sm font-medium text-muted-foreground">
-                  Settled in <HdfcMark size={14} /> HDFC bank, xx8787
-                </p>
-                <Button variant="link" className="h-6 p-0 text-sm text-primary underline">View deductions</Button>
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <span><span className="text-destructive">₹{formatAmount(summary.deductionsAmount)}</span> <span className="text-muted-foreground">deductions</span></span>
+                <Button variant="link" className="h-5 p-0 text-sm text-primary underline" onClick={() => setDeductionsOpen(true)}>View breakdown</Button>
               </div>
             </div>
           </div>
@@ -873,25 +706,87 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
           <div className="flex min-w-0 flex-col">
             <div className="flex h-16 items-center gap-2 border-b border-border px-4">
               <Hourglass className="h-6 w-6 text-foreground" />
-              <p className="text-base font-medium text-card-foreground">Yet to be settled</p>
+              <p className="text-base font-medium text-card-foreground">Remaining amount</p>
             </div>
-            <div className="flex h-[136px] flex-col justify-between px-5 py-4">
+            <div className="flex min-h-[136px] flex-col gap-4 px-5 py-4">
               <div>
-                <p className="text-xl font-semibold leading-7 text-foreground">₹{formatAmountWithPaise(summary.unsettledAmount)}</p>
-                <p className="mt-2 text-sm font-medium text-muted-foreground">{summary.remainingCount} payments remaining</p>
+                <AmountText value={summary.unsettledAmount} />
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <span>{summary.remainingCount} payments remaining</span>
+                  <span className="h-4 w-px bg-border" />
+                  <span>Next settlement by <span className="text-foreground">{summary.nextSettlementAt}</span></span>
+                </div>
               </div>
-              <p className="text-sm font-medium text-muted-foreground">Next {channelLabel(channel)} settlement by <span className="text-foreground">{summary.nextSettlementAt}</span></p>
+              <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                <span><span className="text-destructive">{summary.failedCount}</span> <span className="text-muted-foreground">settlement failed</span></span>
+                <Button variant="link" className="h-5 p-0 text-sm text-primary underline">View</Button>
+                <span className="h-4 w-px bg-border" />
+                <span><span className="text-destructive">{summary.onHoldCount}</span> <span className="text-muted-foreground">payments on hold</span></span>
+                <Button asChild variant="link" className="inline-flex h-5 items-center gap-1 p-0 text-sm text-primary underline">
+                  <Link href="/on-hold-disputes">
+                    View
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
+
+        {channel === "in-store" ? (
+          <div className="flex items-center gap-3 border-t border-border bg-[#eef2ff] px-4 py-3 dark:bg-[#1a1f3a]">
+            <Zap className="h-5 w-5 shrink-0 text-[#4f46e5] dark:text-[#a5b4fc]" />
+            <p className="min-w-0 flex-1 text-sm font-medium text-foreground">
+              Get some settlement in your account today via On-Demand settlement
+            </p>
+            <Button variant="outline" size="sm" className="h-8 shrink-0 bg-background">Settle now</Button>
+          </div>
+        ) : null}
       </section>
+
+      <Sheet open={deductionsOpen} onOpenChange={setDeductionsOpen}>
+        <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-[464px]">
+          <SheetHeader className="flex-row items-center justify-between border-b border-border px-6 py-4">
+            <SheetTitle className="text-lg font-medium text-foreground">Deductions</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col gap-5 border-b border-border px-6 py-6 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Gross amount</span>
+              <span className="font-semibold text-foreground">₹{formatAmount(summary.grossAmount)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Refunds</span>
+              <span className="font-semibold text-destructive">- ₹{formatAmount(summary.refundsAmount)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">MSF / MDR</span>
+              <span className="font-semibold text-destructive">- ₹{formatAmount(summary.mdrAmount)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">GST</span>
+              <span className="font-semibold text-destructive">- ₹{formatAmount(summary.gstAmount)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                Others
+                <Info className="h-4 w-4 text-muted-foreground" />
+              </span>
+              <span className="font-semibold text-destructive">- ₹{formatAmount(summary.othersAmount)}</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between px-6 py-6 text-sm">
+            <span className="text-muted-foreground">Net settled amount</span>
+            <span className="font-semibold text-foreground">₹{formatAmount(summary.settledAmount)}</span>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <section className="mt-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative w-[229px]">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder={channel === "online" ? "Search UTR number" : "Search Settlement ID or UTR"}
+              placeholder="Search by UTR or Trxn ID"
               value={searchQuery}
               onChange={(event) => {
                 setSearchQuery(event.target.value)
@@ -918,18 +813,26 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8">
-                More filters
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-secondary px-1 text-xs text-secondary-foreground">7</span>
+                Status
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="max-h-[520px] w-56 overflow-y-auto">
-              <DropdownMenuLabel>Status</DropdownMenuLabel>
+            <DropdownMenuContent align="start" className="w-44">
               <DropdownMenuRadioGroup value={statusFilter} onValueChange={(value) => { setStatusFilter(value as typeof statusFilter); setPage(1) }}>
                 <DropdownMenuRadioItem value="all">All statuses</DropdownMenuRadioItem>
                 {statuses.map((status) => <DropdownMenuRadioItem key={status} value={status}>{status}</DropdownMenuRadioItem>)}
               </DropdownMenuRadioGroup>
-              <DropdownMenuSeparator />
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8">
+                More filters
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-secondary px-1 text-xs text-secondary-foreground">3</span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="max-h-[520px] w-56 overflow-y-auto">
               <DropdownMenuLabel>Settlement type</DropdownMenuLabel>
               <DropdownMenuRadioGroup value={typeFilter} onValueChange={(value) => { setTypeFilter(value as typeof typeFilter); setPage(1) }}>
                 <DropdownMenuRadioItem value="all">All types</DropdownMenuRadioItem>
@@ -969,12 +872,8 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
             Email filtered
           </Button>
           <Button variant="outline" size="sm" className="h-8">
-            <ReceiptText className="h-4 w-4" />
-            {channel === "online" ? "Download UTR report" : "Download MPR"}
-          </Button>
-          <Button variant="outline" size="sm" className="h-8">
             <Download className="h-4 w-4" />
-            Download settlement report
+            Download filtered
           </Button>
         </div>
       </section>
@@ -984,80 +883,111 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
           <div className="overflow-x-auto">
             <Table className="min-w-[1104px]">
               <TableHeader>
-                <TableRow className="h-10">
-                  <TableHead className="px-3 text-sm font-medium text-muted-foreground">{channel === "online" ? "UTR" : "Settlement ID"}</TableHead>
-                  <TableHead className="px-3 text-sm font-medium text-muted-foreground">{channel === "online" ? "Settled on" : "UTR"}</TableHead>
-                  <TableHead className="px-3 text-right text-sm font-medium text-muted-foreground">Gross amount</TableHead>
-                  <TableHead className="px-3 text-right text-sm font-medium text-muted-foreground">Deductions</TableHead>
-                  <TableHead className="px-3 text-right text-sm font-medium text-muted-foreground">{channel === "online" ? "Net settlement" : "Net amount"}</TableHead>
-                  <TableHead className="px-3 text-sm font-medium text-muted-foreground">{channel === "online" ? "Refund / chargeback" : "Settled on"}</TableHead>
-                  <TableHead className="px-3 text-sm font-medium text-muted-foreground">Status</TableHead>
-                  <TableHead className="px-3 text-sm font-medium text-muted-foreground">{channel === "online" ? "Cycle" : "Channel"}</TableHead>
-                </TableRow>
+                {channel === "online" ? (
+                  <TableRow className="h-10">
+                    <TableHead className="px-3 text-sm font-medium text-muted-foreground">UTR</TableHead>
+                    <TableHead className="px-3 text-sm font-medium text-muted-foreground">Settled on</TableHead>
+                    <TableHead className="px-3 text-right text-sm font-medium text-muted-foreground">Gross amount</TableHead>
+                    <TableHead className="px-3 text-right text-sm font-medium text-muted-foreground">Deductions</TableHead>
+                    <TableHead className="px-3 text-right text-sm font-medium text-muted-foreground">Net settlement</TableHead>
+                    <TableHead className="px-3 text-sm font-medium text-muted-foreground">Refund / chargeback</TableHead>
+                    <TableHead className="px-3 text-sm font-medium text-muted-foreground">Status</TableHead>
+                    <TableHead className="px-3 text-sm font-medium text-muted-foreground">Cycle</TableHead>
+                  </TableRow>
+                ) : (
+                  <TableRow className="h-10">
+                    <TableHead className="px-4 text-sm font-medium text-muted-foreground">UTR</TableHead>
+                    <TableHead className="px-4 text-sm font-medium text-muted-foreground">Gross amount</TableHead>
+                    <TableHead className="px-4 text-sm font-medium text-muted-foreground">Total Deduction</TableHead>
+                    <TableHead className="px-4 text-sm font-medium text-muted-foreground">Net settlement</TableHead>
+                    <TableHead className="px-4 text-sm font-medium text-muted-foreground">Settled date</TableHead>
+                    <TableHead className="px-4 text-sm font-medium text-muted-foreground">Bank</TableHead>
+                    <TableHead className="px-4 text-sm font-medium text-muted-foreground">Status</TableHead>
+                  </TableRow>
+                )}
               </TableHeader>
               <TableBody>
                 {pagedRows.map((row) => (
-                  <TableRow key={row.id} className="h-16 cursor-pointer align-top" onClick={() => router.push(`/settlements/${row.batchId}`)}>
-                    <TableCell className="px-3 align-top text-sm font-medium text-foreground">
-                      {channel === "online" ? (
+                  channel === "online" ? (
+                    <TableRow key={row.id} className="h-16 cursor-pointer align-top" onClick={() => router.push(`/settlements/${row.batchId}`)}>
+                      <TableCell className="px-3 align-top text-sm font-medium text-foreground">
                         <span className="inline-flex items-center gap-2">
                           {row.utr}
                           {row.settlementType !== "Normal" ? <Zap className="h-4 w-4 text-muted-foreground" /> : null}
                         </span>
-                      ) : (
-                        <>
-                          <p>{row.batchId}</p>
-                          <p className="mt-1 text-sm text-muted-foreground">{row.settlementType} / {row.transactionCount} txns</p>
-                        </>
-                      )}
-                    </TableCell>
-                    <TableCell className="px-3 align-top text-sm font-medium text-foreground">
-                      {channel === "online" ? (
-                        <>
-                          <p>{row.settlementDatePrimary}</p>
-                          <p className="mt-1 text-sm text-muted-foreground">{row.settlementDateSecondary}</p>
-                        </>
-                      ) : (
-                        <span className="inline-flex items-center gap-2">
-                          {row.utr}
-                          {row.settlementType !== "Normal" ? <Zap className="h-4 w-4 text-muted-foreground" /> : null}
+                      </TableCell>
+                      <TableCell className="px-3 align-top text-sm font-medium text-foreground">
+                        <p>{row.settlementDatePrimary}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{row.settlementDateSecondary}</p>
+                      </TableCell>
+                      <TableCell className="px-3 text-right align-top text-sm font-medium text-foreground">{rm(row.grossAmount)}</TableCell>
+                      <TableCell className="px-3 text-right align-top">
+                        <p className="text-sm font-medium text-foreground">{rm(row.deductionsTotal)}</p>
+                        <p className="text-sm text-muted-foreground">MDR + GST</p>
+                      </TableCell>
+                      <TableCell className="px-3 text-right align-top text-sm font-medium text-foreground">{rm(row.netAmount)}</TableCell>
+                      <TableCell className="px-3 align-top">
+                        <p className="text-sm font-medium text-foreground">{rm(row.refundAmount + row.chargebackAmount)}</p>
+                        <p className="text-sm text-muted-foreground">Refunds + chargebacks</p>
+                      </TableCell>
+                      <TableCell className="px-3 align-top"><StatusBadge status={row.status} /></TableCell>
+                      <TableCell className="px-3 align-top">
+                        <p className="text-sm font-medium text-foreground">{row.settlementCycle}</p>
+                        <p className="text-sm text-muted-foreground">{row.odsEnabled ? `ODS till ${row.odsCutoff}` : row.weekendSettlementEnabled ? "Weekend enabled" : "Standard"}</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <TableRow key={row.id} className="h-16 cursor-pointer align-top" onClick={() => router.push(`/settlements/${row.batchId}`)}>
+                      <TableCell className="px-4 align-top">
+                        <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                          <span>{row.utr}</span>
+                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                        </div>
+                        <div className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <span>{row.transactionCount} payments</span>
+                          {row.settlementType === "ODS" ? (
+                            <>
+                              <span className="h-3 w-px bg-border" />
+                              <span className="inline-flex items-center gap-1 font-medium text-[#4f46e5] dark:text-[#a5b4fc]">
+                                <Zap className="h-3.5 w-3.5" />
+                                On-Demand
+                              </span>
+                            </>
+                          ) : row.settlementType === "SDS" ? (
+                            <>
+                              <span className="h-3 w-px bg-border" />
+                              <span className="inline-flex items-center gap-1 font-medium text-success">
+                                <FastForward className="h-3.5 w-3.5" />
+                                Same-Day
+                              </span>
+                            </>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-4 align-top text-sm font-medium text-foreground">{rm(row.grossAmount)}</TableCell>
+                      <TableCell className="px-4 align-top">
+                        <span className="inline-flex items-center gap-1 text-sm font-medium text-foreground">
+                          {rm(row.deductionsTotal)}
+                          <Info className="h-3.5 w-3.5 text-muted-foreground" />
                         </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="px-3 text-right align-top"><p className="text-sm font-medium text-foreground">{inr(row.grossAmount)}</p></TableCell>
-                    <TableCell className="px-3 text-right align-top">
-                      <p className="text-sm font-medium text-foreground">{inr(row.deductionsTotal)}</p>
-                      {channel === "online" ? <p className="text-sm text-muted-foreground">MDR + GST</p> : null}
-                    </TableCell>
-                    <TableCell className="px-3 text-right align-top"><p className="text-sm font-medium text-foreground">{inr(row.netAmount)}</p></TableCell>
-                    <TableCell className="px-3 align-top">
-                      {channel === "online" ? (
-                        <>
-                          <p className="text-sm font-medium text-foreground">{inr(row.refundAmount + row.chargebackAmount)}</p>
-                          <p className="text-sm text-muted-foreground">Refunds + chargebacks</p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-sm font-medium text-foreground">{row.settlementDatePrimary}</p>
-                          <p className="text-sm text-muted-foreground">{row.settlementDateSecondary}</p>
-                        </>
-                      )}
-                    </TableCell>
-                    <TableCell className="px-3 align-top"><StatusBadge status={row.status} /></TableCell>
-                    <TableCell className="px-3 align-top">
-                      {channel === "online" ? (
-                        <>
-                          <p className="text-sm font-medium text-foreground">{row.settlementCycle}</p>
-                          <p className="text-sm text-muted-foreground">{row.odsEnabled ? `ODS till ${row.odsCutoff}` : row.weekendSettlementEnabled ? "Weekend enabled" : "Standard"}</p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-sm font-medium text-foreground">{channelLabel(row.channel)}</p>
-                          <p className="text-sm text-muted-foreground">{row.acquiringBank} / {row.tid}</p>
-                        </>
-                      )}
-                    </TableCell>
-                  </TableRow>
+                      </TableCell>
+                      <TableCell className="px-4 align-top text-sm font-medium text-foreground">{rm(row.netAmount)}</TableCell>
+                      <TableCell className="px-4 align-top">
+                        <p className="text-sm font-medium text-foreground">{row.settlementDatePrimary}</p>
+                        <p className="mt-0.5 text-sm text-muted-foreground">{row.settlementDateSecondary}</p>
+                      </TableCell>
+                      <TableCell className="px-4 align-top">
+                        <div className="flex items-center gap-2">
+                          <BankMark bank={row.acquiringBank} />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground">{row.acquiringBank} bank</p>
+                            <p className="mt-0.5 text-sm text-muted-foreground">{row.accountLabel}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-4 align-top"><StatusBadge status={row.status} /></TableCell>
+                    </TableRow>
+                  )
                 ))}
               </TableBody>
             </Table>

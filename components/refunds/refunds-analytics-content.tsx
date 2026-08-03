@@ -18,7 +18,7 @@ export function RefundsAnalyticsContent() {
       {
         id: "total-refund-count",
         title: "Total refund count",
-        value: totalRefundCount.toLocaleString("en-IN"),
+        value: totalRefundCount.toLocaleString("en-MY"),
         delta: "+7.4% vs previous period",
         chart: [1520, 1590, 1632, 1701, 1766, 1815, totalRefundCount],
         compareChart: [1410, 1456, 1498, 1540, 1603, 1662, 1718],
@@ -28,7 +28,7 @@ export function RefundsAnalyticsContent() {
       {
         id: "total-refund-volume",
         title: "Total refund volume",
-        value: `₹${totalRefundVolume.toLocaleString("en-IN")}`,
+        value: `₹${totalRefundVolume.toLocaleString("en-MY")}`,
         delta: "₹2.39M processed",
         chart: [1720000, 1815000, 1898000, 2012000, 2143000, 2266000, totalRefundVolume],
         compareChart: [1602000, 1675000, 1741000, 1820000, 1916000, 2032000, 2141000],

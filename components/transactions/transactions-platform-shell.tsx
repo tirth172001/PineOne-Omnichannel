@@ -3,32 +3,27 @@
 import { useEffect, useState, type CSSProperties, type ComponentType, type ReactNode } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { AnimatePresence, motion } from "framer-motion"
 import {
   ArrowLeftRight,
   Bell,
   BookOpen,
-  Building2,
   CircleDot,
   CreditCard,
   Ellipsis,
   FileText,
-  Gavel,
   Globe,
   Home,
   Link2,
   LogOut,
   MessageSquare,
-  MessageSquareText,
   Moon,
+  PauseCircle,
   QrCode,
   RotateCcw,
   Search,
-  Shield,
-  SlidersHorizontal,
   Store,
   Sun,
-  UserCircle2,
-  Users,
   WalletCards,
 } from "lucide-react"
 import { useTheme } from "next-themes"
@@ -44,9 +39,17 @@ import {
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { NavVisibilityProvider } from "@/components/dashboard/nav-visibility-context"
+import {
+  SETTINGS_NAV_ITEMS,
+  SettingsPanelContent,
+  SettingsSidebarNav,
+  type SettingsModule,
+} from "@/components/account/settings-slide-panel"
 import { clearDummyAuthSession, readDummyAuthSession } from "@/lib/dummy-auth"
 import { setThemeWithTransition } from "@/lib/theme-transition"
 import { cn } from "@/lib/utils"
+
+const PANEL_TRANSITION = { duration: 0.28, ease: [0.22, 1, 0.36, 1] as const }
 
 interface TransactionsPlatformShellProps {
   children: ReactNode
@@ -65,7 +68,7 @@ const navGroups: Array<{ label?: string; items: ShellNavItem[] }> = [
       { label: "Overview", href: "/", icon: Home },
       { label: "Transaction", href: "/transactions", icon: ArrowLeftRight },
       { label: "Settlement", href: "/settlements", icon: WalletCards },
-      { label: "Dispute cases", href: "/disputes", icon: Gavel },
+      { label: "On-hold & disputes", href: "/on-hold-disputes", icon: PauseCircle },
       { label: "Refunds", href: "/refunds", icon: RotateCcw },
       { label: "Reports", href: "/reports", icon: FileText },
     ],
@@ -227,7 +230,7 @@ function SidebarNav() {
   )
 }
 
-function Topbar() {
+function Topbar({ onOpenSettings }: { onOpenSettings: (module: SettingsModule) => void }) {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [profileName, setProfileName] = useState("Rahul Sharma")
@@ -292,32 +295,15 @@ function Topbar() {
                 <p className="text-[11px] text-muted-foreground">{profileRole}</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => router.push("/account/profile")}>
-                <UserCircle2 className="mr-2 h-3.5 w-3.5" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => router.push("/account/business-details")}>
-                <Building2 className="mr-2 h-3.5 w-3.5" />
-                Business details
-              </DropdownMenuItem>
-              {isAdmin ? (
-                <DropdownMenuItem onSelect={() => router.push("/account/users")}>
-                  <Users className="mr-2 h-3.5 w-3.5" />
-                  Users management
-                </DropdownMenuItem>
-              ) : null}
-              <DropdownMenuItem onSelect={() => router.push("/account/preferences")}>
-                <SlidersHorizontal className="mr-2 h-3.5 w-3.5" />
-                Preferences
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => router.push("/account/security")}>
-                <Shield className="mr-2 h-3.5 w-3.5" />
-                Security
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => router.push("/account/feedback")}>
-                <MessageSquareText className="mr-2 h-3.5 w-3.5" />
-                Feedback
-              </DropdownMenuItem>
+              {SETTINGS_NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => {
+                const Icon = item.icon
+                return (
+                  <DropdownMenuItem key={item.key} onSelect={() => onOpenSettings(item.key)}>
+                    <Icon className="mr-2 h-3.5 w-3.5" />
+                    {item.label}
+                  </DropdownMenuItem>
+                )
+              })}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onSelect={() => {
@@ -337,6 +323,18 @@ function Topbar() {
 }
 
 export function TransactionsPlatformShell({ children }: TransactionsPlatformShellProps) {
+  const router = useRouter()
+  const [settingsModule, setSettingsModule] = useState<SettingsModule | null>(null)
+
+  function closeSettings() {
+    setSettingsModule(null)
+  }
+
+  function logoutFromSettings() {
+    clearDummyAuthSession()
+    router.replace("/")
+  }
+
   return (
     <NavVisibilityProvider>
       <div
@@ -344,11 +342,49 @@ export function TransactionsPlatformShell({ children }: TransactionsPlatformShel
         style={{ "--dashboard-top-offset": "64px" } as CSSProperties}
       >
         <div className="flex min-h-screen w-full">
-          <SidebarNav />
+          <div className="relative w-64 shrink-0">
+            <SidebarNav />
+            <AnimatePresence>
+              {settingsModule ? (
+                <motion.div
+                  key="settings-sidebar"
+                  className="absolute inset-0 z-10 h-full w-64 overflow-hidden"
+                  initial={{ x: -256, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -256, opacity: 0 }}
+                  transition={PANEL_TRANSITION}
+                >
+                  <SettingsSidebarNav
+                    activeModule={settingsModule}
+                    onSelect={setSettingsModule}
+                    onBack={closeSettings}
+                    onLogout={logoutFromSettings}
+                  />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
+
           <div className="min-w-0 flex-1 bg-[var(--app-shell-surface)] p-2 pl-0">
             <div className="flex min-h-[calc(100vh-16px)] flex-col overflow-hidden rounded-md bg-background">
-              <Topbar />
-              <main className="min-w-0 flex-1 overflow-x-hidden bg-background">{children}</main>
+              <Topbar onOpenSettings={setSettingsModule} />
+              <div className="relative min-w-0 flex-1 overflow-x-hidden bg-background">
+                <main className="h-full">{children}</main>
+                <AnimatePresence>
+                  {settingsModule ? (
+                    <motion.div
+                      key="settings-content"
+                      className="absolute inset-0 z-10 overflow-y-auto bg-background"
+                      initial={{ x: 32, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: 32, opacity: 0 }}
+                      transition={PANEL_TRANSITION}
+                    >
+                      <SettingsPanelContent module={settingsModule} />
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </div>
