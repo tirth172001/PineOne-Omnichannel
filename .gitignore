@@ -28,3 +28,8 @@ next-env.d.ts
 
 # local worktrees
 .worktrees/
+
+# local agent tooling
+/.agents/
+/.claude/
+/.pnpm-store/
