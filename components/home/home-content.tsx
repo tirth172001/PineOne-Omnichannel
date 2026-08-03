@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   ArrowUpRight,
   Check,
@@ -33,7 +34,6 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { ProductWorkspaceNav, type ProductWorkspaceSection } from "@/components/dashboard/product-workspace-nav"
-import { DetailSidepanelShell } from "@/components/shared/activity-timeline-sidepanel"
 import { PageHeader } from "@/components/ui/panels"
 import { OverviewSnapshotChartCard } from "@/components/home/overview-snapshot-chart-card"
 import { OverviewDetailCards } from "@/components/home/overview-detail-cards"
@@ -92,8 +92,6 @@ type ImeiVerificationStatus = "idle" | "processing" | "completed"
 type BulkRefundStatus = "idle" | "processing" | "completed"
 type DisputeStatus = "Win" | "Loss" | "In review" | "Pending action"
 type RecoveryStatus = "Recovered" | "Recovering" | "At risk" | "Not recovered"
-type DisputeActionType = "partial-defend" | "defend" | "accept"
-type DisputeListingView = "pending action" | "in review" | "closed"
 
 type RefundTableRow = {
   orderId: string
@@ -109,12 +107,6 @@ type RefundTableRow = {
 }
 
 type RefundTimelineItem = {
-  status: string
-  timestamp: string
-  detail: string
-}
-
-type DisputeTimelineItem = {
   status: string
   timestamp: string
   detail: string
@@ -480,7 +472,7 @@ const transactionAttemptsById: Record<string, TransactionAttempt[]> = {
         originalAmount: "₹ 15,000.00",
         capturedAmount: "₹ 13,000.00",
         paymentMode: "Credit Card",
-        currency: "INR",
+        currency: "₹",
         network: "VISA",
         issuer: "HDFC",
         cardCategory: "Super Premium",
@@ -510,7 +502,7 @@ const transactionAttemptsById: Record<string, TransactionAttempt[]> = {
         originalAmount: "₹ 15,000.00",
         capturedAmount: "₹ 0.00",
         paymentMode: "UPI Intent",
-        currency: "INR",
+        currency: "₹",
         customerVpa: "srv*****kaoksbi",
         payerName: "Ms P*******AVA",
         responseMessage: "NA",
@@ -534,7 +526,7 @@ const transactionAttemptsById: Record<string, TransactionAttempt[]> = {
       details: {
         paymentId: "e8dd9787-91c4-4...",
         paymentMode: "UPI Intent",
-        currency: "INR",
+        currency: "₹",
         customerVpa: "srv*****kaoksbi",
       },
     },
@@ -583,29 +575,6 @@ const allProductDisputeRows: DisputeTableRow[] = [
     slaHoursRemaining: 0,
   },
 ]
-
-const disputeTimelineById: Record<string, DisputeTimelineItem[]> = {
-  "DSP-91021": [
-    { status: "Dispute raised", timestamp: "15 Apr 2026, 09:10 AM", detail: "Issuer raised chargeback for transaction TXN-990021." },
-    { status: "Case assigned", timestamp: "15 Apr 2026, 09:25 AM", detail: "Assigned to Chargeback Ops queue." },
-    { status: "Pending action", timestamp: "16 Apr 2026, 11:30 AM", detail: "Merchant evidence is required before SLA cutoff." },
-  ],
-  "DSP-91020": [
-    { status: "Dispute raised", timestamp: "14 Apr 2026, 10:40 AM", detail: "Customer dispute created for in-store card payment." },
-    { status: "Defended", timestamp: "14 Apr 2026, 03:15 PM", detail: "Evidence submitted with signed receipt and logs." },
-    { status: "In review", timestamp: "15 Apr 2026, 01:20 PM", detail: "Issuer bank is reviewing submitted evidence." },
-  ],
-  "DSP-91018": [
-    { status: "Dispute raised", timestamp: "12 Apr 2026, 11:00 AM", detail: "Chargeback initiated by issuing bank." },
-    { status: "In review", timestamp: "13 Apr 2026, 09:35 AM", detail: "Case moved to card network review stage." },
-    { status: "Loss", timestamp: "14 Apr 2026, 06:10 PM", detail: "Dispute closed as lost due to unfavorable decision." },
-  ],
-  "DSP-91012": [
-    { status: "Dispute raised", timestamp: "10 Apr 2026, 08:50 AM", detail: "Issuer flagged cardholder claim on POS payment." },
-    { status: "Defended", timestamp: "10 Apr 2026, 11:20 AM", detail: "Merchant submitted complete evidence pack." },
-    { status: "Win", timestamp: "13 Apr 2026, 04:00 PM", detail: "Chargeback reversed in merchant favor." },
-  ],
-}
 
 const allProductRefundRows: RefundTableRow[] = [
   {
@@ -983,11 +952,11 @@ function buildFallbackTransactionAttempts(transaction: TransactionTableRow): Tra
       method: transaction.paymentMethod,
       details: {
         paymentId: transaction.transactionId,
-        originalAmount: `₹ ${transaction.amount.toLocaleString("en-IN")}.00`,
-        capturedAmount: `₹ ${capturedAmount.toLocaleString("en-IN")}.00`,
+        originalAmount: `₹ ${transaction.amount.toLocaleString("en-MY")}.00`,
+        capturedAmount: `₹ ${capturedAmount.toLocaleString("en-MY")}.00`,
         paymentMode,
         provider,
-        currency: "INR",
+        currency: "₹",
         responseMessage,
       },
     },
@@ -1086,7 +1055,7 @@ function buildScheduleId() {
 }
 
 function formatTimestampForTable(date = new Date()) {
-  return date.toLocaleString("en-IN", {
+  return date.toLocaleString("en-MY", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -1218,6 +1187,7 @@ function PerformanceCard({
 }
 
 export function HomeContent({ initialSection = "overview" }: { initialSection?: ProductWorkspaceSection } = {}) {
+  const router = useRouter()
   const [navSection, setNavSection] = useState<ProductWorkspaceSection>(initialSection)
   const [overviewDateRange, setOverviewDateRange] = useState<"last-7-days" | "last-30-days" | "last-90-days">("last-7-days")
   const [overviewProductFilter, setOverviewProductFilter] = useState<"all" | "Checkout" | "POS Terminal" | "Payment Links">("all")
@@ -1256,18 +1226,6 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
   const [refundTypeFilter, setRefundTypeFilter] = useState("all")
   const [selectedRefundId, setSelectedRefundId] = useState<string | null>(null)
   const [refundDetailSheetOpen, setRefundDetailSheetOpen] = useState(false)
-  const [selectedDisputeId, setSelectedDisputeId] = useState<string | null>(null)
-  const [disputeListingView, setDisputeListingView] = useState<DisputeListingView>("pending action")
-  const [disputeActionType, setDisputeActionType] = useState<DisputeActionType>("defend")
-  const [disputeActionStep, setDisputeActionStep] = useState<"form" | "confirm" | "success">("form")
-  const [disputeDefendAmount, setDisputeDefendAmount] = useState("")
-  const [disputeComment, setDisputeComment] = useState("")
-  const [disputeDocuments, setDisputeDocuments] = useState({
-    voiceDelivery: "",
-    rebuttalLetter: "",
-    refundDetails: "",
-    additionalDocuments: "",
-  })
   const [bulkRefundSheetOpen, setBulkRefundSheetOpen] = useState(false)
   const [bulkRefundStatus, setBulkRefundStatus] = useState<BulkRefundStatus>("idle")
   const [bulkRefundProcessedRows, setBulkRefundProcessedRows] = useState(0)
@@ -1337,7 +1295,6 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     setSelectedTableDetail(null)
     setSelectedTransactionId(null)
     setSelectedTimelineAttemptId(null)
-    setSelectedDisputeId(null)
     setRefundSheetOpen(false)
     setRefundType("full")
     setPartialRefundAmount("")
@@ -1355,9 +1312,6 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
   useEffect(() => {
     if (navSection !== "transactions") {
       setImeiSheetOpen(false)
-    }
-    if (navSection !== "disputes") {
-      setSelectedDisputeId(null)
     }
     if (navSection !== "refunds") {
       setBulkRefundSheetOpen(false)
@@ -1562,8 +1516,8 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
 
   const imeiStatusMessage =
     imeiStatus === "completed"
-      ? `Verification completed for ${imeiTotalRows.toLocaleString("en-IN")} rows.`
-      : `${imeiProcessedRows.toLocaleString("en-IN")} of ${imeiTotalRows.toLocaleString("en-IN")} rows processed · ETA ${imeiEstimatedMinutes} min`
+      ? `Verification completed for ${imeiTotalRows.toLocaleString("en-MY")} rows.`
+      : `${imeiProcessedRows.toLocaleString("en-MY")} of ${imeiTotalRows.toLocaleString("en-MY")} rows processed · ETA ${imeiEstimatedMinutes} min`
   const imeiBannerIsSuccess = imeiStatus === "completed"
 
   const bulkRefundSampleRows = useMemo(() => {
@@ -1584,8 +1538,8 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
 
   const bulkRefundStatusMessage =
     bulkRefundStatus === "completed"
-      ? `Bulk refund completed for ${bulkRefundTotalRows.toLocaleString("en-IN")} rows.`
-      : `${bulkRefundProcessedRows.toLocaleString("en-IN")} of ${bulkRefundTotalRows.toLocaleString("en-IN")} rows processed · ETA ${bulkRefundEstimatedMinutes} min`
+      ? `Bulk refund completed for ${bulkRefundTotalRows.toLocaleString("en-MY")} rows.`
+      : `${bulkRefundProcessedRows.toLocaleString("en-MY")} of ${bulkRefundTotalRows.toLocaleString("en-MY")} rows processed · ETA ${bulkRefundEstimatedMinutes} min`
 
   const bulkRefundBannerIsSuccess = bulkRefundStatus === "completed"
 
@@ -1598,11 +1552,6 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     selectedRefundId
       ? allProductRefundRows.find((row) => row.refundId === selectedRefundId) ?? null
       : null
-  const selectedDispute =
-    selectedDisputeId
-      ? allProductDisputeRows.find((row) => row.disputeId === selectedDisputeId) ?? null
-      : null
-  const selectedDisputeTimeline = selectedDispute ? disputeTimelineById[selectedDispute.disputeId] ?? [] : []
   const selectedTransactionAttempts = useMemo(() => {
     if (!selectedTransaction) return []
     return transactionAttemptsById[selectedTransaction.transactionId] ?? buildFallbackTransactionAttempts(selectedTransaction)
@@ -1638,7 +1587,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
   }, [selectedTimelineAttemptId, selectedTransactionAttempts])
 
   const transactionAmount = selectedTransaction?.amount ?? 0
-  const transactionAmountLabel = `₹${transactionAmount.toLocaleString("en-IN")}`
+  const transactionAmountLabel = `₹${transactionAmount.toLocaleString("en-MY")}`
   const totalRefundedAmount = selectedTransaction?.refundedAmount ?? 0
   const netAmount = Math.max(0, transactionAmount - totalRefundedAmount)
   const transactionStatus = selectedTransaction?.paymentStatus ?? "Initiated"
@@ -1683,15 +1632,6 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     },
   ]
 
-  const hasAllDisputeDocuments =
-    Boolean(disputeDocuments.voiceDelivery) &&
-    Boolean(disputeDocuments.rebuttalLetter) &&
-    Boolean(disputeDocuments.refundDetails) &&
-    Boolean(disputeDocuments.additionalDocuments)
-  const canSubmitDisputeAction =
-    selectedDispute?.status === "Pending action" &&
-    hasAllDisputeDocuments &&
-    disputeComment.trim().length > 0
   const activeReportFieldGroups = reportFieldLibrary[activeReportType]
   const activeReportAllFields = getUniqueReportFields(activeReportType)
   const selectedFieldsForGeneration =
@@ -1733,7 +1673,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
       accessorKey: "amount",
       width: 120,
       align: "right",
-      cell: (row) => `₹${row.amount.toLocaleString("en-IN")}`,
+      cell: (row) => `₹${row.amount.toLocaleString("en-MY")}`,
       getSearchValue: (row) => `${row.amount}`,
     },
     {
@@ -1782,112 +1722,6 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     { id: "amount", header: "Amount", accessorKey: "amount", width: 120, align: "right" },
   ]
 
-  const disputeBaseColumns: DataTableColumn<(typeof allProductDisputeRows)[number]>[] = [
-    { id: "disputeId", header: "Dispute ID", accessorKey: "disputeId", width: 130, pinnable: true },
-    { id: "paymentId", header: "Payment ID", accessorKey: "paymentId", width: 145 },
-    {
-      id: "amount",
-      header: "Amount",
-      accessorKey: "amount",
-      width: 120,
-      align: "right",
-      cell: (row) => `₹${row.amount.toLocaleString("en-IN")}`,
-      getSearchValue: (row) => `${row.amount}`,
-    },
-    {
-      id: "dueDate",
-      header: "Dispute due date",
-      accessorKey: "dueDate",
-      width: 170,
-      getSearchValue: (row) => `${row.dueDate} ${row.slaHoursRemaining}`,
-      cell: (row) => (
-        <div>
-          <p>{row.dueDate}</p>
-          {row.status === "Pending action" ? (
-            <p className="mt-0.5 text-[10px] text-warning">SLA breach in {row.slaHoursRemaining}h</p>
-          ) : null}
-        </div>
-      ),
-    },
-    {
-      id: "status",
-      header: "Status",
-      accessorKey: "status",
-      width: 135,
-      filterOptions: [
-        { label: "Win", value: "win" },
-        { label: "Loss", value: "loss" },
-        { label: "In review", value: "in review" },
-        { label: "Pending action", value: "pending action" },
-      ],
-      getFilterValue: (row) => row.status.toLowerCase(),
-      cell: (row) => (
-        <Badge
-          variant="outline"
-          className={cn(
-            "text-[10px]",
-            row.status === "Win" && "bg-success/15 border-success/30 text-foreground",
-            row.status === "Loss" && "bg-destructive/10 border-destructive/30 text-foreground",
-            row.status === "In review" && "bg-muted/60 border-border text-foreground",
-            row.status === "Pending action" && "bg-warning/15 border-warning/35 text-foreground",
-          )}
-        >
-          {row.status}
-        </Badge>
-      ),
-    },
-    {
-      id: "recoveryStatus",
-      header: "Recovery status",
-      accessorKey: "recoveryStatus",
-      width: 135,
-      filterOptions: [
-        { label: "Recovered", value: "recovered" },
-        { label: "Recovering", value: "recovering" },
-        { label: "At risk", value: "at risk" },
-        { label: "Not recovered", value: "not recovered" },
-      ],
-      getFilterValue: (row) => row.recoveryStatus.toLowerCase(),
-    },
-  ]
-
-  const disputeActionColumn: DataTableColumn<(typeof allProductDisputeRows)[number]> = {
-    id: "action",
-    header: "Action",
-    width: 114,
-    align: "center",
-    cell: (row) => (
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-7 text-[11px]"
-        onClick={(event) => {
-          event.preventDefault()
-          event.stopPropagation()
-          setSelectedDisputeId(row.disputeId)
-          primeDisputeActionFlow(row, "defend")
-        }}
-      >
-        Defend
-      </Button>
-    ),
-  }
-
-  const disputeRowsForView = useMemo(() => {
-    if (disputeListingView === "pending action") {
-      return allProductDisputeRows.filter((row) => row.status === "Pending action")
-    }
-    if (disputeListingView === "in review") {
-      return allProductDisputeRows.filter((row) => row.status === "In review")
-    }
-    return allProductDisputeRows.filter((row) => row.status === "Win" || row.status === "Loss")
-  }, [disputeListingView])
-
-  const disputeColumns: DataTableColumn<(typeof allProductDisputeRows)[number]>[] =
-    disputeListingView === "pending action"
-      ? [...disputeBaseColumns, disputeActionColumn]
-      : disputeBaseColumns
-
   const refundColumns: DataTableColumn<(typeof allProductRefundRows)[number]>[] = [
     { id: "orderId", header: "Order ID", accessorKey: "orderId", width: 130, pinnable: true },
     { id: "transactionId", header: "Transaction ID", accessorKey: "transactionId", width: 150 },
@@ -1898,7 +1732,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
       accessorKey: "amount",
       width: 120,
       align: "right",
-      cell: (row) => `₹${row.amount.toLocaleString("en-IN")}`,
+      cell: (row) => `₹${row.amount.toLocaleString("en-MY")}`,
       getSearchValue: (row) => `${row.amount}`,
     },
     {
@@ -2181,10 +2015,6 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
   )
   const settlementInProgress = allProductSettlementRows.filter((row) => row.state !== "Completed").length
   const disputesPendingAction = allProductDisputeRows.filter((row) => row.status === "Pending action").length
-  const disputeUnderReviewCount = allProductDisputeRows.filter((row) => row.status === "In review").length
-  const disputeAmountUnderReview = allProductDisputeRows
-    .filter((row) => row.status === "In review" || row.status === "Pending action")
-    .reduce((sum, row) => sum + row.amount, 0)
   const refundExposure = filteredRefundRows.reduce((sum, row) => sum + row.amount, 0)
 
   const nextAction = disputesPendingAction > 0
@@ -2192,7 +2022,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
         title: "Disputes need action today",
         description: `${disputesPendingAction} dispute${disputesPendingAction === 1 ? "" : "s"} are waiting for evidence submission before SLA.`,
         ctaLabel: "Review disputes",
-        href: "/disputes",
+        href: "/on-hold-disputes",
       }
     : {
         title: "Drive the next payment milestone",
@@ -2315,7 +2145,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     {
       id: "next-settlement",
       title: `Next settlement on ${snapshotNextSettlementDate}`,
-      detail: `₹${snapshotNextSettlementAmount.toLocaleString("en-IN")} across ${snapshotNextSettlementCount.toLocaleString("en-IN")} batches to ${snapshotNextSettlementBankAccount}`,
+      detail: `₹${snapshotNextSettlementAmount.toLocaleString("en-MY")} across ${snapshotNextSettlementCount.toLocaleString("en-MY")} batches to ${snapshotNextSettlementBankAccount}`,
       actionLabel: "View settlements",
       href: "/settlements",
       tone: "default" as const,
@@ -2781,7 +2611,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     { label: "Total transactions", value: `${filteredTransactionRows.length}` },
     {
       label: "Total transaction value",
-      value: `₹${totalTransactionValue.toLocaleString("en-IN")}`,
+      value: `₹${totalTransactionValue.toLocaleString("en-MY")}`,
     },
     {
       label: "Success rate",
@@ -2790,7 +2620,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     },
     {
       label: "Refunded amount",
-      value: `₹${refundedTransactionValue.toLocaleString("en-IN")}`,
+      value: `₹${refundedTransactionValue.toLocaleString("en-MY")}`,
     },
   ]
 
@@ -2801,18 +2631,13 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
       { label: "In progress", value: `${settlementInProgress}`, delta: "Awaiting completion" },
       {
         label: "Settlement amount",
-        value: `₹${allProductSettlementRows.reduce((sum, row) => sum + parseInr(row.amount), 0).toLocaleString("en-IN")}`,
+        value: `₹${allProductSettlementRows.reduce((sum, row) => sum + parseInr(row.amount), 0).toLocaleString("en-MY")}`,
         delta: "Current cycle",
       },
     ],
-    disputes: [
-      { label: "Total disputes", value: `${allProductDisputeRows.length}` },
-      { label: "Disputes under review", value: `${disputeUnderReviewCount}` },
-      { label: "Amount under review", value: `₹${disputeAmountUnderReview.toLocaleString("en-IN")}` },
-    ],
     refunds: [
       { label: "Total count", value: `${filteredRefundRows.length}` },
-      { label: "Total volume", value: `₹${refundExposure.toLocaleString("en-IN")}` },
+      { label: "Total volume", value: `₹${refundExposure.toLocaleString("en-MY")}` },
     ],
   }
 
@@ -2833,7 +2658,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
       getValue: (row) => row.amount,
       align: "right",
       width: 120,
-      cell: (row) => `₹${row.amount.toLocaleString("en-IN")}`,
+      cell: (row) => `₹${row.amount.toLocaleString("en-MY")}`,
     },
   ]
 
@@ -2841,7 +2666,6 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     overview: "Overview",
     transactions: "Transactions",
     settlements: "Settlements",
-    disputes: "Disputes",
     refunds: "Refunds",
     reports: "Reports",
     vas: "Value Added Services",
@@ -2875,11 +2699,6 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
         <Button size="sm" className="h-8 text-xs">Run settlement</Button>
       </>
     ),
-    disputes: (
-      <>
-        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
-      </>
-    ),
     refunds: (
       <>
         <Button
@@ -2902,7 +2721,13 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     <ProductWorkspaceNav
       title="All Products"
       value={navSection}
-      onChange={(nextSection) => setNavSection(nextSection)}
+      onChange={(nextSection) => {
+        if (nextSection === "disputes") {
+          router.push("/on-hold-disputes")
+          return
+        }
+        setNavSection(nextSection)
+      }}
     />
   )
 
@@ -2965,14 +2790,14 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Total transaction volume</p>
                         <AnimatedNumberText
-                          value={`₹${snapshotTransactionAmount.toLocaleString("en-IN")}`}
+                          value={`₹${snapshotTransactionAmount.toLocaleString("en-MY")}`}
                           className="text-[24px] leading-none font-semibold text-foreground"
                         />
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Total transactions</p>
                         <AnimatedNumberText
-                          value={snapshotTransactionCount.toLocaleString("en-IN")}
+                          value={snapshotTransactionCount.toLocaleString("en-MY")}
                           className="text-[24px] leading-none font-semibold text-foreground"
                         />
                       </div>
@@ -2992,21 +2817,21 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Settled amount</p>
                         <AnimatedNumberText
-                          value={`₹${snapshotSettlementAmount.toLocaleString("en-IN")}`}
+                          value={`₹${snapshotSettlementAmount.toLocaleString("en-MY")}`}
                           className="text-[24px] leading-none font-semibold text-foreground"
                         />
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Overall settlements</p>
                         <AnimatedNumberText
-                          value={snapshotSettlementCount.toLocaleString("en-IN")}
+                          value={snapshotSettlementCount.toLocaleString("en-MY")}
                           className="text-[24px] leading-none font-semibold text-foreground"
                         />
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Next settlement cycle</p>
                         <AnimatedNumberText
-                          value={`₹${snapshotNextSettlementAmount.toLocaleString("en-IN")} · ${snapshotNextSettlementCount.toLocaleString("en-IN")} batches`}
+                          value={`₹${snapshotNextSettlementAmount.toLocaleString("en-MY")} · ${snapshotNextSettlementCount.toLocaleString("en-MY")} batches`}
                           className="text-[24px] leading-none font-semibold text-foreground"
                         />
                       </div>
@@ -3026,14 +2851,14 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Overall refund amount</p>
                         <AnimatedNumberText
-                          value={`₹${snapshotRefundAmount.toLocaleString("en-IN")}`}
+                          value={`₹${snapshotRefundAmount.toLocaleString("en-MY")}`}
                           className="text-[24px] leading-none font-semibold text-foreground"
                         />
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Refund requests</p>
                         <AnimatedNumberText
-                          value={snapshotRefundCount.toLocaleString("en-IN")}
+                          value={snapshotRefundCount.toLocaleString("en-MY")}
                           className="text-[24px] leading-none font-semibold text-foreground"
                         />
                       </div>
@@ -3052,7 +2877,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
               {!overviewHiddenSnapshotCards.includes("disputes") ? (
                 <OverviewSnapshotChartCard
                   title="Disputes"
-                  actionHref="/disputes"
+                  actionHref="/on-hold-disputes"
                   actionLabel="Disputes"
                   chartOptions={snapshotDisputeTrendOptions}
                   metrics={
@@ -3060,21 +2885,21 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Total disputes</p>
                         <AnimatedNumberText
-                          value={snapshotDisputeCount.toLocaleString("en-IN")}
+                          value={snapshotDisputeCount.toLocaleString("en-MY")}
                           className="text-[24px] leading-none font-semibold text-foreground"
                         />
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Amount in dispute</p>
                         <AnimatedNumberText
-                          value={`₹${snapshotDisputeAmount.toLocaleString("en-IN")}`}
+                          value={`₹${snapshotDisputeAmount.toLocaleString("en-MY")}`}
                           className="text-[24px] leading-none font-semibold text-foreground"
                         />
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Amount breaching SLA</p>
                         <AnimatedNumberText
-                          value={`₹${snapshotSlaBreachAmount.toLocaleString("en-IN")}`}
+                          value={`₹${snapshotSlaBreachAmount.toLocaleString("en-MY")}`}
                           className="text-[24px] leading-none font-semibold text-destructive"
                         />
                       </div>
@@ -3306,12 +3131,12 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                     <Separator className="bg-border/70" />
                     <div className="flex items-center justify-between py-3">
                       <p className="text-sm text-muted-foreground">Refunded amount</p>
-                      <p className="text-sm font-medium text-foreground">{`- ₹${totalRefundedAmount.toLocaleString("en-IN")}`}</p>
+                      <p className="text-sm font-medium text-foreground">{`- ₹${totalRefundedAmount.toLocaleString("en-MY")}`}</p>
                     </div>
                     <Separator className="bg-border/70" />
                     <div className="flex items-center justify-between py-3">
                       <p className="text-sm font-semibold text-foreground">Net amount</p>
-                      <p className="text-sm font-semibold text-foreground">{`₹${netAmount.toLocaleString("en-IN")}`}</p>
+                      <p className="text-sm font-semibold text-foreground">{`₹${netAmount.toLocaleString("en-MY")}`}</p>
                     </div>
                   </div>
                 </section>
@@ -3554,36 +3379,6 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
             initialPinnedColumnIds={["id"]}
           />
         </>
-      ) : navSection === "disputes" ? (
-        <>
-          <SectionSummaryStrip metrics={summaryBySection.disputes ?? []} />
-          <DataTable
-            data={disputeRowsForView}
-            columns={disputeColumns}
-            rowId={(row) => row.disputeId}
-            selectedRowId={selectedDisputeId}
-            onRowClick={(row) => {
-              setSelectedDisputeId(row.disputeId)
-              resetDisputeActionFlow()
-              setSelectedTableDetail(null)
-            }}
-            searchPlaceholder="Search by dispute ID or payment ID..."
-            initialPinnedColumnIds={["disputeId"]}
-            statusAsViewOnly
-            includeAllStatusOption={false}
-            statusOptions={[
-              { label: "Pending action", value: "pending action" },
-              { label: "In review", value: "in review" },
-              { label: "Closed", value: "closed" },
-            ]}
-            statusValue={disputeListingView}
-            onStatusChange={(value) => {
-              setDisputeListingView(value as DisputeListingView)
-              setSelectedDisputeId(null)
-              resetDisputeActionFlow()
-            }}
-          />
-        </>
       ) : navSection === "refunds" ? (
         <>
           {bulkRefundBannerVisible && bulkRefundBackgroundMode ? (
@@ -3744,244 +3539,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     </div>
   )
 
-  const rightContext = selectedDispute ? (
-    <div className="h-full overflow-y-auto">
-      <div className="flex items-center justify-between px-6 py-4">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Dispute case</p>
-          <p className="text-[16px] font-semibold text-foreground">{selectedDispute.disputeId}</p>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="h-8 w-8"
-          aria-label="Close dispute panel"
-          onClick={() => setSelectedDisputeId(null)}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-      <Separator />
-      <div className="space-y-5 p-6">
-        <section className="space-y-2">
-          {[
-            ["Dispute ID", selectedDispute.disputeId],
-            ["Payment ID", selectedDispute.paymentId],
-            ["Amount", `₹${selectedDispute.amount.toLocaleString("en-IN")}`],
-            ["Due date", selectedDispute.dueDate],
-            ["Status", selectedDispute.status],
-            ["Recovery status", selectedDispute.recoveryStatus],
-          ].map(([label, value]) => (
-            <div key={label} className="flex items-center justify-between gap-4">
-              <span className="text-xs text-muted-foreground">{label}</span>
-              <span className="text-xs font-medium text-foreground text-right">{value}</span>
-            </div>
-          ))}
-          {selectedDispute.status === "Pending action" ? (
-            <div className="rounded-md bg-warning/10 px-3 py-2 text-[11px] text-warning">
-              SLA breach in {selectedDispute.slaHoursRemaining}h. If no action is taken before due date, dispute may be auto-lost.
-            </div>
-          ) : null}
-          {selectedDispute.status === "Pending action" ? (
-            <div className="space-y-3 rounded-lg border border-border/70 bg-card p-3.5">
-              <p className="text-xs font-semibold text-foreground">Take action</p>
-              {disputeActionStep === "success" ? (
-                <div className="space-y-3 rounded-md border border-success/30 bg-success/5 p-3">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-success" />
-                    <div>
-                      <p className="text-xs font-medium text-foreground">Dispute action submitted</p>
-                      <p className="mt-1 text-[11px] text-muted-foreground">
-                        {disputeActionType === "accept"
-                          ? "Chargeback acceptance has been recorded."
-                          : disputeActionType === "partial-defend"
-                            ? "Partial defense documents were submitted for review."
-                            : "Defense documents were submitted for review."}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs"
-                    onClick={() => resetDisputeActionFlow()}
-                  >
-                    Reset form
-                  </Button>
-                </div>
-              ) : disputeActionType === "accept" && disputeActionStep === "confirm" ? (
-                <div className="space-y-3 rounded-md border border-warning/35 bg-warning/10 p-3">
-                  <div>
-                    <p className="text-xs font-semibold text-foreground">Confirm acceptance</p>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      By confirming, the chargeback will be accepted and dispute will close as a loss.
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 flex-1 text-xs"
-                      onClick={() => setDisputeActionStep("form")}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="h-8 flex-1 text-xs"
-                      onClick={() => setDisputeActionStep("success")}
-                    >
-                      Confirm accept
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <RadioGroup
-                    value={disputeActionType}
-                    onValueChange={(value) => {
-                      const selectedAction = value as DisputeActionType
-                      setDisputeActionType(selectedAction)
-                      setDisputeActionStep("form")
-                      if (selectedAction === "partial-defend") {
-                        setDisputeDefendAmount(String(selectedDispute.amount))
-                      } else {
-                        setDisputeDefendAmount("")
-                      }
-                    }}
-                    className="gap-2"
-                  >
-                    {[
-                      {
-                        key: "partial-defend",
-                        label: "Partially defend",
-                        description: "Submit defense for a specific amount.",
-                      },
-                      {
-                        key: "defend",
-                        label: "Defend",
-                        description: "Submit full defense with all evidence.",
-                      },
-                      {
-                        key: "accept",
-                        label: "Accept",
-                        description: "Accept chargeback and close the case.",
-                      },
-                    ].map((item) => (
-                      <label
-                        key={item.key}
-                        htmlFor={`dispute-action-${item.key}`}
-                        className={cn(
-                          "flex cursor-pointer items-start gap-2 rounded-md border px-2.5 py-2",
-                          disputeActionType === item.key ? "border-primary bg-primary/10" : "border-border"
-                        )}
-                      >
-                        <RadioGroupItem
-                          id={`dispute-action-${item.key}`}
-                          value={item.key}
-                          className="mt-0.5"
-                        />
-                        <div>
-                          <p className="text-xs font-medium text-foreground">{item.label}</p>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground">{item.description}</p>
-                        </div>
-                      </label>
-                    ))}
-                  </RadioGroup>
-
-                  {disputeActionType === "partial-defend" ? (
-                    <div className="space-y-1">
-                      <p className="text-[11px] text-muted-foreground">Amount to defend</p>
-                      <Input
-                        value={disputeDefendAmount}
-                        onChange={(event) => setDisputeDefendAmount(event.target.value)}
-                        type="number"
-                        placeholder={`Max ${selectedDispute.amount}`}
-                        className="h-9"
-                      />
-                    </div>
-                  ) : null}
-
-                  {disputeActionType !== "accept" ? (
-                    <div className="space-y-2 rounded-md border border-border/70 bg-muted/20 p-2.5">
-                      <p className="text-[11px] font-medium text-foreground">Required documents</p>
-                      {[
-                        { key: "voiceDelivery", label: "Voice delivery" },
-                        { key: "rebuttalLetter", label: "Rebuttal letter" },
-                        { key: "refundDetails", label: "Refund details" },
-                        { key: "additionalDocuments", label: "Additional documents" },
-                      ].map((item) => (
-                        <label key={item.key} className="block space-y-1">
-                          <span className="text-[11px] text-muted-foreground">{item.label}</span>
-                          <Input
-                            type="file"
-                            onChange={(event) =>
-                              handleDisputeDocumentPicked(
-                                item.key as keyof typeof disputeDocuments,
-                                event
-                              )
-                            }
-                            className="h-9"
-                          />
-                          {disputeDocuments[item.key as keyof typeof disputeDocuments] ? (
-                            <p className="text-[11px] text-muted-foreground">
-                              {disputeDocuments[item.key as keyof typeof disputeDocuments]}
-                            </p>
-                          ) : null}
-                        </label>
-                      ))}
-                      <div className="space-y-1">
-                        <p className="text-[11px] text-muted-foreground">Additional comments</p>
-                        <Textarea
-                          value={disputeComment}
-                          onChange={(event) => setDisputeComment(event.target.value)}
-                          rows={3}
-                          placeholder="Provide context for the issuer review team."
-                          className="text-xs"
-                        />
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <Button
-                    size="sm"
-                    className="h-8 w-full text-xs"
-                    disabled={!canSubmitDisputeAction}
-                    onClick={() => {
-                      if (disputeActionType === "accept") {
-                        setDisputeActionStep("confirm")
-                        return
-                      }
-                      setDisputeActionStep("success")
-                    }}
-                  >
-                    {disputeActionType === "accept" ? "Proceed to confirmation" : "Submit action"}
-                  </Button>
-                </>
-              )}
-            </div>
-          ) : null}
-        </section>
-        <Separator />
-        <section>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Status timeline</p>
-          <div className="mt-3 space-y-0">
-            {selectedDisputeTimeline.map((event, index) => (
-              <div key={`${event.status}-${event.timestamp}`} className="relative pl-6 pb-4 last:pb-0">
-                {index < selectedDisputeTimeline.length - 1 ? (
-                  <span className="absolute left-[7px] top-4 h-[calc(100%-8px)] w-px bg-border" />
-                ) : null}
-                <span className="absolute left-0 top-1.5 h-4 w-4 rounded-full border border-primary/35 bg-background" />
-                <p className="text-xs font-medium text-foreground">{event.status}</p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">{event.timestamp}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{event.detail}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-    </div>
-  ) : selectedTableDetail ? (
+  const rightContext = selectedTableDetail ? (
     <div className="h-full overflow-y-auto">
       <div className="flex items-center justify-between px-6 py-4">
         <div>
@@ -4047,8 +3605,8 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <span>Product: {selectedTransaction?.product ?? "Payments"}</span>
         <span>Order ID: {selectedTransaction?.orderId ?? "NA"}</span>
-        <span>Captured: ₹{netAmount.toLocaleString("en-IN")}</span>
-        <span>Refunded: ₹{totalRefundedAmount.toLocaleString("en-IN")}</span>
+        <span>Captured: ₹{netAmount.toLocaleString("en-MY")}</span>
+        <span>Refunded: ₹{totalRefundedAmount.toLocaleString("en-MY")}</span>
       </div>
       {transactionLink ? (
         <p className="inline-flex items-center gap-1.5 text-sm text-primary">
@@ -4096,41 +3654,6 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     setPartialRefundAmount("")
   }
 
-  function resetDisputeActionFlow() {
-    setDisputeActionStep("form")
-    setDisputeActionType("defend")
-    setDisputeDefendAmount("")
-    setDisputeComment("")
-    setDisputeDocuments({
-      voiceDelivery: "",
-      rebuttalLetter: "",
-      refundDetails: "",
-      additionalDocuments: "",
-    })
-  }
-
-  function primeDisputeActionFlow(dispute: DisputeTableRow, actionType: DisputeActionType = "defend") {
-    setDisputeActionStep("form")
-    setDisputeActionType(actionType)
-    setDisputeDefendAmount(String(dispute.amount))
-    setDisputeComment("")
-    setDisputeDocuments({
-      voiceDelivery: "",
-      rebuttalLetter: "",
-      refundDetails: "",
-      additionalDocuments: "",
-    })
-  }
-
-  function handleDisputeDocumentPicked(
-    key: keyof typeof disputeDocuments,
-    event: React.ChangeEvent<HTMLInputElement>
-  ) {
-    const file = event.target.files?.[0]
-    if (!file) return
-    setDisputeDocuments((current) => ({ ...current, [key]: file.name }))
-  }
-
   function handleInitiateRefund() {
     if (!canInitiateRefund) return
     setRefundStep("success")
@@ -4162,7 +3685,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
 
   function handleGenerateReport() {
     if (!canGenerateReport) return
-    const reportName = reportSaveAsName.trim() || `${reportTypeLabel[activeReportType]} ${new Date().toLocaleDateString("en-IN")}`
+    const reportName = reportSaveAsName.trim() || `${reportTypeLabel[activeReportType]} ${new Date().toLocaleDateString("en-MY")}`
     const nextEntry: GeneratedReportRow = {
       id: buildReportId(),
       reportType: activeReportType,
@@ -4504,135 +4027,6 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
         rightContext={rightContext}
         showRightContext={Boolean(selectedTableDetail)}
       />
-      <DetailSidepanelShell
-        open={Boolean(selectedDispute)}
-        onOpenChange={(open) => {
-          if (open) return
-          setSelectedDisputeId(null)
-          resetDisputeActionFlow()
-        }}
-        title="Dispute details"
-      >
-        {selectedDispute ? (
-          <div className="space-y-6 p-6">
-            <section className="space-y-3">
-              {[
-                ["Dispute ID", selectedDispute.disputeId],
-                ["Payment ID", selectedDispute.paymentId],
-                ["Amount", `₹${selectedDispute.amount.toLocaleString("en-IN")}`],
-                ["Due date", selectedDispute.dueDate],
-                ["Status", selectedDispute.status],
-                ["Recovery status", selectedDispute.recoveryStatus],
-              ].map(([label, value]) => (
-                <div key={label} className="flex items-center justify-between gap-4">
-                  <span className="text-xs text-muted-foreground">{label}</span>
-                  <span className="text-xs font-medium text-foreground text-right">{value}</span>
-                </div>
-              ))}
-              {selectedDispute.status === "Pending action" ? (
-                <div className="rounded-md bg-warning/10 px-3 py-2 text-[11px] text-warning">
-                  SLA breach in {selectedDispute.slaHoursRemaining}h. If no action is taken before due date, dispute may be auto-lost.
-                </div>
-              ) : null}
-            </section>
-
-            {selectedDispute.status === "Pending action" ? (
-              <section className="space-y-3 rounded-lg border border-border/70 bg-card p-3.5">
-                <p className="text-xs font-semibold text-foreground">Defend dispute</p>
-                {disputeActionStep === "success" ? (
-                  <div className="space-y-3 rounded-md border border-success/30 bg-success/5 p-3">
-                    <div className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-success" />
-                      <div>
-                        <p className="text-xs font-medium text-foreground">Defense submitted</p>
-                        <p className="mt-1 text-[11px] text-muted-foreground">
-                          Defense documents were submitted for review.
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs"
-                      onClick={() => resetDisputeActionFlow()}
-                    >
-                      Reset form
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <div className="space-y-2 rounded-md border border-border/70 bg-muted/20 p-2.5">
-                      <p className="text-[11px] font-medium text-foreground">Required documents</p>
-                      {[
-                        { key: "voiceDelivery", label: "Voice delivery" },
-                        { key: "rebuttalLetter", label: "Rebuttal letter" },
-                        { key: "refundDetails", label: "Refund details" },
-                        { key: "additionalDocuments", label: "Additional documents" },
-                      ].map((item) => (
-                        <label key={item.key} className="block space-y-1">
-                          <span className="text-[11px] text-muted-foreground">{item.label}</span>
-                          <Input
-                            type="file"
-                            onChange={(event) =>
-                              handleDisputeDocumentPicked(
-                                item.key as keyof typeof disputeDocuments,
-                                event
-                              )
-                            }
-                            className="h-9"
-                          />
-                          {disputeDocuments[item.key as keyof typeof disputeDocuments] ? (
-                            <p className="text-[11px] text-muted-foreground">
-                              {disputeDocuments[item.key as keyof typeof disputeDocuments]}
-                            </p>
-                          ) : null}
-                        </label>
-                      ))}
-                      <div className="space-y-1">
-                        <p className="text-[11px] text-muted-foreground">Additional comments</p>
-                        <Textarea
-                          value={disputeComment}
-                          onChange={(event) => setDisputeComment(event.target.value)}
-                          rows={3}
-                          placeholder="Provide context for the issuer review team."
-                          className="text-xs"
-                        />
-                      </div>
-                    </div>
-
-                    <Button
-                      size="sm"
-                      className="h-8 w-full text-xs"
-                      disabled={!canSubmitDisputeAction}
-                      onClick={() => setDisputeActionStep("success")}
-                    >
-                      Defend
-                    </Button>
-                  </>
-                )}
-              </section>
-            ) : null}
-
-            <Separator />
-            <section>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Status timeline</p>
-              <div className="mt-3 space-y-0">
-                {selectedDisputeTimeline.map((event, index) => (
-                  <div key={`${event.status}-${event.timestamp}`} className="relative pl-6 pb-4 last:pb-0">
-                    {index < selectedDisputeTimeline.length - 1 ? (
-                      <span className="absolute left-[7px] top-4 h-[calc(100%-8px)] w-px bg-border" />
-                    ) : null}
-                    <span className="absolute left-0 top-1.5 h-4 w-4 rounded-full border border-primary/35 bg-background" />
-                    <p className="text-xs font-medium text-foreground">{event.status}</p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">{event.timestamp}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{event.detail}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-        ) : null}
-      </DetailSidepanelShell>
       <Sheet
         open={scheduleReportSheetOpen}
         onOpenChange={(open) => {
@@ -5158,7 +4552,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                 <Input
                   value={reportSaveAsName}
                   onChange={(event) => setReportSaveAsName(event.target.value)}
-                  placeholder={`${reportTypeLabel[activeReportType]} ${new Date().toLocaleDateString("en-IN")}`}
+                  placeholder={`${reportTypeLabel[activeReportType]} ${new Date().toLocaleDateString("en-MY")}`}
                   className="h-9"
                 />
               </div>
@@ -5287,14 +4681,14 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                   <div className="text-center">
                     <p className="text-sm font-semibold text-foreground">IMEI verification complete</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {imeiTotalRows.toLocaleString("en-IN")} rows processed successfully.
+                      {imeiTotalRows.toLocaleString("en-MY")} rows processed successfully.
                     </p>
                   </div>
                   <div className="grid gap-2 text-xs text-muted-foreground">
                     <div className="flex items-center justify-between">
                       <span>Processed rows</span>
                       <span className="font-medium text-foreground">
-                        {imeiProcessedRows.toLocaleString("en-IN")} / {imeiTotalRows.toLocaleString("en-IN")}
+                        {imeiProcessedRows.toLocaleString("en-MY")} / {imeiTotalRows.toLocaleString("en-MY")}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -5358,7 +4752,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                     </div>
                     <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
                       <p className="text-xs text-muted-foreground">
-                        {imeiSampleTransactions.length.toLocaleString("en-IN")} transactions in selected range
+                        {imeiSampleTransactions.length.toLocaleString("en-MY")} transactions in selected range
                       </p>
                       <Button
                         variant="outline"
@@ -5463,14 +4857,14 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                   <div className="text-center">
                     <p className="text-sm font-semibold text-foreground">Bulk refund processing complete</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {bulkRefundTotalRows.toLocaleString("en-IN")} rows processed successfully.
+                      {bulkRefundTotalRows.toLocaleString("en-MY")} rows processed successfully.
                     </p>
                   </div>
                   <div className="grid gap-2 text-xs text-muted-foreground">
                     <div className="flex items-center justify-between">
                       <span>Processed rows</span>
                       <span className="font-medium text-foreground">
-                        {bulkRefundProcessedRows.toLocaleString("en-IN")} / {bulkRefundTotalRows.toLocaleString("en-IN")}
+                        {bulkRefundProcessedRows.toLocaleString("en-MY")} / {bulkRefundTotalRows.toLocaleString("en-MY")}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -5534,7 +4928,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                     </div>
                     <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
                       <p className="text-xs text-muted-foreground">
-                        {bulkRefundSampleRows.length.toLocaleString("en-IN")} refund rows in selected range
+                        {bulkRefundSampleRows.length.toLocaleString("en-MY")} refund rows in selected range
                       </p>
                       <Button
                         variant="outline"
@@ -5620,7 +5014,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                       ["Order ID", selectedRefund.orderId],
                       ["Transaction ID", selectedRefund.transactionId],
                       ["Merchant Order ID", selectedRefund.merchantOrderId],
-                      ["Amount", `₹${selectedRefund.amount.toLocaleString("en-IN")}`],
+                      ["Amount", `₹${selectedRefund.amount.toLocaleString("en-MY")}`],
                       ["Transaction type", selectedRefund.transactionType],
                       ["Refund status", selectedRefund.refundStatus],
                       ["Payment mode / method", selectedRefund.paymentMethod],
@@ -5672,7 +5066,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
               <p className="text-sm font-semibold text-foreground">Refund transaction</p>
               <p className="text-xs text-muted-foreground">
                 {selectedTransaction?.transactionId ?? "Select a transaction"} · Refundable ₹
-                {refundableAmount.toLocaleString("en-IN")}
+                {refundableAmount.toLocaleString("en-MY")}
               </p>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
@@ -5684,7 +5078,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                   <div>
                     <p className="text-sm font-semibold text-foreground">Refund initiated</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      ₹{refundAmountValue.toLocaleString("en-IN")} will be processed for{" "}
+                      ₹{refundAmountValue.toLocaleString("en-MY")} will be processed for{" "}
                       {selectedTransaction?.transactionId}.
                     </p>
                   </div>
