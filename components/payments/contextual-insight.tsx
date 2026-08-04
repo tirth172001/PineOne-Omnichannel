@@ -24,8 +24,8 @@ export function ContextualInsight() {
           </p>
         </div>
         <Button asChild className="shrink-0">
-          <Link href="/products/pine-labs-upi">
-            Explore Pine Labs UPI
+          <Link href="/products/online-payments">
+            Explore Checkout
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>

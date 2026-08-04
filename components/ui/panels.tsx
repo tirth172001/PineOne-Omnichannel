@@ -15,8 +15,11 @@
  */
 
 import * as React from "react"
+import Link from "next/link"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft } from "lucide-react"
 
 /* Container: flex row, fills remaining height */
 export function PanelGroup({ className, ...props }: React.ComponentProps<"div">) {
@@ -94,31 +97,97 @@ export function PanelBody({ className, ...props }: React.ComponentProps<"div">) 
 export function PageHeader({
   title,
   description,
+  subtitle,
+  meta,
+  badges,
+  actions,
+  leading,
+  contentClassName,
+  titleRowClassName,
+  titleClassName,
+  subtitleClassName,
+  backHref,
+  onBack,
+  backLabel = "Back",
   children,
   className,
 }: {
   title: string
   description?: string
+  subtitle?: string
+  meta?: React.ReactNode
+  badges?: React.ReactNode
+  actions?: React.ReactNode
+  leading?: React.ReactNode
+  contentClassName?: string
+  titleRowClassName?: string
+  titleClassName?: string
+  subtitleClassName?: string
+  backHref?: string
+  onBack?: () => void
+  backLabel?: string
   children?: React.ReactNode
   className?: string
 }) {
+  const rightActions = actions ?? children
+  const isInternal = Boolean(backHref || onBack)
+
   return (
-    <div
+    <header
       className={cn(
-        "flex shrink-0 items-center gap-4 bg-background/95 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/85",
+        "mt-2 shrink-0 bg-background",
         className
       )}
     >
-      <div className="flex-1 min-w-0">
-        <h1 className="truncate text-[16px] font-semibold leading-tight text-foreground">{title}</h1>
-        {description && (
-          <p className="mt-1 truncate text-[12px] leading-snug text-muted-foreground">{description}</p>
-        )}
+      <div
+        className="mx-auto flex w-full flex-wrap items-start gap-3 px-4 py-3"
+        style={{ maxWidth: "var(--dashboard-center-max-width, 1440px)" }}
+      >
+        <div className={cn("min-w-0 flex flex-1 items-start gap-2.5", contentClassName)}>
+          {isInternal ? (
+            backHref ? (
+              <Button asChild variant="ghost" size="icon-sm" className="mt-0.5 h-8 w-8 rounded-lg">
+                <Link href={backHref} aria-label={backLabel}>
+                  <ArrowLeft className="h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <Button variant="ghost" size="icon-sm" className="mt-0.5 h-8 w-8 rounded-lg" onClick={onBack} aria-label={backLabel}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )
+          ) : null}
+
+          {leading ? <div className="mt-0.5 shrink-0">{leading}</div> : null}
+
+          <div className="min-w-0 flex-1">
+            <div className={cn("flex flex-wrap items-center gap-2", titleRowClassName)}>
+              <h1
+                className={cn(
+                  "break-words text-[18px] font-semibold leading-tight text-foreground sm:truncate",
+                  titleClassName
+                )}
+              >
+                {title}
+              </h1>
+              {badges ? <div className="flex flex-wrap items-center gap-1.5">{badges}</div> : null}
+            </div>
+            {(subtitle || description) && (
+              <p className={cn("mt-1 text-[14px] leading-snug text-muted-foreground", subtitleClassName)}>
+                {subtitle ?? description}
+              </p>
+            )}
+            {meta ? <div className="mt-2">{meta}</div> : null}
+          </div>
+        </div>
+
+        {rightActions ? (
+          <div className="flex w-full flex-wrap items-center justify-start gap-2 pt-1 sm:ml-auto sm:w-auto sm:shrink-0 sm:flex-nowrap sm:justify-end sm:pt-0">
+            {rightActions}
+          </div>
+        ) : null}
       </div>
-      {children && (
-        <div className="flex items-center gap-2 shrink-0">{children}</div>
-      )}
-    </div>
+    </header>
   )
 }
 

@@ -5,23 +5,22 @@ import { Check, ExternalLink, Smartphone, CreditCard, QrCode } from "lucide-reac
 
 const activeProducts = [
   {
-    name: "POS Device",
+    name: "POS terminal",
     status: "Active",
     icon: Smartphone,
     description: "Pine Labs Android POS",
   },
   {
-    name: "Card Payments",
+    name: "Checkout",
     status: "Live",
     icon: CreditCard,
-    description: "Visa, Mastercard, RuPay",
+    description: "Cards, UPI, wallets, and netbanking",
   },
   {
-    name: "UPI",
-    status: "External",
+    name: "Payment links",
+    status: "Live",
     icon: QrCode,
-    description: "Third-party provider",
-    isExternal: true,
+    description: "Shared collections across channels",
   },
 ]
 
@@ -43,9 +42,7 @@ export function ActiveSetupCard() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <p className="font-medium text-foreground">{product.name}</p>
-                {product.isExternal && (
-                  <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                )}
+                {product.isExternal && <ExternalLink className="h-3 w-3 text-muted-foreground" />}
               </div>
               <p className="text-xs text-muted-foreground">{product.description}</p>
             </div>
@@ -67,9 +64,9 @@ export function ActiveSetupCard() {
         ))}
 
         <p className="text-xs text-muted-foreground pt-2">
-          Using external UPI?{" "}
-          <a href="/products/pine-labs-upi" className="text-primary hover:underline">
-            See how Pine Labs UPI compares
+          Need to adjust your payment setup?{" "}
+          <a href="/products/online-payments" className="text-primary hover:underline">
+            Open online payment products
           </a>
         </p>
       </CardContent>

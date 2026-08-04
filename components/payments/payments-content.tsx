@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { AnimatedNumberText } from "@/components/ui/animated-number-text"
 import { PageHeader, PanelEmpty } from "@/components/ui/panels"
 import { HighchartsPanelChart } from "@/components/ui/highcharts"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
@@ -56,22 +57,25 @@ function TxnRow({ txn, selected, onClick }: { txn: typeof transactions[0]; selec
   const { badge } = statusMap[txn.status as keyof typeof statusMap]
   const MI = mIcon[txn.method] ?? CreditCard
   return (
-    <button onClick={onClick}
-      className={`intercom-panel-row ${selected ? "intercom-panel-row-active" : ""}`}>
+    <Button variant="ghost" onClick={onClick}
+      className={`intercom-panel-row !h-auto !justify-start ${selected ? "intercom-panel-row-active" : ""}`}>
       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted shrink-0">
         <MI className="h-4 w-4 text-muted-foreground" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-medium text-foreground truncate">{txn.merchant}</p>
-          <p className="text-sm font-semibold text-foreground shrink-0">₹{txn.amount.toLocaleString("en-IN")}</p>
+          <AnimatedNumberText
+            value={`₹${txn.amount.toLocaleString("en-MY")}`}
+            className="text-sm font-semibold text-foreground shrink-0"
+          />
         </div>
         <div className="flex items-center justify-between gap-2 mt-0.5">
           <p className="text-xs text-muted-foreground truncate">{txn.label} · {txn.time}</p>
           <Badge variant="outline" className={`text-[9px] px-1.5 py-0 shrink-0 ${badge}`}>{txn.status}</Badge>
         </div>
       </div>
-    </button>
+    </Button>
   )
 }
 
@@ -85,7 +89,10 @@ function TxnDetail({ txn }: { txn: typeof transactions[0] }) {
           <MI className="h-6 w-6 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-2xl font-bold text-foreground">₹{txn.amount.toLocaleString("en-IN")}</p>
+          <AnimatedNumberText
+            value={`₹${txn.amount.toLocaleString("en-MY")}`}
+            className="text-2xl font-bold text-foreground"
+          />
           <p className="text-sm text-muted-foreground">{txn.merchant}</p>
           <Badge variant="outline" className={`mt-1.5 text-xs gap-1 ${badge}`}>
             <Icon className="h-3 w-3" />{txn.status}
@@ -164,7 +171,7 @@ function Analytics() {
             {methodData.map(d => (
               <div key={d.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-sm" style={{ backgroundColor: d.color }} /><span className="text-xs text-muted-foreground">{d.name}</span></div>
-                <span className="text-xs font-semibold text-foreground">{d.value}%</span>
+                <AnimatedNumberText value={`${d.value}%`} className="text-xs font-semibold text-foreground" />
               </div>
             ))}
           </div>
@@ -178,7 +185,7 @@ function Analytics() {
             <div key={d.reason} className="flex items-center gap-3">
               <span className="text-xs text-muted-foreground flex-1">{d.reason}</span>
               <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden"><div className="h-full bg-destructive/70 rounded-full" style={{ width: `${(d.count/18)*100}%` }} /></div>
-              <span className="text-xs font-medium text-foreground w-4 text-right">{d.count}</span>
+              <AnimatedNumberText value={`${d.count}`} className="text-xs font-medium text-foreground w-4 text-right" />
             </div>
           ))}
         </div>
@@ -191,7 +198,7 @@ function Analytics() {
             <span className="text-xs text-muted-foreground">{l}</span>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">{b} avg</span>
-              <span className="text-xs font-semibold text-success">{y}</span>
+              <AnimatedNumberText value={y} className="text-xs font-semibold text-success" />
               <TrendingUp className="h-3 w-3 text-success" />
             </div>
           </div>
@@ -234,14 +241,14 @@ export function PaymentsContent() {
         ].map((item) => {
           const active = section === item.key
           return (
-            <button
+            <Button variant="ghost"
               key={item.key}
               onClick={() => {
                 setSection(item.key as PaymentsSection)
                 setSelected(null)
                 setContextMode(null)
               }}
-              className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
+              className={`w-full rounded-lg border px-3 py-2 !h-auto !justify-start text-left transition-colors ${
                 active
                   ? "border-border bg-secondary/70"
                   : "border-transparent hover:border-border hover:bg-secondary/30"
@@ -249,7 +256,7 @@ export function PaymentsContent() {
             >
               <p className="text-sm font-medium text-foreground">{item.label}</p>
               <p className="text-xs text-muted-foreground">{item.helper}</p>
-            </button>
+            </Button>
           )
         })}
       </div>
@@ -257,7 +264,7 @@ export function PaymentsContent() {
   )
 
   const centerMain = (
-    <div className="h-full overflow-y-auto p-5 space-y-4">
+    <div className="h-full overflow-y-auto p-4 space-y-4">
       <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
         Context-aware routing found one payment anomaly in the selected scope.
         <Button
@@ -271,10 +278,10 @@ export function PaymentsContent() {
       </div>
 
       <div className="grid grid-cols-4 gap-3">
-        {[{l:"Today",v:"₹2.34L"},{l:"Success",v:"96.7%"},{l:"Failed",v:"3.3%"},{l:"Txns",v:"234"}].map(s => (
+        {[{l:"Today",v:"₹234K"},{l:"Success",v:"96.7%"},{l:"Failed",v:"3.3%"},{l:"Txns",v:"234"}].map(s => (
           <div key={s.l} className="rounded-xl border border-border bg-card p-3">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.l}</p>
-            <p className="text-base font-semibold text-foreground mt-1">{s.v}</p>
+            <AnimatedNumberText value={s.v} className="text-base font-semibold text-foreground mt-1" />
           </div>
         ))}
       </div>
@@ -327,14 +334,13 @@ export function PaymentsContent() {
       </PageHeader>
       <WorkspaceShell
         leftContext={leftContext}
-        showLeftContext
+        showLeftContext={false}
         centerMain={centerMain}
         rightContext={rightContext}
         showRightContext={contextMode === "analytics" || Boolean(selectedTxn)}
         hideBottomNav={section !== "overview"}
         leftWidth={248}
         leftMaxWidth={300}
-        centerMaxWidth={1080}
       />
     </>
   )

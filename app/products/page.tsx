@@ -1,10 +1,10 @@
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
 import { ProductsContent } from "@/components/products/products-content"
 
 export default function ProductsPage() {
   return (
-    <DashboardLayout>
+    <TransactionsPlatformShell>
       <ProductsContent />
-    </DashboardLayout>
+    </TransactionsPlatformShell>
   )
 }

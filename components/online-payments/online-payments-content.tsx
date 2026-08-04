@@ -1,15 +1,14 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import {
   BarChart3,
-  CheckCircle2,
   Clock,
   CreditCard,
-  Download,
-  Filter,
+  Monitor,
   QrCode,
-  Search,
+  Smartphone,
   Wallet,
   X,
   XCircle,
@@ -21,17 +20,44 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { HighchartsPanelChart } from "@/components/ui/highcharts"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
+import { ProductWorkspaceNav, type ProductWorkspaceSection } from "@/components/dashboard/product-workspace-nav"
+import { PageHeader } from "@/components/ui/panels"
+import { OverviewAnalyticsCanvas, type AnalyticsWidget } from "@/components/dashboard/overview-analytics-canvas"
+import { SectionSummaryStrip, type SectionSummaryMetric } from "@/components/dashboard/section-summary-strip"
+import {
+  advanceOnboardingProgress,
+  markOnboardingStarted,
+  type ProductOnboardingFeature,
+  type ProductOnboardingProgress,
+} from "@/lib/product-onboarding"
 
 type SectionKey = "overview" | "upi" | "cards" | "emi" | "wallets"
-type NavSection = "overview" | "transactions" | "settlements" | "disputes" | "refunds" | "reports" | "vas"
+type NavSection = ProductWorkspaceSection
 type VasItem = { id: string; name: string; detail: string; enabled: boolean; requiresConfig: boolean }
 type VasConfig = { label: string; threshold: string; owner: string }
+type CheckoutConfig = {
+  brandName: string
+  checkoutDomain: string
+  supportEmail: string
+  accentColor: string
+  showPineLabsBranding: boolean
+  guestCheckout: boolean
+  saveCards: boolean
+  failureFallback: boolean
+  surchargeControl: boolean
+  settlementAlerts: boolean
+}
 
 type RightContext =
   | { kind: "transaction"; id: string }
   | { kind: "metric"; title: string; description: string; value: string }
   | { kind: "vas"; id: string }
   | null
+
+const onboardingFeatureLabel: Record<ProductOnboardingFeature, string> = {
+  payout: "Payout",
+}
 
 const weeklyData = [
   { day: "Mon", upi: 62, cards: 55, emi: 18, wallets: 10 },
@@ -44,10 +70,10 @@ const weeklyData = [
 ]
 
 const methods = [
-  { key: "upi", label: "UPI", color: "var(--color-primary)", share: 42, amount: "₹3.6L" },
-  { key: "cards", label: "Cards", color: "var(--color-chart-2)", share: 38, amount: "₹3.3L" },
-  { key: "emi", label: "EMI", color: "var(--color-chart-4)", share: 12, amount: "₹1.0L" },
-  { key: "wallets", label: "Wallets", color: "var(--color-chart-3)", share: 8, amount: "₹0.7L" },
+  { key: "upi", label: "UPI", color: "var(--color-primary)", share: 42, amount: "₹360K" },
+  { key: "cards", label: "Cards", color: "var(--color-chart-2)", share: 38, amount: "₹330K" },
+  { key: "emi", label: "EMI", color: "var(--color-chart-4)", share: 12, amount: "₹100K" },
+  { key: "wallets", label: "Wallets", color: "var(--color-chart-3)", share: 8, amount: "₹70K" },
 ] as const
 
 const methodOrder: Array<{ key: SectionKey; label: string }> = [
@@ -58,16 +84,58 @@ const methodOrder: Array<{ key: SectionKey; label: string }> = [
   { key: "wallets", label: "Wallets" },
 ]
 
-const segmentOptions = ["7D", "30D", "90D"] as const
+const onlineTxnMethods = [
+  { method: "UPI", label: "Google Pay" },
+  { method: "Card", label: "Visa •• 4242" },
+  { method: "EMI", label: "Bajaj Fin" },
+  { method: "Wallet", label: "Paytm" },
+] as const
 
-const recentTxns = [
-  { id: "TXN-9201", method: "UPI", label: "Google Pay", amount: 2450, status: "success", time: "2m ago", merchant: "Rahul Sharma" },
-  { id: "TXN-9200", method: "Card", label: "Visa •• 4242", amount: 8900, status: "success", time: "8m ago", merchant: "Priya Nair" },
-  { id: "TXN-9199", method: "UPI", label: "PhonePe", amount: 1200, status: "failed", time: "15m ago", merchant: "Arjun Mehta" },
-  { id: "TXN-9198", method: "EMI", label: "Bajaj Fin", amount: 45000, status: "success", time: "22m ago", merchant: "Sneha Patel" },
-  { id: "TXN-9197", method: "Wallet", label: "Paytm", amount: 600, status: "pending", time: "31m ago", merchant: "Kiran Rao" },
-  { id: "TXN-9196", method: "Card", label: "MC •• 1234", amount: 3200, status: "success", time: "45m ago", merchant: "Neha Joshi" },
-]
+const onlineTxnStatuses = ["success", "success", "pending", "failed"] as const
+const onlineTxnMerchants = ["Rahul Sharma", "Priya Nair", "Arjun Mehta", "Sneha Patel", "Kiran Rao", "Neha Joshi"] as const
+
+const recentTxns = Array.from({ length: 48 }, (_, index) => {
+  const methodMeta = onlineTxnMethods[index % onlineTxnMethods.length]
+  return {
+    id: `TXN-${9201 + index}`,
+    method: methodMeta.method,
+    label: methodMeta.label,
+    amount: 900 + ((index * 1375) % 52000),
+    status: onlineTxnStatuses[index % onlineTxnStatuses.length],
+    time: `${(index + 1) * 2}m ago`,
+    merchant: onlineTxnMerchants[index % onlineTxnMerchants.length],
+  }
+})
+
+const settlementRows = Array.from({ length: 14 }, (_, index) => {
+  const state = index % 3 === 0 ? "Completed" : index % 3 === 1 ? "Processing" : "Needs action"
+  const title = state === "Completed" ? "Today's settlement" : state === "Processing" ? "T+1 batch" : "Holdback review"
+  return {
+    id: `STL-${2081 + index}`,
+    title,
+    amount: `₹${(84120 + index * 2175).toLocaleString("en-MY")}`,
+    state,
+  }
+})
+
+const disputeRows = Array.from({ length: 14 }, (_, index) => ({
+  id: `DP-${3342 + index}`,
+  state: index % 2 === 0 ? "Chargeback initiated" : "Evidence required",
+  amount: `₹${(4300 + index * 640).toLocaleString("en-MY")}`,
+}))
+
+const refundRows = Array.from({ length: 14 }, (_, index) => ({
+  id: `RF-${1202 + index}`,
+  state: index % 2 === 0 ? "Auto-approved" : "Manual review",
+  amount: `₹${(1200 + index * 420).toLocaleString("en-MY")}`,
+}))
+
+const reportRows = Array.from({ length: 14 }, (_, index) => ({
+  id: `RPT-${201 + index}`,
+  title: index % 3 === 0 ? "Gateway success report" : index % 3 === 1 ? "Method mix report" : "Settlement variance report",
+  cadence: index % 2 === 0 ? "Daily" : "Weekly",
+  owner: index % 2 === 0 ? "Payments Ops" : "Growth Team",
+}))
 
 const defaultVasItems: VasItem[] = [
   { id: "smart-routing", name: "Smart routing", detail: "Route by success likelihood across gateways.", enabled: true, requiresConfig: true },
@@ -87,56 +155,26 @@ const vasGroups = [
 ] as const
 
 const statusBadge: Record<string, string> = {
-  success: "bg-success/10 text-success border-success/20",
+  success: "bg-success/20 text-foreground border-success/35",
   failed: "bg-destructive/10 text-destructive border-destructive/20",
-  pending: "bg-warning/10 text-warning-foreground border-warning/20",
+  pending: "bg-warning/20 text-foreground border-warning/30",
 }
 
-const statusIcon: Record<string, React.ComponentType<{ className?: string }>> = {
-  success: CheckCircle2,
-  failed: XCircle,
-  pending: Clock,
+function parseInr(value: string) {
+  return Number(value.replace(/[^\d.-]/g, ""))
 }
 
-const methodIcon: Record<string, React.ComponentType<{ className?: string }>> = {
-  UPI: QrCode,
-  Card: CreditCard,
-  EMI: CreditCard,
-  Wallet: Wallet,
-}
-
-function metricForSection(section: SectionKey) {
-  if (section === "overview") {
-    return {
-      title: "Online Overview",
-      subtitle: "Across all payment methods",
-      stats: [
-        { label: "Revenue", value: "₹1,43,950" },
-        { label: "Transactions", value: "167" },
-        { label: "Success", value: "96.7%" },
-        { label: "Avg Ticket", value: "₹861" },
-      ],
-    }
-  }
-
-  const method = methods.find((item) => item.key === section)
-  return {
-    title: method?.label ?? "Method",
-    subtitle: "Method-specific analytics",
-    stats: [
-      { label: "Revenue", value: method?.amount ?? "₹0" },
-      { label: "Share", value: `${method?.share ?? 0}%` },
-      { label: "Success", value: "97.1%" },
-      { label: "Avg Ticket", value: "₹926" },
-    ],
-  }
-}
-
-export function OnlinePaymentsContent() {
-  const [query, setQuery] = useState("")
-  const [navSection, setNavSection] = useState<NavSection>("overview")
+export function OnlinePaymentsContent({
+  initialSection,
+  onboardingFeature,
+}: {
+  initialSection?: NavSection
+  onboardingFeature?: ProductOnboardingFeature | null
+} = {}) {
+  const showInternalBack = initialSection !== undefined
+  const [navSection, setNavSection] = useState<NavSection>(initialSection ?? "overview")
   const [section, setSection] = useState<SectionKey>("overview")
-  const [segment, setSegment] = useState<(typeof segmentOptions)[number]>("7D")
+  const [overviewCustomizeOpen, setOverviewCustomizeOpen] = useState(false)
   const [rightContext, setRightContext] = useState<RightContext>(null)
   const [vasItems, setVasItems] = useState<VasItem[]>(defaultVasItems)
   const [vasConfigById, setVasConfigById] = useState<Record<string, VasConfig>>(defaultVasConfig)
@@ -145,17 +183,45 @@ export function OnlinePaymentsContent() {
     anomalyAlerts: true,
     autoRollout: false,
   })
+  const [checkoutConfig, setCheckoutConfig] = useState<CheckoutConfig>({
+    brandName: "Acme Commerce",
+    checkoutDomain: "pay.acme.com",
+    supportEmail: "payments@acme.com",
+    accentColor: "#1f6f4a",
+    showPineLabsBranding: false,
+    guestCheckout: true,
+    saveCards: true,
+    failureFallback: true,
+    surchargeControl: false,
+    settlementAlerts: true,
+  })
+  const [configSaveState, setConfigSaveState] = useState<"idle" | "saving" | "saved">("idle")
+  const [previewDevice, setPreviewDevice] = useState<"mobile" | "desktop">("mobile")
+  const [onboardingProgress, setOnboardingProgress] = useState<ProductOnboardingProgress | null>(null)
 
-  const sectionMeta = metricForSection(section)
+  const updateCheckoutConfig = (updater: (current: CheckoutConfig) => CheckoutConfig) => {
+    setCheckoutConfig((current) => updater(current))
+    setConfigSaveState("idle")
+  }
+
+  useEffect(() => {
+    if (navSection !== "configurations" || !onboardingFeature) return
+    setOnboardingProgress(markOnboardingStarted(onboardingFeature, 4))
+  }, [navSection, onboardingFeature])
+
+  const handleSaveConfiguration = () => {
+    setConfigSaveState("saving")
+    window.setTimeout(() => {
+      setConfigSaveState("saved")
+      if (onboardingFeature) {
+        setOnboardingProgress(advanceOnboardingProgress(onboardingFeature, 1))
+      }
+    }, 500)
+  }
 
   const filteredTxns = useMemo(
     () =>
       recentTxns
-        .filter((txn) =>
-          txn.merchant.toLowerCase().includes(query.toLowerCase()) ||
-          txn.method.toLowerCase().includes(query.toLowerCase()) ||
-          txn.id.toLowerCase().includes(query.toLowerCase()),
-        )
         .filter((txn) => {
           if (section === "overview") return true
           if (section === "upi") return txn.method === "UPI"
@@ -164,7 +230,108 @@ export function OnlinePaymentsContent() {
           if (section === "wallets") return txn.method === "Wallet"
           return true
         }),
-    [query, section],
+    [section],
+  )
+  const sectionSeries = useMemo(
+    () =>
+      section === "cards"
+        ? weeklyData.map((item) => item.cards)
+        : section === "emi"
+          ? weeklyData.map((item) => item.emi)
+          : section === "wallets"
+            ? weeklyData.map((item) => item.wallets)
+            : weeklyData.map((item) => item.upi),
+    [section]
+  )
+  const aggregateSeries = useMemo(
+    () => weeklyData.map((item) => item.upi + item.cards + item.emi + item.wallets),
+    []
+  )
+  const selectedMethod = section === "overview" ? null : methods.find((item) => item.key === section)
+  const successCount = filteredTxns.filter((txn) => txn.status === "success").length
+  const failedAndPendingCount = filteredTxns.filter((txn) => txn.status !== "success").length
+  const processedValue = filteredTxns.reduce((total, txn) => total + txn.amount, 0)
+  const averageTicket = filteredTxns.length ? Math.round(processedValue / filteredTxns.length) : 0
+  const successRate = filteredTxns.length ? (successCount / filteredTxns.length) * 100 : 0
+  const processingSettlements = settlementRows.filter((row) => row.state !== "Completed").length
+  const configuredProducts =
+    section === "overview"
+      ? methods.map((item) => item.label)
+      : selectedMethod
+        ? [selectedMethod.label]
+        : ["UPI"]
+  const overviewWidgets = useMemo<AnalyticsWidget[]>(
+    () => [
+      {
+        id: "processed-value",
+        title: "Processed value",
+        value: `₹${processedValue.toLocaleString("en-MY")}`,
+        delta: `${section === "overview" ? "All methods" : selectedMethod?.label ?? "UPI"} scope`,
+        hint: "Settled and authorized flow",
+        chart: section === "overview" ? aggregateSeries : sectionSeries,
+        compareChart: (section === "overview" ? aggregateSeries : sectionSeries).map((point) =>
+          Number((point * 0.92).toFixed(2))
+        ),
+        defaultWidth: "wide",
+      },
+      {
+        id: "txn-volume",
+        title: "Total transactions",
+        value: `${filteredTxns.length}`,
+        delta: `${successCount} successful`,
+        hint: "Captured in selected date range",
+        chart: (section === "overview" ? aggregateSeries : sectionSeries).map((point) =>
+          Number((point * 1.28).toFixed(2))
+        ),
+      },
+      {
+        id: "success-rate",
+        title: "Success rate",
+        value: `${successRate.toFixed(1)}%`,
+        delta: `${failedAndPendingCount} need attention`,
+        hint: "Includes gateway retries",
+        chart: [95.4, 95.9, 96.2, 96.3, 96.6, 96.7, Number(successRate.toFixed(1))],
+        compareChart: [94.8, 95.1, 95.5, 95.8, 96.0, 96.1, Number((successRate - 0.7).toFixed(1))],
+      },
+      {
+        id: "avg-ticket",
+        title: "Average ticket",
+        value: `₹${averageTicket.toLocaleString("en-MY")}`,
+        delta: section === "overview" ? "Blended ticket size" : `${selectedMethod?.label ?? "UPI"} ticket size`,
+        hint: "Useful for pricing and incentives",
+        chart: [750, 790, 810, 845, 880, 910, averageTicket || 880],
+      },
+      {
+        id: "method-share",
+        title: section === "overview" ? "Top method share" : `${selectedMethod?.label ?? "UPI"} share`,
+        value: section === "overview" ? "42%" : `${selectedMethod?.share ?? 42}%`,
+        delta: section === "overview" ? "UPI is leading this period" : "Of online processed value",
+        hint: "Payment mix insight",
+        chart: [34, 36, 37, 39, 40, 41, section === "overview" ? 42 : selectedMethod?.share ?? 42],
+      },
+      {
+        id: "settlement-readiness",
+        title: "Settlement readiness",
+        value: `${Math.max(0, settlementRows.length - processingSettlements)}/${settlementRows.length}`,
+        delta: processingSettlements ? `${processingSettlements} batches in progress` : "All batches clear",
+        hint: "Operational risk watch",
+        chart: [88, 89, 91, 93, 95, 96, processingSettlements ? 94 : 97],
+      },
+    ],
+    [
+      aggregateSeries,
+      averageTicket,
+      failedAndPendingCount,
+      filteredTxns.length,
+      processedValue,
+      processingSettlements,
+      section,
+      sectionSeries,
+      selectedMethod?.label,
+      selectedMethod?.share,
+      successCount,
+      successRate,
+    ]
   )
 
   const selectedTxn =
@@ -190,288 +357,659 @@ export function OnlinePaymentsContent() {
     ],
   } as const
 
-  const sectionTrendOptions = {
-    chart: { type: "area" },
-    xAxis: { categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] },
-    yAxis: { labels: { format: "{value}" } },
-    legend: { enabled: false },
-    tooltip: { pointFormat: "<b>{point.y}</b>" },
-    series: [
-      {
-        type: "area",
-        name: sectionMeta.title,
-        data:
-          section === "cards"
-            ? weeklyData.map((item) => item.cards)
-            : section === "emi"
-              ? weeklyData.map((item) => item.emi)
-              : section === "wallets"
-                ? weeklyData.map((item) => item.wallets)
-                : weeklyData.map((item) => item.upi),
-        color:
-          section === "cards"
-            ? "var(--color-chart-2)"
-            : section === "emi"
-              ? "var(--color-chart-4)"
-              : section === "wallets"
-                ? "var(--color-chart-3)"
-                : "var(--color-primary)",
-        fillOpacity: 0.16,
-      },
-    ],
-  } as const
+  const transactionColumns: DataTableColumn<(typeof recentTxns)[number]>[] = [
+    { id: "id", header: "ID", accessorKey: "id", width: 120, pinnable: true },
+    { id: "merchant", header: "Merchant", accessorKey: "merchant", width: 180 },
+    {
+      id: "method",
+      header: "Method",
+      accessorKey: "method",
+      filterOptions: methods.map((method) => ({ label: method.label, value: method.label })),
+      width: 110,
+    },
+    { id: "label", header: "Instrument", accessorKey: "label", width: 150 },
+    {
+      id: "status",
+      header: "Status",
+      accessorKey: "status",
+      filterOptions: [
+        { label: "Success", value: "success" },
+        { label: "Pending", value: "pending" },
+        { label: "Failed", value: "failed" },
+      ],
+      width: 110,
+      cell: (txn) => (
+        <Badge variant="outline" className={`text-[10px] capitalize ${statusBadge[txn.status]}`}>
+          {txn.status}
+        </Badge>
+      ),
+    },
+    {
+      id: "amount",
+      header: "Amount",
+      getValue: (txn) => txn.amount,
+      align: "right",
+      width: 120,
+      cell: (txn) => <span className="font-medium tabular-nums">₹{txn.amount.toLocaleString("en-MY")}</span>,
+    },
+    { id: "time", header: "Time", accessorKey: "time", width: 90, align: "right" },
+  ]
+
+  const settlementColumns: DataTableColumn<(typeof settlementRows)[number]>[] = [
+    { id: "id", header: "Batch", accessorKey: "id", width: 120, pinnable: true },
+    { id: "title", header: "Settlement", accessorKey: "title", width: 220 },
+    {
+      id: "state",
+      header: "State",
+      accessorKey: "state",
+      filterOptions: [
+        { label: "Completed", value: "Completed" },
+        { label: "Processing", value: "Processing" },
+        { label: "Needs action", value: "Needs action" },
+      ],
+      width: 130,
+    },
+    { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
+  ]
+
+  const disputeColumns: DataTableColumn<(typeof disputeRows)[number]>[] = [
+    { id: "id", header: "Dispute ID", accessorKey: "id", width: 120, pinnable: true },
+    { id: "state", header: "Status", accessorKey: "state", width: 220 },
+    { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
+  ]
+
+  const refundColumns: DataTableColumn<(typeof refundRows)[number]>[] = [
+    { id: "id", header: "Refund ID", accessorKey: "id", width: 120, pinnable: true },
+    { id: "state", header: "State", accessorKey: "state", width: 220 },
+    { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
+  ]
+
+  const reportColumns: DataTableColumn<(typeof reportRows)[number]>[] = [
+    { id: "id", header: "Report ID", accessorKey: "id", width: 120, pinnable: true },
+    { id: "title", header: "Report", accessorKey: "title", width: 260 },
+    { id: "cadence", header: "Cadence", accessorKey: "cadence", width: 120 },
+    { id: "owner", header: "Owner", accessorKey: "owner", width: 140 },
+  ]
 
   const leftContext = (
-    <div className="h-full overflow-y-auto p-3">
-      <p className="px-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Online Payments</p>
-      <div className="mt-2 space-y-1">
-        {[
-          { key: "overview", label: "Overview" },
-          { key: "transactions", label: "Transactions" },
-          { key: "settlements", label: "Settlements" },
-          { key: "disputes", label: "Disputes" },
-          { key: "refunds", label: "Refunds" },
-          { key: "reports", label: "Reports" },
-          { key: "vas", label: "Value Added Services" },
-        ].map((item) => {
-          const active = navSection === item.key
-          return (
-            <button
-              key={item.key}
-              onClick={() => {
-                setNavSection(item.key as NavSection)
-                setRightContext(null)
-              }}
-              className={`w-full rounded-md px-3 py-2 text-left transition-colors ${
-                active ? "bg-secondary/70 text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              }`}
-            >
-              <p className="text-[13px] font-medium">{item.label}</p>
-            </button>
-          )
-        })}
-      </div>
-    </div>
+    <ProductWorkspaceNav
+      title="Checkout"
+      value={navSection}
+      showConfigurations
+      configurationsLabel="Configuration"
+      onChange={(nextSection) => {
+        setNavSection(nextSection)
+        setRightContext(null)
+      }}
+    />
   )
 
   const transactionsList = (
-    <section className="overflow-hidden rounded-lg bg-card/80">
-      <div className="flex items-center justify-between px-4 py-3">
-        <p className="text-[13px] font-semibold text-foreground">Transactions</p>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search..."
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              className="h-8 w-48 border-0 bg-muted/70 pl-8 text-xs"
-            />
-          </div>
-          <Button variant="ghost" size="icon-sm" className="h-8 w-8 text-muted-foreground">
-            <Filter className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </div>
-      <div className="space-y-1 px-2 pb-2">
-        {filteredTxns.map((txn) => {
-          const SI = statusIcon[txn.status] ?? CheckCircle2
-          const MI = methodIcon[txn.method] ?? CreditCard
-          const selected = rightContext?.kind === "transaction" && rightContext.id === txn.id
-          return (
-            <button
-              key={txn.id}
-              onClick={() => setRightContext({ kind: "transaction", id: txn.id })}
-              className={`intercom-panel-row ${selected ? "intercom-panel-row-active" : ""}`}
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                <MI className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="truncate text-sm font-medium text-foreground">{txn.merchant}</p>
-                  <p className="text-sm font-semibold text-foreground">₹{txn.amount.toLocaleString("en-IN")}</p>
-                </div>
-                <div className="mt-0.5 flex items-center justify-between gap-2">
-                  <p className="truncate text-xs text-muted-foreground">{txn.label} · {txn.time}</p>
-                  <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${statusBadge[txn.status]}`}>
-                    {txn.status}
-                  </Badge>
-                </div>
-              </div>
-              <SI className={`h-4 w-4 shrink-0 ${txn.status === "success" ? "text-success" : txn.status === "failed" ? "text-destructive" : "text-warning"}`} />
-            </button>
-          )
-        })}
-      </div>
-    </section>
+    <DataTable
+      data={filteredTxns}
+      columns={transactionColumns}
+      rowId={(txn) => txn.id}
+      selectedRowId={rightContext?.kind === "transaction" ? rightContext.id : null}
+      onRowClick={(txn) => setRightContext({ kind: "transaction", id: txn.id })}
+      searchPlaceholder="Search transactions..."
+      emptyText="No transactions found"
+      initialPinnedColumnIds={["id"]}
+    />
   )
+  const transactionValue = filteredTxns.reduce((sum, txn) => sum + txn.amount, 0)
+  const transactionSuccessCount = filteredTxns.filter((txn) => txn.status === "success").length
+  const transactionSuccessRate = filteredTxns.length
+    ? ((transactionSuccessCount / filteredTxns.length) * 100).toFixed(1)
+    : "0.0"
+  const settlementProcessingCount = settlementRows.filter((row) => row.state !== "Completed").length
+  const disputeExposure = disputeRows.reduce((sum, row) => sum + parseInr(row.amount), 0)
+  const refundExposure = refundRows.reduce((sum, row) => sum + parseInr(row.amount), 0)
+
+  const summaryBySection: Partial<Record<NavSection, SectionSummaryMetric[]>> = {
+    transactions: [
+      { label: "Total transactions", value: `${filteredTxns.length}`, delta: `${transactionSuccessCount} successful` },
+      { label: "Processed value", value: `₹${transactionValue.toLocaleString("en-MY")}`, delta: "Selected window" },
+      { label: "Success rate", value: `${transactionSuccessRate}%`, delta: "Including retries" },
+      { label: "Pending or failed", value: `${filteredTxns.length - transactionSuccessCount}`, delta: "Needs review" },
+    ],
+    settlements: [
+      { label: "Total batches", value: `${settlementRows.length}`, delta: "Current cycle" },
+      { label: "In progress", value: `${settlementProcessingCount}`, delta: "Awaiting completion" },
+      { label: "Completed", value: `${settlementRows.length - settlementProcessingCount}`, delta: "Settled" },
+      {
+        label: "Settlement amount",
+        value: `₹${settlementRows.reduce((sum, row) => sum + parseInr(row.amount), 0).toLocaleString("en-MY")}`,
+        delta: "Across listed batches",
+      },
+    ],
+    disputes: [
+      { label: "Open disputes", value: `${disputeRows.length}`, delta: "Requires action" },
+      { label: "Total exposure", value: `₹${disputeExposure.toLocaleString("en-MY")}`, delta: "At risk value" },
+      { label: "Evidence required", value: `${disputeRows.filter((row) => /evidence/i.test(row.state)).length}`, delta: "High priority" },
+    ],
+    refunds: [
+      { label: "Open refunds", value: `${refundRows.length}`, delta: "Current requests" },
+      { label: "Refund value", value: `₹${refundExposure.toLocaleString("en-MY")}`, delta: "Potential payout" },
+      { label: "Manual review", value: `${refundRows.filter((row) => /manual/i.test(row.state)).length}`, delta: "Needs operator" },
+    ],
+    reports: [
+      { label: "Scheduled reports", value: `${reportRows.length}`, delta: "Active automations" },
+      { label: "Daily cadence", value: `${reportRows.filter((row) => row.cadence === "Daily").length}`, delta: "Runs each day" },
+      { label: "Weekly cadence", value: `${reportRows.filter((row) => row.cadence === "Weekly").length}`, delta: "Runs weekly" },
+    ],
+  }
+
+  const headerTitleBySection: Partial<Record<NavSection, string>> = {
+    overview: "Overview",
+    configurations: "Configuration",
+    transactions: "Transactions",
+    settlements: "Settlements",
+    disputes: "Disputes",
+    refunds: "Refunds",
+    reports: "Reports",
+    vas: "Value Added Services",
+  }
+
+  const headerActionsBySection: Partial<Record<NavSection, React.ReactNode>> = {
+    overview: (
+      <Button size="sm" className="h-8 text-xs" onClick={() => setOverviewCustomizeOpen(true)}>
+        Customize
+      </Button>
+    ),
+    configurations: (
+      <>
+        <Button asChild variant="outline" size="sm" className="h-8 text-xs">
+          <Link href="/settings?module=credentials">Credentials</Link>
+        </Button>
+        <Button
+          size="sm"
+          className="h-8 text-xs"
+          disabled={configSaveState === "saving"}
+          onClick={handleSaveConfiguration}
+        >
+          {configSaveState === "saving" ? "Saving..." : "Save configuration"}
+        </Button>
+      </>
+    ),
+    transactions: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button variant="outline" size="sm" className="h-8 text-xs">More actions</Button>
+        <Button size="sm" className="h-8 text-xs">Create transaction</Button>
+      </>
+    ),
+    settlements: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Run settlement</Button>
+      </>
+    ),
+    disputes: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Resolve dispute</Button>
+      </>
+    ),
+    refunds: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Initiate refund</Button>
+      </>
+    ),
+    reports: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Generate report</Button>
+      </>
+    ),
+  }
+
+  const pageHeader = (
+    <PageHeader
+      title={headerTitleBySection[navSection] ?? "Checkout"}
+      subtitle="Checkout"
+      actions={headerActionsBySection[navSection]}
+      backHref={showInternalBack ? "/online-payments" : undefined}
+      backLabel="Back to Checkout"
+    />
+  )
+  const enabledPreviewServices = vasItems.filter((item) => item.enabled).map((item) => item.name)
 
   const centerMain = (
-    <div className="h-full overflow-y-auto p-4 space-y-4">
-      <section className="rounded-lg bg-card/80 px-4 py-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{navSection}</p>
-            <h2 className="text-[15px] font-semibold text-foreground">Online payments workspace</h2>
-          </div>
-          {navSection !== "vas" && (
-            <>
-              <div className="ml-auto flex items-center gap-1 rounded-md bg-muted/70 p-1">
-                {methodOrder.map((option) => (
-                  <button
-                    key={option.key}
-                    onClick={() => setSection(option.key)}
-                    className={`rounded-sm px-2.5 py-1 text-[11px] ${
-                      section === option.key ? "bg-card text-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    {option.key === "overview" ? "All" : option.label}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-1 rounded-md bg-muted/70 p-1">
-                {segmentOptions.map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => setSegment(option)}
-                    className={`rounded-sm px-2.5 py-1 text-[11px] ${segment === option ? "bg-card text-foreground" : "text-muted-foreground"}`}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
+    <div
+      className={`h-full p-4 space-y-4 ${
+        navSection === "configurations" ? "overflow-hidden" : "overflow-y-auto"
+      }`}
+    >
       {navSection === "overview" && (
-        <>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {sectionMeta.stats.map((item) => (
-              <div key={item.label} className="rounded-lg bg-card/80 p-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{item.label}</p>
-                <p className="mt-1 text-[15px] font-semibold text-foreground">{item.value}</p>
-              </div>
-            ))}
-          </div>
+        <OverviewAnalyticsCanvas
+          scopeId="online-payments-overview"
+          widgets={overviewWidgets}
+          configuredProducts={configuredProducts}
+          dateOptions={["Today", "Last 7 days", "Last 30 days", "This quarter"]}
+          compareOptions={["Yesterday", "Previous period", "Last week"]}
+          showViewOptions={false}
+          showConfiguredProductsBadge={false}
+          showAutoRefreshControl={false}
+          showCustomizeControl={false}
+          toolbarSurface="plain"
+          customizeOpen={overviewCustomizeOpen}
+          onCustomizeOpenChange={setOverviewCustomizeOpen}
+        />
+      )}
 
-          <section className="overflow-hidden rounded-lg bg-card/80 p-3">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{sectionMeta.subtitle}</p>
-                <h3 className="text-[14px] font-semibold text-foreground">{sectionMeta.title} analytics</h3>
+      {navSection === "configurations" && (
+        <section className="h-full min-h-0">
+          <div className="grid h-full min-h-0 gap-6 xl:grid-cols-2">
+            <div className="h-full min-h-0 overflow-y-auto space-y-4 pr-2">
+              {onboardingFeature && onboardingProgress && (
+                <div className="rounded-lg border border-warning/35 bg-warning/10 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                        {onboardingFeatureLabel[onboardingFeature]} setup progress
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-foreground">
+                        {onboardingProgress.stepsCompleted}/{onboardingProgress.totalSteps} steps complete
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Save configuration to record progress and continue onboarding.
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="border-warning/35 bg-warning/20 text-[10px] text-foreground">
+                      {onboardingProgress.status === "configured" ? "Configured" : "In progress"}
+                    </Badge>
+                  </div>
+                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-warning transition-all"
+                      style={{
+                        width: `${Math.max(
+                          8,
+                          (onboardingProgress.stepsCompleted / Math.max(1, onboardingProgress.totalSteps)) * 100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="rounded-lg bg-card/80 p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Whitelabel identity</p>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Brand name</p>
+                    <Input
+                      value={checkoutConfig.brandName}
+                      onChange={(event) => updateCheckoutConfig((current) => ({ ...current, brandName: event.target.value }))}
+                      className="mt-1 h-8 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Checkout domain</p>
+                    <Input
+                      value={checkoutConfig.checkoutDomain}
+                      onChange={(event) => updateCheckoutConfig((current) => ({ ...current, checkoutDomain: event.target.value }))}
+                      className="mt-1 h-8 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Support email</p>
+                    <Input
+                      value={checkoutConfig.supportEmail}
+                      onChange={(event) => updateCheckoutConfig((current) => ({ ...current, supportEmail: event.target.value }))}
+                      className="mt-1 h-8 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Accent token / color</p>
+                    <Input
+                      value={checkoutConfig.accentColor}
+                      onChange={(event) => updateCheckoutConfig((current) => ({ ...current, accentColor: event.target.value }))}
+                      className="mt-1 h-8 text-xs"
+                    />
+                  </div>
+                </div>
+                <div className="mt-3 rounded-lg border border-border px-3 py-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium text-foreground">Hide Pine Labs branding</p>
+                    <Switch
+                      checked={!checkoutConfig.showPineLabsBranding}
+                      onCheckedChange={(checked) =>
+                        updateCheckoutConfig((current) => ({ ...current, showPineLabsBranding: !checked }))
+                      }
+                    />
+                  </div>
+                </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 text-xs"
-                onClick={() =>
-                  setRightContext({
-                    kind: "metric",
-                    title: `${sectionMeta.title} drilldown`,
-                    description: "Performance is stable. Optimize retries and routing in peak hours.",
-                    value: sectionMeta.stats[0]?.value ?? "—",
-                  })
-                }
-              >
-                Open Details
-              </Button>
+
+              <div className="rounded-lg bg-card/80 p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Checkout controls</p>
+                <div className="mt-3 divide-y divide-border rounded-lg border border-border overflow-hidden">
+                  {[
+                    { key: "guestCheckout", label: "Guest checkout" },
+                    { key: "saveCards", label: "Saved cards" },
+                    { key: "failureFallback", label: "Failure fallback" },
+                    { key: "surchargeControl", label: "Surcharge control" },
+                    { key: "settlementAlerts", label: "Settlement alerts" },
+                  ].map((item) => (
+                    <div key={item.key} className="flex items-center justify-between gap-3 px-4 py-3">
+                      <p className="text-sm font-medium text-foreground">{item.label}</p>
+                      <Switch
+                        checked={checkoutConfig[item.key as keyof CheckoutConfig] as boolean}
+                        onCheckedChange={(checked) =>
+                          updateCheckoutConfig((current) => ({
+                            ...current,
+                            [item.key]: checked,
+                          }))
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-card/80 p-4">
+                <div className="space-y-4">
+                  {vasGroups.map((group) => {
+                    const groupItems = vasItems.filter((item) => group.itemIds.some((groupId) => groupId === item.id))
+                    return (
+                      <div key={group.id}>
+                        <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{group.title}</p>
+                        <div className="divide-y divide-border rounded-lg border border-border overflow-hidden">
+                          {groupItems.map((item) => (
+                            <div key={item.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                              <p className="text-sm font-medium text-foreground">{item.name}</p>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {item.requiresConfig && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs"
+                                    onClick={() => setRightContext({ kind: "vas", id: item.id })}
+                                  >
+                                    Configure
+                                  </Button>
+                                )}
+                                <Switch
+                                  checked={item.enabled}
+                                  onCheckedChange={(checked) => {
+                                    setVasItems((current) =>
+                                      current.map((entry) => (entry.id === item.id ? { ...entry, enabled: checked } : entry)),
+                                    )
+                                    setConfigSaveState("idle")
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
-            <div className="h-64 overflow-hidden rounded-md bg-muted/45 p-2">
-              <HighchartsPanelChart options={section === "overview" ? volumeOptions : sectionTrendOptions} />
-            </div>
-          </section>
+
+            <aside className="self-start pt-2 xl:sticky xl:top-4">
+              <div className="flex justify-center">
+                <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/35 p-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className={`h-7 w-7 ${previewDevice === "mobile" ? "bg-card text-foreground" : "text-muted-foreground"}`}
+                    aria-label="Mobile preview"
+                    title="Mobile preview"
+                    onClick={() => setPreviewDevice("mobile")}
+                  >
+                    <Smartphone className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className={`h-7 w-7 ${previewDevice === "desktop" ? "bg-card text-foreground" : "text-muted-foreground"}`}
+                    aria-label="Desktop preview"
+                    title="Desktop preview"
+                    onClick={() => setPreviewDevice("desktop")}
+                  >
+                    <Monitor className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+              {previewDevice === "mobile" ? (
+                <div className="mt-3 flex h-[70vh] min-h-[560px] justify-center">
+                  <div className="h-full w-[310px] max-h-full rounded-[2.25rem] border border-border bg-neutral-950 p-2 shadow-xl">
+                    <div className="h-full overflow-hidden rounded-[1.9rem] border border-neutral-800 bg-background flex flex-col">
+                      <div className="flex justify-center pt-2">
+                        <div className="h-5 w-28 rounded-full bg-neutral-900" />
+                      </div>
+                      <div className="flex flex-1 flex-col gap-3 p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-xs font-semibold text-foreground">{checkoutConfig.brandName || "Brand name"}</p>
+                            <p className="text-[10px] text-muted-foreground">{checkoutConfig.checkoutDomain || "checkout.domain.com"}</p>
+                          </div>
+                          <Badge variant="outline" className="text-[10px]">
+                            {checkoutConfig.showPineLabsBranding ? "Co-branded" : "Whitelabel"}
+                          </Badge>
+                        </div>
+                        <div className="rounded-md border border-border px-3 py-2">
+                          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Order total</p>
+                          <p className="mt-0.5 text-base font-semibold text-foreground">₹4,850</p>
+                          <p className="text-[10px] text-muted-foreground">Invoice #CHK-20481</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="rounded-md border border-border/70 px-2 py-1.5">
+                            <p className="text-[10px] text-muted-foreground">Guest checkout</p>
+                            <p className="text-xs font-medium text-foreground">{checkoutConfig.guestCheckout ? "Enabled" : "Disabled"}</p>
+                          </div>
+                          <div className="rounded-md border border-border/70 px-2 py-1.5">
+                            <p className="text-[10px] text-muted-foreground">Saved cards</p>
+                            <p className="text-xs font-medium text-foreground">{checkoutConfig.saveCards ? "Enabled" : "Disabled"}</p>
+                          </div>
+                        </div>
+                        <div
+                          className="h-8 w-full rounded-md text-xs font-semibold text-white flex items-center justify-center"
+                          style={{ backgroundColor: checkoutConfig.accentColor || "#1f6f4a" }}
+                        >
+                          Pay securely
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Enabled services</p>
+                          <div className="mt-1 flex flex-wrap gap-1.5">
+                            {enabledPreviewServices.length ? (
+                              enabledPreviewServices.map((service) => (
+                                <Badge key={service} variant="outline" className="text-[10px]">
+                                  {service}
+                                </Badge>
+                              ))
+                            ) : (
+                              <Badge variant="outline" className="text-[10px]">No services</Badge>
+                            )}
+                          </div>
+                        </div>
+                        <p className="mt-auto text-[10px] text-muted-foreground">Support: {checkoutConfig.supportEmail || "support@merchant.com"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3 h-[70vh] min-h-[560px] rounded-xl border border-border bg-background shadow-xl overflow-hidden">
+                  <div className="flex items-center gap-2 border-b border-border px-4 py-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/40" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/40" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/40" />
+                    <div className="ml-2 rounded-md border border-border px-2 py-1 text-[10px] text-muted-foreground">
+                      {(checkoutConfig.checkoutDomain || "checkout.domain.com") + "/checkout"}
+                    </div>
+                  </div>
+                  <div className="p-5 h-[calc(100%-2.5rem)] overflow-hidden">
+                    <div className="mx-auto h-full max-w-2xl rounded-lg border border-border bg-card/70 p-4 flex flex-col">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{checkoutConfig.brandName || "Brand name"}</p>
+                          <p className="text-xs text-muted-foreground">Secure checkout</p>
+                        </div>
+                        <Badge variant="outline" className="text-[10px]">
+                          {checkoutConfig.showPineLabsBranding ? "Co-branded" : "Whitelabel"}
+                        </Badge>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-4 flex-1">
+                        <div className="space-y-3">
+                          <div className="rounded-md border border-border px-3 py-2">
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Order total</p>
+                            <p className="mt-0.5 text-lg font-semibold text-foreground">₹4,850</p>
+                            <p className="text-[10px] text-muted-foreground">Invoice #CHK-20481</p>
+                          </div>
+                          <div className="rounded-md border border-border px-3 py-2">
+                            <p className="text-xs font-medium text-foreground">Customer details</p>
+                            <div className="mt-2 space-y-1.5">
+                              <div className="h-8 rounded-md border border-border/70 bg-background" />
+                              <div className="h-8 rounded-md border border-border/70 bg-background" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="rounded-md border border-border px-3 py-2">
+                            <p className="text-xs font-medium text-foreground">Payment methods</p>
+                            <div className="mt-2 space-y-1.5">
+                              <div className="h-8 rounded-md border border-border/70 bg-background flex items-center px-2 text-[11px] text-foreground">
+                                Guest checkout: {checkoutConfig.guestCheckout ? "Enabled" : "Disabled"}
+                              </div>
+                              <div className="h-8 rounded-md border border-border/70 bg-background flex items-center px-2 text-[11px] text-foreground">
+                                Saved cards: {checkoutConfig.saveCards ? "Enabled" : "Disabled"}
+                              </div>
+                              <div className="h-8 rounded-md border border-border/70 bg-background flex items-center px-2 text-[11px] text-foreground">
+                                Failure fallback: {checkoutConfig.failureFallback ? "Enabled" : "Disabled"}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="rounded-md border border-border px-3 py-2">
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Enabled services</p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {enabledPreviewServices.length ? (
+                                enabledPreviewServices.map((service) => (
+                                  <Badge key={service} variant="outline" className="text-[10px]">
+                                    {service}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <Badge variant="outline" className="text-[10px]">No services</Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="mt-4 h-9 w-full rounded-md text-sm font-semibold text-white flex items-center justify-center"
+                        style={{ backgroundColor: checkoutConfig.accentColor || "#1f6f4a" }}
+                      >
+                        Pay securely
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </aside>
+          </div>
+        </section>
+      )}
+
+      {navSection === "transactions" && (
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.transactions ?? []} />
           {transactionsList}
         </>
       )}
 
-      {navSection === "transactions" && transactionsList}
-
       {navSection === "settlements" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Settlements</p>
-          <div className="mt-3 space-y-2">
-            {[
-              ["Today's settlement", "₹84,120", "Completed"],
-              ["T+1 batch", "₹1,42,330", "Processing"],
-              ["Holdback review", "₹12,490", "Needs action"],
-            ].map(([label, value, state]) => (
-              <button
-                key={label}
-                onClick={() => setRightContext({ kind: "metric", title: String(label), description: "Settlement context and actions.", value: String(value) })}
-                className="intercom-panel-row"
-              >
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{label}</p>
-                  <p className="text-xs text-muted-foreground">{state}</p>
-                </div>
-                <p className="text-sm font-semibold text-foreground">{value}</p>
-              </button>
-            ))}
-          </div>
-        </section>
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.settlements ?? []} />
+          <DataTable
+            data={settlementRows}
+            columns={settlementColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search settlements..."
+            emptyText="No settlements found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) =>
+              setRightContext({
+                kind: "metric",
+                title: row.title,
+                description: "Settlement context and actions.",
+                value: row.amount,
+              })
+            }
+          />
+        </>
       )}
 
       {navSection === "disputes" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Disputes</p>
-          <div className="mt-3 space-y-2">
-            {[
-              ["DP-3342", "Chargeback initiated", "₹4,300"],
-              ["DP-3337", "Evidence required", "₹12,500"],
-            ].map(([id, state, amount]) => (
-              <button
-                key={id}
-                onClick={() => setRightContext({ kind: "metric", title: String(id), description: "Dispute handling steps and SLA timers.", value: String(amount) })}
-                className="intercom-panel-row"
-              >
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{id}</p>
-                  <p className="text-xs text-muted-foreground">{state}</p>
-                </div>
-                <p className="text-sm font-semibold text-foreground">{amount}</p>
-              </button>
-            ))}
-          </div>
-        </section>
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.disputes ?? []} />
+          <DataTable
+            data={disputeRows}
+            columns={disputeColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search disputes..."
+            emptyText="No disputes found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) =>
+              setRightContext({
+                kind: "metric",
+                title: row.id,
+                description: "Dispute handling steps and SLA timers.",
+                value: row.amount,
+              })
+            }
+          />
+        </>
       )}
 
       {navSection === "reports" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Reports</p>
-            <Button variant="ghost" size="sm" className="h-8 text-xs">Generate report</Button>
-          </div>
-          <div className="h-64 overflow-hidden rounded-md bg-muted/45 p-2">
-            <HighchartsPanelChart options={volumeOptions} />
-          </div>
-        </section>
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.reports ?? []} />
+          <DataTable
+            data={reportRows}
+            columns={reportColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search reports..."
+            emptyText="No reports found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) =>
+              setRightContext({
+                kind: "metric",
+                title: row.title,
+                description: `${row.cadence} report owned by ${row.owner}.`,
+                value: row.id,
+              })
+            }
+          />
+        </>
       )}
 
       {navSection === "refunds" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Refunds</p>
-          <div className="mt-3 space-y-2">
-            {[
-              ["RF-1202", "Auto-approved", "₹1,200"],
-              ["RF-1197", "Manual review", "₹4,400"],
-            ].map(([id, state, amount]) => (
-              <button
-                key={id}
-                onClick={() => setRightContext({ kind: "metric", title: String(id), description: "Refund state, SLA and next actions.", value: String(amount) })}
-                className="intercom-panel-row"
-              >
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{id}</p>
-                  <p className="text-xs text-muted-foreground">{state}</p>
-                </div>
-                <p className="text-sm font-semibold text-foreground">{amount}</p>
-              </button>
-            ))}
-          </div>
-        </section>
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.refunds ?? []} />
+          <DataTable
+            data={refundRows}
+            columns={refundColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search refunds..."
+            emptyText="No refunds found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) =>
+              setRightContext({
+                kind: "metric",
+                title: row.id,
+                description: "Refund state, SLA and next actions.",
+                value: row.amount,
+              })
+            }
+          />
+        </>
       )}
 
       {navSection === "vas" && (
@@ -479,7 +1017,7 @@ export function OnlinePaymentsContent() {
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Value Added Services</p>
           <div className="space-y-4">
             {vasGroups.map((group) => {
-              const groupItems = vasItems.filter((item) => group.itemIds.includes(item.id))
+              const groupItems = vasItems.filter((item) => group.itemIds.some((groupId) => groupId === item.id))
               return (
                 <div key={group.id}>
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">{group.title}</p>
@@ -565,7 +1103,7 @@ export function OnlinePaymentsContent() {
           <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Transaction</p>
           <h3 className="text-[16px] font-semibold text-foreground">Transaction detail</h3>
         </div>
-        <Button variant="ghost" size="icon-sm" className="h-8 w-8" onClick={() => setRightContext(null)}>
+        <Button variant="ghost" size="icon-sm" className="h-8 w-8" aria-label="Close transaction panel" onClick={() => setRightContext(null)}>
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -576,7 +1114,7 @@ export function OnlinePaymentsContent() {
           <CreditCard className="h-5 w-5 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-xl font-semibold text-foreground">₹{selectedTxn.amount.toLocaleString("en-IN")}</p>
+          <p className="text-xl font-semibold text-foreground">₹{selectedTxn.amount.toLocaleString("en-MY")}</p>
           <p className="text-sm text-muted-foreground">{selectedTxn.merchant}</p>
           <Badge variant="outline" className={`mt-1 text-xs ${statusBadge[selectedTxn.status]}`}>
             {selectedTxn.status}
@@ -612,7 +1150,7 @@ export function OnlinePaymentsContent() {
           <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Insight</p>
           <h3 className="text-[16px] font-semibold text-foreground">{rightContext.title}</h3>
         </div>
-        <Button variant="ghost" size="icon-sm" className="h-8 w-8" onClick={() => setRightContext(null)}>
+        <Button variant="ghost" size="icon-sm" className="h-8 w-8" aria-label="Close insight panel" onClick={() => setRightContext(null)}>
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -642,7 +1180,7 @@ export function OnlinePaymentsContent() {
           <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Value-added service</p>
           <h3 className="text-[16px] font-semibold text-foreground">{selectedVas.name}</h3>
         </div>
-        <Button variant="ghost" size="icon-sm" className="h-8 w-8" onClick={() => setRightContext(null)}>
+        <Button variant="ghost" size="icon-sm" className="h-8 w-8" aria-label="Close value-added service panel" onClick={() => setRightContext(null)}>
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -716,15 +1254,17 @@ export function OnlinePaymentsContent() {
   ) : null
 
   return (
-    <WorkspaceShell
-      leftContext={leftContext}
-      showLeftContext
-      centerMain={centerMain}
-      rightContext={rightPane}
-      showRightContext={Boolean(rightContext)}
-      leftWidth={260}
-      leftMaxWidth={300}
-      centerMaxWidth={1080}
-    />
+    <>
+      {pageHeader}
+      <WorkspaceShell
+        leftContext={leftContext}
+        showLeftContext={false}
+        centerMain={centerMain}
+        rightContext={rightPane}
+        showRightContext={Boolean(rightContext)}
+        leftWidth={260}
+        leftMaxWidth={300}
+      />
+    </>
   )
 }

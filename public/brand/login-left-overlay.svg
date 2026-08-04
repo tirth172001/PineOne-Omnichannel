@@ -1,0 +1,43 @@
+<svg width="708" height="890" viewBox="0 0 708 890" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_21503_62)">
+<g opacity="0.9" filter="url(#filter0_n_21503_62)">
+<path d="M428.989 369.668V456.454L370.104 516.47V428.695H282.432L341.33 369.668H428.989Z" stroke="url(#paint0_linear_21503_62)" stroke-width="5.33659"/>
+</g>
+<path opacity="0.3" d="M958.5 74.5V823.783L429.612 1362.88V604.626H-326.975L201.926 74.5H958.5Z" stroke="url(#paint1_linear_21503_62)" stroke-width="5"/>
+<path opacity="0.3" d="M-250.5 815.5L-250.5 66.2167L278.388 -472.881L278.388 285.374L1034.97 285.374L506.074 815.5L-250.5 815.5Z" stroke="url(#paint2_linear_21503_62)" stroke-width="5"/>
+</g>
+<defs>
+<filter id="filter0_n_21503_62" x="276" y="367" width="155.657" height="156" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="1.8738546371459961 1.8738546371459961" stitchTiles="stitch" numOctaves="3" result="noise" seed="799" />
+<feColorMatrix in="noise" type="luminanceToAlpha" result="alphaNoise" />
+<feComponentTransfer in="alphaNoise" result="coloredNoise1">
+<feFuncA type="discrete" tableValues="1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "/>
+</feComponentTransfer>
+<feComposite operator="in" in2="shape" in="coloredNoise1" result="noise1Clipped" />
+<feFlood flood-color="rgba(0, 0, 0, 0.25)" result="color1Flood" />
+<feComposite operator="in" in2="noise1Clipped" in="color1Flood" result="color1" />
+<feMerge result="effect1_noise_21503_62">
+<feMergeNode in="shape" />
+<feMergeNode in="color1" />
+</feMerge>
+</filter>
+<linearGradient id="paint0_linear_21503_62" x1="392.743" y1="367" x2="393.088" y2="522.999" gradientUnits="userSpaceOnUse">
+<stop stop-color="white" stop-opacity="0"/>
+<stop offset="0.493263" stop-color="white"/>
+<stop offset="1" stop-color="white" stop-opacity="0"/>
+</linearGradient>
+<linearGradient id="paint1_linear_21503_62" x1="818.56" y1="70.7271" x2="432.503" y2="604.002" gradientUnits="userSpaceOnUse">
+<stop stop-color="white"/>
+<stop offset="1" stop-color="white" stop-opacity="0"/>
+</linearGradient>
+<linearGradient id="paint2_linear_21503_62" x1="-110.56" y1="819.273" x2="275.497" y2="285.998" gradientUnits="userSpaceOnUse">
+<stop stop-color="white"/>
+<stop offset="1" stop-color="white" stop-opacity="0"/>
+</linearGradient>
+<clipPath id="clip0_21503_62">
+<path d="M0 7.99998C0 3.5817 3.58172 0 8 0H700C704.418 0 708 3.58172 708 8V882C708 886.418 704.418 890 700 890H8C3.58172 890 0 886.418 0 882V7.99998Z" fill="white"/>
+</clipPath>
+</defs>
+</svg>

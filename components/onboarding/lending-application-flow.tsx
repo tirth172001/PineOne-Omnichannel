@@ -256,10 +256,10 @@ export function LendingApplicationFlow() {
                         className="grid grid-cols-2 gap-3"
                       >
                         {[
-                          { value: "1-3-lakhs", label: "1-3 Lakhs" },
-                          { value: "3-5-lakhs", label: "3-5 Lakhs" },
-                          { value: "5-10-lakhs", label: "5-10 Lakhs" },
-                          { value: "10-plus-lakhs", label: "10+ Lakhs" },
+                          { value: "1-3-lakhs", label: "₹100,000-300,000" },
+                          { value: "3-5-lakhs", label: "₹300,000-500,000" },
+                          { value: "5-10-lakhs", label: "₹500,000-1,000,000" },
+                          { value: "10-plus-lakhs", label: "₹1,000,000+" },
                         ].map((option) => (
                           <div key={option.value} className="relative">
                             <RadioGroupItem value={option.value} id={option.value} className="peer sr-only" />
@@ -361,7 +361,7 @@ export function LendingApplicationFlow() {
                     <Label className="text-base">Loan Amount</Label>
                     <div className="flex items-center gap-1 text-2xl font-bold text-primary">
                       <IndianRupee className="h-5 w-5" />
-                      {loanAmount.toLocaleString("en-IN")}
+                      {loanAmount.toLocaleString("en-MY")}
                     </div>
                   </div>
                   <Slider
@@ -410,21 +410,21 @@ export function LendingApplicationFlow() {
                     <p className="text-sm text-muted-foreground mb-1">Monthly EMI</p>
                     <div className="flex items-center justify-center gap-1">
                       <IndianRupee className="h-4 w-4 text-primary" />
-                      <span className="text-2xl font-bold text-foreground">{emi.toLocaleString("en-IN")}</span>
+                      <span className="text-2xl font-bold text-foreground">{emi.toLocaleString("en-MY")}</span>
                     </div>
                   </div>
                   <div className="text-center border-x border-border">
                     <p className="text-sm text-muted-foreground mb-1">Total Interest</p>
                     <div className="flex items-center justify-center gap-1">
                       <IndianRupee className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-2xl font-bold text-foreground">{totalInterest.toLocaleString("en-IN")}</span>
+                      <span className="text-2xl font-bold text-foreground">{totalInterest.toLocaleString("en-MY")}</span>
                     </div>
                   </div>
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground mb-1">Total Payable</p>
                     <div className="flex items-center justify-center gap-1">
                       <IndianRupee className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-2xl font-bold text-foreground">{totalAmount.toLocaleString("en-IN")}</span>
+                      <span className="text-2xl font-bold text-foreground">{totalAmount.toLocaleString("en-MY")}</span>
                     </div>
                   </div>
                 </div>
@@ -688,7 +688,7 @@ export function LendingApplicationFlow() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Loan Amount</p>
-                    <p className="text-lg font-semibold text-foreground">Rs. {loanAmount.toLocaleString("en-IN")}</p>
+                    <p className="text-lg font-semibold text-foreground">₹ {loanAmount.toLocaleString("en-MY")}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Interest Rate</p>
@@ -700,21 +700,21 @@ export function LendingApplicationFlow() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Monthly EMI</p>
-                    <p className="text-lg font-semibold text-primary">Rs. {emi.toLocaleString("en-IN")}</p>
+                    <p className="text-lg font-semibold text-primary">₹ {emi.toLocaleString("en-MY")}</p>
                   </div>
                 </div>
                 <div className="border-t border-border pt-4 mt-4">
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-muted-foreground">Processing Fee (2%)</span>
-                    <span className="text-foreground">Rs. {(loanAmount * 0.02).toLocaleString("en-IN")}</span>
+                    <span className="text-foreground">₹ {(loanAmount * 0.02).toLocaleString("en-MY")}</span>
                   </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-muted-foreground">GST on Processing Fee</span>
-                    <span className="text-foreground">Rs. {(loanAmount * 0.02 * 0.18).toLocaleString("en-IN")}</span>
+                    <span className="text-foreground">₹ {(loanAmount * 0.02 * 0.18).toLocaleString("en-MY")}</span>
                   </div>
                   <div className="flex justify-between font-medium pt-2 border-t border-border">
                     <span className="text-foreground">Net Disbursement Amount</span>
-                    <span className="text-primary">Rs. {(loanAmount - (loanAmount * 0.02) - (loanAmount * 0.02 * 0.18)).toLocaleString("en-IN")}</span>
+                    <span className="text-primary">₹ {(loanAmount - (loanAmount * 0.02) - (loanAmount * 0.02 * 0.18)).toLocaleString("en-MY")}</span>
                   </div>
                 </div>
               </CardContent>
@@ -735,8 +735,8 @@ export function LendingApplicationFlow() {
                 <div className="bg-secondary/50 rounded-lg p-4 h-48 overflow-y-auto text-sm text-muted-foreground space-y-3">
                   <p className="font-medium text-foreground">LOAN AGREEMENT</p>
                   <p>This Loan Agreement is entered into between Pine Labs Private Limited (Lender) and Sharma Electronics represented by Rahul Sharma (Borrower).</p>
-                  <p><strong>1. Loan Details:</strong> The Lender agrees to provide a loan of Rs. {loanAmount.toLocaleString("en-IN")} at an interest rate of {interestRate}% per annum for a tenure of {tenure} months.</p>
-                  <p><strong>2. Repayment:</strong> The Borrower agrees to repay the loan through monthly EMIs of Rs. {emi.toLocaleString("en-IN")} via auto-debit from daily settlements.</p>
+                  <p><strong>1. Loan Details:</strong> The Lender agrees to provide a loan of ₹ {loanAmount.toLocaleString("en-MY")} at an interest rate of {interestRate}% per annum for a tenure of {tenure} months.</p>
+                  <p><strong>2. Repayment:</strong> The Borrower agrees to repay the loan through monthly EMIs of ₹ {emi.toLocaleString("en-MY")} via auto-debit from daily settlements.</p>
                   <p><strong>3. Prepayment:</strong> The Borrower may prepay the loan at any time without any prepayment penalty after 3 EMIs.</p>
                   <p><strong>4. Default:</strong> In case of default, a late payment fee of 2% per month will be applicable on the overdue amount.</p>
                   <p>...</p>
@@ -805,7 +805,7 @@ export function LendingApplicationFlow() {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <p className="text-sm text-muted-foreground">Disbursement Amount</p>
-                    <p className="text-3xl font-bold text-foreground">Rs. {(loanAmount - (loanAmount * 0.02) - (loanAmount * 0.02 * 0.18)).toLocaleString("en-IN")}</p>
+                    <p className="text-3xl font-bold text-foreground">₹ {(loanAmount - (loanAmount * 0.02) - (loanAmount * 0.02 * 0.18)).toLocaleString("en-MY")}</p>
                   </div>
                   <Badge className="bg-warning/20 text-warning-foreground border-warning/30">Processing</Badge>
                 </div>
@@ -878,7 +878,7 @@ export function LendingApplicationFlow() {
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground">EMI Amount</span>
-                    <span className="font-medium text-foreground">Rs. {emi.toLocaleString("en-IN")}</span>
+                    <span className="font-medium text-foreground">₹ {emi.toLocaleString("en-MY")}</span>
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground">Last EMI Date</span>

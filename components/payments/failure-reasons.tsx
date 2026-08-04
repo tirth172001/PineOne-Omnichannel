@@ -78,8 +78,8 @@ export function FailureReasons() {
 
         <p className="mt-6 text-xs text-muted-foreground">
           Tip: Many timeout issues can be resolved with better payment routing.{" "}
-          <a href="/products/pine-labs-upi" className="text-primary hover:underline">
-            Learn how Pine Labs UPI handles retries
+          <a href="/products/online-payments" className="text-primary hover:underline">
+            Learn how smart routing improves recovery
           </a>
         </p>
       </CardContent>

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { TrendingUp, TrendingDown, ArrowUpRight } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { AnimatedNumberText } from "@/components/ui/animated-number-text"
 import { HighchartsPanelChart } from "@/components/ui/highcharts"
 
 const transactionData = [120000, 80000, 150000, 180000, 280000, 320000, 250000, 180000, 300000, 280000, 220000, 150000]
@@ -17,9 +18,9 @@ export function BusinessHealthCard() {
           <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">Transactions</CardTitle>
         </CardHeader>
         <CardContent className="px-5 py-4">
-          <p className="text-2xl font-bold text-foreground">₹2,34,86,400.54</p>
+          <AnimatedNumberText value="₹2,34,86,400.54" className="text-2xl font-bold text-foreground" />
           <div className="flex items-center gap-1 text-xs text-success mt-1">
-            <TrendingUp className="h-3 w-3" /> +5.2%
+            <TrendingUp className="h-3 w-3" /> <AnimatedNumberText value="+5.2%" />
           </div>
           <div className="h-28 mt-2">
             <HighchartsPanelChart
@@ -42,7 +43,7 @@ export function BusinessHealthCard() {
           <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">Total Payout</CardTitle>
         </CardHeader>
         <CardContent className="px-5 py-4">
-          <p className="text-2xl font-bold text-foreground">₹10,00,000</p>
+          <AnimatedNumberText value="₹10,00,000" className="text-2xl font-bold text-foreground" />
           <p className="text-xs text-muted-foreground">Net after deductions</p>
           <div className="h-28 mt-2">
             <HighchartsPanelChart
@@ -61,9 +62,9 @@ export function BusinessHealthCard() {
           <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">Refunds</CardTitle>
         </CardHeader>
         <CardContent className="px-5 py-4">
-          <p className="text-2xl font-bold text-foreground">₹86,400</p>
+          <AnimatedNumberText value="₹86,400" className="text-2xl font-bold text-foreground" />
           <div className="flex items-center gap-1 text-xs text-destructive mt-1">
-            <TrendingDown className="h-3 w-3" /> 234 txns
+            <TrendingDown className="h-3 w-3" /> <AnimatedNumberText value="234" /> txns
           </div>
           <div className="h-28 mt-2">
             <HighchartsPanelChart

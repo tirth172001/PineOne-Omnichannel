@@ -3,17 +3,8 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { ThemeProvider } from "@/components/theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { Geist, Geist_Mono } from 'next/font/google'
-
-const geistSans = Geist({
-  subsets: ['latin'],
-  variable: '--font-geist-sans',
-})
-
-const geistMono = Geist_Mono({
-  subsets: ['latin'],
-  variable: '--font-geist-mono',
-})
+import { Toaster } from "@/components/ui/sonner"
+import { AgentationDevtools } from "@/components/dev/agentation-devtools"
 
 export const metadata: Metadata = {
   title: 'Pine One | Merchant Dashboard',
@@ -44,15 +35,19 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+    <html lang="en" suppressHydrationWarning className="font-sans">
+      <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
           enableSystem={false}
           storageKey="pine-one-theme"
         >
-          <TooltipProvider>{children}</TooltipProvider>
+          <TooltipProvider>
+            {children}
+            <AgentationDevtools />
+          </TooltipProvider>
+          <Toaster />
         </ThemeProvider>
         <Analytics />
       </body>

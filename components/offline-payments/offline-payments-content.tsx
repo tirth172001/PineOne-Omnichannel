@@ -1,33 +1,82 @@
 "use client"
 
-import { useState } from "react"
-import { Wifi, WifiOff, CheckCircle2, X, XCircle, Clock, CreditCard, Zap, Download, Filter, Search, TrendingUp, Settings } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { CheckCircle2, MoreVertical, Settings, Smartphone, Wifi, WifiOff, X, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
-import { PanelEmpty } from "@/components/ui/panels"
+import { PanelEmpty, PageHeader } from "@/components/ui/panels"
 import { HighchartsPanelChart } from "@/components/ui/highcharts"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
-
-type OfflineNavSection = "overview" | "transactions" | "settlements" | "disputes" | "refunds" | "reports" | "vas"
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
+import { ProductWorkspaceNav, type ProductWorkspaceSection } from "@/components/dashboard/product-workspace-nav"
+import { OverviewAnalyticsCanvas, type AnalyticsWidget } from "@/components/dashboard/overview-analytics-canvas"
+import { SectionSummaryStrip, type SectionSummaryMetric } from "@/components/dashboard/section-summary-strip"
 type DeviceSegment = "all" | "a920-pro" | "p2-lite" | "a80" | "offline"
+type TransactionMethodView = "all" | "Tap" | "Chip" | "Swipe"
+type OfflineNavSection = ProductWorkspaceSection
+type DeviceRow = {
+  id: string
+  hardwareId: string
+  hardwareModel: string
+  posId: string
+  storeName: string
+  storeAddress: string
+  installationDate: string
+  mode: "Standalone" | "Linked"
+  name: string
+  location: string
+  status: "online" | "offline"
+  today: string
+  txns: number
+  model: "A920 Pro" | "P2 Lite" | "A80"
+  lastSeen: string
+}
 type VasItem = { id: string; name: string; detail: string; enabled: boolean; requiresConfig: boolean }
 type VasConfig = { label: string; rollout: string; owner: string }
+type TableDetail = {
+  title: string
+  description: string
+  value: string
+  rows: Array<{ label: string; value: string }>
+}
 
-const devices = [
-  { id: "POS-001", name: "Counter 1", location: "Main Floor", status: "online", today: "₹82,400", txns: 68, model: "A920 Pro" },
-  { id: "POS-002", name: "Counter 2", location: "Main Floor", status: "online", today: "₹71,200", txns: 59, model: "A920 Pro" },
-  { id: "POS-003", name: "Counter 3", location: "Main Floor", status: "online", today: "₹65,800", txns: 54, model: "A920 Pro" },
-  { id: "POS-004", name: "Billing Desk", location: "Ground Floor", status: "online", today: "₹54,300", txns: 45, model: "P2 Lite" },
-  { id: "POS-005", name: "Express Lane", location: "Ground Floor", status: "offline", today: "₹0", txns: 0, model: "A920 Pro" },
-  { id: "POS-006", name: "Food Court", location: "First Floor", status: "online", today: "₹48,100", txns: 39, model: "A80" },
-  { id: "POS-007", name: "Electronics", location: "First Floor", status: "online", today: "₹92,000", txns: 62, model: "A920 Pro" },
-  { id: "POS-008", name: "Mobile Dept", location: "First Floor", status: "online", today: "₹45,600", txns: 37, model: "P2 Lite" },
-  { id: "POS-009", name: "Customer Svc", location: "Entry", status: "offline", today: "₹0", txns: 0, model: "A80" },
-  { id: "POS-010", name: "Warehouse", location: "Basement", status: "online", today: "₹11,600", txns: 10, model: "P2 Lite" },
+const initialDevices: DeviceRow[] = [
+  { id: "POS-001", hardwareId: "000001367160", hardwareModel: "Touch | A920", posId: "2569863", storeName: "PINE LABS LIMITED NOIDA KIOSK", storeAddress: "PineLabs, Candor TechSpace, Noida", installationDate: "17 Oct, 2023", mode: "Standalone", name: "Counter 1", location: "Main Floor", status: "online", today: "₹82,400", txns: 68, model: "A920 Pro", lastSeen: "Now" },
+  { id: "POS-002", hardwareId: "000001374921", hardwareModel: "Touch | A910", posId: "2569824", storeName: "PINE LABS LIMITED NOIDA KIOSK", storeAddress: "PineLabs, Candor TechSpace, Noida", installationDate: "17 Oct, 2023", mode: "Standalone", name: "Counter 2", location: "Main Floor", status: "online", today: "₹71,200", txns: 59, model: "A920 Pro", lastSeen: "1 min ago" },
+  { id: "POS-003", hardwareId: "000001572835", hardwareModel: "Touch | A910", posId: "2569826", storeName: "PINE LABS LIMITED NOIDA KIOSK", storeAddress: "PineLabs, Candor TechSpace, Noida", installationDate: "17 Oct, 2023", mode: "Standalone", name: "Counter 3", location: "Main Floor", status: "online", today: "₹65,800", txns: 54, model: "A920 Pro", lastSeen: "3 min ago" },
+  { id: "POS-004", hardwareId: "000001572836", hardwareModel: "Touch | A910", posId: "2569825", storeName: "PINE LABS LIMITED NOIDA KIOSK", storeAddress: "PineLabs, Candor TechSpace, Noida", installationDate: "17 Oct, 2023", mode: "Standalone", name: "Billing Desk", location: "Ground Floor", status: "online", today: "₹54,300", txns: 45, model: "P2 Lite", lastSeen: "2 min ago" },
+  { id: "POS-005", hardwareId: "000002217053", hardwareModel: "Go | A50", posId: "2574976", storeName: "HARISH AMDOSKAR", storeAddress: "Room No 10, Shree Omkar CHS", installationDate: "17 Oct, 2023", mode: "Standalone", name: "Express Lane", location: "Ground Floor", status: "offline", today: "₹0", txns: 0, model: "A920 Pro", lastSeen: "2 hr ago" },
+  { id: "POS-006", hardwareId: "000002217678", hardwareModel: "Go | A50", posId: "2575005", storeName: "KIRAN KUMAR ERUKALA 11221", storeAddress: "18-03-189 Vidhya Nagar, Hyderabad", installationDate: "17 Oct, 2023", mode: "Standalone", name: "Food Court", location: "First Floor", status: "online", today: "₹48,100", txns: 39, model: "A80", lastSeen: "Now" },
+  { id: "POS-007", hardwareId: "000002825779", hardwareModel: "Go | A50", posId: "1709397", storeName: "MAITRIKKUMAR SANJAYKUMAR", storeAddress: "PineLabs Pvt Ltd, Office North", installationDate: "10 Feb, 2022", mode: "Standalone", name: "Electronics", location: "First Floor", status: "online", today: "₹92,000", txns: 62, model: "A920 Pro", lastSeen: "Now" },
+  { id: "POS-008", hardwareId: "000002944210", hardwareModel: "Touch | A920", posId: "2581108", storeName: "BANGALORE RETAIL HUB", storeAddress: "Old Airport Road, Bengaluru", installationDate: "12 Dec, 2023", mode: "Standalone", name: "Mobile Dept", location: "First Floor", status: "online", today: "₹45,600", txns: 37, model: "P2 Lite", lastSeen: "5 min ago" },
+  { id: "POS-009", hardwareId: "000003112278", hardwareModel: "Duo | A80", posId: "2581129", storeName: "PINE CASH & CARRY", storeAddress: "MG Road, Bengaluru", installationDate: "05 Nov, 2023", mode: "Standalone", name: "Customer Svc", location: "Entry", status: "offline", today: "₹0", txns: 0, model: "A80", lastSeen: "46 min ago" },
+  { id: "POS-010", hardwareId: "000003118456", hardwareModel: "Go | A50", posId: "2581194", storeName: "WAREHOUSE COLLECTION POINT", storeAddress: "Electronic City, Bengaluru", installationDate: "21 Jan, 2024", mode: "Standalone", name: "Warehouse", location: "Basement", status: "online", today: "₹11,600", txns: 10, model: "P2 Lite", lastSeen: "14 min ago" },
+  { id: "POS-011", hardwareId: "000003245109", hardwareModel: "Touch | A920", posId: "2581440", storeName: "CITY RETAIL SOUTH", storeAddress: "Koramangala, Bengaluru", installationDate: "11 Feb, 2024", mode: "Standalone", name: "Counter 4", location: "Ground Floor", status: "online", today: "₹63,900", txns: 51, model: "A920 Pro", lastSeen: "Now" },
+  { id: "POS-012", hardwareId: "000003245110", hardwareModel: "Touch | A920", posId: "2581441", storeName: "CITY RETAIL SOUTH", storeAddress: "Koramangala, Bengaluru", installationDate: "11 Feb, 2024", mode: "Standalone", name: "Counter 5", location: "Ground Floor", status: "online", today: "₹58,200", txns: 47, model: "A920 Pro", lastSeen: "3 min ago" },
+  { id: "POS-013", hardwareId: "000003245210", hardwareModel: "Go | A50", posId: "2581522", storeName: "NORTH HYPERMART", storeAddress: "Yelahanka, Bengaluru", installationDate: "20 Feb, 2024", mode: "Standalone", name: "Self Checkout 1", location: "Entry", status: "online", today: "₹14,700", txns: 16, model: "P2 Lite", lastSeen: "6 min ago" },
+  { id: "POS-014", hardwareId: "000003245211", hardwareModel: "Go | A50", posId: "2581523", storeName: "NORTH HYPERMART", storeAddress: "Yelahanka, Bengaluru", installationDate: "20 Feb, 2024", mode: "Standalone", name: "Self Checkout 2", location: "Entry", status: "offline", today: "₹0", txns: 0, model: "P2 Lite", lastSeen: "1 hr ago" },
+  { id: "POS-015", hardwareId: "000003310001", hardwareModel: "Duo | A80", posId: "2581810", storeName: "PINE FRESH MART", storeAddress: "HSR Layout, Bengaluru", installationDate: "03 Mar, 2024", mode: "Standalone", name: "Fresh Produce", location: "Left Wing", status: "online", today: "₹27,400", txns: 28, model: "A80", lastSeen: "11 min ago" },
+  { id: "POS-016", hardwareId: "000003310002", hardwareModel: "Duo | A80", posId: "2581811", storeName: "PINE FRESH MART", storeAddress: "HSR Layout, Bengaluru", installationDate: "03 Mar, 2024", mode: "Standalone", name: "Dairy Counter", location: "Left Wing", status: "online", today: "₹24,950", txns: 23, model: "A80", lastSeen: "9 min ago" },
 ]
+
+const offlineTransactionRows = Array.from({ length: 36 }, (_, index) => {
+  const method = index % 3 === 0 ? "Tap" : index % 3 === 1 ? "Chip" : "Swipe"
+  const status = index % 6 === 0 ? "Failed" : "Success"
+  const deviceNumber = String((index % 16) + 1).padStart(3, "0")
+  return {
+    id: `TXN-${89008 + index}`,
+    device: `POS-${deviceNumber}`,
+    amount: `₹${(850 + index * 410).toLocaleString("en-MY")}`,
+    method,
+    status,
+    time: `${(9 + (index % 12)).toString().padStart(2, "0")}:${(index * 7 % 60).toString().padStart(2, "0")} ${index % 2 === 0 ? "AM" : "PM"}`,
+    location: index % 3 === 0 ? "Main Floor" : index % 3 === 1 ? "Ground Floor" : "First Floor",
+  }
+})
 
 const weeklyData = [
   { day: "Mon", tap: 127, chip: 76, swipe: 42 },
@@ -39,6 +88,10 @@ const weeklyData = [
   { day: "Sun", tap: 87, chip: 52, swipe: 29 },
 ]
 
+function parseInr(value: string) {
+  return Number(value.replace(/[^\d.-]/g, ""))
+}
+
 const deviceTxns = [
   { id: "TXN-D201", amount: 2450, method: "Tap", status: "success", time: "4m ago", card: "Visa •• 8832" },
   { id: "TXN-D200", amount: 850, method: "Chip", status: "success", time: "12m ago", card: "RuPay •• 4521" },
@@ -46,6 +99,32 @@ const deviceTxns = [
   { id: "TXN-D198", amount: 1100, method: "Swipe", status: "failed", time: "38m ago", card: "Visa •• 1100" },
   { id: "TXN-D197", amount: 3300, method: "Tap", status: "success", time: "52m ago", card: "Amex •• 3388" },
 ]
+
+const settlementRows = Array.from({ length: 14 }, (_, index) => ({
+  id: `STL-${901 + index}`,
+  title: index % 3 === 0 ? "Today's settlement" : index % 3 === 1 ? "Pending reconciliation" : "Holdback reserve",
+  amount: `₹${(112300 + index * 1850).toLocaleString("en-MY")}`,
+  state: index % 3 === 0 ? "Completed" : index % 3 === 1 ? "Processing" : "Review",
+}))
+
+const disputeRows = Array.from({ length: 14 }, (_, index) => ({
+  id: `DSP-${109 + index}`,
+  state: index % 2 === 0 ? "Chargeback requested" : "Waiting for evidence",
+  amount: `₹${(2300 + index * 530).toLocaleString("en-MY")}`,
+}))
+
+const refundRows = Array.from({ length: 14 }, (_, index) => ({
+  id: `RFD-${603 + index}`,
+  state: index % 2 === 0 ? "POS refund approved" : "Pending manager review",
+  amount: `₹${(780 + index * 240).toLocaleString("en-MY")}`,
+}))
+
+const reportRows = Array.from({ length: 14 }, (_, index) => ({
+  id: `RPT-${301 + index}`,
+  title: index % 3 === 0 ? "Terminal uptime report" : index % 3 === 1 ? "Card mode mix report" : "Offline settlement report",
+  cadence: index % 2 === 0 ? "Daily" : "Weekly",
+  owner: index % 2 === 0 ? "Terminal Ops" : "Store Ops",
+}))
 
 const defaultVasItems: VasItem[] = [
   { id: "amex-enable", name: "AMEX acceptance", detail: "Enable American Express card acceptance across terminals.", enabled: false, requiresConfig: true },
@@ -64,31 +143,7 @@ const vasGroups = [
   { id: "experience", title: "In-store experience", itemIds: ["smart-tipping"] },
 ] as const
 
-function DeviceRow({ device, selected, onClick }: { device: typeof devices[0]; selected: boolean; onClick: () => void }) {
-  const online = device.status === "online"
-  return (
-    <button onClick={onClick}
-      className={`intercom-panel-row ${selected ? "intercom-panel-row-active" : ""}`}>
-      <div className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 ${online ? "bg-success/10" : "bg-muted"}`}>
-        {online ? <Wifi className="h-4 w-4 text-success" /> : <WifiOff className="h-4 w-4 text-muted-foreground" />}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-medium text-foreground truncate">{device.name}</p>
-          <p className="text-sm font-semibold text-foreground shrink-0">{device.today}</p>
-        </div>
-        <div className="flex items-center justify-between gap-2 mt-0.5">
-          <p className="text-xs text-muted-foreground truncate">{device.location} · {device.model}</p>
-          <Badge variant="outline" className={`text-[9px] px-1.5 py-0 shrink-0 ${online ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground border-border"}`}>
-            {device.status}
-          </Badge>
-        </div>
-      </div>
-    </button>
-  )
-}
-
-function DeviceDetail({ device }: { device: typeof devices[0] }) {
+function DeviceDetail({ device }: { device: DeviceRow }) {
   const online = device.status === "online"
   return (
     <div className="p-5 space-y-5">
@@ -155,7 +210,7 @@ function DeviceDetail({ device }: { device: typeof devices[0] }) {
                       <p className="text-xs font-medium text-foreground">{t.card}</p>
                       <p className="text-[10px] text-muted-foreground">{t.method} · {t.time}</p>
                     </div>
-                    <p className="text-xs font-semibold text-foreground">₹{t.amount.toLocaleString("en-IN")}</p>
+                    <p className="text-xs font-semibold text-foreground">₹{t.amount.toLocaleString("en-MY")}</p>
                   </div>
                 )
               })}
@@ -167,12 +222,38 @@ function DeviceDetail({ device }: { device: typeof devices[0] }) {
   )
 }
 
-export function OfflinePaymentsContent() {
+function mapInitialModelToSegment(model?: string): DeviceSegment {
+  const normalized = model?.trim().toLowerCase()
+  if (!normalized) return "all"
+  if (normalized === "a891") return "a920-pro"
+  if (normalized === "mini") return "p2-lite"
+  if (normalized === "go" || normalized === "duo" || normalized === "voice-pod") return "a80"
+  return "all"
+}
+
+export function OfflinePaymentsContent({
+  initialSection,
+  initialModel,
+}: {
+  initialSection?: OfflineNavSection
+  initialModel?: string
+} = {}) {
+  const showInternalBack = initialSection !== undefined
+  const [navSection, setNavSection] = useState<OfflineNavSection>(initialSection ?? "overview")
+  const [overviewCustomizeOpen, setOverviewCustomizeOpen] = useState(false)
+  const [deviceRows, setDeviceRows] = useState<DeviceRow[]>(initialDevices)
   const [selected, setSelected] = useState<string | null>(null)
-  const [navSection, setNavSection] = useState<OfflineNavSection>("overview")
-  const [deviceSegment, setDeviceSegment] = useState<DeviceSegment>("all")
-  const [rightTab, setRightTab] = useState<"detail" | "analytics">("detail")
-  const [query, setQuery] = useState("")
+  const [selectedDeviceIds, setSelectedDeviceIds] = useState<string[]>([])
+  const deviceSegment = mapInitialModelToSegment(initialModel)
+  const [transactionView, setTransactionView] = useState<TransactionMethodView>("all")
+  const [rightTab, setRightTab] = useState<"detail" | "analytics" | "add-device">("detail")
+  const [selectedTableDetail, setSelectedTableDetail] = useState<TableDetail | null>(null)
+  const [newDeviceForm, setNewDeviceForm] = useState({
+    name: "",
+    location: "",
+    model: "A920 Pro" as DeviceRow["model"],
+    status: "online" as DeviceRow["status"],
+  })
   const [vasItems, setVasItems] = useState<VasItem[]>(defaultVasItems)
   const [selectedVasId, setSelectedVasId] = useState<string | null>(null)
   const [vasConfigById, setVasConfigById] = useState<Record<string, VasConfig>>(defaultVasConfig)
@@ -181,20 +262,142 @@ export function OfflinePaymentsContent() {
     nightRollout: false,
     dailyDigest: true,
   })
-  const selectedDevice = devices.find(d => d.id === selected)
+  const selectedDevice = deviceRows.find((d) => d.id === selected)
   const selectedVas = vasItems.find((item) => item.id === selectedVasId) ?? null
   const selectedVasConfig = selectedVas ? vasConfigById[selectedVas.id] : null
-  const filtered = devices
-    .filter((d) => {
-      if (deviceSegment === "all") return true
-      if (deviceSegment === "offline") return d.status === "offline"
-      if (deviceSegment === "a920-pro") return d.model === "A920 Pro"
-      if (deviceSegment === "p2-lite") return d.model === "P2 Lite"
-      if (deviceSegment === "a80") return d.model === "A80"
-      return true
+  const filteredOfflineTransactions = useMemo(
+    () =>
+      offlineTransactionRows.filter((row) => {
+        if (transactionView === "all") return true
+        return row.method === transactionView
+      }),
+    [transactionView]
+  )
+
+  useEffect(() => {
+    setSelectedTableDetail(null)
+    if (navSection !== "manage-devices") {
+      setSelected(null)
+    }
+  }, [navSection])
+  const paymentModeSeries = useMemo(
+    () =>
+      transactionView === "Chip"
+        ? weeklyData.map((d) => d.chip)
+        : transactionView === "Swipe"
+          ? weeklyData.map((d) => d.swipe)
+          : transactionView === "Tap"
+            ? weeklyData.map((d) => d.tap)
+            : weeklyData.map((d) => d.tap + d.chip + d.swipe),
+    [transactionView]
+  )
+  const filteredDevices = useMemo(
+    () =>
+      deviceRows.filter((d) => {
+        if (deviceSegment === "all") return true
+        if (deviceSegment === "offline") return d.status === "offline"
+        if (deviceSegment === "a920-pro") return d.model === "A920 Pro"
+        if (deviceSegment === "p2-lite") return d.model === "P2 Lite"
+        if (deviceSegment === "a80") return d.model === "A80"
+        return true
+      }),
+    [deviceRows, deviceSegment]
+  )
+  useEffect(() => {
+    const validDeviceIds = new Set(filteredDevices.map((device) => device.id))
+    setSelectedDeviceIds((current) => {
+      const next = current.filter((id) => validDeviceIds.has(id))
+      if (next.length === current.length && next.every((id, index) => id === current[index])) {
+        return current
+      }
+      return next
     })
-    .filter(d => d.name.toLowerCase().includes(query.toLowerCase()) || d.location.toLowerCase().includes(query.toLowerCase()))
-  const onlineCount = devices.filter(d => d.status === "online").length
+  }, [filteredDevices])
+  const allFilteredSelected =
+    filteredDevices.length > 0 && filteredDevices.every((device) => selectedDeviceIds.includes(device.id))
+  const onlineCount = deviceRows.filter((d) => d.status === "online").length
+  const offlineCount = deviceRows.length - onlineCount
+  const successOfflineCount = filteredOfflineTransactions.filter((row) => row.status === "Success").length
+  const totalOfflineValue = filteredOfflineTransactions.reduce((sum, row) => sum + parseInr(row.amount), 0)
+  const offlineSuccessRate = filteredOfflineTransactions.length
+    ? (successOfflineCount / filteredOfflineTransactions.length) * 100
+    : 0
+  const averageOfflineTicket = filteredOfflineTransactions.length
+    ? Math.round(totalOfflineValue / filteredOfflineTransactions.length)
+    : 0
+  const processingSettlementCount = settlementRows.filter((row) => row.state !== "Completed").length
+  const offlineWidgets = useMemo<AnalyticsWidget[]>(
+    () => [
+      {
+        id: "offline-processed-value",
+        title: "Processed value",
+        value: `₹${totalOfflineValue.toLocaleString("en-MY")}`,
+        delta: transactionView === "all" ? "All terminal modes" : `${transactionView} mode`,
+        hint: "Captured at POS terminals",
+        chart: paymentModeSeries,
+        compareChart: paymentModeSeries.map((point) => Number((point * 0.9).toFixed(2))),
+        defaultWidth: "wide",
+      },
+      {
+        id: "offline-total-transactions",
+        title: "Total transactions",
+        value: `${filteredOfflineTransactions.length}`,
+        delta: `${successOfflineCount} approved`,
+        hint: "Transactions for current filters",
+        chart: paymentModeSeries.map((point) => Number((point * 1.1).toFixed(2))),
+      },
+      {
+        id: "offline-success-rate",
+        title: "Approval rate",
+        value: `${offlineSuccessRate.toFixed(1)}%`,
+        delta: `${filteredOfflineTransactions.length - successOfflineCount} declined`,
+        hint: "Card-present acceptance health",
+        chart: [96.3, 96.8, 97.1, 97.3, 97.4, 97.6, Number(offlineSuccessRate.toFixed(1))],
+      },
+      {
+        id: "offline-avg-ticket",
+        title: "Average ticket",
+        value: `₹${averageOfflineTicket.toLocaleString("en-MY")}`,
+        delta: "In-store blended basket",
+        hint: "Useful for staffing and campaign slots",
+        chart: [1750, 1810, 1890, 1940, 2010, 2080, averageOfflineTicket || 2000],
+      },
+      {
+        id: "offline-terminal-health",
+        title: "Terminal health",
+        value: `${onlineCount}/${deviceRows.length}`,
+        delta: offlineCount ? `${offlineCount} currently offline` : "All terminals online",
+        hint: "Live connectivity and uptime",
+        chart: [84, 86, 87, 89, 91, 93, offlineCount ? 90 : 95],
+      },
+      {
+        id: "offline-settlement-readiness",
+        title: "Settlement readiness",
+        value: `${Math.max(0, settlementRows.length - processingSettlementCount)}/${settlementRows.length}`,
+        delta: processingSettlementCount ? `${processingSettlementCount} pending action` : "All batches complete",
+        hint: "Reconciliation watch",
+        chart: [88, 89, 90, 91, 92, 93, processingSettlementCount ? 91 : 95],
+      },
+    ],
+    [
+      averageOfflineTicket,
+      deviceRows.length,
+      filteredOfflineTransactions.length,
+      offlineCount,
+      offlineSuccessRate,
+      onlineCount,
+      paymentModeSeries,
+      processingSettlementCount,
+      successOfflineCount,
+      totalOfflineValue,
+      transactionView,
+    ]
+  )
+  const configuredOfflineProducts = useMemo(
+    () => ["Tap", "Chip", "Swipe", ...Array.from(new Set(deviceRows.map((row) => row.model)))],
+    [deviceRows]
+  )
+  const canCreateDevice = newDeviceForm.name.trim().length > 0 && newDeviceForm.location.trim().length > 0
   const typeOptions = {
     chart: { type: "column" },
     xAxis: { categories: weeklyData.map((d) => d.day) },
@@ -208,172 +411,549 @@ export function OfflinePaymentsContent() {
     ],
   } as const
 
+  const handleCreateDevice = () => {
+    if (!canCreateDevice) return
+    const nextNumber =
+      deviceRows.reduce((max, device) => {
+        const numeric = Number(device.id.replace("POS-", ""))
+        return Number.isNaN(numeric) ? max : Math.max(max, numeric)
+      }, 0) + 1
+    const nextDevice: DeviceRow = {
+      id: `POS-${String(nextNumber).padStart(3, "0")}`,
+      hardwareId: String(300000000000 + nextNumber).padStart(12, "0"),
+      hardwareModel:
+        newDeviceForm.model === "A920 Pro"
+          ? "Touch | A920"
+          : newDeviceForm.model === "P2 Lite"
+            ? "Go | A50"
+            : "Duo | A80",
+      posId: String(2580000 + nextNumber),
+      storeName: newDeviceForm.name.trim().toUpperCase(),
+      storeAddress: `${newDeviceForm.location.trim()}, Bengaluru`,
+      installationDate: new Date().toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+      mode: "Standalone",
+      name: newDeviceForm.name.trim(),
+      location: newDeviceForm.location.trim(),
+      model: newDeviceForm.model,
+      status: newDeviceForm.status,
+      today: "₹0",
+      txns: 0,
+      lastSeen: "Now",
+    }
+    setDeviceRows((current) => [nextDevice, ...current])
+    setSelected(nextDevice.id)
+    setRightTab("detail")
+    setNewDeviceForm({
+      name: "",
+      location: "",
+      model: "A920 Pro",
+      status: "online",
+    })
+  }
+
+  const deviceColumns: DataTableColumn<DeviceRow>[] = [
+    {
+      id: "select",
+      header: allFilteredSelected ? "✓" : "",
+      width: 44,
+      align: "center",
+      searchable: false,
+      hideable: false,
+      draggable: false,
+      pinnable: false,
+      cell: (device) => (
+        <div className="flex items-center justify-center" onClick={(event) => event.stopPropagation()}>
+          <Checkbox
+            checked={selectedDeviceIds.includes(device.id)}
+            onCheckedChange={(checked) =>
+              setSelectedDeviceIds((current) =>
+                checked ? Array.from(new Set([...current, device.id])) : current.filter((id) => id !== device.id)
+              )
+            }
+            aria-label={`Select ${device.hardwareId}`}
+          />
+        </div>
+      ),
+    },
+    {
+      id: "hardware",
+      header: "Hardware ID / Model",
+      width: 260,
+      pinnable: true,
+      getValue: (device) => device.hardwareId,
+      getSearchValue: (device) => `${device.hardwareId} ${device.hardwareModel} ${device.model}`,
+      cell: (device) => (
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border/70 bg-muted/40 text-muted-foreground">
+            <Smartphone className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-foreground">{device.hardwareId}</p>
+            <p className="truncate text-xs text-muted-foreground">{device.hardwareModel}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "posId",
+      header: "POS ID",
+      accessorKey: "posId",
+      width: 110,
+    },
+    {
+      id: "storeName",
+      header: "Store Name",
+      width: 280,
+      getValue: (device) => device.storeName,
+      getSearchValue: (device) => `${device.storeName} ${device.storeAddress}`,
+      cell: (device) => (
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-foreground">{device.storeName}</p>
+          <p className="truncate text-xs text-muted-foreground">{device.storeAddress}</p>
+        </div>
+      ),
+    },
+    {
+      id: "installationDate",
+      header: "Installation Date",
+      accessorKey: "installationDate",
+      width: 140,
+    },
+    {
+      id: "mode",
+      header: "Mode",
+      accessorKey: "mode",
+      width: 120,
+      filterOptions: [
+        { label: "Standalone", value: "Standalone" },
+        { label: "Linked", value: "Linked" },
+      ],
+      cell: (device) => (
+        <Badge
+          variant="outline"
+          className={
+            device.mode === "Standalone"
+              ? "border-warning/60 bg-warning/20 text-foreground dark:text-warning"
+              : "border-primary/35 bg-primary/15 text-foreground dark:text-primary"
+          }
+        >
+          {device.mode}
+        </Badge>
+      ),
+    },
+    {
+      id: "action",
+      header: "Action",
+      width: 72,
+      align: "center",
+      searchable: false,
+      hideable: false,
+      draggable: false,
+      pinnable: false,
+      getValue: () => "",
+      cell: () => (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="h-7 w-7 rounded-md"
+          onClick={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+          }}
+          aria-label="Open row actions"
+        >
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ]
+
+  const transactionColumns: DataTableColumn<(typeof offlineTransactionRows)[number]>[] = [
+    { id: "id", header: "Transaction", accessorKey: "id", width: 140, pinnable: true },
+    { id: "device", header: "Device", accessorKey: "device", width: 110 },
+    { id: "location", header: "Location", accessorKey: "location", width: 130 },
+    {
+      id: "method",
+      header: "Method",
+      accessorKey: "method",
+      width: 100,
+      filterOptions: [
+        { label: "Tap", value: "Tap" },
+        { label: "Chip", value: "Chip" },
+        { label: "Swipe", value: "Swipe" },
+      ],
+    },
+    {
+      id: "status",
+      header: "Status",
+      accessorKey: "status",
+      width: 120,
+      filterOptions: [
+        { label: "Success", value: "Success" },
+        { label: "Failed", value: "Failed" },
+      ],
+      cell: (transaction) => (
+        <Badge
+          variant="outline"
+          className={
+            transaction.status === "Success"
+              ? "bg-success/20 text-foreground border-success/35"
+              : "bg-destructive/20 text-foreground border-destructive/35"
+          }
+        >
+          {transaction.status}
+        </Badge>
+      ),
+    },
+    { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
+    { id: "time", header: "Time", accessorKey: "time", align: "right", width: 110 },
+  ]
+
+  const settlementColumns: DataTableColumn<(typeof settlementRows)[number]>[] = [
+    { id: "id", header: "Batch", accessorKey: "id", width: 110, pinnable: true },
+    { id: "title", header: "Settlement", accessorKey: "title", width: 220 },
+    {
+      id: "state",
+      header: "State",
+      accessorKey: "state",
+      width: 120,
+      filterOptions: [
+        { label: "Completed", value: "Completed" },
+        { label: "Processing", value: "Processing" },
+        { label: "Review", value: "Review" },
+      ],
+    },
+    { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
+  ]
+
+  const disputeColumns: DataTableColumn<(typeof disputeRows)[number]>[] = [
+    { id: "id", header: "Dispute ID", accessorKey: "id", width: 120, pinnable: true },
+    { id: "state", header: "Status", accessorKey: "state", width: 220 },
+    { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
+  ]
+
+  const refundColumns: DataTableColumn<(typeof refundRows)[number]>[] = [
+    { id: "id", header: "Refund ID", accessorKey: "id", width: 120, pinnable: true },
+    { id: "state", header: "State", accessorKey: "state", width: 220 },
+    { id: "amount", header: "Amount", accessorKey: "amount", align: "right", width: 120 },
+  ]
+
+  const reportColumns: DataTableColumn<(typeof reportRows)[number]>[] = [
+    { id: "id", header: "Report ID", accessorKey: "id", width: 120, pinnable: true },
+    { id: "title", header: "Report", accessorKey: "title", width: 260 },
+    { id: "cadence", header: "Cadence", accessorKey: "cadence", width: 120 },
+    { id: "owner", header: "Owner", accessorKey: "owner", width: 140 },
+  ]
+
   const leftContext = (
-    <div className="h-full overflow-y-auto p-3">
-      <p className="px-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Offline Payments</p>
-      <div className="mt-2 space-y-1">
-        {[
-          { key: "overview", label: "Overview" },
-          { key: "transactions", label: "Transactions" },
-          { key: "settlements", label: "Settlements" },
-          { key: "disputes", label: "Disputes" },
-          { key: "refunds", label: "Refunds" },
-          { key: "reports", label: "Reports" },
-          { key: "vas", label: "Value Added Services" },
-        ].map((item) => {
-          const active = navSection === item.key
-          return (
-            <button
-              key={item.key}
-              onClick={() => {
-                setNavSection(item.key as OfflineNavSection)
-                setSelected(null)
-                setSelectedVasId(null)
-                setRightTab("detail")
-              }}
-              className={`w-full rounded-md px-3 py-2 text-left transition-colors ${
-                active ? "bg-secondary/70 text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              }`}
-            >
-              <p className="text-[13px] font-medium">{item.label}</p>
-            </button>
-          )
-        })}
-      </div>
-    </div>
+    <ProductWorkspaceNav
+      title="POS Terminal"
+      value={navSection}
+      showManageDevices
+      onChange={(nextSection) => {
+        setNavSection(nextSection)
+        setSelected(null)
+        setSelectedVasId(null)
+        setRightTab("detail")
+      }}
+    />
+  )
+
+  const transactionsAmount = filteredOfflineTransactions.reduce((sum, row) => sum + parseInr(row.amount), 0)
+  const successTransactions = filteredOfflineTransactions.filter((row) => row.status === "Success").length
+  const settlementInProgress = settlementRows.filter((row) => row.state !== "Completed").length
+  const disputeAmount = disputeRows.reduce((sum, row) => sum + parseInr(row.amount), 0)
+  const refundAmount = refundRows.reduce((sum, row) => sum + parseInr(row.amount), 0)
+
+  const summaryBySection: Partial<Record<OfflineNavSection, SectionSummaryMetric[]>> = {
+    transactions: [
+      { label: "Total transactions", value: `${filteredOfflineTransactions.length}`, delta: `${successTransactions} successful` },
+      { label: "Processed value", value: `₹${transactionsAmount.toLocaleString("en-MY")}` },
+      { label: "Approval rate", value: `${offlineSuccessRate.toFixed(1)}%`, delta: "Card-present flow" },
+      { label: "Active terminals", value: `${onlineCount}/${deviceRows.length}`, delta: `${offlineCount} offline` },
+    ],
+    settlements: [
+      { label: "Total batches", value: `${settlementRows.length}`, delta: "Current cycle" },
+      { label: "In progress", value: `${settlementInProgress}`, delta: "Awaiting completion" },
+      { label: "Completed", value: `${settlementRows.length - settlementInProgress}`, delta: "Reconciled" },
+      {
+        label: "Settlement amount",
+        value: `₹${settlementRows.reduce((sum, row) => sum + parseInr(row.amount), 0).toLocaleString("en-MY")}`,
+        delta: "Across listed batches",
+      },
+    ],
+    disputes: [
+      { label: "Open disputes", value: `${disputeRows.length}`, delta: "Needs action" },
+      { label: "Exposure", value: `₹${disputeAmount.toLocaleString("en-MY")}`, delta: "Disputed amount" },
+      { label: "Evidence pending", value: `${disputeRows.filter((row) => /evidence/i.test(row.state)).length}`, delta: "High priority" },
+    ],
+    refunds: [
+      { label: "Open refunds", value: `${refundRows.length}`, delta: "Current queue" },
+      { label: "Refund value", value: `₹${refundAmount.toLocaleString("en-MY")}`, delta: "Potential payout" },
+      { label: "Manual review", value: `${refundRows.filter((row) => /review/i.test(row.state)).length}`, delta: "Operator needed" },
+    ],
+    reports: [
+      { label: "Scheduled reports", value: `${reportRows.length}`, delta: "Active schedules" },
+      { label: "Daily reports", value: `${reportRows.filter((row) => row.cadence === "Daily").length}`, delta: "Run every day" },
+      { label: "Weekly reports", value: `${reportRows.filter((row) => row.cadence === "Weekly").length}`, delta: "Run weekly" },
+    ],
+  }
+
+  const headerTitleBySection: Partial<Record<OfflineNavSection, string>> = {
+    overview: "Overview",
+    transactions: "Transactions",
+    settlements: "Settlements",
+    disputes: "Disputes",
+    refunds: "Refunds",
+    reports: "Reports",
+    "manage-devices": "Manage Devices",
+    vas: "Value Added Services",
+  }
+
+  const headerActionsBySection: Partial<Record<OfflineNavSection, React.ReactNode>> = {
+    overview: (
+      <Button size="sm" className="h-8 text-xs" onClick={() => setOverviewCustomizeOpen(true)}>
+        Customize
+      </Button>
+    ),
+    transactions: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button variant="outline" size="sm" className="h-8 text-xs">More actions</Button>
+        <Button size="sm" className="h-8 text-xs">Capture payment</Button>
+      </>
+    ),
+    settlements: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Run settlement</Button>
+      </>
+    ),
+    disputes: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Resolve dispute</Button>
+      </>
+    ),
+    refunds: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Issue refund</Button>
+      </>
+    ),
+    reports: (
+      <>
+        <Button variant="outline" size="sm" className="h-8 text-xs">Export</Button>
+        <Button size="sm" className="h-8 text-xs">Generate report</Button>
+      </>
+    ),
+    "manage-devices": (
+      <Button
+        size="sm"
+        className="h-8 text-xs"
+        onClick={() => {
+          setSelected(null)
+          setRightTab("add-device")
+        }}
+      >
+        Add device
+      </Button>
+    ),
+  }
+
+  const pageHeader = (
+    <PageHeader
+      title={headerTitleBySection[navSection] ?? "In-store payment"}
+      subtitle="In-store payment"
+      actions={headerActionsBySection[navSection]}
+      backHref={showInternalBack ? "/products/in-store-payments" : undefined}
+      backLabel="Back to In-store payment"
+    />
   )
 
   const centerMain = (
     <div className="h-full overflow-y-auto p-4 space-y-4">
-      <section className="rounded-lg bg-card/80 px-4 py-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{navSection}</p>
-            <h2 className="text-[15px] font-semibold text-foreground">Offline payments workspace</h2>
-          </div>
-          {navSection !== "vas" && (
-            <div className="ml-auto flex items-center gap-1 rounded-md bg-muted/70 p-1">
-              {[
-                { key: "all", label: "All" },
-                { key: "a920-pro", label: "A920 Pro" },
-                { key: "p2-lite", label: "P2 Lite" },
-                { key: "a80", label: "A80" },
-                { key: "offline", label: "Offline" },
-              ].map((item) => (
-                <button
-                  key={item.key}
-                  onClick={() => setDeviceSegment(item.key as DeviceSegment)}
-                  className={`rounded-sm px-2.5 py-1 text-[11px] ${
-                    deviceSegment === item.key ? "bg-card text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+      {navSection === "overview" && (
+        <OverviewAnalyticsCanvas
+          scopeId="offline-payments-overview"
+          widgets={offlineWidgets}
+          configuredProducts={configuredOfflineProducts}
+          dateOptions={["Today", "Last 7 days", "Last 30 days", "This quarter"]}
+          compareOptions={["Yesterday", "Previous period", "Last week"]}
+          showViewOptions={false}
+          showConfiguredProductsBadge={false}
+          showAutoRefreshControl={false}
+          showCustomizeControl={false}
+          toolbarSurface="plain"
+          customizeOpen={overviewCustomizeOpen}
+          onCustomizeOpenChange={setOverviewCustomizeOpen}
+        />
+      )}
 
-      {(navSection === "overview" || navSection === "transactions") && (
+      {navSection === "transactions" && (
         <>
-          {navSection === "overview" && (
-            <div className="grid grid-cols-4 gap-3">
-              {[{l:"Total Devices",v:`${devices.length}`},{l:"Online",v:`${onlineCount}`},{l:"Revenue",v:"₹4.71L"},{l:"Alerts",v:"2 Offline"}].map(s => (
-                <div key={s.l} className="rounded-lg bg-card/80 p-3">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.l}</p>
-                  <p className="mt-1 text-[15px] font-semibold text-foreground">{s.v}</p>
-                </div>
-              ))}
-            </div>
-          )}
+          <SectionSummaryStrip metrics={summaryBySection.transactions ?? []} />
 
-          <div className="overflow-hidden rounded-lg bg-card/80">
-            <div className="flex items-center gap-2 px-3 py-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input placeholder="Search devices..." value={query} onChange={e => setQuery(e.target.value)} className="h-8 border-0 bg-muted/70 pl-8 text-xs" />
+          <DataTable
+            data={filteredOfflineTransactions}
+            columns={transactionColumns}
+            rowId={(transaction) => transaction.id}
+            searchPlaceholder="Search transactions..."
+            emptyText="No transactions found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) => {
+              setSelected(null)
+              setSelectedTableDetail({
+                title: row.id,
+                description: "Transaction detail and operational context.",
+                value: row.amount,
+                rows: [
+                  { label: "Device", value: row.device },
+                  { label: "Method", value: row.method },
+                  { label: "Status", value: row.status },
+                  { label: "Location", value: row.location },
+                  { label: "Time", value: row.time },
+                ],
+              })
+              setRightTab("detail")
+            }}
+          />
+        </>
+      )}
+
+      {navSection === "manage-devices" && (
+        <>
+          <div className="grid grid-cols-4 gap-3">
+            {[{l:"Total Devices",v:`${deviceRows.length}`},{l:"Online",v:`${onlineCount}`},{l:"Revenue",v:"₹471K"},{l:"Alerts",v:"2 Offline"}].map(s => (
+              <div key={s.l} className="rounded-lg bg-card/80 p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.l}</p>
+                <p className="mt-1 text-[15px] font-semibold text-foreground">{s.v}</p>
               </div>
-              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setRightTab("analytics")}>Analytics</Button>
-            </div>
-            <div className="space-y-1 px-2 pb-2">
-              {filtered.map(d => <DeviceRow key={d.id} device={d} selected={selected===d.id} onClick={() => { setSelected(d.id); setRightTab("detail") }} />)}
-            </div>
+            ))}
           </div>
+
+          <DataTable
+            data={filteredDevices}
+            columns={deviceColumns}
+            rowId={(device) => device.id}
+            selectedRowId={selected}
+            onRowClick={(device) => {
+              setSelected(device.id)
+              setSelectedTableDetail(null)
+              setRightTab("detail")
+            }}
+            searchPlaceholder="Search devices..."
+            emptyText="No devices found"
+            initialPinnedColumnIds={["id"]}
+          />
         </>
       )}
 
       {navSection === "settlements" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Settlements</p>
-          <div className="mt-3 space-y-2">
-            {[
-              ["Today's settlement", "₹1,12,300", "Completed"],
-              ["Pending reconciliation", "₹23,400", "Processing"],
-              ["Holdback reserve", "₹9,800", "Review"],
-            ].map(([title, value, state]) => (
-              <button key={title} onClick={() => setRightTab("analytics")} className="intercom-panel-row">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{title}</p>
-                  <p className="text-xs text-muted-foreground">{state}</p>
-                </div>
-                <p className="text-sm font-semibold text-foreground">{value}</p>
-              </button>
-            ))}
-          </div>
-        </section>
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.settlements ?? []} />
+          <DataTable
+            data={settlementRows}
+            columns={settlementColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search settlements..."
+            emptyText="No settlements found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) => {
+              setSelected(null)
+              setSelectedTableDetail({
+                title: row.id,
+                description: "Settlement detail and payout status.",
+                value: row.amount,
+                rows: [
+                  { label: "Title", value: row.title },
+                  { label: "State", value: row.state },
+                ],
+              })
+              setRightTab("detail")
+            }}
+          />
+        </>
       )}
 
       {navSection === "disputes" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Disputes</p>
-          <div className="mt-3 space-y-2">
-            {[
-              ["DSP-112", "Chargeback requested", "₹2,300"],
-              ["DSP-109", "Waiting for evidence", "₹5,900"],
-            ].map(([id, state, amount]) => (
-              <button key={id} onClick={() => setRightTab("analytics")} className="intercom-panel-row">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{id}</p>
-                  <p className="text-xs text-muted-foreground">{state}</p>
-                </div>
-                <p className="text-sm font-semibold text-foreground">{amount}</p>
-              </button>
-            ))}
-          </div>
-        </section>
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.disputes ?? []} />
+          <DataTable
+            data={disputeRows}
+            columns={disputeColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search disputes..."
+            emptyText="No disputes found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) => {
+              setSelected(null)
+              setSelectedTableDetail({
+                title: row.id,
+                description: "Dispute case detail and required actions.",
+                value: row.amount,
+                rows: [{ label: "Current state", value: row.state }],
+              })
+              setRightTab("detail")
+            }}
+          />
+        </>
       )}
 
       {navSection === "reports" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Reports</p>
-            <Button variant="ghost" size="sm" className="h-8 text-xs">Generate report</Button>
-          </div>
-          <div className="h-56 rounded-md bg-muted/45 p-2">
-            <HighchartsPanelChart options={typeOptions} />
-          </div>
-        </section>
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.reports ?? []} />
+          <DataTable
+            data={reportRows}
+            columns={reportColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search reports..."
+            emptyText="No reports found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) => {
+              setSelected(null)
+              setSelectedTableDetail({
+                title: row.id,
+                description: "Report configuration and owner context.",
+                value: row.title,
+                rows: [
+                  { label: "Cadence", value: row.cadence },
+                  { label: "Owner", value: row.owner },
+                ],
+              })
+              setRightTab("detail")
+            }}
+          />
+        </>
       )}
 
       {navSection === "refunds" && (
-        <section className="rounded-lg bg-card/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Refunds</p>
-          <div className="mt-3 space-y-2">
-            {[
-              ["RFD-611", "POS refund approved", "₹780"],
-              ["RFD-603", "Pending manager review", "₹2,240"],
-            ].map(([id, status, value]) => (
-              <button key={id} onClick={() => setRightTab("analytics")} className="intercom-panel-row">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{id}</p>
-                  <p className="text-xs text-muted-foreground">{status}</p>
-                </div>
-                <p className="text-sm font-semibold text-foreground">{value}</p>
-              </button>
-            ))}
-          </div>
-        </section>
+        <>
+          <SectionSummaryStrip metrics={summaryBySection.refunds ?? []} />
+          <DataTable
+            data={refundRows}
+            columns={refundColumns}
+            rowId={(row) => row.id}
+            searchPlaceholder="Search refunds..."
+            emptyText="No refunds found"
+            initialPinnedColumnIds={["id"]}
+            onRowClick={(row) => {
+              setSelected(null)
+              setSelectedTableDetail({
+                title: row.id,
+                description: "Refund request details and processing context.",
+                value: row.amount,
+                rows: [{ label: "Current state", value: row.state }],
+              })
+              setRightTab("detail")
+            }}
+          />
+        </>
       )}
 
       {navSection === "vas" && (
@@ -381,7 +961,7 @@ export function OfflinePaymentsContent() {
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Value Added Services</p>
           <div className="space-y-4">
             {vasGroups.map((group) => {
-              const groupItems = vasItems.filter((item) => group.itemIds.includes(item.id))
+              const groupItems = vasItems.filter((item) => group.itemIds.some((groupId) => groupId === item.id))
               return (
                 <div key={group.id}>
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">{group.title}</p>
@@ -521,9 +1101,100 @@ export function OfflinePaymentsContent() {
         <Button variant="outline" className="w-full" onClick={() => setSelectedVasId(null)}>Cancel</Button>
       </div>
     </div>
+  ) : rightTab === "add-device" ? (
+    <div className="p-6 space-y-5">
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Device onboarding</p>
+        <h4 className="mt-1 text-[18px] font-semibold text-foreground">Add POS device</h4>
+      </div>
+      <div className="space-y-3">
+        <div>
+          <p className="text-xs text-muted-foreground">Device name</p>
+          <Input
+            value={newDeviceForm.name}
+            onChange={(event) => setNewDeviceForm((current) => ({ ...current, name: event.target.value }))}
+            placeholder="Counter 11"
+            className="mt-1 h-8 bg-background/50 text-xs"
+          />
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Store location</p>
+          <Input
+            value={newDeviceForm.location}
+            onChange={(event) => setNewDeviceForm((current) => ({ ...current, location: event.target.value }))}
+            placeholder="Second floor"
+            className="mt-1 h-8 bg-background/50 text-xs"
+          />
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Device model</p>
+          <select
+            value={newDeviceForm.model}
+            onChange={(event) =>
+              setNewDeviceForm((current) => ({ ...current, model: event.target.value as DeviceRow["model"] }))
+            }
+            className="mt-1 h-8 w-full rounded-md border border-border bg-background/50 px-2 text-xs text-foreground"
+          >
+            <option value="A920 Pro">A920 Pro</option>
+            <option value="P2 Lite">P2 Lite</option>
+            <option value="A80">A80</option>
+          </select>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Connection status</p>
+          <select
+            value={newDeviceForm.status}
+            onChange={(event) =>
+              setNewDeviceForm((current) => ({ ...current, status: event.target.value as DeviceRow["status"] }))
+            }
+            className="mt-1 h-8 w-full rounded-md border border-border bg-background/50 px-2 text-xs text-foreground"
+          >
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+          </select>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Button className="w-full" disabled={!canCreateDevice} onClick={handleCreateDevice}>
+          Add and configure
+        </Button>
+        <Button variant="outline" className="w-full" onClick={() => setRightTab("detail")}>
+          Cancel
+        </Button>
+      </div>
+    </div>
   ) : rightTab === "detail" ? (
-    selectedDevice ? <DeviceDetail device={selectedDevice} /> : (
-      <PanelEmpty icon={Wifi} title="Select a device" description="Click a POS device to view its status, transactions and configuration." />
+    navSection !== "manage-devices" && selectedTableDetail ? (
+      <div className="p-6 space-y-5">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Record detail</p>
+          <h4 className="mt-1 text-[18px] font-semibold text-foreground">{selectedTableDetail.title}</h4>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Current value</p>
+          <p className="text-[20px] font-semibold text-foreground">{selectedTableDetail.value}</p>
+        </div>
+        <Separator />
+        <p className="text-sm text-muted-foreground">{selectedTableDetail.description}</p>
+        <div className="space-y-2">
+          {selectedTableDetail.rows.map((item) => (
+            <div key={item.label} className="flex items-center justify-between gap-4">
+              <span className="text-xs text-muted-foreground">{item.label}</span>
+              <span className="text-xs font-medium text-foreground text-right">{item.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : selectedDevice ? <DeviceDetail device={selectedDevice} /> : (
+      <PanelEmpty
+        icon={Wifi}
+        title={navSection === "manage-devices" ? "Select a device" : "Select a row"}
+        description={
+          navSection === "manage-devices"
+            ? "Click a POS device to view its status, transactions and configuration."
+            : "Click any row in the table to open detail context."
+        }
+      />
     )
   ) : (
     <div className="mt-0 overflow-auto px-5 py-4 space-y-6">
@@ -541,7 +1212,7 @@ export function OfflinePaymentsContent() {
       <Separator />
       <div className="space-y-2">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Revenue by Device</p>
-        {devices.filter(d => d.status==="online").sort((a,b) => parseInt(b.today.replace(/[₹,]/g,"")) - parseInt(a.today.replace(/[₹,]/g,""))).map(d => (
+        {deviceRows.filter(d => d.status==="online").sort((a,b) => parseInt(b.today.replace(/[₹,]/g,"")) - parseInt(a.today.replace(/[₹,]/g,""))).map(d => (
           <div key={d.id} className="flex items-center gap-3">
             <span className="text-xs text-muted-foreground w-28 shrink-0 truncate">{d.name}</span>
             <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
@@ -560,16 +1231,26 @@ export function OfflinePaymentsContent() {
         <div>
           <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Context</p>
           <p className="text-[16px] font-semibold text-foreground">
-            {selectedVas ? "Service configuration" : rightTab === "detail" ? "Device detail" : "Analytics"}
+            {selectedVas
+              ? "Service configuration"
+              : rightTab === "add-device"
+                ? "Add device"
+                : rightTab === "detail"
+                  ? navSection === "manage-devices"
+                    ? "Device detail"
+                    : "Context detail"
+                  : "Analytics"}
           </p>
         </div>
         <Button
           variant="ghost"
           size="icon-sm"
           className="h-8 w-8"
+          aria-label="Close contextual panel"
           onClick={() => {
             setSelectedVasId(null)
             setSelected(null)
+            setSelectedTableDetail(null)
             setRightTab("detail")
           }}
         >
@@ -582,15 +1263,23 @@ export function OfflinePaymentsContent() {
   )
 
   return (
+    <>
+      {pageHeader}
       <WorkspaceShell
         leftContext={leftContext}
-        showLeftContext
+        showLeftContext={false}
         centerMain={centerMain}
-      rightContext={rightContext}
-      showRightContext={Boolean(selectedVas) || rightTab === "analytics" || Boolean(selectedDevice)}
-      leftWidth={248}
-      leftMaxWidth={300}
-      centerMaxWidth={1080}
-    />
+        rightContext={rightContext}
+        showRightContext={
+          Boolean(selectedVas) ||
+          rightTab === "analytics" ||
+          rightTab === "add-device" ||
+          Boolean(selectedDevice) ||
+          Boolean(selectedTableDetail)
+        }
+        leftWidth={248}
+        leftMaxWidth={300}
+      />
+    </>
   )
 }

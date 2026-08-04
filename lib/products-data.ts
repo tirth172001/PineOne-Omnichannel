@@ -1,31 +1,21 @@
 import {
-  CreditCard,
-  QrCode,
-  Repeat,
-  Percent,
-  Calculator,
-  Banknote,
-  Send,
-  Receipt,
-  Gift,
-  Users,
-  Tag,
-  Landmark,
-  TrendingUp,
-  Smartphone,
-  Monitor,
-  Cpu,
-  Zap,
-  Shield,
-  Wifi,
-  ShieldCheck,
-  Truck,
-  FileText,
-  GraduationCap,
-  HeartPulse,
-  Building,
-  Fuel,
+  AudioLines,
   Cloud,
+  CreditCard,
+  FileText,
+  Fuel,
+  Gift,
+  GraduationCap,
+  HandCoins,
+  HeartPulse,
+  LayoutGrid,
+  MonitorSmartphone,
+  Route,
+  ShieldCheck,
+  Sparkles,
+  Store,
+  Truck,
+  Wifi,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -35,8 +25,15 @@ export interface Product {
   description: string
   icon: LucideIcon
   status: "enabled" | "available" | "coming-soon"
-  whyUseful?: string
   href: string
+  whyUseful?: string
+}
+
+export interface ProductCategory {
+  id: string
+  name: string
+  description: string
+  products: Product[]
 }
 
 export interface PartnerProduct {
@@ -52,210 +49,92 @@ export interface PartnerProduct {
   category: string
 }
 
-export interface ProductCategory {
-  id: string
-  name: string
-  description: string
-  products: Product[]
-}
+export const configuredProductNames = ["Checkout", "POS terminal", "Payment links"] as const
 
 export const productCategories: ProductCategory[] = [
   {
-    id: "payments",
-    name: "Payments",
-    description: "Accept payments across multiple channels",
+    id: "core-products",
+    name: "Core products",
+    description: "Primary payment surfaces available in the V3 workspace",
     products: [
       {
-        id: "card-payments",
-        name: "Card Payments",
-        description: "Accept Visa, Mastercard, RuPay, and more",
+        id: "payment-gateway",
+        name: "Payment Gateway",
+        description: "Online payment orchestration for checkout, routing, retries, and reconciliation.",
         icon: CreditCard,
         status: "enabled",
-        href: "/products/card-payments",
+        href: "/products/online-payments",
       },
       {
-        id: "pine-labs-upi",
-        name: "Pine Labs UPI",
-        description: "Smart UPI with intelligent routing and higher success rates",
-        icon: QrCode,
+        id: "subscription",
+        name: "Subscription",
+        description: "Recurring collections, mandate lifecycle, dunning, and renewal analytics.",
+        icon: Route,
+        status: "enabled",
+        href: "/products/online-payments",
+      },
+      {
+        id: "payout",
+        name: "Payout",
+        description: "Business disbursals and beneficiary payouts with approval and settlement controls.",
+        icon: HandCoins,
         status: "available",
-        whyUseful: "5% higher success rate during peak hours",
-        href: "/products/pine-labs-upi",
+        href: "/products/online-payments",
       },
       {
-        id: "subscriptions",
-        name: "Subscriptions",
-        description: "Recurring payments with automatic billing",
-        icon: Repeat,
-        status: "available",
-        whyUseful: "Great for memberships and regular services",
-        href: "/products/subscriptions",
-      },
-    ],
-  },
-  {
-    id: "affordability",
-    name: "Affordability & Conversion",
-    description: "Help customers afford more and increase sales",
-    products: [
-      {
-        id: "emi",
-        name: "EMI",
-        description: "Enable installment payments on cards",
-        icon: Calculator,
-        status: "available",
-        whyUseful: "Increase average order value by up to 40%",
-        href: "/products/emi",
+        id: "online-payments",
+        name: "Online payment",
+        description: "Checkout, smart routing, and payment-link product surfaces.",
+        icon: CreditCard,
+        status: "enabled",
+        href: "/products/online-payments",
       },
       {
-        id: "pay-later",
-        name: "Pay Later",
-        description: "Buy now, pay later options for customers",
-        icon: Percent,
-        status: "available",
-        whyUseful: "Boost conversion with flexible payment options",
-        href: "/products/pay-later",
+        id: "in-store-payments",
+        name: "In-store payment",
+        description: "Device portfolio, store operations, and in-person acceptance.",
+        icon: Store,
+        status: "enabled",
+        href: "/products/in-store-payments",
       },
-      {
-        id: "credit-line-upi",
-        name: "Credit Line on UPI",
-        description: "Pre-approved credit limits for UPI transactions",
-        icon: Banknote,
-        status: "coming-soon",
-        href: "/products/credit-line-upi",
-      },
-    ],
-  },
-  {
-    id: "payouts",
-    name: "Payouts & Collections",
-    description: "Send money and collect payments efficiently",
-    products: [
-      {
-        id: "payouts",
-        name: "Payouts",
-        description: "Send money to vendors, partners, or customers",
-        icon: Send,
-        status: "available",
-        href: "/products/payouts",
-      },
-      {
-        id: "invoicing",
-        name: "Invoicing",
-        description: "Create and send digital invoices with payment links",
-        icon: Receipt,
-        status: "available",
-        href: "/products/invoicing",
-      },
-    ],
-  },
-  {
-    id: "engagement",
-    name: "Prepaid & Engagement",
-    description: "Reward and retain your customers",
-    products: [
       {
         id: "gift-cards",
-        name: "Gift Cards",
-        description: "Branded gift cards for your business",
+        name: "Gift cards",
+        description: "Gift-card issuing and redemption workflows for merchants.",
         icon: Gift,
-        status: "available",
-        href: "/products/gift-cards",
-      },
-      {
-        id: "loyalty",
-        name: "Loyalty Programs",
-        description: "Points, rewards, and membership programs",
-        icon: Users,
-        status: "available",
-        whyUseful: "Increase repeat purchases by 25%",
-        href: "/products/loyalty",
-      },
-      {
-        id: "offers",
-        name: "Offers & Promotions",
-        description: "Bank and brand offers at checkout",
-        icon: Tag,
-        status: "available",
-        href: "/products/offers",
+        status: "coming-soon",
+        href: "/products/gift-cards-coming-soon",
       },
     ],
   },
   {
-    id: "lending",
-    name: "Lending & Credit",
-    description: "Access capital to grow your business",
+    id: "extensions",
+    name: "Extensions",
+    description: "Additional product surfaces and bundled merchant add-ons",
     products: [
       {
-        id: "merchant-lending",
-        name: "Merchant Lending",
-        description: "Quick loans based on your transaction history",
-        icon: Landmark,
+        id: "other-products",
+        name: "Other products",
+        description: "3rd-party products, partner offers, and adjacent merchant tools.",
+        icon: LayoutGrid,
         status: "available",
-        whyUseful: "Pre-approved up to ₹5L based on your history",
-        href: "/products/merchant-lending",
+        href: "/products/other-products",
       },
       {
-        id: "working-capital",
-        name: "Working Capital",
-        description: "Short-term credit for inventory and operations",
-        icon: TrendingUp,
-        status: "available",
-        href: "/products/working-capital",
-      },
-    ],
-  },
-  {
-    id: "devices",
-    name: "Devices",
-    description: "Hardware for accepting in-person payments",
-    products: [
-      {
-        id: "android-pos",
-        name: "Android POS",
-        description: "Smart terminal with app ecosystem",
-        icon: Smartphone,
-        status: "enabled",
-        href: "/products/android-pos",
+        id: "offer-engine",
+        name: "Offer engine",
+        description: "Rule-driven offer orchestration across payment and merchant journeys.",
+        icon: Sparkles,
+        status: "coming-soon",
+        href: "/products/offer-engine-coming-soon",
       },
       {
-        id: "countertop-terminal",
-        name: "Countertop Terminal",
-        description: "Traditional POS terminal for high volume",
-        icon: Monitor,
-        status: "available",
-        href: "/products/countertop-terminal",
-      },
-    ],
-  },
-  {
-    id: "platform",
-    name: "Platform & Infrastructure",
-    description: "Advanced tools for developers and large merchants",
-    products: [
-      {
-        id: "apis",
-        name: "APIs & SDKs",
-        description: "Integrate Pine Labs into your systems",
-        icon: Cpu,
-        status: "available",
-        href: "/products/apis",
-      },
-      {
-        id: "webhooks",
-        name: "Webhooks",
-        description: "Real-time event notifications",
-        icon: Zap,
-        status: "available",
-        href: "/products/webhooks",
-      },
-      {
-        id: "fraud-protection",
-        name: "Fraud Protection",
-        description: "AI-powered fraud detection and prevention",
-        icon: Shield,
-        status: "available",
-        href: "/products/fraud-protection",
+        id: "growthx",
+        name: "GrowthX",
+        description: "Growth-focused cross-sell and merchant acceleration programs.",
+        icon: Route,
+        status: "coming-soon",
+        href: "/products/growthx-coming-soon",
       },
     ],
   },
@@ -362,7 +241,7 @@ export const partnerProducts: PartnerProduct[] = [
     id: "awfis-coworking",
     name: "Co-working Space",
     description: "Flexible office spaces and meeting rooms across major cities",
-    icon: Building,
+    icon: MonitorSmartphone,
     partnerName: "Awfis",
     discount: "First month free",
     benefits: [
@@ -396,7 +275,7 @@ export const partnerProducts: PartnerProduct[] = [
     description: "AWS cloud credits for startups and growing businesses",
     icon: Cloud,
     partnerName: "Amazon Web Services",
-    discount: "Up to $5,000 credits",
+    discount: "Up to ₹5,000 credits",
     benefits: [
       "Free tier services",
       "Technical support",

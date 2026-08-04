@@ -1,10 +1,10 @@
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { OnlinePaymentsContent } from "@/components/online-payments/online-payments-content"
+import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
+import { PaymentGatewayListingContent } from "@/components/online-payments/payment-gateway-listing-content"
 
 export default function OnlinePaymentsPage() {
   return (
-    <DashboardLayout>
-      <OnlinePaymentsContent />
-    </DashboardLayout>
+    <TransactionsPlatformShell>
+      <PaymentGatewayListingContent />
+    </TransactionsPlatformShell>
   )
 }
