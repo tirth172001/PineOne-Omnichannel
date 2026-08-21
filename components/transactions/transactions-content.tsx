@@ -2,29 +2,30 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CaretDownIcon, MagnifyingGlassIcon } from "@phosphor-icons/react"
 import type { DateRange } from "react-day-picker"
 import {
-  Calendar as CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Clock3,
-  Download,
-  Mail,
-  RefreshCcw,
-  SlidersHorizontal,
-  X,
-} from "lucide-react"
-
+  ArrowClockwiseIcon,
+  CalendarIcon,
+  CaretDoubleLeftIcon,
+  CaretDoubleRightIcon,
+  CaretDownIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  ClockIcon,
+  DownloadIcon,
+  EnvelopeSimpleIcon,
+  MagnifyingGlassIcon,
+  SlidersHorizontalIcon,
+  WalletIcon,
+  XIcon,
+} from "@phosphor-icons/react"
 import {
   ListingPageHeader,
-  ListingSummaryCards,
   ListingToolbar,
   type ListingFilter,
 } from "@/components/shared/listing-page-primitives"
 import { DetailSidepanelShell } from "@/components/shared/activity-timeline-sidepanel"
+import { SummaryCardGroup, type SummaryCardItem } from "@/components/shared/summary-card-group"
 import { StatusPill } from "@/components/shared/status-pill"
 import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
 import { transactionRows } from "@/components/transactions/transactions-data"
@@ -146,7 +147,7 @@ function TimePickerPopover({
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="outline" className="justify-start">
-          <Clock3 className="h-4 w-4" />
+          <ClockIcon className="h-4 w-4" />
           {value}
         </Button>
       </PopoverTrigger>
@@ -353,13 +354,22 @@ export function TransactionsContent() {
     transactionTypeFilter,
   ])
 
-  const summaryCards = useMemo(() => {
+  const summaryCards = useMemo<SummaryCardItem[]>(() => {
     const totalCount = filteredRows.length
     const totalVolume = filteredRows.reduce((sum, row) => sum + row.amount, 0)
 
     return [
-      { label: "Total volume", value: formatInr(totalVolume) },
-      { label: "Total count", value: `${totalCount}` },
+      {
+        icon: WalletIcon,
+        label: "Total volume",
+        value: (
+          <>
+            {formatInr(totalVolume)}
+            <span className="text-sm font-medium text-muted-foreground">.00</span>
+          </>
+        ),
+        subtext: `${totalCount} payments`,
+      },
     ]
   }, [filteredRows])
 
@@ -867,7 +877,7 @@ export function TransactionsContent() {
 
   return (
     <TransactionsPlatformShell>
-      <div className="tx-light-theme mx-auto w-full max-w-[1512px] bg-[var(--tx-surface-page,var(--background))]">
+      <div className="tx-light-theme w-full bg-[var(--tx-surface-page,var(--background))]">
         <ListingPageHeader
           title="Payments"
           toggles={[
@@ -883,7 +893,7 @@ export function TransactionsContent() {
               </Button>
             ) : (
               <Button variant="outline" className="rounded-[8px] border-[var(--tx-border-strong,var(--border))] bg-[var(--tx-surface-panel,var(--background))]">
-                <RefreshCcw className="h-4 w-4" />
+                <ArrowClockwiseIcon className="h-4 w-4" />
                 Refresh
               </Button>
             )
@@ -1028,11 +1038,11 @@ export function TransactionsContent() {
               mode === "online" ? (
                 <>
                   <Button variant="ghost" className="rounded-[8px] px-2 text-primary hover:bg-transparent hover:text-primary">
-                    <SlidersHorizontal className="h-4 w-4" />
+                    <SlidersHorizontalIcon className="h-4 w-4" />
                     Customise columns
                   </Button>
                   <Button variant="outline" className="rounded-[8px] border-[var(--tx-border-strong,var(--border))] bg-[var(--tx-surface-panel,var(--background))]">
-                    <Download className="h-4 w-4" />
+                    <DownloadIcon className="h-4 w-4" />
                     Download filtered
                   </Button>
                 </>
@@ -1043,11 +1053,11 @@ export function TransactionsContent() {
                     className="rounded-[8px] border-[var(--tx-border-strong,var(--border))] bg-[var(--tx-surface-panel,var(--background))]"
                     onClick={() => setEmailPanelOpen(true)}
                   >
-                    <Mail className="h-4 w-4" />
+                    <EnvelopeSimpleIcon className="h-4 w-4" />
                     Email filtered
                   </Button>
                   <Button variant="outline" className="rounded-[8px] border-[var(--tx-border-strong,var(--border))] bg-[var(--tx-surface-panel,var(--background))]">
-                    <Download className="h-4 w-4" />
+                    <DownloadIcon className="h-4 w-4" />
                     Download filtered
                   </Button>
                 </>
@@ -1055,12 +1065,12 @@ export function TransactionsContent() {
             }
           />
 
-          <ListingSummaryCards className="px-0 py-0" cards={summaryCards} />
+          <SummaryCardGroup cards={summaryCards} />
 
           <section className="space-y-6">
             <div className="overflow-hidden rounded-[8px] border border-border bg-card">
               <div className="overflow-x-auto">
-                <Table className="min-w-[1100px]">
+                <Table className="min-w-[68.75rem]">
                   <TableHeader>
                     <TableRow className="h-10 [&>th:first-child]:rounded-tl-[8px] [&>th:last-child]:rounded-tr-[8px]">
                       <TableHead className="px-4 text-sm font-medium text-muted-foreground">Order ID</TableHead>
@@ -1079,7 +1089,7 @@ export function TransactionsContent() {
                     {visibleRows.map((row) => (
                       <TableRow
                         key={row.transactionId}
-                        className="h-[72px] cursor-pointer"
+                        className="h-[4.5rem] cursor-pointer"
                         onClick={() =>
                           router.push(
                             `/transactions/${row.transactionId}?channel=${mode === "online" ? "online" : "in-store"}`
@@ -1159,7 +1169,7 @@ export function TransactionsContent() {
                       onClick={() => setPage(1)}
                       disabled={page <= 1}
                     >
-                      <ChevronsLeft className="h-4 w-4" />
+                      <CaretDoubleLeftIcon className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="outline"
@@ -1168,7 +1178,7 @@ export function TransactionsContent() {
                       onClick={() => setPage((current) => Math.max(1, current - 1))}
                       disabled={page <= 1}
                     >
-                      <ChevronLeft className="h-4 w-4" />
+                      <CaretLeftIcon className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="outline"
@@ -1177,7 +1187,7 @@ export function TransactionsContent() {
                       onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
                       disabled={page >= totalPages}
                     >
-                      <ChevronRight className="h-4 w-4" />
+                      <CaretRightIcon className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="outline"
@@ -1186,7 +1196,7 @@ export function TransactionsContent() {
                       onClick={() => setPage(totalPages)}
                       disabled={page >= totalPages}
                     >
-                      <ChevronsRight className="h-4 w-4" />
+                      <CaretDoubleRightIcon className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -1206,7 +1216,7 @@ export function TransactionsContent() {
             <h3 className="text-base font-semibold text-foreground">Email IDs</h3>
             <div className="mt-1 space-y-3">
               <div className="relative">
-                <Mail className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <EnvelopeSimpleIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={emailDraft}
                   onChange={(event) => setEmailDraft(event.target.value)}
@@ -1249,7 +1259,7 @@ export function TransactionsContent() {
                     onClick={() => removeEmailId(email)}
                     className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
                   >
-                    <X className="h-5 w-5" />
+                    <XIcon className="h-5 w-5" />
                     <span className="sr-only">Remove {email}</span>
                   </button>
                 </div>

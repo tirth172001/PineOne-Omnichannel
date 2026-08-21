@@ -1,7 +1,7 @@
 "use client"
 
 import type { ComponentType } from "react"
-import { CheckCircle2, CircleDot, Clock3, XCircle } from "lucide-react"
+import { CheckCircleIcon, ClockIcon, RecordIcon, XCircleIcon } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 
 export type StatusTone = "processing" | "success" | "initiated" | "failed"
@@ -14,10 +14,10 @@ const toneIconClass: Record<StatusTone, string> = {
 }
 
 const toneIcon: Record<StatusTone, ComponentType<{ className?: string }>> = {
-  processing: Clock3,
-  success: CheckCircle2,
-  initiated: CircleDot,
-  failed: XCircle,
+  processing: ClockIcon,
+  success: CheckCircleIcon,
+  initiated: RecordIcon,
+  failed: XCircleIcon,
 }
 
 interface StatusPillProps {

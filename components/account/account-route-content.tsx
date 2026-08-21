@@ -10,7 +10,7 @@ import {
   useAccountHeaderActions,
 } from "@/components/account/account-header-actions-context"
 import { clearDummyAuthSession, readDummyAuthSession } from "@/lib/dummy-auth"
-import { LogOut } from "lucide-react"
+import { SignOutIcon } from "@phosphor-icons/react"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
@@ -57,7 +57,7 @@ function AccountRouteContentInner({ tab }: AccountRouteContentProps) {
         <section>
           <div className="px-8 pt-8 pb-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
-              <h1 className="text-[30px] font-semibold leading-none text-foreground">Profile</h1>
+              <h1 className="text-2xl font-semibold leading-none text-foreground">Profile</h1>
               <div className="flex flex-wrap items-center gap-2">
                 <div className="inline-flex items-center gap-2 rounded-md border border-border/70 bg-card/80 px-2.5 py-1.5">
                   <Avatar className="size-7">
@@ -78,7 +78,7 @@ function AccountRouteContentInner({ tab }: AccountRouteContentProps) {
                     router.replace("/login")
                   }}
                 >
-                  <LogOut className="h-3.5 w-3.5" />
+                  <SignOutIcon className="h-3.5 w-3.5" />
                   Logout
                 </Button>
                 {headerActions?.actions}
@@ -100,7 +100,7 @@ function AccountRouteContentInner({ tab }: AccountRouteContentProps) {
       <div className="space-y-6 px-8 py-6 lg:py-8">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <h1 className="text-[30px] font-semibold leading-8 tracking-[-0.4px] text-foreground">
+            <h1 className="text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground">
               Account
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -127,7 +127,7 @@ function AccountRouteContentInner({ tab }: AccountRouteContentProps) {
                 router.replace("/login")
               }}
             >
-              <LogOut className="h-3.5 w-3.5" />
+              <SignOutIcon className="h-3.5 w-3.5" />
               Logout
             </Button>
             {headerActions?.actions}

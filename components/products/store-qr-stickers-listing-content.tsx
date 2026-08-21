@@ -2,8 +2,7 @@
 
 import Link from "next/link"
 import { useMemo, useState } from "react"
-import { Copy, Download, QrCode, Store } from "lucide-react"
-
+import { CopyIcon, DownloadIcon, QrCodeIcon, StorefrontIcon } from "@phosphor-icons/react"
 import { TransactionStyleListingPage, type ListingColumn } from "@/components/shared/transaction-style-listing-page"
 import { type ListingFilter } from "@/components/shared/listing-page-primitives"
 import { DetailSidepanelShell } from "@/components/shared/activity-timeline-sidepanel"
@@ -141,7 +140,7 @@ export function StoreQrStickersListingContent() {
         filters={filters}
         rightActions={
           <Button variant="outline" className="rounded-[8px] border-border/70 bg-background">
-            <Download className="h-4 w-4" />
+            <DownloadIcon className="h-4 w-4" />
             Download filtered
           </Button>
         }
@@ -160,7 +159,7 @@ export function StoreQrStickersListingContent() {
             <div className="flex-1 space-y-6 overflow-y-auto p-6">
               <section className="space-y-3">
                 <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-muted p-1.5">
-                  <Store className="h-6 w-6 text-primary" />
+                  <StorefrontIcon className="h-6 w-6 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-semibold leading-tight text-foreground">{selectedStore.storeName}</p>
@@ -177,11 +176,11 @@ export function StoreQrStickersListingContent() {
                 <div className="flex flex-col items-center gap-4">
                   <p className="text-2xl font-semibold leading-none tracking-tight text-foreground">pine labs</p>
                   <div className="inline-flex h-40 w-40 items-center justify-center rounded-md border border-border/70 bg-background">
-                    <QrCode className="h-24 w-24 text-foreground" />
+                    <QrCodeIcon className="h-24 w-24 text-foreground" />
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <span>UPI ID: 6352699747@ptyes</span>
-                    <Copy className="h-3.5 w-3.5" />
+                    <CopyIcon className="h-3.5 w-3.5" />
                   </div>
                 </div>
               </section>

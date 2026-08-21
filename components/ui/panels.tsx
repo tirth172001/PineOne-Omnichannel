@@ -19,8 +19,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
-
+import { ArrowLeftIcon } from "@phosphor-icons/react"
 /* Container: flex row, fills remaining height */
 export function PanelGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
@@ -148,12 +147,12 @@ export function PageHeader({
             backHref ? (
               <Button asChild variant="ghost" size="icon-sm" className="mt-0.5 h-8 w-8 rounded-lg">
                 <Link href={backHref} aria-label={backLabel}>
-                  <ArrowLeft className="h-4 w-4" />
+                  <ArrowLeftIcon className="h-4 w-4" />
                 </Link>
               </Button>
             ) : (
               <Button variant="ghost" size="icon-sm" className="mt-0.5 h-8 w-8 rounded-lg" onClick={onBack} aria-label={backLabel}>
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeftIcon className="h-4 w-4" />
               </Button>
             )
           ) : null}
@@ -205,31 +204,4 @@ export function PanelCopy({ className, ...props }: React.ComponentProps<"p">) {
 
 export function PanelSection({ className, ...props }: React.ComponentProps<"section">) {
   return <section className={cn("px-4 py-3 last:border-b-0", className)} {...props} />
-}
-
-/* Empty state for panels with no selection */
-export function PanelEmpty({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon?: React.ComponentType<{ className?: string }>
-  title: string
-  description?: string
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-8">
-      {Icon && (
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/55 border border-border">
-          <Icon className="h-5 w-5 text-muted-foreground" />
-        </div>
-      )}
-      <div>
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        {description && (
-          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{description}</p>
-        )}
-      </div>
-    </div>
-  )
 }

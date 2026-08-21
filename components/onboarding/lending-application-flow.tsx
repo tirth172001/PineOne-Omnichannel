@@ -12,35 +12,34 @@ import { Slider } from "@/components/ui/slider"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Landmark,
-  Shield,
-  Clock,
-  TrendingUp,
-  Calculator,
-  FileText,
-  CheckCircle2,
-  AlertCircle,
-  Sparkles,
-  IndianRupee,
-  Calendar,
-  Percent,
-  Building2,
-  CreditCard,
-  Upload,
-  Eye,
-  Download,
-  Zap,
-} from "lucide-react"
-
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  BankIcon,
+  BuildingsIcon,
+  CalculatorIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  ClockIcon,
+  CreditCardIcon,
+  CurrencyInrIcon,
+  DownloadIcon,
+  EyeIcon,
+  FileTextIcon,
+  LightningIcon,
+  PercentIcon,
+  ShieldIcon,
+  SparkleIcon,
+  TrendUpIcon,
+  UploadIcon,
+  WarningCircleIcon,
+} from "@phosphor-icons/react"
 const steps = [
-  { id: 1, name: "Check Eligibility", icon: Calculator },
-  { id: 2, name: "Choose Offer", icon: IndianRupee },
-  { id: 3, name: "Verify Identity", icon: Shield },
-  { id: 4, name: "E-Agreement", icon: FileText },
-  { id: 5, name: "Disbursement", icon: CheckCircle2 },
+  { id: 1, name: "Check Eligibility", icon: CalculatorIcon },
+  { id: 2, name: "Choose Offer", icon: CurrencyInrIcon },
+  { id: 3, name: "Verify Identity", icon: ShieldIcon },
+  { id: 4, name: "E-Agreement", icon: FileTextIcon },
+  { id: 5, name: "Disbursement", icon: CheckCircleIcon },
 ]
 
 export function LendingApplicationFlow() {
@@ -114,11 +113,11 @@ export function LendingApplicationFlow() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeftIcon className="h-5 w-5" />
               </Link>
               <div className="flex items-center gap-2">
                 <div className="h-8 w-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Landmark className="h-4 w-4 text-primary" />
+                  <BankIcon className="h-4 w-4 text-primary" />
                 </div>
                 <div>
                   <h1 className="font-semibold text-foreground">Merchant Lending</h1>
@@ -127,7 +126,7 @@ export function LendingApplicationFlow() {
               </div>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Shield className="h-4 w-4" />
+              <ShieldIcon className="h-4 w-4" />
               <span>256-bit encrypted</span>
             </div>
           </div>
@@ -154,7 +153,7 @@ export function LendingApplicationFlow() {
                             : "bg-secondary text-muted-foreground"
                       }`}
                     >
-                      {isCompleted ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                      {isCompleted ? <CheckIcon className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
                     </div>
                     <span className={`text-xs mt-1.5 ${isCurrent ? "text-foreground font-medium" : "text-muted-foreground"}`}>
                       {step.name}
@@ -180,7 +179,7 @@ export function LendingApplicationFlow() {
               <>
                 <div className="text-center max-w-lg mx-auto">
                   <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Sparkles className="h-8 w-8 text-primary" />
+                    <SparkleIcon className="h-8 w-8 text-primary" />
                   </div>
                   <h2 className="text-2xl font-semibold text-foreground mb-2">Check Your Credit Eligibility</h2>
                   <p className="text-muted-foreground">
@@ -193,7 +192,7 @@ export function LendingApplicationFlow() {
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
                       <div className="h-12 w-12 bg-primary/20 rounded-xl flex items-center justify-center shrink-0">
-                        <TrendingUp className="h-6 w-6 text-primary" />
+                        <TrendUpIcon className="h-6 w-6 text-primary" />
                       </div>
                       <div>
                         <h3 className="font-medium text-foreground mb-1">Good news! You may be pre-approved</h3>
@@ -202,11 +201,11 @@ export function LendingApplicationFlow() {
                         </p>
                         <div className="flex items-center gap-4 text-sm">
                           <div className="flex items-center gap-1.5">
-                            <CheckCircle2 className="h-4 w-4 text-primary" />
+                            <CheckCircleIcon className="h-4 w-4 text-primary" />
                             <span className="text-foreground">6+ months active</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <CheckCircle2 className="h-4 w-4 text-primary" />
+                            <CheckCircleIcon className="h-4 w-4 text-primary" />
                             <span className="text-foreground">Good transaction volume</span>
                           </div>
                         </div>
@@ -279,7 +278,7 @@ export function LendingApplicationFlow() {
                 <div className="flex justify-end">
                   <Button size="lg" onClick={checkEligibility}>
                     Check Eligibility
-                    <ArrowRight className="h-4 w-4 ml-2" />
+                    <ArrowRightIcon className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
               </>
@@ -288,7 +287,7 @@ export function LendingApplicationFlow() {
                 {/* Eligibility result */}
                 <div className="text-center max-w-lg mx-auto">
                   <div className="h-16 w-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle2 className="h-8 w-8 text-primary-foreground" />
+                    <CheckCircleIcon className="h-8 w-8 text-primary-foreground" />
                   </div>
                   <h2 className="text-2xl font-semibold text-foreground mb-2">You are Pre-Approved!</h2>
                   <p className="text-muted-foreground">
@@ -306,11 +305,11 @@ export function LendingApplicationFlow() {
                       </div>
                       <div className="flex items-center justify-center gap-6 text-sm">
                         <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <ClockIcon className="h-4 w-4 text-muted-foreground" />
                           <span className="text-muted-foreground">Disbursement in 2 hours</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Percent className="h-4 w-4 text-muted-foreground" />
+                          <PercentIcon className="h-4 w-4 text-muted-foreground" />
                           <span className="text-muted-foreground">Starting 18% p.a.</span>
                         </div>
                       </div>
@@ -320,9 +319,9 @@ export function LendingApplicationFlow() {
 
                 <div className="grid grid-cols-3 gap-4">
                   {[
-                    { icon: Zap, label: "No Collateral", desc: "Unsecured loan" },
-                    { icon: Calendar, label: "Flexible Tenure", desc: "3 to 24 months" },
-                    { icon: CreditCard, label: "Auto Debit EMI", desc: "From settlements" },
+                    { icon: LightningIcon, label: "No Collateral", desc: "Unsecured loan" },
+                    { icon: CalendarIcon, label: "Flexible Tenure", desc: "3 to 24 months" },
+                    { icon: CreditCardIcon, label: "Auto Debit EMI", desc: "From settlements" },
                   ].map((feature) => (
                     <Card key={feature.label}>
                       <CardContent className="p-4 text-center">
@@ -337,7 +336,7 @@ export function LendingApplicationFlow() {
                 <div className="flex justify-end">
                   <Button size="lg" onClick={handleNext}>
                     View Loan Offers
-                    <ArrowRight className="h-4 w-4 ml-2" />
+                    <ArrowRightIcon className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
               </>
@@ -360,7 +359,7 @@ export function LendingApplicationFlow() {
                   <div className="flex items-center justify-between">
                     <Label className="text-base">Loan Amount</Label>
                     <div className="flex items-center gap-1 text-2xl font-bold text-primary">
-                      <IndianRupee className="h-5 w-5" />
+                      <CurrencyInrIcon className="h-5 w-5" />
                       {loanAmount.toLocaleString("en-MY")}
                     </div>
                   </div>
@@ -409,21 +408,21 @@ export function LendingApplicationFlow() {
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground mb-1">Monthly EMI</p>
                     <div className="flex items-center justify-center gap-1">
-                      <IndianRupee className="h-4 w-4 text-primary" />
+                      <CurrencyInrIcon className="h-4 w-4 text-primary" />
                       <span className="text-2xl font-bold text-foreground">{emi.toLocaleString("en-MY")}</span>
                     </div>
                   </div>
                   <div className="text-center border-x border-border">
                     <p className="text-sm text-muted-foreground mb-1">Total Interest</p>
                     <div className="flex items-center justify-center gap-1">
-                      <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                      <CurrencyInrIcon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-2xl font-bold text-foreground">{totalInterest.toLocaleString("en-MY")}</span>
                     </div>
                   </div>
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground mb-1">Total Payable</p>
                     <div className="flex items-center justify-center gap-1">
-                      <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                      <CurrencyInrIcon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-2xl font-bold text-foreground">{totalAmount.toLocaleString("en-MY")}</span>
                     </div>
                   </div>
@@ -501,12 +500,12 @@ export function LendingApplicationFlow() {
 
             <div className="flex justify-between">
               <Button variant="outline" size="lg" onClick={handleBack}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
                 Back
               </Button>
               <Button size="lg" onClick={handleNext}>
                 Continue to Verification
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <ArrowRightIcon className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </div>
@@ -526,7 +525,7 @@ export function LendingApplicationFlow() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                      <CreditCard className="h-5 w-5 text-primary" />
+                      <CreditCardIcon className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <p className="font-medium text-foreground">PAN Verification</p>
@@ -534,7 +533,7 @@ export function LendingApplicationFlow() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-primary">
-                    <CheckCircle2 className="h-5 w-5" />
+                    <CheckCircleIcon className="h-5 w-5" />
                     <span className="text-sm font-medium">Verified</span>
                   </div>
                 </div>
@@ -545,7 +544,7 @@ export function LendingApplicationFlow() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-primary" />
+                  <ShieldIcon className="h-5 w-5 text-primary" />
                   Aadhaar Verification
                 </CardTitle>
                 <CardDescription>
@@ -587,7 +586,7 @@ export function LendingApplicationFlow() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Eye className="h-5 w-5 text-primary" />
+                  <EyeIcon className="h-5 w-5 text-primary" />
                   Selfie Verification
                 </CardTitle>
                 <CardDescription>
@@ -598,7 +597,7 @@ export function LendingApplicationFlow() {
                 {!formData.selfieUploaded ? (
                   <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
                     <div className="h-12 w-12 bg-secondary rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Upload className="h-6 w-6 text-muted-foreground" />
+                      <UploadIcon className="h-6 w-6 text-muted-foreground" />
                     </div>
                     <p className="text-sm text-muted-foreground mb-3">
                       Click below to take a selfie or upload a photo
@@ -611,14 +610,14 @@ export function LendingApplicationFlow() {
                   <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                        <Eye className="h-5 w-5 text-primary" />
+                        <EyeIcon className="h-5 w-5 text-primary" />
                       </div>
                       <div>
                         <p className="font-medium text-foreground">Selfie uploaded</p>
                         <p className="text-sm text-muted-foreground">Verification in progress...</p>
                       </div>
                     </div>
-                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                    <CheckCircleIcon className="h-5 w-5 text-primary" />
                   </div>
                 )}
               </CardContent>
@@ -628,7 +627,7 @@ export function LendingApplicationFlow() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-primary" />
+                  <BuildingsIcon className="h-5 w-5 text-primary" />
                   Business Details
                 </CardTitle>
               </CardHeader>
@@ -656,7 +655,7 @@ export function LendingApplicationFlow() {
 
             <div className="flex justify-between">
               <Button variant="outline" size="lg" onClick={handleBack}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
                 Back
               </Button>
               <Button 
@@ -665,7 +664,7 @@ export function LendingApplicationFlow() {
                 disabled={!formData.aadhaarOtp || !formData.selfieUploaded}
               >
                 Continue to Agreement
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <ArrowRightIcon className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </div>
@@ -726,7 +725,7 @@ export function LendingApplicationFlow() {
                 <CardTitle className="text-lg flex items-center justify-between">
                   <span>Loan Agreement</span>
                   <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
+                    <DownloadIcon className="h-4 w-4 mr-2" />
                     Download PDF
                   </Button>
                 </CardTitle>
@@ -772,7 +771,7 @@ export function LendingApplicationFlow() {
 
             <div className="flex justify-between">
               <Button variant="outline" size="lg" onClick={handleBack}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
                 Back
               </Button>
               <Button 
@@ -781,7 +780,7 @@ export function LendingApplicationFlow() {
                 disabled={!formData.agreementAccepted || !formData.autoDebitAccepted}
               >
                 Sign & Submit
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <ArrowRightIcon className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </div>
@@ -792,7 +791,7 @@ export function LendingApplicationFlow() {
           <div className="space-y-6">
             <div className="text-center max-w-lg mx-auto">
               <div className="h-20 w-20 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="h-10 w-10 text-primary-foreground" />
+                <CheckCircleIcon className="h-10 w-10 text-primary-foreground" />
               </div>
               <h2 className="text-2xl font-semibold text-foreground mb-2">Loan Approved!</h2>
               <p className="text-muted-foreground">
@@ -828,9 +827,9 @@ export function LendingApplicationFlow() {
                             : "bg-secondary text-muted-foreground"
                       }`}>
                         {step.status === "completed" ? (
-                          <Check className="h-3 w-3" />
+                          <CheckIcon className="h-3 w-3" />
                         ) : step.status === "current" ? (
-                          <Clock className="h-3 w-3" />
+                          <ClockIcon className="h-3 w-3" />
                         ) : (
                           <span className="text-xs">{index + 1}</span>
                         )}
@@ -855,7 +854,7 @@ export function LendingApplicationFlow() {
               <CardContent>
                 <div className="flex items-center gap-4 p-4 bg-secondary/50 rounded-lg">
                   <div className="h-12 w-12 bg-secondary rounded-lg flex items-center justify-center">
-                    <Building2 className="h-6 w-6 text-foreground" />
+                    <BuildingsIcon className="h-6 w-6 text-foreground" />
                   </div>
                   <div>
                     <p className="font-medium text-foreground">{formData.bankName}</p>
@@ -893,7 +892,7 @@ export function LendingApplicationFlow() {
             </Card>
 
             <div className="flex items-center justify-center gap-2 p-4 bg-secondary/50 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-muted-foreground" />
+              <WarningCircleIcon className="h-5 w-5 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
                 You will receive an SMS and email once the amount is credited to your account.
               </p>
@@ -903,7 +902,7 @@ export function LendingApplicationFlow() {
               <Button size="lg" asChild>
                 <Link href="/">
                   Go to Dashboard
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                  <ArrowRightIcon className="h-4 w-4 ml-2" />
                 </Link>
               </Button>
             </div>

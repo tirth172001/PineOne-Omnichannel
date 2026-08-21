@@ -3,15 +3,15 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import {
-  AlertTriangle,
-  ArrowUpRight,
-  CheckCircle2,
-  Download,
-  FileSpreadsheet,
-  Landmark,
-  PackageCheck,
-  Upload,
-} from "lucide-react"
+  ArrowUpRightIcon,
+  BankIcon,
+  CheckCircleIcon,
+  DownloadIcon,
+  MicrosoftExcelLogoIcon,
+  PackageIcon,
+  UploadIcon,
+  WarningIcon,
+} from "@phosphor-icons/react"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
 import { PageHeader } from "@/components/ui/panels"
 import { Button } from "@/components/ui/button"
@@ -431,7 +431,7 @@ export function CrossBorderContent({ initialSection = "overview" }: { initialSec
               <Button asChild size="sm" className="h-8 text-xs">
                 <Link href="/cross-border/uploads">
                   Upload AWB batch
-                  <ArrowUpRight className="h-3.5 w-3.5" />
+                  <ArrowUpRightIcon className="h-3.5 w-3.5" />
                 </Link>
               </Button>
             </div>
@@ -489,11 +489,11 @@ export function CrossBorderContent({ initialSection = "overview" }: { initialSec
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" className="h-8 text-xs">
-                  <Download className="h-3.5 w-3.5" />
+                  <DownloadIcon className="h-3.5 w-3.5" />
                   Download MPR
                 </Button>
                 <Button variant="outline" size="sm" className="h-8 text-xs">
-                  <FileSpreadsheet className="h-3.5 w-3.5" />
+                  <MicrosoftExcelLogoIcon className="h-3.5 w-3.5" />
                   Customize MPR
                 </Button>
                 <Button size="sm" className="h-8 text-xs" disabled={!supportsOnDemandSettlement}>
@@ -597,7 +597,7 @@ export function CrossBorderContent({ initialSection = "overview" }: { initialSec
                 </p>
               </div>
               <Button size="sm" className="h-8 text-xs" onClick={() => setBulkOperationOpen(true)}>
-                <Upload className="h-3.5 w-3.5" />
+                <UploadIcon className="h-3.5 w-3.5" />
                 Start bulk upload
               </Button>
             </div>

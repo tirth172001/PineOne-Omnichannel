@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckCircle2, Download, FileUp, Loader2 } from "lucide-react"
+import { CheckCircleIcon, DownloadIcon, FileArrowUpIcon, SpinnerIcon } from "@phosphor-icons/react"
 import type { ChangeEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -67,7 +67,7 @@ export function BulkOperationSheet({
         side="right"
         a11yTitle={title}
         a11yDescription={description}
-        className="w-full border-l border-border/60 bg-background p-0 sm:max-w-[460px]"
+        className="w-full p-0 sm:max-w-[460px]"
       >
         <div className="flex h-full flex-col">
           <div className="border-b border-border/60 bg-muted/25 px-4 py-3">
@@ -123,7 +123,7 @@ export function BulkOperationSheet({
             {isCompleted ? (
               <div className="space-y-4 rounded-lg border border-success/35 bg-card p-4">
                 <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-success/20 text-success">
-                  <CheckCircle2 className="h-5 w-5" />
+                  <CheckCircleIcon className="h-5 w-5" />
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-semibold text-foreground">Bulk operation completed</p>
@@ -156,7 +156,7 @@ export function BulkOperationSheet({
                   <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
                     <p className="text-xs text-muted-foreground">{templateSummary}</p>
                     <Button variant="outline" size="sm" className="h-8 text-xs" onClick={onDownloadTemplate}>
-                      <Download className="mr-1.5 h-3.5 w-3.5" />
+                      <DownloadIcon className="mr-1.5 h-3.5 w-3.5" />
                       Download template
                     </Button>
                   </div>
@@ -164,7 +164,7 @@ export function BulkOperationSheet({
                 <div className="space-y-3 rounded-lg border border-border/70 bg-card p-4">
                   <p className="text-xs font-medium text-foreground">2. Upload prepared file</p>
                   <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border/70 bg-muted/20 px-4 py-5 text-center">
-                    <FileUp className="h-5 w-5 text-muted-foreground" />
+                    <FileArrowUpIcon className="h-5 w-5 text-muted-foreground" />
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-foreground">Upload file</p>
                       <p className="text-[11px] text-muted-foreground">Supports .csv, .xlsx, .xls</p>
@@ -191,7 +191,7 @@ export function BulkOperationSheet({
 
           {isProcessing ? (
             <div className="border-t border-border/60 p-3 text-center text-xs text-muted-foreground">
-              <Loader2 className="mr-1 inline h-3.5 w-3.5 animate-spin" />
+              <SpinnerIcon className="mr-1 inline h-3.5 w-3.5 animate-spin" />
               Processing in progress
             </div>
           ) : null}

@@ -1,13 +1,26 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Download, Filter, CheckCircle2, XCircle, Clock, CreditCard, QrCode, Wallet, TrendingUp, BarChart3 } from "lucide-react"
+import {
+  ChartBarIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  CreditCardIcon,
+  DownloadIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon,
+  QrCodeIcon,
+  TrendUpIcon,
+  WalletIcon,
+  XCircleIcon,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { AnimatedNumberText } from "@/components/ui/animated-number-text"
-import { PageHeader, PanelEmpty } from "@/components/ui/panels"
+import { PageHeader } from "@/components/ui/panels"
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
 import { HighchartsPanelChart } from "@/components/ui/highcharts"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
 
@@ -46,16 +59,16 @@ const failureData = [
 ]
 
 const statusMap = {
-  success: { Icon: CheckCircle2, badge: "bg-success/10 text-success border-success/20" },
-  failed: { Icon: XCircle, badge: "bg-destructive/10 text-destructive border-destructive/20" },
-  pending: { Icon: Clock, badge: "bg-warning/10 text-warning-foreground border-warning/20" },
+  success: { Icon: CheckCircleIcon, badge: "bg-success/10 text-success border-success/20" },
+  failed: { Icon: XCircleIcon, badge: "bg-destructive/10 text-destructive border-destructive/20" },
+  pending: { Icon: ClockIcon, badge: "bg-warning/10 text-warning-foreground border-warning/20" },
 }
 
-const mIcon: Record<string, React.ComponentType<{ className?: string }>> = { UPI: QrCode, Card: CreditCard, EMI: CreditCard, Wallet: Wallet }
+const mIcon: Record<string, React.ComponentType<{ className?: string }>> = { UPI: QrCodeIcon, Card: CreditCardIcon, EMI: CreditCardIcon, Wallet: WalletIcon }
 
 function TxnRow({ txn, selected, onClick }: { txn: typeof transactions[0]; selected: boolean; onClick: () => void }) {
   const { badge } = statusMap[txn.status as keyof typeof statusMap]
-  const MI = mIcon[txn.method] ?? CreditCard
+  const MI = mIcon[txn.method] ?? CreditCardIcon
   return (
     <Button variant="ghost" onClick={onClick}
       className={`intercom-panel-row !h-auto !justify-start ${selected ? "intercom-panel-row-active" : ""}`}>
@@ -81,7 +94,7 @@ function TxnRow({ txn, selected, onClick }: { txn: typeof transactions[0]; selec
 
 function TxnDetail({ txn }: { txn: typeof transactions[0] }) {
   const { Icon, badge } = statusMap[txn.status as keyof typeof statusMap]
-  const MI = mIcon[txn.method] ?? CreditCard
+  const MI = mIcon[txn.method] ?? CreditCardIcon
   return (
     <div className="p-5 space-y-5">
       <div className="flex items-start gap-4">
@@ -110,7 +123,7 @@ function TxnDetail({ txn }: { txn: typeof transactions[0] }) {
       </div>
       <div className="flex gap-2">
         {txn.status === "success" && <Button variant="outline" size="sm" className="flex-1">Initiate Refund</Button>}
-        <Button variant="outline" size="sm" className="flex-1 gap-1.5"><Download className="h-3.5 w-3.5" />Receipt</Button>
+        <Button variant="outline" size="sm" className="flex-1 gap-1.5"><DownloadIcon className="h-3.5 w-3.5" />Receipt</Button>
       </div>
     </div>
   )
@@ -199,7 +212,7 @@ function Analytics() {
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">{b} avg</span>
               <AnimatedNumberText value={y} className="text-xs font-semibold text-success" />
-              <TrendingUp className="h-3 w-3 text-success" />
+              <TrendUpIcon className="h-3 w-3 text-success" />
             </div>
           </div>
         ))}
@@ -289,11 +302,11 @@ export function PaymentsContent() {
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="p-3 border-b border-border flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input placeholder="Search transactions..." value={query} onChange={e => setQuery(e.target.value)} className="pl-8 h-8 text-xs" />
           </div>
           <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => setContextMode("analytics")}>
-            <BarChart3 className="h-3.5 w-3.5" />
+            <ChartBarIcon className="h-3.5 w-3.5" />
             Insights
           </Button>
         </div>
@@ -319,13 +332,21 @@ export function PaymentsContent() {
   ) : selectedTxn ? (
     <TxnDetail txn={selectedTxn} />
   ) : (
-    <PanelEmpty icon={BarChart3} title="Select a transaction" description="Choose a transaction to reveal contextual actions and detailed metadata." />
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <ChartBarIcon className="h-4 w-4" />
+        </EmptyMedia>
+        <EmptyTitle>Select a transaction</EmptyTitle>
+        <EmptyDescription>Choose a transaction to reveal contextual actions and detailed metadata.</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   )
 
   return (
     <>
       <PageHeader title="Payments" description="Transactions · Settlements · Refunds">
-        <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs"><Download className="h-3.5 w-3.5" />Export</Button>
+        <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs"><DownloadIcon className="h-3.5 w-3.5" />Export</Button>
         {contextMode && (
           <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setContextMode(null)}>
             Close Context

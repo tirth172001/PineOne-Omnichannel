@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronDown } from "lucide-react"
+import { CaretDownIcon } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { getSidebarSections, type NavItem, type NavSection, type SidebarProduct } from "@/lib/navigation/navigation-model"
 
@@ -78,7 +78,7 @@ function NavGroup({
       >
         <Icon className="h-4 w-4 shrink-0" />
         <span className="flex-1 text-left">{item.label}</span>
-        <ChevronDown
+        <CaretDownIcon
           className={cn(
             "h-3.5 w-3.5 transition-transform duration-200",
             open ? "rotate-180" : ""

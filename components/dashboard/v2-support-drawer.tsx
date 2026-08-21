@@ -17,7 +17,7 @@ export function V2SupportDrawer({ open, onOpenChange, pathname }: V2SupportDrawe
         showCloseButton={false}
         a11yTitle="Help and Support"
         a11yDescription="Chat-style support request flow with guided troubleshooting."
-        className="w-full border-l border-border/60 bg-background p-0 sm:max-w-[430px]"
+        className="w-full p-0 sm:max-w-[430px]"
       >
         <SupportRequestChatPanel
           pathname={pathname}

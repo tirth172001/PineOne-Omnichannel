@@ -1,8 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ChevronRight, Info } from "lucide-react"
-
+import { CaretRightIcon, InfoIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -82,7 +81,7 @@ export function OverviewDetailCards() {
               <div>
                 <p className="flex items-center gap-1 text-sm font-medium uppercase tracking-wide text-muted-foreground">
                   {card.heading}
-                  <Info className="h-3.5 w-3.5" />
+                  <InfoIcon className="h-3.5 w-3.5" />
                 </p>
                 <p className="mt-2 text-[20px] font-semibold leading-none text-foreground">{card.total}</p>
               </div>
@@ -105,7 +104,7 @@ export function OverviewDetailCards() {
                     <p className="truncate text-sm text-muted-foreground">{stat.label}</p>
                     <p className="shrink-0 text-base font-semibold text-foreground">{stat.value}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <CaretRightIcon className="h-4 w-4 text-muted-foreground" />
                 </div>
               ))}
             </div>

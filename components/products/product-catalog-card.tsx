@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import Link from "next/link"
-import { ArrowUpRight } from "lucide-react"
+import { ArrowUpRightIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -34,7 +34,7 @@ function CardActionButton({ action, primary = false }: { action: ProductCatalogC
     >
       <Link href={action.href}>
         {action.label}
-        {action.showArrow === false ? null : <ArrowUpRight className="h-3.5 w-3.5" />}
+        {action.showArrow === false ? null : <ArrowUpRightIcon className="h-3.5 w-3.5" />}
       </Link>
     </Button>
   )

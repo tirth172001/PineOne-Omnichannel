@@ -3,16 +3,16 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import {
-  BarChart3,
-  Clock,
-  CreditCard,
-  Monitor,
-  QrCode,
-  Smartphone,
-  Wallet,
-  X,
-  XCircle,
-} from "lucide-react"
+  ChartBarIcon,
+  ClockIcon,
+  CreditCardIcon,
+  DeviceMobileIcon,
+  MonitorIcon,
+  QrCodeIcon,
+  WalletIcon,
+  XCircleIcon,
+  XIcon,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -763,7 +763,7 @@ export function OnlinePaymentsContent({
                     title="Mobile preview"
                     onClick={() => setPreviewDevice("mobile")}
                   >
-                    <Smartphone className="h-3.5 w-3.5" />
+                    <DeviceMobileIcon className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     type="button"
@@ -774,7 +774,7 @@ export function OnlinePaymentsContent({
                     title="Desktop preview"
                     onClick={() => setPreviewDevice("desktop")}
                   >
-                    <Monitor className="h-3.5 w-3.5" />
+                    <MonitorIcon className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
@@ -1104,14 +1104,14 @@ export function OnlinePaymentsContent({
           <h3 className="text-[16px] font-semibold text-foreground">Transaction detail</h3>
         </div>
         <Button variant="ghost" size="icon-sm" className="h-8 w-8" aria-label="Close transaction panel" onClick={() => setRightContext(null)}>
-          <X className="h-4 w-4" />
+          <XIcon className="h-4 w-4" />
         </Button>
       </div>
       <Separator />
       <div className="space-y-5 p-6">
         <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-          <CreditCard className="h-5 w-5 text-muted-foreground" />
+          <CreditCardIcon className="h-5 w-5 text-muted-foreground" />
         </div>
         <div>
           <p className="text-xl font-semibold text-foreground">₹{selectedTxn.amount.toLocaleString("en-MY")}</p>
@@ -1151,7 +1151,7 @@ export function OnlinePaymentsContent({
           <h3 className="text-[16px] font-semibold text-foreground">{rightContext.title}</h3>
         </div>
         <Button variant="ghost" size="icon-sm" className="h-8 w-8" aria-label="Close insight panel" onClick={() => setRightContext(null)}>
-          <X className="h-4 w-4" />
+          <XIcon className="h-4 w-4" />
         </Button>
       </div>
       <Separator />
@@ -1181,7 +1181,7 @@ export function OnlinePaymentsContent({
           <h3 className="text-[16px] font-semibold text-foreground">{selectedVas.name}</h3>
         </div>
         <Button variant="ghost" size="icon-sm" className="h-8 w-8" aria-label="Close value-added service panel" onClick={() => setRightContext(null)}>
-          <X className="h-4 w-4" />
+          <XIcon className="h-4 w-4" />
         </Button>
       </div>
       <Separator />

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { ArrowRightIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ManageProductListContent, type ManagedProduct } from "@/components/products/manage-product-list-content"
@@ -89,7 +89,7 @@ function buildPayoutBanner(progress: ProductOnboardingProgress) {
         <Button asChild size="sm" className="h-8 gap-1.5">
           <Link href="/online-payments/configuration?feature=payout">
             Continue setup
-            <ArrowRight className="h-3.5 w-3.5" />
+            <ArrowRightIcon className="h-3.5 w-3.5" />
           </Link>
         </Button>
       </div>

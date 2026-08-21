@@ -1,8 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { CopyIcon } from "lucide-react"
-
+import { CopyIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { FoundationTableRow } from "@/app/component-docs/_lib/foundation-token-table"

@@ -1,8 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Download } from "lucide-react"
-
+import { DownloadIcon } from "@phosphor-icons/react"
 import { ListingToolbar, type ListingFilter } from "@/components/shared/listing-page-primitives"
 import { StatusPill, type StatusTone } from "@/components/shared/status-pill"
 import { Button } from "@/components/ui/button"
@@ -140,11 +139,11 @@ export function ReportsContent() {
   ]
 
   return (
-    <div className="mx-auto w-full max-w-[1512px]">
+    <div className="w-full">
       <section>
         <div className="px-8 pt-8 pb-0">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <h1 className="text-[30px] font-semibold leading-none text-foreground">Reports</h1>
+            <h1 className="text-2xl font-semibold leading-none text-foreground">Reports</h1>
             <div className="flex items-center gap-3">
               <Button variant="outline" className="rounded-[8px] border-border/70 bg-background">
                 Schedule report
@@ -221,7 +220,7 @@ export function ReportsContent() {
               rightActions={
                 <>
                   <Button variant="outline" className="rounded-[8px] border-border/70 bg-background">
-                    <Download className="h-4 w-4" />
+                    <DownloadIcon className="h-4 w-4" />
                     Download filtered
                   </Button>
                 </>

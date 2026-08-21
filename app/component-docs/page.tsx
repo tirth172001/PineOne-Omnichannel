@@ -1,6 +1,5 @@
 import Link from "next/link"
-import { ArrowLeftIcon } from "lucide-react"
-
+import { ArrowLeftIcon } from "@phosphor-icons/react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { componentRegistry } from "@/app/component-docs/_lib/component-registry"

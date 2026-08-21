@@ -2,8 +2,15 @@
 
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CalendarDays, ChevronDown, Copy, Download, PauseCircle, Search, WalletCards } from "lucide-react"
-
+import {
+  CalendarDotsIcon,
+  CaretDownIcon,
+  CopyIcon,
+  DownloadIcon,
+  MagnifyingGlassIcon,
+  PauseCircleIcon,
+  WalletIcon,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -24,6 +31,7 @@ import {
 } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StatusPill } from "@/components/shared/status-pill"
+import { SummaryCardGroup } from "@/components/shared/summary-card-group"
 import {
   disputeActionLabel,
   disputeRecords,
@@ -93,7 +101,7 @@ export function OnHoldDisputesContent() {
   return (
     <div>
       <section className="flex flex-wrap items-center gap-4 px-8 pt-8">
-        <h1 className="text-3xl font-semibold leading-8 tracking-[-0.4px] text-foreground">On-hold &amp; disputes</h1>
+        <h1 className="text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground">On-hold &amp; disputes</h1>
         <Tabs value={channel} onValueChange={(value) => setChannel(value as typeof channel)}>
           <TabsList className="h-8 rounded-[8px] bg-muted p-1">
             <TabsTrigger value="in-store" className="h-6 rounded-[6px] border-transparent px-4 py-1 text-sm font-medium text-muted-foreground data-active:!border-transparent data-active:!bg-background data-active:!text-foreground">In-store payments</TabsTrigger>
@@ -115,7 +123,7 @@ export function OnHoldDisputesContent() {
       <section className="flex flex-wrap items-center justify-between gap-4 px-8 py-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative w-[229px]">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by any ID"
               value={search}
@@ -127,7 +135,7 @@ export function OnHoldDisputesContent() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8">
-                <CalendarDays className="h-4 w-4" />
+                <CalendarDotsIcon className="h-4 w-4" />
                 {dateFilter === "today" ? "Today" : "All dates"}
               </Button>
             </DropdownMenuTrigger>
@@ -142,7 +150,7 @@ export function OnHoldDisputesContent() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8">
                 Status
-                <ChevronDown className="h-4 w-4" />
+                <CaretDownIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
@@ -155,7 +163,7 @@ export function OnHoldDisputesContent() {
         </div>
 
         <Button variant="outline" size="sm" className="h-8">
-          <Download className="h-4 w-4" />
+          <DownloadIcon className="h-4 w-4" />
           Download filtered
         </Button>
       </section>
@@ -163,30 +171,32 @@ export function OnHoldDisputesContent() {
       {tab === "on-hold" ? (
         <>
           <section className="px-8">
-            <div className="overflow-hidden rounded-lg border border-border bg-card">
-              <div className="grid md:grid-cols-2">
-                <div className="flex flex-col gap-2 px-5 py-4">
-                  <div className="flex items-center gap-2">
-                    <PauseCircle className="h-5 w-5 text-foreground" />
-                    <p className="text-base font-medium text-card-foreground">Amount on hold</p>
-                  </div>
-                  <div>
-                    <p className="text-xl font-semibold leading-7 text-foreground">{formatInr(onHoldSummary.heldAmount)}</p>
-                    <p className="mt-1 text-sm font-medium text-muted-foreground">{onHoldSummary.heldCount} payments</p>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2 border-t border-border px-5 py-4 md:border-l md:border-t-0">
-                  <div className="flex items-center gap-2">
-                    <WalletCards className="h-5 w-5 text-foreground" />
-                    <p className="text-base font-medium text-card-foreground">Amount released</p>
-                  </div>
-                  <div>
-                    <p className="text-xl font-semibold leading-7 text-foreground">{formatInr(onHoldSummary.releasedAmount)}</p>
-                    <p className="mt-1 text-sm font-medium text-muted-foreground">{onHoldSummary.releasedCount} payments resolved</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <SummaryCardGroup
+              cards={[
+                {
+                  icon: PauseCircleIcon,
+                  label: "Amount on hold",
+                  value: (
+                    <>
+                      {formatInr(onHoldSummary.heldAmount)}
+                      <span className="text-sm font-medium text-muted-foreground">.00</span>
+                    </>
+                  ),
+                  subtext: `${onHoldSummary.heldCount} payments`,
+                },
+                {
+                  icon: WalletIcon,
+                  label: "Amount released",
+                  value: (
+                    <>
+                      {formatInr(onHoldSummary.releasedAmount)}
+                      <span className="text-sm font-medium text-muted-foreground">.00</span>
+                    </>
+                  ),
+                  subtext: `${onHoldSummary.releasedCount} payments resolved`,
+                },
+              ]}
+            />
           </section>
 
           <section className="px-8 py-6">
@@ -216,7 +226,7 @@ export function OnHoldDisputesContent() {
                         <TableCell className="px-4 align-top">
                           <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
                             {row.transactionId}
-                            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                            <CopyIcon className="h-3.5 w-3.5 text-muted-foreground" />
                           </span>
                         </TableCell>
                         <TableCell className="px-4 align-top text-sm font-medium text-foreground">{row.amount}</TableCell>

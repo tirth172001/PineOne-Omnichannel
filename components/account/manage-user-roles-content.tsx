@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SectionSummaryStrip, type SectionSummaryMetric } from "@/components/dashboard/section-summary-strip"
-import { TransactionStyleTable } from "@/components/shared/transaction-style-table"
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
 import { PageHeader } from "@/components/ui/panels"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -26,8 +26,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
-import { ChevronRight, MoreVertical, Search } from "lucide-react"
-
+import { CaretRightIcon, DotsThreeVerticalIcon, MagnifyingGlassIcon } from "@phosphor-icons/react"
 type RoleRecord = {
   id: string
   roleName: string
@@ -201,7 +200,6 @@ export function ManageUserRolesContent() {
     description: "",
     selectedPermissions: [] as string[],
   })
-  const [roleSearchQuery, setRoleSearchQuery] = useState("")
 
   const summary = useMemo(() => {
     const totalRoles = roles.length
@@ -242,23 +240,14 @@ export function ManageUserRolesContent() {
       Support: [],
     })
   }, [filteredPermissions])
-  const filteredRoles = useMemo(() => {
-    const query = roleSearchQuery.trim().toLowerCase()
-    if (!query) return roles
-    return roles.filter((role) =>
-      [role.roleName, role.scope, role.permissions.join(" "), role.createdBy, role.createdOn, role.lastModifiedOn]
-        .join(" ")
-        .toLowerCase()
-        .includes(query)
-    )
-  }, [roleSearchQuery, roles])
-  const roleColumns = useMemo(
+  const roleColumns = useMemo<DataTableColumn<RoleRecord>[]>(
     () => [
       {
-        key: "roleName",
+        id: "roleName",
         header: "ROLE NAME",
-        headerClassName: "h-10 min-w-[180px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: RoleRecord) => (
+        width: 180,
+        getSearchValue: (row) => `${row.roleName} ${row.scope} ${row.createdBy}`,
+        cell: (row) => (
           <div className="space-y-0.5">
             <p className="text-xs font-medium text-foreground">{row.roleName}</p>
             <p className="text-[11px] text-muted-foreground">{row.scope}</p>
@@ -266,40 +255,43 @@ export function ManageUserRolesContent() {
         ),
       },
       {
-        key: "permissions",
+        id: "permissions",
         header: "PERMISSIONS",
-        headerClassName: "h-10 min-w-[180px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: RoleRecord) => renderPermissionChips(row.permissions),
+        width: 180,
+        getSearchValue: (row) => row.permissions.join(" "),
+        cell: (row) => renderPermissionChips(row.permissions),
       },
       {
-        key: "usersAssigned",
+        id: "usersAssigned",
         header: "USERS ASSIGNED",
-        headerClassName: "h-10 min-w-[140px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: RoleRecord) => row.usersAssigned,
+        width: 140,
+        cell: (row) => row.usersAssigned,
       },
       {
-        key: "createdOn",
+        id: "createdOn",
         header: "CREATED ON",
-        headerClassName: "h-10 min-w-[160px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: RoleRecord) => row.createdOn,
+        width: 160,
+        accessorKey: "createdOn",
+        cell: (row) => row.createdOn,
       },
       {
-        key: "lastModifiedOn",
+        id: "lastModifiedOn",
         header: "LAST MODIFIED ON",
-        headerClassName: "h-10 min-w-[180px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: RoleRecord) => row.lastModifiedOn,
+        width: 180,
+        accessorKey: "lastModifiedOn",
+        cell: (row) => row.lastModifiedOn,
       },
       {
-        key: "action",
+        id: "action",
         header: "ACTION",
-        headerClassName: "h-10 min-w-[100px] px-3 text-right text-sm font-medium text-muted-foreground",
-        cellClassName: "px-3 text-right",
-        render: (_row: RoleRecord) => (
+        width: 100,
+        align: "right",
+        cell: () => (
           <div className="flex justify-end">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-lg">
-                  <MoreVertical className="h-4 w-4" />
+                  <DotsThreeVerticalIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48 rounded-lg">
@@ -387,27 +379,14 @@ export function ManageUserRolesContent() {
           title="Role permissions"
           description="All available roles and their permission sets."
         >
-          <div className="space-y-4">
-            <div className="flex justify-end">
-              <div className="relative w-[260px]">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={roleSearchQuery}
-                  onChange={(event) => setRoleSearchQuery(event.target.value)}
-                  placeholder="Search roles or permissions"
-                  className="h-8 rounded-md border-input pl-8 pr-3 text-sm"
-                />
-              </div>
-            </div>
-            <TransactionStyleTable
-              rows={filteredRoles}
-              rowKey={(row) => row.id}
-              columns={roleColumns}
-              minWidthClassName="min-w-[1080px]"
-              selectedCount={0}
-              totalRowsLabel={filteredRoles.length}
-            />
-          </div>
+          <DataTable
+            data={roles}
+            rowId={(row) => row.id}
+            columns={roleColumns}
+            tableClassName="min-w-[1080px]"
+            searchPlaceholder="Search roles or permissions"
+            emptyText="No roles match your search."
+          />
         </SectionCard>
       </div>
 
@@ -468,7 +447,7 @@ export function ManageUserRolesContent() {
                 </p>
               </div>
               <div className="relative">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={permissionSearchQuery}
                   onChange={(event) => setPermissionSearchQuery(event.target.value)}
@@ -506,7 +485,7 @@ export function ManageUserRolesContent() {
                             {groupSelectedCount} selected of {allGroupPermissions.length}
                           </p>
                         </div>
-                        <ChevronRight
+                        <CaretRightIcon
                           className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`}
                         />
                       </button>

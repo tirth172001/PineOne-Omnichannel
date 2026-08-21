@@ -1,7 +1,13 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { CalendarDays, GripVertical, LayoutGrid, Settings2, X } from "lucide-react"
+import {
+  CalendarDotsIcon,
+  DotsSixVerticalIcon,
+  GridFourIcon,
+  SlidersIcon,
+  XIcon,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
@@ -307,7 +313,7 @@ export function OverviewAnalyticsCanvas({
         <div className="flex flex-wrap items-center gap-2">
           <Select value={dateRange} onValueChange={setDateRange}>
             <SelectTrigger size="sm" className="h-8 w-[150px] rounded-md text-xs">
-              <CalendarDays className="mr-1.5 size-3.5 text-muted-foreground" />
+              <CalendarDotsIcon className="mr-1.5 size-3.5 text-muted-foreground" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -335,7 +341,7 @@ export function OverviewAnalyticsCanvas({
           {showViewOptions && viewSelectorVariant === "dropdown" ? (
             <Select value={activeView} onValueChange={handleActiveViewChange}>
               <SelectTrigger size="sm" className="h-8 w-[180px] rounded-md text-xs">
-                <LayoutGrid className="mr-1.5 size-3.5 text-muted-foreground" />
+                <GridFourIcon className="mr-1.5 size-3.5 text-muted-foreground" />
                 <SelectValue placeholder="Product" />
               </SelectTrigger>
               <SelectContent>
@@ -364,7 +370,7 @@ export function OverviewAnalyticsCanvas({
                   className="h-8 rounded-md gap-1.5 text-xs"
                   onClick={() => setCustomizeOpen(true)}
                 >
-                  <Settings2 className="size-3.5" />
+                  <SlidersIcon className="size-3.5" />
                   Customize
                 </Button>
               ) : null}
@@ -396,7 +402,7 @@ export function OverviewAnalyticsCanvas({
               : null}
             {showConfiguredProductsBadge ? (
               <Badge variant="outline" className="ml-auto h-7 rounded-md px-2.5 text-[11px]">
-                <LayoutGrid className="mr-1.5 size-3.5" />
+                <GridFourIcon className="mr-1.5 size-3.5" />
                 {enabledProductsLabel}
               </Badge>
             ) : null}
@@ -430,7 +436,7 @@ export function OverviewAnalyticsCanvas({
               <div className="mb-2 flex min-w-0 items-center gap-2">
                 <p className="text-[12px] font-medium text-foreground">{widget.title}</p>
                 <span className="ml-auto inline-flex items-center text-muted-foreground/70">
-                  <GripVertical className="h-3.5 w-3.5" />
+                  <DotsSixVerticalIcon className="h-3.5 w-3.5" />
                 </span>
               </div>
 
@@ -482,7 +488,7 @@ export function OverviewAnalyticsCanvas({
           showCloseButton={false}
           a11yTitle="Customize Overview Widgets"
           a11yDescription="Configure visibility, size, and order of overview widgets."
-          className="w-full border-l border-border/60 bg-background p-0 sm:max-w-[420px]"
+          className="w-full p-0 sm:max-w-[420px]"
         >
           <div className="flex h-full flex-col">
             <div className="border-b border-border/60 bg-muted/25 px-4 py-3">
@@ -499,7 +505,7 @@ export function OverviewAnalyticsCanvas({
                   aria-label="Close customize widgets panel"
                   onClick={() => setCustomizeOpen(false)}
                 >
-                  <X className="h-4 w-4" />
+                  <XIcon className="h-4 w-4" />
                 </Button>
               </div>
             </div>

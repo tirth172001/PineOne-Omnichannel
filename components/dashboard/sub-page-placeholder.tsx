@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeftIcon } from "@phosphor-icons/react"
 import Link from "next/link"
 
 interface SubPagePlaceholderProps {
@@ -17,7 +17,7 @@ export function SubPagePlaceholder({ section, page, parentHref, parentLabel, des
           href={parentHref}
           className="mb-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
+          <ArrowLeftIcon className="h-3.5 w-3.5" />
           {parentLabel}
         </Link>
         <h1 className="text-xl font-semibold text-foreground">{page}</h1>

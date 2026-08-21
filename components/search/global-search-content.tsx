@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowUpRight, Search } from "lucide-react"
+import { ArrowUpRightIcon, MagnifyingGlassIcon } from "@phosphor-icons/react"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -68,7 +68,7 @@ export function GlobalSearchContent() {
             <Card className="rounded-lg border-border/70 bg-card">
               <CardContent className="space-y-4 p-4">
                 <div className="relative max-w-xl">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     autoFocus
                     value={query}
@@ -113,7 +113,7 @@ export function GlobalSearchContent() {
                               {item.description}
                             </span>
                           </span>
-                          <ArrowUpRight className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                          <ArrowUpRightIcon className="mt-0.5 h-4 w-4 text-muted-foreground" />
                         </button>
                       ))}
                     </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { CreditCard, ArrowRight, X } from "lucide-react"
+import { ArrowRightIcon, CreditCardIcon, XIcon } from "@phosphor-icons/react"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -13,7 +13,7 @@ export function AttentionStrip() {
   return (
     /* Shopify Polaris Banner — left accent border, shadcn Alert base */
     <Alert className="border-l-[3px] border-l-primary bg-card pr-3 py-3.5">
-      <CreditCard className="h-4 w-4 text-primary" />
+      <CreditCardIcon className="h-4 w-4 text-primary" />
 
       <div className="flex items-start justify-between gap-4 col-start-2">
         <div className="min-w-0">
@@ -30,7 +30,7 @@ export function AttentionStrip() {
           <Button size="sm" className="h-8 gap-1.5 text-xs" asChild>
             <Link href="/products/online-payments">
               Explore Checkout
-              <ArrowRight className="h-3.5 w-3.5" />
+              <ArrowRightIcon className="h-3.5 w-3.5" />
             </Link>
           </Button>
           {/* Shopify plain dismiss */}
@@ -41,7 +41,7 @@ export function AttentionStrip() {
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
             aria-label="Dismiss"
           >
-            <X className="h-3.5 w-3.5" />
+            <XIcon className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>

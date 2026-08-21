@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Minus, Plus } from "lucide-react"
+import { MinusIcon, PlusIcon } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 
 export type BranchFlowTone = "primary" | "success" | "warning" | "destructive" | "muted" | "accent"
@@ -247,7 +247,7 @@ export function TransactionStateBranchFlow({
               const hasChildren = Boolean(node.children?.length)
               const isExpanded = expandedNodes.has(node.id)
               const percentage = rootValue > 0 ? ((node.value / rootValue) * 100).toFixed(node.id === rootId ? 0 : 1) : "0"
-              const ExpandIcon = isExpanded ? Minus : Plus
+              const ExpandIcon = isExpanded ? MinusIcon : PlusIcon
 
               return (
                 <button

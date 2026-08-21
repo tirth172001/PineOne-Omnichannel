@@ -1,9 +1,7 @@
 "use client"
 
-import { Search } from "lucide-react"
+import { CaretDownIcon, MagnifyingGlassIcon } from "@phosphor-icons/react"
 import type { ReactNode } from "react"
-import { CaretDownIcon } from "@phosphor-icons/react"
-
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -66,7 +64,7 @@ export function ListingPageHeader({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-4">
-              <h1 className="text-3xl font-semibold leading-8 tracking-[-0.4px] text-foreground">{title}</h1>
+              <h1 className="text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground">{title}</h1>
               <Tabs value={activeToggle} onValueChange={onToggleChange}>
                 <TabsList className="h-8 rounded-[8px] bg-muted p-1">
                   {toggles.map((toggle) => (
@@ -204,8 +202,8 @@ export function ListingToolbar({
     <section className={cn("px-8 py-4", className)}>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex max-w-full flex-nowrap items-center gap-3">
-          <div className="relative w-[229px] shrink-0">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative w-[14.3125rem] shrink-0">
+            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
@@ -259,7 +257,7 @@ export function ListingSummaryCards({
           <div
             key={card.label}
             className={cn(
-              "h-[76px] px-4 pt-[12px] pb-[12px]",
+              "h-[4.75rem] px-4 pt-3 pb-3",
               index > 0 ? "border-l border-border" : "border-l-0"
             )}
           >

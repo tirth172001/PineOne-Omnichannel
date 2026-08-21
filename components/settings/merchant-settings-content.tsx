@@ -3,23 +3,23 @@
 import { useEffect, useMemo, useState, type ComponentType } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
-  Bell,
-  Building2,
-  CheckCircle2,
-  ChevronRight,
-  Copy,
-  KeyRound,
-  LockKeyhole,
-  MessageSquareText,
-  Palette,
-  RadioTower,
-  RotateCcw,
-  ShieldCheck,
-  SlidersHorizontal,
-  UserCircle2,
-  Users,
-  Webhook,
-} from "lucide-react"
+  ArrowCounterClockwiseIcon,
+  BellIcon,
+  BuildingsIcon,
+  CaretRightIcon,
+  ChatTextIcon,
+  CheckCircleIcon,
+  CopyIcon,
+  KeyIcon,
+  LockKeyIcon,
+  PaletteIcon,
+  RadioIcon,
+  ShieldCheckIcon,
+  SlidersHorizontalIcon,
+  UserCircleIcon,
+  UsersIcon,
+  WebhooksLogoIcon,
+} from "@phosphor-icons/react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -62,7 +62,7 @@ const moduleItems: SettingsModuleItem[] = [
     key: "profile",
     label: "Profile",
     group: "Account",
-    icon: UserCircle2,
+    icon: UserCircleIcon,
     description: "Personal details, role, and contact information for the signed-in user.",
     status: "Complete",
   },
@@ -70,7 +70,7 @@ const moduleItems: SettingsModuleItem[] = [
     key: "business-details",
     label: "Business details",
     group: "Account",
-    icon: Building2,
+    icon: BuildingsIcon,
     description: "Legal entity, category, website, and merchant identity details.",
     status: "Verified",
   },
@@ -78,7 +78,7 @@ const moduleItems: SettingsModuleItem[] = [
     key: "users",
     label: "Users management",
     group: "Account",
-    icon: Users,
+    icon: UsersIcon,
     description: "Invite teammates, assign access, and review approval state.",
     status: "8 users",
   },
@@ -86,7 +86,7 @@ const moduleItems: SettingsModuleItem[] = [
     key: "preferences",
     label: "Preferences",
     group: "Account",
-    icon: SlidersHorizontal,
+    icon: SlidersHorizontalIcon,
     description: "Workspace language, default view, digest cadence, and display settings.",
     status: "Synced",
   },
@@ -94,7 +94,7 @@ const moduleItems: SettingsModuleItem[] = [
     key: "security",
     label: "Security",
     group: "Account",
-    icon: LockKeyhole,
+    icon: LockKeyIcon,
     description: "Login protection, sessions, device trust, and sensitive-action controls.",
     status: "Strong",
   },
@@ -102,7 +102,7 @@ const moduleItems: SettingsModuleItem[] = [
     key: "feedback",
     label: "Feedback",
     group: "Account",
-    icon: MessageSquareText,
+    icon: ChatTextIcon,
     description: "Share product feedback and track requests sent to the Pine Labs team.",
     status: "Open",
   },
@@ -110,7 +110,7 @@ const moduleItems: SettingsModuleItem[] = [
     key: "credentials",
     label: "Credentials",
     group: "Merchant",
-    icon: KeyRound,
+    icon: KeyIcon,
     description: "API keys and client credentials used by merchant integrations.",
     status: "Live",
   },
@@ -118,7 +118,7 @@ const moduleItems: SettingsModuleItem[] = [
     key: "webhooks",
     label: "Webhooks",
     group: "Merchant",
-    icon: Webhook,
+    icon: WebhooksLogoIcon,
     description: "Configure event callbacks, delivery verification, and retry behavior.",
     status: "5 events",
   },
@@ -126,7 +126,7 @@ const moduleItems: SettingsModuleItem[] = [
     key: "checkout-styling",
     label: "Checkout styling",
     group: "Merchant",
-    icon: Palette,
+    icon: PaletteIcon,
     description: "Set brand controls for hosted payment journeys.",
     status: "Branded",
   },
@@ -134,7 +134,7 @@ const moduleItems: SettingsModuleItem[] = [
     key: "paymodes",
     label: "Paymodes",
     group: "Merchant",
-    icon: RadioTower,
+    icon: RadioIcon,
     description: "Enable, disable, and prioritize supported payment methods.",
     status: "4 active",
   },
@@ -195,7 +195,7 @@ function SettingRow({
         </span>
         <span className="mt-1 block text-xs leading-5 text-muted-foreground">{item.description}</span>
       </span>
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+      <CaretRightIcon className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
     </button>
   )
 }
@@ -278,15 +278,15 @@ export function MerchantSettingsContent() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline" className="h-8 gap-1.5 rounded-md px-2.5 text-xs">
-              <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+              <CheckCircleIcon className="h-3.5 w-3.5 text-primary" />
               Changes saved
             </Badge>
             <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
-              <RotateCcw className="h-3.5 w-3.5" />
+              <ArrowCounterClockwiseIcon className="h-3.5 w-3.5" />
               Reset
             </Button>
             <Button size="sm" className="h-8 gap-1.5 text-xs">
-              <ShieldCheck className="h-3.5 w-3.5" />
+              <ShieldCheckIcon className="h-3.5 w-3.5" />
               Save changes
             </Button>
           </div>
@@ -472,7 +472,7 @@ export function MerchantSettingsContent() {
                         <div key={keyValue} className="rounded-lg border border-border/70 bg-muted/20 p-3">
                           <p className="font-mono text-sm text-foreground">{keyValue}</p>
                           <Button variant="ghost" size="sm" className="mt-2 h-8 text-xs">
-                            <Copy className="h-3.5 w-3.5" />
+                            <CopyIcon className="h-3.5 w-3.5" />
                             Copy
                           </Button>
                         </div>
@@ -551,7 +551,7 @@ export function MerchantSettingsContent() {
 
                   <div className="rounded-lg border border-primary/15 bg-primary/5 p-3">
                     <div className="mb-2 flex items-center gap-2">
-                      <Bell className="h-4 w-4 text-primary" />
+                      <BellIcon className="h-4 w-4 text-primary" />
                       <p className="text-sm font-medium text-foreground">Operational notes</p>
                     </div>
                     <ul className="space-y-1">

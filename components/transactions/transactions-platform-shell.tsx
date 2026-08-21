@@ -5,42 +5,33 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import {
-  ArrowLeftRight,
-  Bell,
-  BookOpen,
-  CircleDot,
-  CreditCard,
-  Ellipsis,
-  FileText,
-  Globe,
-  Home,
-  Link2,
-  LogOut,
-  MessageSquare,
-  Moon,
-  PauseCircle,
-  QrCode,
-  RotateCcw,
-  Search,
-  Store,
-  Sun,
-  WalletCards,
-} from "lucide-react"
+  ArrowCounterClockwiseIcon,
+  CaretUpDownIcon,
+  ChatIcon,
+  CreditCardIcon,
+  FileTextIcon,
+  GearIcon,
+  HouseIcon,
+  LinkIcon,
+  MoonIcon,
+  PauseCircleIcon,
+  SignOutIcon,
+  StorefrontIcon,
+  SunIcon,
+  WalletIcon,
+} from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
+import { LogoMark } from "@/components/brand/logo-mark"
 import { NavVisibilityProvider } from "@/components/dashboard/nav-visibility-context"
 import {
-  SETTINGS_NAV_ITEMS,
   SettingsPanelContent,
   SettingsSidebarNav,
   type SettingsModule,
@@ -57,58 +48,125 @@ interface TransactionsPlatformShellProps {
 
 type ShellNavItem = {
   label: string
-  href?: string
+  href: string
   icon: ComponentType<{ className?: string }>
-  subItems?: Array<{ label: string; href: string; icon: ComponentType<{ className?: string }> }>
 }
 
 const navGroups: Array<{ label?: string; items: ShellNavItem[] }> = [
   {
     items: [
-      { label: "Overview", href: "/", icon: Home },
-      { label: "Transaction", href: "/transactions", icon: ArrowLeftRight },
-      { label: "Settlement", href: "/settlements", icon: WalletCards },
-      { label: "On-hold & disputes", href: "/on-hold-disputes", icon: PauseCircle },
-      { label: "Refunds", href: "/refunds", icon: RotateCcw },
-      { label: "Reports", href: "/reports", icon: FileText },
+      { label: "Overview", href: "/", icon: HouseIcon },
+      { label: "Payments", href: "/transactions", icon: CreditCardIcon },
+      { label: "Settlement", href: "/settlements", icon: WalletIcon },
+      { label: "On-hold & disputes", href: "/on-hold-disputes", icon: PauseCircleIcon },
+      { label: "Refunds", href: "/refunds", icon: ArrowCounterClockwiseIcon },
+      { label: "Reports", href: "/reports", icon: FileTextIcon },
     ],
   },
   {
-    label: "In-store payment",
+    label: "Products",
     items: [
-      { label: "POS terminals", href: "/offline-payments/manage-devices", icon: Store },
-      { label: "Store QR stickers", href: "/products/in-store-payments/upi-qr-sticker", icon: QrCode },
-    ],
-  },
-  {
-    label: "Online payment",
-    items: [
-      { label: "Payment gateway", href: "/online-payments", icon: Globe },
-      { label: "Payment links", href: "/payment-links", icon: Link2 },
-      { label: "Subscriptions", href: "/products/other-products", icon: RotateCcw },
-      {
-        label: "More",
-        icon: Ellipsis,
-        subItems: [
-          { label: "Smart routing", href: "/online-products/smart-routing", icon: CreditCard },
-          { label: "QR codes", href: "/online-products/qr-codes", icon: QrCode },
-          { label: "3rd party product", href: "/online-products/third-party-product", icon: CircleDot },
-        ],
-      },
-    ],
-  },
-  {
-    label: "Help & support",
-    items: [
-      { label: "Knowledge hub", href: "/support/knowledge-hub", icon: BookOpen },
-      { label: "Support queries", href: "/support/support-queries", icon: MessageSquare },
+      { label: "Terminal devices", href: "/offline-payments/manage-devices", icon: StorefrontIcon },
+      { label: "Payment links", href: "/payment-links", icon: LinkIcon },
+      { label: "Subscriptions", href: "/products/other-products", icon: ArrowCounterClockwiseIcon },
     ],
   },
 ]
 
-function SidebarNav() {
+const DUMMY_BUSINESS = {
+  initials: "VS",
+  name: "Vijay sales private limited",
+  detail: "Online & In-store payments enabled",
+}
+
+function AccountMenu({ onLogout }: { onLogout: () => void }) {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  const [profileName, setProfileName] = useState("Rahul Sharma")
+  const [profileRole, setProfileRole] = useState("Admin")
+
+  useEffect(() => {
+    setMounted(true)
+    const session = readDummyAuthSession()
+    if (!session) return
+    setProfileName(session.name)
+    setProfileRole(session.role)
+  }, [])
+
+  const isDark = mounted ? theme !== "light" : true
+  const initials = profileName
+    .split(" ")
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase()
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="flex h-auto w-full items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-sidebar-accent"
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background text-xs font-medium text-muted-foreground">
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium leading-tight text-sidebar-foreground">{profileName}</p>
+            <p className="truncate text-xs leading-tight text-sidebar-foreground/70">{profileRole}</p>
+          </div>
+          <CaretUpDownIcon className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/60" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" side="top" className="w-72 p-2">
+        <p className="px-2 pb-1.5 pt-1 text-xs font-medium text-muted-foreground">Account</p>
+        <div className="flex items-center gap-2.5 rounded-md border border-border/70 bg-muted/40 px-2.5 py-2">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-semibold text-muted-foreground">
+            {DUMMY_BUSINESS.initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-foreground">{DUMMY_BUSINESS.name}</p>
+            <p className="truncate text-xs text-muted-foreground">{DUMMY_BUSINESS.detail}</p>
+          </div>
+        </div>
+        <Button type="button" variant="outline" size="sm" className="mt-2 w-full">
+          Switch account
+        </Button>
+
+        <DropdownMenuSeparator className="my-2" />
+
+        <div className="flex items-center justify-between rounded-md px-2 py-1.5">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-foreground">{profileName}</p>
+            <p className="truncate text-xs text-muted-foreground">{profileRole}</p>
+          </div>
+        </div>
+
+        <DropdownMenuItem onSelect={() => setThemeWithTransition(setTheme, isDark ? "light" : "dark")}>
+          {isDark ? <SunIcon className="mr-2 h-3.5 w-3.5" /> : <MoonIcon className="mr-2 h-3.5 w-3.5" />}
+          Dark mode
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator className="my-2" />
+
+        <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={onLogout}>
+          <SignOutIcon className="mr-2 h-3.5 w-3.5" />
+          Logout
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function SidebarNav({
+  onOpenSettings,
+  onLogout,
+}: {
+  onOpenSettings: (module: SettingsModule) => void
+  onLogout: () => void
+}) {
   const pathname = usePathname()
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
 
   const isHrefActive = (href: string) => {
     const baseHref = href.split("?")[0] ?? href
@@ -116,99 +174,26 @@ function SidebarNav() {
     return pathname === baseHref || pathname.startsWith(`${baseHref}/`)
   }
 
-  useEffect(() => {
-    setExpandedGroups((prev) => {
-      let changed = false
-      const next = { ...prev }
-
-      navGroups.forEach((group) => {
-        group.items.forEach((item) => {
-          if (!item.subItems?.length) return
-          const hasActiveChild = item.subItems.some((sub) => isHrefActive(sub.href))
-          if (hasActiveChild && !next[item.label]) {
-            next[item.label] = true
-            changed = true
-          }
-        })
-      })
-
-      return changed ? next : prev
-    })
-  }, [pathname])
-
   return (
-    <aside className="sticky top-0 h-screen w-64 shrink-0 bg-sidebar">
-      <div className="flex h-16 items-center bg-sidebar px-2">
-        <span className="px-4 text-[36px] font-semibold leading-none tracking-[-0.02em] text-foreground">ONE</span>
+    <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col bg-sidebar">
+      <div className="flex h-16 shrink-0 items-center bg-sidebar px-2">
+        <LogoMark className="h-12 w-auto pr-4 text-foreground" />
       </div>
 
-      <nav className="h-[calc(100vh-4rem)] overflow-y-auto bg-sidebar px-2 py-2">
+      <nav className="min-h-0 flex-1 overflow-y-auto bg-sidebar px-2 py-2">
         {navGroups.map((group, groupIndex) => (
-          <div key={`${group.label ?? "core"}-${groupIndex}`} className={cn(groupIndex > 0 && "mt-2")}>
+          <div key={`${group.label ?? "core"}-${groupIndex}`} className={cn(groupIndex > 0 && "mt-6")}>
             {group.label ? (
               <p className="mb-1 px-2 text-xs font-medium text-muted-foreground/90">{group.label}</p>
             ) : null}
             <div className="space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon
-                const hasSubItems = Boolean(item.subItems?.length)
-                const activeSubItem = item.subItems?.find((sub) => isHrefActive(sub.href))
-                const active = hasSubItems ? Boolean(activeSubItem) : Boolean(item.href && isHrefActive(item.href))
-                const expanded = Boolean(expandedGroups[item.label])
-
-                if (hasSubItems) {
-                  const toggleLabel = expanded ? "Less" : item.label
-                  return (
-                    <div key={`group-${item.label}`}>
-                      {expanded ? (
-                        <div className="mb-1 space-y-1">
-                          {item.subItems?.map((subItem) => {
-                            const subActive = isHrefActive(subItem.href)
-                            const SubIcon = subItem.icon
-                            return (
-                              <Link
-                                key={subItem.href}
-                                href={subItem.href}
-                                className={cn(
-                                  "flex h-8 items-center gap-2 rounded-md px-2 text-sm leading-none transition-colors",
-                                  subActive
-                                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                                    : "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                                )}
-                              >
-                                <SubIcon className="h-3.5 w-3.5 shrink-0" />
-                                <span className="truncate">{subItem.label}</span>
-                              </Link>
-                            )
-                          })}
-                        </div>
-                      ) : null}
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedGroups((prev) => ({
-                            ...prev,
-                            [item.label]: !prev[item.label],
-                          }))
-                        }
-                        className={cn(
-                          "flex h-8 w-full items-center gap-2 rounded-md px-2 text-sm leading-none transition-colors",
-                          "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                        )}
-                        aria-expanded={expanded}
-                      >
-                        <span className="flex-1 truncate text-left">{toggleLabel}</span>
-                      </button>
-                    </div>
-                  )
-                }
-
-                if (!item.href) return null
+                const active = isHrefActive(item.href)
 
                 return (
                   <Link
-                    key={item.href ?? item.label}
+                    key={item.href}
                     href={item.href}
                     className={cn(
                       "flex h-8 items-center gap-2 rounded-md px-2 text-sm leading-none transition-colors",
@@ -225,100 +210,39 @@ function SidebarNav() {
             </div>
           </div>
         ))}
-      </nav>
-    </aside>
-  )
-}
 
-function Topbar({ onOpenSettings }: { onOpenSettings: (module: SettingsModule) => void }) {
-  const router = useRouter()
-  const { theme, setTheme } = useTheme()
-  const [profileName, setProfileName] = useState("Rahul Sharma")
-  const [profileRole, setProfileRole] = useState("Admin")
-  const [mounted, setMounted] = useState(false)
+        <div className="mt-6">
+          <p className="mb-1 px-2 text-xs font-medium text-muted-foreground/90">Other</p>
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => onOpenSettings("personal-details")}
+              className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm leading-none text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <GearIcon className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Account settings</span>
+            </button>
 
-  useEffect(() => {
-    const session = readDummyAuthSession()
-    if (!session) return
-    setProfileName(session.name)
-    setProfileRole(session.role)
-  }, [])
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  const isAdmin = profileRole.toLowerCase() === "admin"
-  const isDark = mounted ? theme !== "light" : true
-
-  return (
-    <header className="sticky top-0 z-30 h-16 border-b border-border bg-background">
-      <div className="mx-auto flex h-full max-w-[1280px] items-center justify-between gap-4 px-8">
-        <div className="relative w-full max-w-[373px]">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search pages, actions, products, and settings..."
-            className="h-8 rounded-[10px] border-input bg-background pl-9 pr-12 text-sm"
-          />
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-sm bg-muted px-1 py-0 text-xs text-muted-foreground">
-            ⌘K
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-[10px] border border-border bg-background px-2.5 py-1.5">
-            <span className="text-xs text-foreground">Test mode</span>
-            <Switch checked={false} aria-label="Toggle test mode" />
+            <Link
+              href="/support/support-queries"
+              className={cn(
+                "flex h-8 items-center gap-2 rounded-md px-2 text-sm leading-none transition-colors",
+                isHrefActive("/support/support-queries")
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}
+            >
+              <ChatIcon className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Support queries</span>
+            </Link>
           </div>
-
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="h-8 w-8 rounded-md"
-            onClick={() => setThemeWithTransition(setTheme, isDark ? "light" : "dark")}
-            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-          <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-md">
-            <Bell className="h-4 w-4" />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-full bg-muted text-sm font-medium text-muted-foreground hover:bg-muted">
-                TT
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="space-y-0.5">
-                <p className="text-sm font-medium text-foreground">{profileName}</p>
-                <p className="text-[11px] text-muted-foreground">{profileRole}</p>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {SETTINGS_NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => {
-                const Icon = item.icon
-                return (
-                  <DropdownMenuItem key={item.key} onSelect={() => onOpenSettings(item.key)}>
-                    <Icon className="mr-2 h-3.5 w-3.5" />
-                    {item.label}
-                  </DropdownMenuItem>
-                )
-              })}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={() => {
-                  clearDummyAuthSession()
-                  router.replace("/")
-                }}
-              >
-                <LogOut className="mr-2 h-3.5 w-3.5" />
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
+      </nav>
+
+      <div className="shrink-0 space-y-1 bg-sidebar px-2 py-2">
+        <AccountMenu onLogout={onLogout} />
       </div>
-    </header>
+    </aside>
   )
 }
 
@@ -339,11 +263,11 @@ export function TransactionsPlatformShell({ children }: TransactionsPlatformShel
     <NavVisibilityProvider>
       <div
         className="min-h-screen bg-[var(--app-shell-surface)] text-foreground"
-        style={{ "--dashboard-top-offset": "64px" } as CSSProperties}
+        style={{ "--dashboard-top-offset": "0px" } as CSSProperties}
       >
         <div className="flex min-h-screen w-full">
           <div className="relative w-64 shrink-0">
-            <SidebarNav />
+            <SidebarNav onOpenSettings={setSettingsModule} onLogout={logoutFromSettings} />
             <AnimatePresence>
               {settingsModule ? (
                 <motion.div
@@ -367,7 +291,6 @@ export function TransactionsPlatformShell({ children }: TransactionsPlatformShel
 
           <div className="min-w-0 flex-1 bg-[var(--app-shell-surface)] p-2 pl-0">
             <div className="flex min-h-[calc(100vh-16px)] flex-col overflow-hidden rounded-md bg-background">
-              <Topbar onOpenSettings={setSettingsModule} />
               <div className="relative min-w-0 flex-1 overflow-x-hidden bg-background">
                 <main className="h-full">{children}</main>
                 <AnimatePresence>

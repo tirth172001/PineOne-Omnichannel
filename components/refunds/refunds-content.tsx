@@ -2,19 +2,18 @@
 
 import { useMemo, useState } from "react"
 import {
-  CalendarDays,
-  CheckCheck,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Download,
-  Loader2,
-  Mail,
-  Search,
-} from "lucide-react"
-
+  CalendarDotsIcon,
+  CaretDoubleLeftIcon,
+  CaretDoubleRightIcon,
+  CaretDownIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  ChecksIcon,
+  DownloadIcon,
+  EnvelopeSimpleIcon,
+  MagnifyingGlassIcon,
+  SpinnerIcon,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -41,6 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { SummaryCardGroup } from "@/components/shared/summary-card-group"
 
 type RefundStatus = "Pending" | "Success" | "Failed" | "Session expired" | "Cancelled" | "User cancelled"
 
@@ -112,7 +112,7 @@ export function RefundsContent() {
     <div>
       <section className="flex flex-wrap items-center justify-between gap-4 px-8 pt-8">
         <div className="flex flex-wrap items-center gap-4">
-          <h1 className="text-3xl font-semibold leading-8 tracking-[-0.4px] text-foreground">Refunds</h1>
+          <h1 className="text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground">Refunds</h1>
           <Tabs value={channel} onValueChange={(value) => { setChannel(value as typeof channel); setPage(1) }}>
             <TabsList className="h-8 rounded-[8px] bg-muted p-1">
               <TabsTrigger value="in-store" className="h-6 rounded-[6px] border-transparent px-4 py-1 text-sm font-medium text-muted-foreground data-active:!border-transparent data-active:!bg-background data-active:!text-foreground">In-store payments</TabsTrigger>
@@ -129,36 +129,36 @@ export function RefundsContent() {
       <Separator className="mt-6" />
 
       <section className="px-8 pt-6">
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <div className="grid md:grid-cols-2">
-            <div className="flex flex-col gap-2 px-5 py-4">
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-5 w-5 text-foreground" />
-                <p className="text-base font-medium text-card-foreground">Refunds pending</p>
-              </div>
-              <div>
-                <p className="text-xl font-semibold leading-7 text-foreground">₹10,00,000<span className="text-sm font-medium text-muted-foreground">.00</span></p>
-                <p className="mt-1 text-sm font-medium text-muted-foreground">1000 payments</p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2 border-t border-border px-5 py-4 md:border-l md:border-t-0">
-              <div className="flex items-center gap-2">
-                <CheckCheck className="h-5 w-5 text-foreground" />
-                <p className="text-base font-medium text-card-foreground">Refunded amount</p>
-              </div>
-              <div>
-                <p className="text-xl font-semibold leading-7 text-foreground">₹6,00,000<span className="text-sm font-medium text-muted-foreground">.00</span></p>
-                <p className="mt-1 text-sm font-medium text-muted-foreground">94 payments resolved</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SummaryCardGroup
+          cards={[
+            {
+              icon: SpinnerIcon,
+              label: "Refunds pending",
+              value: (
+                <>
+                  ₹10,00,000<span className="text-sm font-medium text-muted-foreground">.00</span>
+                </>
+              ),
+              subtext: "1000 payments",
+            },
+            {
+              icon: ChecksIcon,
+              label: "Refunded amount",
+              value: (
+                <>
+                  ₹6,00,000<span className="text-sm font-medium text-muted-foreground">.00</span>
+                </>
+              ),
+              subtext: "94 payments resolved",
+            },
+          ]}
+        />
       </section>
 
       <section className="flex flex-wrap items-center justify-between gap-4 px-8 py-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative w-[229px]">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by any ID"
               value={search}
@@ -170,7 +170,7 @@ export function RefundsContent() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8">
-                <CalendarDays className="h-4 w-4" />
+                <CalendarDotsIcon className="h-4 w-4" />
                 {dateFilter === "today" ? "Today" : "All dates"}
               </Button>
             </DropdownMenuTrigger>
@@ -185,7 +185,7 @@ export function RefundsContent() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8">
                 Status
-                <ChevronDown className="h-4 w-4" />
+                <CaretDownIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
@@ -198,17 +198,17 @@ export function RefundsContent() {
           <Button variant="outline" size="sm" className="h-8">
             More filters
             <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-secondary px-1 text-xs text-secondary-foreground">3</span>
-            <ChevronDown className="h-4 w-4" />
+            <CaretDownIcon className="h-4 w-4" />
           </Button>
         </div>
 
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" className="h-8">
-            <Mail className="h-4 w-4" />
+            <EnvelopeSimpleIcon className="h-4 w-4" />
             Email filtered
           </Button>
           <Button variant="outline" size="sm" className="h-8">
-            <Download className="h-4 w-4" />
+            <DownloadIcon className="h-4 w-4" />
             Download filtered
           </Button>
         </div>
@@ -269,10 +269,10 @@ export function RefundsContent() {
             </div>
             <span className="font-medium text-foreground">Page {clampedPage} of {totalPages}</span>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" className="h-8 w-8" disabled={clampedPage === 1} onClick={() => setPage(1)}><ChevronsLeft className="h-4 w-4" /></Button>
-              <Button variant="outline" size="icon" className="h-8 w-8" disabled={clampedPage === 1} onClick={() => setPage(clampedPage - 1)}><ChevronLeft className="h-4 w-4" /></Button>
-              <Button variant="outline" size="icon" className="h-8 w-8" disabled={clampedPage === totalPages} onClick={() => setPage(clampedPage + 1)}><ChevronRight className="h-4 w-4" /></Button>
-              <Button variant="outline" size="icon" className="h-8 w-8" disabled={clampedPage === totalPages} onClick={() => setPage(totalPages)}><ChevronsRight className="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={clampedPage === 1} onClick={() => setPage(1)}><CaretDoubleLeftIcon className="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={clampedPage === 1} onClick={() => setPage(clampedPage - 1)}><CaretLeftIcon className="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={clampedPage === totalPages} onClick={() => setPage(clampedPage + 1)}><CaretRightIcon className="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={clampedPage === totalPages} onClick={() => setPage(totalPages)}><CaretDoubleRightIcon className="h-4 w-4" /></Button>
             </div>
           </div>
         </div>

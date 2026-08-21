@@ -3,19 +3,19 @@
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  AlertTriangle,
-  ArrowUpRight,
-  Bot,
-  CheckCircle2,
-  CircleDashed,
-  Clock4,
-  LifeBuoy,
-  SendHorizontal,
-  Sparkles,
-  UserCircle2,
-  Wrench,
-  X,
-} from "lucide-react"
+  ArrowUpRightIcon,
+  CheckCircleIcon,
+  CircleDashedIcon,
+  ClockIcon,
+  LifebuoyIcon,
+  PaperPlaneRightIcon,
+  RobotIcon,
+  SparkleIcon,
+  UserCircleIcon,
+  WarningIcon,
+  WrenchIcon,
+  XIcon,
+} from "@phosphor-icons/react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -137,7 +137,7 @@ export function SupportRequestChatPanel({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                <LifeBuoy className="h-4 w-4" />
+                <LifebuoyIcon className="h-4 w-4" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">Pine Assist</p>
@@ -146,7 +146,7 @@ export function SupportRequestChatPanel({
             </div>
             <div className="mt-2 flex items-center gap-2">
               <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/10 text-[10px] text-primary">
-                <Sparkles className="h-3 w-3" />
+                <SparkleIcon className="h-3 w-3" />
                 {profileRole}
               </Badge>
               <Badge variant="outline" className="text-[10px]">
@@ -155,7 +155,7 @@ export function SupportRequestChatPanel({
             </div>
           </div>
           <Button variant="ghost" size="icon-sm" aria-label="Close support" onClick={onClose}>
-            <X className="h-4 w-4" />
+            <XIcon className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -183,7 +183,7 @@ export function SupportRequestChatPanel({
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
         <div className="max-w-[92%] rounded-xl bg-muted px-3 py-2 text-foreground">
           <p className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider opacity-75">
-            <Bot className="h-3 w-3" />
+            <RobotIcon className="h-3 w-3" />
             Pine Assist
           </p>
           <p className="text-sm leading-relaxed">
@@ -194,7 +194,7 @@ export function SupportRequestChatPanel({
         {issueSubmitted ? (
           <div className="ml-auto max-w-[92%] rounded-xl bg-primary px-3 py-2 text-primary-foreground">
             <p className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider opacity-80">
-              <UserCircle2 className="h-3 w-3" />
+              <UserCircleIcon className="h-3 w-3" />
               {profileName}
             </p>
             <p className="text-sm leading-relaxed">{issueText}</p>
@@ -204,7 +204,7 @@ export function SupportRequestChatPanel({
         {issueSubmitted ? (
           <div className="max-w-[92%] rounded-xl bg-muted px-3 py-2 text-foreground">
             <p className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider opacity-75">
-              <Bot className="h-3 w-3" />
+              <RobotIcon className="h-3 w-3" />
               Pine Assist
             </p>
             <p className="text-sm leading-relaxed">Select the impacted POS terminal to run an automated health check.</p>
@@ -231,11 +231,11 @@ export function SupportRequestChatPanel({
         {issueSubmitted && selectedDevice && healthStatus === "running" ? (
           <div className="max-w-[92%] rounded-xl bg-muted px-3 py-2 text-foreground">
             <p className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider opacity-75">
-              <Bot className="h-3 w-3" />
+              <RobotIcon className="h-3 w-3" />
               Pine Assist
             </p>
             <p className="inline-flex items-center gap-1.5 text-sm">
-              <CircleDashed className="h-4 w-4 animate-spin" />
+              <CircleDashedIcon className="h-4 w-4 animate-spin" />
               Running health checks on {selectedDeviceLabel}...
             </p>
           </div>
@@ -244,11 +244,11 @@ export function SupportRequestChatPanel({
         {issueSubmitted && selectedDevice && healthStatus === "done" ? (
           <div className="max-w-[92%] rounded-xl border border-warning/30 bg-warning/5 px-3 py-2 text-foreground">
             <p className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider opacity-75">
-              <Bot className="h-3 w-3" />
+              <RobotIcon className="h-3 w-3" />
               Pine Assist
             </p>
             <p className="inline-flex items-center gap-1.5 text-sm font-medium">
-              <AlertTriangle className="h-4 w-4 text-warning" />
+              <WarningIcon className="h-4 w-4 text-warning" />
               Health check complete: printer issues detected
             </p>
             <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
@@ -267,7 +267,7 @@ export function SupportRequestChatPanel({
                 className="h-8 text-xs"
                 onClick={() => setQuickFixApplied(true)}
               >
-                <Wrench className="mr-1 h-3.5 w-3.5" />
+                <WrenchIcon className="mr-1 h-3.5 w-3.5" />
                 Restart printer service
               </Button>
               <Button
@@ -277,7 +277,7 @@ export function SupportRequestChatPanel({
                 className="h-8 text-xs"
                 onClick={() => setQuickFixApplied(true)}
               >
-                <Wrench className="mr-1 h-3.5 w-3.5" />
+                <WrenchIcon className="mr-1 h-3.5 w-3.5" />
                 Calibrate print density
               </Button>
             </div>
@@ -287,7 +287,7 @@ export function SupportRequestChatPanel({
         {quickFixApplied && !requestRaised ? (
           <div className="max-w-[92%] rounded-xl bg-muted px-3 py-2 text-foreground">
             <p className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider opacity-75">
-              <Bot className="h-3 w-3" />
+              <RobotIcon className="h-3 w-3" />
               Pine Assist
             </p>
             <p className="text-sm leading-relaxed">
@@ -299,11 +299,11 @@ export function SupportRequestChatPanel({
         {requestRaised ? (
           <div className="max-w-[92%] rounded-xl border border-success/30 bg-success/5 px-3 py-2 text-foreground">
             <p className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider opacity-75">
-              <Bot className="h-3 w-3" />
+              <RobotIcon className="h-3 w-3" />
               Pine Assist
             </p>
             <p className="inline-flex items-center gap-1.5 text-sm font-semibold">
-              <CheckCircle2 className="h-4 w-4 text-success" />
+              <CheckCircleIcon className="h-4 w-4 text-success" />
               Request raised successfully
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -331,7 +331,7 @@ export function SupportRequestChatPanel({
               className="h-10 bg-muted/50"
             />
             <Button size="icon-sm" aria-label="Send issue" onClick={() => handleSubmitIssue(issueText)}>
-              <SendHorizontal className="h-4 w-4" />
+              <PaperPlaneRightIcon className="h-4 w-4" />
             </Button>
           </div>
         ) : null}
@@ -356,11 +356,11 @@ export function SupportRequestChatPanel({
               }}
             >
               Open support center
-              <ArrowUpRight className="h-3.5 w-3.5" />
+              <ArrowUpRightIcon className="h-3.5 w-3.5" />
             </Button>
           ) : null}
           <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Clock4 className="h-3.5 w-3.5" />
+            <ClockIcon className="h-3.5 w-3.5" />
             Expected resolution in next 48 hours
           </p>
         </div>

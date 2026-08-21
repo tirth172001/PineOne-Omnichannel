@@ -2,18 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react"
 import {
-  ArrowDownUp,
-  Check,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Columns3,
-  Copy,
-  Download,
-  Search,
-} from "lucide-react"
+  ArrowsDownUpIcon,
+  CaretDoubleLeftIcon,
+  CaretDoubleRightIcon,
+  CaretDownIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  CheckIcon,
+  ColumnsIcon,
+  CopyIcon,
+  DownloadIcon,
+  MagnifyingGlassIcon,
+} from "@phosphor-icons/react"
 import { StatusPill, type StatusTone } from "@/components/shared/status-pill"
 import { Button } from "@/components/ui/button"
 import {
@@ -163,7 +163,7 @@ function PaymentLinksTable({
                           onClick={() => onCopy(row)}
                           aria-label={`Copy ${row.paymentLink}`}
                         >
-                          {copiedRowId === row.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                          {copiedRowId === row.id ? <CheckIcon className="h-3.5 w-3.5" /> : <CopyIcon className="h-3.5 w-3.5" />}
                         </button>
                       </div>
                     </TableCell>
@@ -347,7 +347,7 @@ export function PaymentLinksContent() {
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative w-[229px]">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
@@ -372,7 +372,7 @@ export function PaymentLinksContent() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium">
                   {statusFilter === "all" ? "All status" : statusFilter[0].toUpperCase() + statusFilter.slice(1)}
-                  <ChevronDown className="h-4 w-4" />
+                  <CaretDownIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
@@ -392,7 +392,7 @@ export function PaymentLinksContent() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium">
                   {dateFilter === "today" ? "Today" : dateFilter === "7d" ? "Last 7 days" : "All time"}
-                  <ChevronDown className="h-4 w-4" />
+                  <CaretDownIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
@@ -419,13 +419,13 @@ export function PaymentLinksContent() {
               onClick={() => setSortDirection((current) => (current === "asc" ? "desc" : "asc"))}
               aria-label="Sort rows"
             >
-              <ArrowDownUp className="h-4 w-4" />
+              <ArrowsDownUpIcon className="h-4 w-4" />
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon-sm" className="h-8 w-[51px] rounded-md" aria-label="Select columns">
-                  <Columns3 className="h-4 w-4" />
+                  <ColumnsIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -459,7 +459,7 @@ export function PaymentLinksContent() {
 
             <div className="h-6 w-px bg-border/70" />
             <Button variant="ghost" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium" onClick={exportAllRows}>
-              <Download className="h-4 w-4" />
+              <DownloadIcon className="h-4 w-4" />
               Export all
             </Button>
           </div>
@@ -497,7 +497,7 @@ export function PaymentLinksContent() {
                 disabled={page <= 1}
                 onClick={() => setPage(1)}
               >
-                <ChevronsLeft className="h-4 w-4" />
+                <CaretDoubleLeftIcon className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
@@ -506,7 +506,7 @@ export function PaymentLinksContent() {
                 disabled={page <= 1}
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <CaretLeftIcon className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
@@ -515,7 +515,7 @@ export function PaymentLinksContent() {
                 disabled={page >= totalPages}
                 onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
               >
-                <ChevronRight className="h-4 w-4" />
+                <CaretRightIcon className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
@@ -524,7 +524,7 @@ export function PaymentLinksContent() {
                 disabled={page >= totalPages}
                 onClick={() => setPage(totalPages)}
               >
-                <ChevronsRight className="h-4 w-4" />
+                <CaretDoubleRightIcon className="h-4 w-4" />
               </Button>
             </div>
           </div>

@@ -4,25 +4,25 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
-  ArrowUpRight,
-  Check,
-  CheckCircle2,
-  CircleAlert,
-  Copy,
-  CreditCard,
-  Download,
-  FileUp,
-  Landmark,
-  Link2,
-  Loader2,
-  MoreHorizontal,
-  Pause,
-  PenLine,
-  Smartphone,
-  Trash2,
-  X,
-  XCircle,
-} from "lucide-react"
+  ArrowUpRightIcon,
+  BankIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  CopyIcon,
+  CreditCardIcon,
+  DeviceMobileIcon,
+  DotsThreeIcon,
+  DownloadIcon,
+  FileArrowUpIcon,
+  LinkIcon,
+  PauseIcon,
+  PencilLineIcon,
+  SpinnerIcon,
+  TrashIcon,
+  WarningCircleIcon,
+  XCircleIcon,
+  XIcon,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -1157,7 +1157,7 @@ function PerformanceCard({
           <Button asChild size="sm" className="h-8 rounded-md px-3 text-[11px]">
             <Link href={card.href}>
               {card.ctaLabel}
-              <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
+              <ArrowUpRightIcon className="ml-1.5 h-3.5 w-3.5" />
             </Link>
           </Button>
         </div>
@@ -1608,12 +1608,12 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
           : "border-primary/35 bg-primary/12 text-primary"
   const PaymentMethodIcon =
     paymentMethodCategory === "UPI"
-      ? Smartphone
+      ? DeviceMobileIcon
       : paymentMethodCategory === "Payment Link"
-        ? Link2
+        ? LinkIcon
         : paymentMethodCategory === "Netbanking"
-          ? Landmark
-          : CreditCard
+          ? BankIcon
+          : CreditCardIcon
   const transactionEventItems = [
     {
       title: `The payment ${selectedTransaction?.transactionId ?? "TXN-990020"} for ${transactionAmountLabel} has ${transactionStatus.toLowerCase()}.`,
@@ -1812,7 +1812,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
               event.stopPropagation()
             }}
           >
-            <Download className="mr-1.5 h-3.5 w-3.5" />
+            <DownloadIcon className="mr-1.5 h-3.5 w-3.5" />
             Download
           </Button>
         ) : row.status === "failed" ? (
@@ -1916,7 +1916,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                 event.stopPropagation()
               }}
             >
-              <MoreHorizontal className="h-3.5 w-3.5" />
+              <DotsThreeIcon className="h-3.5 w-3.5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -1943,7 +1943,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                 setScheduleReportSheetOpen(true)
               }}
             >
-              <PenLine className="mr-2 h-3.5 w-3.5" />
+              <PencilLineIcon className="mr-2 h-3.5 w-3.5" />
               Edit
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -1963,7 +1963,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                 setReportToast(`${row.scheduleName} paused.`)
               }}
             >
-              <Pause className="mr-2 h-3.5 w-3.5" />
+              <PauseIcon className="mr-2 h-3.5 w-3.5" />
               Pause
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -1974,7 +1974,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                 setReportToast(`${row.scheduleName} deleted.`)
               }}
             >
-              <Trash2 className="mr-2 h-3.5 w-3.5" />
+              <TrashIcon className="mr-2 h-3.5 w-3.5" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -2742,14 +2742,14 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     >
       {reportToast ? (
         <Alert className="rounded-lg border-success/35 bg-success/10">
-          <CheckCircle2 className="size-4 text-success" />
+          <CheckCircleIcon className="size-4 text-success" />
           <AlertDescription className="text-xs text-foreground">{reportToast}</AlertDescription>
         </Alert>
       ) : null}
       {navSection === "overview" ? (
         <>
           <section className="w-full max-w-[1120px] space-y-6">
-            <h3 className="text-[30px] font-semibold leading-[1.05] text-foreground">overview</h3>
+            <h3 className="text-2xl font-semibold leading-[1.05] text-foreground">overview</h3>
 
             <OverviewDetailCards />
 
@@ -2915,7 +2915,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                 showCloseButton={false}
                 a11yTitle="Customize Overall Snapshot Cards"
                 a11yDescription="Show or hide overview cards."
-                className="w-full border-l border-border/60 bg-background p-0 sm:max-w-[380px]"
+                className="w-full p-0 sm:max-w-[380px]"
               >
                 <div className="flex h-full flex-col">
                   <div className="border-b border-border/60 bg-muted/25 px-4 py-3">
@@ -3006,9 +3006,9 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                               )}
                             >
                               {attempt.tone === "success" || attempt.tone === "neutral" ? (
-                                <Check className="h-3 w-3" />
+                                <CheckIcon className="h-3 w-3" />
                               ) : attempt.tone === "failed" ? (
-                                <XCircle className="h-3 w-3" />
+                                <XCircleIcon className="h-3 w-3" />
                               ) : (
                                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
                               )}
@@ -3065,7 +3065,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                                       <p className="text-sm text-muted-foreground">{field.label}</p>
                                       <p className="inline-flex items-start gap-1.5 break-words text-sm font-medium text-foreground">
                                         <span>{field.value}</span>
-                                        {field.copyable ? <Copy className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" /> : null}
+                                        {field.copyable ? <CopyIcon className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" /> : null}
                                       </p>
                                     </div>
                                   ))}
@@ -3095,7 +3095,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                       </div>
                       <div className="space-y-4">
                         <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                          <ArrowUpRight className="h-4 w-4" />
+                          <ArrowUpRightIcon className="h-4 w-4" />
                           From Pine One
                         </p>
                         <p className="text-[16px] font-semibold text-foreground">
@@ -3273,9 +3273,9 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                 )}
               >
                 {imeiBannerIsSuccess ? (
-                  <CheckCircle2 className="size-4 text-success" />
+                  <CheckCircleIcon className="size-4 text-success" />
                 ) : (
-                  <Loader2 className="size-4 animate-spin text-primary" />
+                  <SpinnerIcon className="size-4 animate-spin text-primary" />
                 )}
                 <AlertTitle className="text-sm font-medium">
                   {imeiStatus === "processing"
@@ -3306,7 +3306,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                       setImeiBackgroundMode(false)
                     }}
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <XIcon className="h-3.5 w-3.5" />
                   </Button>
                 </AlertAction>
               </Alert>
@@ -3391,9 +3391,9 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
               )}
             >
               {bulkRefundBannerIsSuccess ? (
-                <CheckCircle2 className="size-4 text-success" />
+                <CheckCircleIcon className="size-4 text-success" />
               ) : (
-                <Loader2 className="size-4 animate-spin text-primary" />
+                <SpinnerIcon className="size-4 animate-spin text-primary" />
               )}
               <AlertTitle className="text-sm font-medium">
                 {bulkRefundStatus === "processing"
@@ -3424,7 +3424,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                     setBulkRefundBackgroundMode(false)
                   }}
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <XIcon className="h-3.5 w-3.5" />
                 </Button>
               </AlertAction>
             </Alert>
@@ -3553,7 +3553,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
           aria-label="Close detail panel"
           onClick={() => setSelectedTableDetail(null)}
         >
-          <X className="h-4 w-4" />
+          <XIcon className="h-4 w-4" />
         </Button>
       </div>
       <Separator />
@@ -3610,7 +3610,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
       </div>
       {transactionLink ? (
         <p className="inline-flex items-center gap-1.5 text-sm text-primary">
-          <Link2 className="h-3.5 w-3.5" />
+          <LinkIcon className="h-3.5 w-3.5" />
           <span className="truncate">{transactionLink}</span>
         </p>
       ) : null}
@@ -3641,7 +3641,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
         Refund
       </Button>
       <Button variant="outline" size="icon-sm" className="h-9 w-9" aria-label="More actions">
-        <MoreHorizontal className="h-4 w-4" />
+        <DotsThreeIcon className="h-4 w-4" />
       </Button>
     </>
   ) : (
@@ -4038,7 +4038,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
           side="right"
           a11yTitle="Schedule report"
           a11yDescription="Configure recurring report generation."
-          className="w-full border-l border-border/60 bg-background p-0 sm:max-w-[480px]"
+          className="w-full p-0 sm:max-w-[480px]"
         >
           <div className="flex h-full flex-col">
             <div className="border-b border-border/60 bg-muted/25 px-4 py-3">
@@ -4228,7 +4228,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                               aria-label={`Remove ${email}`}
                               onClick={() => removeScheduleEmailRecipient(email)}
                             >
-                              <X className="h-3 w-3" />
+                              <XIcon className="h-3 w-3" />
                             </button>
                           </Badge>
                         ))}
@@ -4323,7 +4323,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                         <label htmlFor="schedule-sftp-ppk">
                           <Button type="button" asChild variant="outline" size="sm" className="h-8 text-xs cursor-pointer">
                             <span>
-                              <FileUp className="mr-1.5 h-3.5 w-3.5" />
+                              <FileArrowUpIcon className="mr-1.5 h-3.5 w-3.5" />
                               Upload .ppk
                             </span>
                           </Button>
@@ -4356,7 +4356,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
           side="right"
           a11yTitle="Customize report"
           a11yDescription="Choose report columns, sequence, and display names."
-          className="w-full border-l border-border/60 bg-background p-0 sm:max-w-[560px]"
+          className="w-full p-0 sm:max-w-[560px]"
         >
           <div className="flex h-full flex-col">
             <div className="border-b border-border/60 bg-muted/25 px-4 py-3">
@@ -4498,7 +4498,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
           side="right"
           a11yTitle="Generate report"
           a11yDescription="Choose format, date range, and fields before generating report."
-          className="w-full border-l border-border/60 bg-background p-0 sm:max-w-[560px]"
+          className="w-full p-0 sm:max-w-[560px]"
         >
           <div className="flex h-full flex-col">
             <div className="border-b border-border/60 bg-muted/25 px-4 py-3">
@@ -4642,7 +4642,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
           side="right"
           a11yTitle="Verify IMEI details"
           a11yDescription="Download sample sheet, upload filled IMEI file, and track verification status."
-          className="w-full border-l border-border/60 bg-background p-0 sm:max-w-[460px]"
+          className="w-full p-0 sm:max-w-[460px]"
         >
           <div className="flex h-full flex-col">
             <div className="border-b border-border/60 bg-muted/25 px-4 py-3">
@@ -4676,7 +4676,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
               ) : imeiStatus === "completed" ? (
                 <div className="space-y-4 rounded-lg border border-success/30 bg-card p-4">
                   <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-success/20 text-success">
-                    <CheckCircle2 className="h-5 w-5" />
+                    <CheckCircleIcon className="h-5 w-5" />
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-semibold text-foreground">IMEI verification complete</p>
@@ -4760,7 +4760,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                         className="h-8 text-xs"
                         onClick={handleDownloadImeiSampleSheet}
                       >
-                        <Download className="mr-1.5 h-3.5 w-3.5" />
+                        <DownloadIcon className="mr-1.5 h-3.5 w-3.5" />
                         Download sample excel
                       </Button>
                     </div>
@@ -4769,7 +4769,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                   <div className="space-y-3 rounded-lg border border-border/70 bg-card p-4">
                     <p className="text-xs font-medium text-foreground">2. Upload filled IMEI file</p>
                     <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border/70 bg-muted/20 px-4 py-5 text-center">
-                      <FileUp className="h-5 w-5 text-muted-foreground" />
+                      <FileArrowUpIcon className="h-5 w-5 text-muted-foreground" />
                       <div className="space-y-1">
                         <p className="text-xs font-medium text-foreground">Upload filled file</p>
                         <p className="text-[11px] text-muted-foreground">Supports .csv, .xlsx, .xls</p>
@@ -4818,7 +4818,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
           side="right"
           a11yTitle="Bulk refund"
           a11yDescription="Download sample sheet, upload filled refund file, and track processing status."
-          className="w-full border-l border-border/60 bg-background p-0 sm:max-w-[460px]"
+          className="w-full p-0 sm:max-w-[460px]"
         >
           <div className="flex h-full flex-col">
             <div className="border-b border-border/60 bg-muted/25 px-4 py-3">
@@ -4852,7 +4852,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
               ) : bulkRefundStatus === "completed" ? (
                 <div className="space-y-4 rounded-lg border border-success/30 bg-card p-4">
                   <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-success/20 text-success">
-                    <CheckCircle2 className="h-5 w-5" />
+                    <CheckCircleIcon className="h-5 w-5" />
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-semibold text-foreground">Bulk refund processing complete</p>
@@ -4936,7 +4936,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                         className="h-8 text-xs"
                         onClick={handleDownloadBulkRefundSampleSheet}
                       >
-                        <Download className="mr-1.5 h-3.5 w-3.5" />
+                        <DownloadIcon className="mr-1.5 h-3.5 w-3.5" />
                         Download sample excel
                       </Button>
                     </div>
@@ -4944,7 +4944,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
                   <div className="space-y-3 rounded-lg border border-border/70 bg-card p-4">
                     <p className="text-xs font-medium text-foreground">2. Upload filled refund file</p>
                     <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border/70 bg-muted/20 px-4 py-5 text-center">
-                      <FileUp className="h-5 w-5 text-muted-foreground" />
+                      <FileArrowUpIcon className="h-5 w-5 text-muted-foreground" />
                       <div className="space-y-1">
                         <p className="text-xs font-medium text-foreground">Upload filled file</p>
                         <p className="text-[11px] text-muted-foreground">Supports .csv, .xlsx, .xls</p>
@@ -4992,7 +4992,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
           side="right"
           a11yTitle="Refund details"
           a11yDescription="Detailed refund information and status timeline."
-          className="w-full border-l border-border/60 bg-background p-0 sm:max-w-[460px]"
+          className="w-full p-0 sm:max-w-[460px]"
         >
           <div className="flex h-full flex-col">
             <div className="border-b border-border/60 bg-muted/25 px-4 py-3">
@@ -5059,7 +5059,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
           side="right"
           a11yTitle="Refund transaction"
           a11yDescription="Choose full or partial refund and initiate refund."
-          className="w-full border-l border-border/60 bg-background p-0 sm:max-w-[420px]"
+          className="w-full p-0 sm:max-w-[420px]"
         >
           <div className="flex h-full flex-col">
             <div className="border-b border-border/60 bg-muted/25 px-4 py-3">
@@ -5073,7 +5073,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
               {refundStep === "success" ? (
                 <div className="space-y-4 rounded-lg border border-border/70 bg-card p-4 text-center">
                   <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-success/20 text-success">
-                    <CheckCircle2 className="h-5 w-5" />
+                    <CheckCircleIcon className="h-5 w-5" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">Refund initiated</p>

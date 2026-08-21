@@ -2,21 +2,21 @@
 
 import { type ComponentType, useEffect, useMemo, useState } from "react"
 import {
-  ArrowDownUp,
-  Check,
-  CheckCircle2,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Columns3,
-  Copy,
-  Download,
-  MoreVertical,
-  Search,
-  XCircle,
-} from "lucide-react"
+  ArrowsDownUpIcon,
+  CaretDoubleLeftIcon,
+  CaretDoubleRightIcon,
+  CaretDownIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  ColumnsIcon,
+  CopyIcon,
+  DotsThreeVerticalIcon,
+  DownloadIcon,
+  MagnifyingGlassIcon,
+  XCircleIcon,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -195,8 +195,8 @@ function toCsvField(value: string | number) {
 }
 
 const statusMeta: Record<SubscriptionStatus, { icon: ComponentType<{ className?: string }>; iconClassName: string }> = {
-  Success: { icon: CheckCircle2, iconClassName: "text-emerald-500" },
-  Cancelled: { icon: XCircle, iconClassName: "text-red-500" },
+  Success: { icon: CheckCircleIcon, iconClassName: "text-emerald-500" },
+  Cancelled: { icon: XCircleIcon, iconClassName: "text-red-500" },
 }
 
 function StatusBadge({ status }: { status: SubscriptionStatus }) {
@@ -279,7 +279,7 @@ function SubscriptionsTable({
                           onClick={() => onCopy(row)}
                           aria-label={`Copy ${row.paymentLink}`}
                         >
-                          {copiedRowId === row.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                          {copiedRowId === row.id ? <CheckIcon className="h-3.5 w-3.5" /> : <CopyIcon className="h-3.5 w-3.5" />}
                         </button>
                       </div>
                     </TableCell>
@@ -309,7 +309,7 @@ function SubscriptionsTable({
                   {visibleColumns.action ? (
                     <TableCell className="px-3 py-2 text-right">
                       <Button variant="outline" size="icon-sm" className="h-8 w-[51px] rounded-md">
-                        <MoreVertical className="h-4 w-4" />
+                        <DotsThreeVerticalIcon className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   ) : null}
@@ -490,7 +490,7 @@ export function SubscriptionsContent() {
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative w-[229px]">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
@@ -515,7 +515,7 @@ export function SubscriptionsContent() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium">
                   {statusFilter === "all" ? "All status" : statusFilter[0].toUpperCase() + statusFilter.slice(1)}
-                  <ChevronDown className="h-4 w-4" />
+                  <CaretDownIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
@@ -533,7 +533,7 @@ export function SubscriptionsContent() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium">
                   {dateFilter === "today" ? "Today" : dateFilter === "7d" ? "Last 7 days" : "All time"}
-                  <ChevronDown className="h-4 w-4" />
+                  <CaretDownIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
@@ -560,13 +560,13 @@ export function SubscriptionsContent() {
               onClick={() => setSortDirection((current) => (current === "asc" ? "desc" : "asc"))}
               aria-label="Sort rows"
             >
-              <ArrowDownUp className="h-4 w-4" />
+              <ArrowsDownUpIcon className="h-4 w-4" />
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon-sm" className="h-8 w-[51px] rounded-md" aria-label="Select columns">
-                  <Columns3 className="h-4 w-4" />
+                  <ColumnsIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -601,7 +601,7 @@ export function SubscriptionsContent() {
 
             <div className="h-6 w-px bg-border/70" />
             <Button variant="ghost" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium" onClick={exportAllRows}>
-              <Download className="h-4 w-4" />
+              <DownloadIcon className="h-4 w-4" />
               Export all
             </Button>
           </div>
@@ -639,7 +639,7 @@ export function SubscriptionsContent() {
                 disabled={page <= 1}
                 onClick={() => setPage(1)}
               >
-                <ChevronsLeft className="h-4 w-4" />
+                <CaretDoubleLeftIcon className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
@@ -648,7 +648,7 @@ export function SubscriptionsContent() {
                 disabled={page <= 1}
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <CaretLeftIcon className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
@@ -657,7 +657,7 @@ export function SubscriptionsContent() {
                 disabled={page >= totalPages}
                 onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
               >
-                <ChevronRight className="h-4 w-4" />
+                <CaretRightIcon className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
@@ -666,7 +666,7 @@ export function SubscriptionsContent() {
                 disabled={page >= totalPages}
                 onClick={() => setPage(totalPages)}
               >
-                <ChevronsRight className="h-4 w-4" />
+                <CaretDoubleRightIcon className="h-4 w-4" />
               </Button>
             </div>
           </div>

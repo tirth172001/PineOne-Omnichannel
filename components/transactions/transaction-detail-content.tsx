@@ -3,19 +3,19 @@
 import Link from "next/link"
 import { useMemo, useState, type ReactNode } from "react"
 import {
-  ArrowLeft,
-  CheckCircle2,
-  ChevronRight,
-  Circle,
-  Copy,
-  CreditCard,
-  Download,
-  Info,
-  QrCode,
-  RotateCcw,
-  Zap,
-  XCircle,
-} from "lucide-react"
+  ArrowCounterClockwiseIcon,
+  ArrowLeftIcon,
+  CaretRightIcon,
+  CheckCircleIcon,
+  CircleIcon,
+  CopyIcon,
+  CreditCardIcon,
+  DownloadIcon,
+  InfoIcon,
+  LightningIcon,
+  QrCodeIcon,
+  XCircleIcon,
+} from "@phosphor-icons/react"
 import { StatusPill } from "@/components/shared/status-pill"
 import {
   ActivityTimelineSidepanel,
@@ -34,7 +34,7 @@ function formatInr(amount: number) {
 }
 
 function PaymentModeIcon({ mode }: { mode: TransactionRecord["paymentMode"] }) {
-  const Icon = mode === "card" ? CreditCard : QrCode
+  const Icon = mode === "card" ? CreditCardIcon : QrCodeIcon
   return (
     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
       <Icon className="h-8 w-8 text-primary-foreground" />
@@ -46,7 +46,7 @@ function DetailMetaPill({ label }: { label: string }) {
   return (
     <div className="inline-flex h-6 items-center gap-1 rounded-full border border-border/80 bg-background/80 px-2 text-xs text-foreground">
       <span>{label}</span>
-      <Copy className="h-3 w-3 text-muted-foreground" />
+      <CopyIcon className="h-3 w-3 text-muted-foreground" />
     </div>
   )
 }
@@ -83,7 +83,7 @@ function ActivityItem({
         onClick={() => onViewMore(eventId)}
         className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary"
       >
-        View details <ChevronRight className="h-3.5 w-3.5" />
+        View details <CaretRightIcon className="h-3.5 w-3.5" />
       </button>
     </div>
   )
@@ -363,10 +363,10 @@ export function TransactionDetailContent({
   }
 
   function toneIcon(tone: ActivityEventTone) {
-    if (tone === "success") return <CheckCircle2 className="h-4 w-4 text-success" />
-    if (tone === "failed") return <XCircle className="h-4 w-4 text-destructive" />
-    if (tone === "processing") return <RotateCcw className="h-4 w-4 text-warning" />
-    return <Circle className="h-4 w-4 text-chart-4" />
+    if (tone === "success") return <CheckCircleIcon className="h-4 w-4 text-success" />
+    if (tone === "failed") return <XCircleIcon className="h-4 w-4 text-destructive" />
+    if (tone === "processing") return <ArrowCounterClockwiseIcon className="h-4 w-4 text-warning" />
+    return <CircleIcon className="h-4 w-4 text-chart-4" />
   }
 
   return (
@@ -381,7 +381,7 @@ export function TransactionDetailContent({
                 <div className="flex h-8 w-full items-center justify-between">
                 <Button asChild variant="ghost" className="h-8 rounded-md px-2 text-xs text-foreground hover:bg-background/20">
                   <Link href="/transactions">
-                    <ArrowLeft className="mr-1 h-4 w-4" />
+                    <ArrowLeftIcon className="mr-1 h-4 w-4" />
                     Back
                   </Link>
                 </Button>
@@ -456,7 +456,7 @@ export function TransactionDetailContent({
                                 onClick={openProductDetailPanel}
                                 className="inline-flex items-center gap-1 text-xs font-medium text-primary"
                               >
-                                View details <ChevronRight className="h-3.5 w-3.5" />
+                                View details <CaretRightIcon className="h-3.5 w-3.5" />
                               </button>
                             </div>
                           ))}
@@ -473,7 +473,7 @@ export function TransactionDetailContent({
                             value: (
                               <span className="inline-flex items-center gap-2">
                                 {transaction.transactionId}
-                                <Copy className="h-4 w-4 text-muted-foreground" />
+                                <CopyIcon className="h-4 w-4 text-muted-foreground" />
                               </span>
                             ),
                           },
@@ -501,7 +501,7 @@ export function TransactionDetailContent({
                             value: (
                               <span className="inline-flex items-center gap-2">
                                 {transaction.merchantId}
-                                <Copy className="h-4 w-4 text-muted-foreground" />
+                                <CopyIcon className="h-4 w-4 text-muted-foreground" />
                               </span>
                             ),
                           },
@@ -574,13 +574,13 @@ export function TransactionDetailContent({
               <p className="text-sm text-muted-foreground">Subvention</p>
               <div className="inline-flex items-center gap-1 text-sm text-foreground">
                 <span>4.5% (₹3,000)</span>
-                <Info className="h-4 w-4 text-muted-foreground" />
+                <InfoIcon className="h-4 w-4 text-muted-foreground" />
               </div>
             </div>
             <div className="space-y-1.5">
               <p className="text-sm text-muted-foreground">Subvention type</p>
               <div className="inline-flex items-center gap-1 text-sm text-foreground">
-                <Zap className="h-4 w-4" />
+                <LightningIcon className="h-4 w-4" />
                 <span>Instant</span>
               </div>
             </div>
@@ -613,7 +613,7 @@ export function TransactionDetailContent({
             {refundSubmitted ? (
               <div className="rounded-lg border border-border bg-card p-4">
                 <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-success/20 text-success">
-                  <CheckCircle2 className="h-5 w-5" />
+                  <CheckCircleIcon className="h-5 w-5" />
                 </div>
                 <p className="mt-3 text-center text-sm font-semibold text-foreground">Refund initiated</p>
                 <p className="mt-1 text-center text-xs text-muted-foreground">
@@ -690,7 +690,7 @@ export function TransactionDetailContent({
           <div className="border-t border-muted px-6 py-4">
             <Button asChild className="w-full">
               <a href={chargeSlipFile} download={chargeSlipName}>
-                <Download className="mr-2 h-4 w-4" />
+                <DownloadIcon className="mr-2 h-4 w-4" />
                 Download chargeslip
               </a>
             </Button>

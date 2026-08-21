@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowRight } from "lucide-react"
+import { ArrowRightIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 
 export function AppAlertStrip() {
@@ -12,7 +12,7 @@ export function AppAlertStrip() {
         </p>
         <Button size="sm" variant="ghost" className="h-7 shrink-0 px-2.5 text-xs">
           Review now
-          <ArrowRight className="ml-1 h-3.5 w-3.5" />
+          <ArrowRightIcon className="ml-1 h-3.5 w-3.5" />
         </Button>
       </div>
     </div>

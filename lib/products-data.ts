@@ -1,29 +1,29 @@
+import type { Icon } from "@phosphor-icons/react"
 import {
-  AudioLines,
-  Cloud,
-  CreditCard,
-  FileText,
-  Fuel,
-  Gift,
-  GraduationCap,
-  HandCoins,
-  HeartPulse,
-  LayoutGrid,
-  MonitorSmartphone,
-  Route,
-  ShieldCheck,
-  Sparkles,
-  Store,
-  Truck,
-  Wifi,
-} from "lucide-react"
-import type { LucideIcon } from "lucide-react"
+  CloudIcon,
+  CreditCardIcon,
+  DevicesIcon,
+  FileTextIcon,
+  GasPumpIcon,
+  GiftIcon,
+  GraduationCapIcon,
+  GridFourIcon,
+  HandCoinsIcon,
+  HeartbeatIcon,
+  PathIcon,
+  ShieldCheckIcon,
+  SparkleIcon,
+  StorefrontIcon,
+  TruckIcon,
+  WaveformIcon,
+  WifiHighIcon,
+} from "@phosphor-icons/react"
 
 export interface Product {
   id: string
   name: string
   description: string
-  icon: LucideIcon
+  icon: Icon
   status: "enabled" | "available" | "coming-soon"
   href: string
   whyUseful?: string
@@ -40,7 +40,7 @@ export interface PartnerProduct {
   id: string
   name: string
   description: string
-  icon: LucideIcon
+  icon: Icon
   partnerName: string
   partnerLogo?: string
   discount: string
@@ -61,7 +61,7 @@ export const productCategories: ProductCategory[] = [
         id: "payment-gateway",
         name: "Payment Gateway",
         description: "Online payment orchestration for checkout, routing, retries, and reconciliation.",
-        icon: CreditCard,
+        icon: CreditCardIcon,
         status: "enabled",
         href: "/products/online-payments",
       },
@@ -69,7 +69,7 @@ export const productCategories: ProductCategory[] = [
         id: "subscription",
         name: "Subscription",
         description: "Recurring collections, mandate lifecycle, dunning, and renewal analytics.",
-        icon: Route,
+        icon: PathIcon,
         status: "enabled",
         href: "/products/online-payments",
       },
@@ -77,7 +77,7 @@ export const productCategories: ProductCategory[] = [
         id: "payout",
         name: "Payout",
         description: "Business disbursals and beneficiary payouts with approval and settlement controls.",
-        icon: HandCoins,
+        icon: HandCoinsIcon,
         status: "available",
         href: "/products/online-payments",
       },
@@ -85,7 +85,7 @@ export const productCategories: ProductCategory[] = [
         id: "online-payments",
         name: "Online payment",
         description: "Checkout, smart routing, and payment-link product surfaces.",
-        icon: CreditCard,
+        icon: CreditCardIcon,
         status: "enabled",
         href: "/products/online-payments",
       },
@@ -93,7 +93,7 @@ export const productCategories: ProductCategory[] = [
         id: "in-store-payments",
         name: "In-store payment",
         description: "Device portfolio, store operations, and in-person acceptance.",
-        icon: Store,
+        icon: StorefrontIcon,
         status: "enabled",
         href: "/products/in-store-payments",
       },
@@ -101,7 +101,7 @@ export const productCategories: ProductCategory[] = [
         id: "gift-cards",
         name: "Gift cards",
         description: "Gift-card issuing and redemption workflows for merchants.",
-        icon: Gift,
+        icon: GiftIcon,
         status: "coming-soon",
         href: "/products/gift-cards-coming-soon",
       },
@@ -116,7 +116,7 @@ export const productCategories: ProductCategory[] = [
         id: "other-products",
         name: "Other products",
         description: "3rd-party products, partner offers, and adjacent merchant tools.",
-        icon: LayoutGrid,
+        icon: GridFourIcon,
         status: "available",
         href: "/products/other-products",
       },
@@ -124,7 +124,7 @@ export const productCategories: ProductCategory[] = [
         id: "offer-engine",
         name: "Offer engine",
         description: "Rule-driven offer orchestration across payment and merchant journeys.",
-        icon: Sparkles,
+        icon: SparkleIcon,
         status: "coming-soon",
         href: "/products/offer-engine-coming-soon",
       },
@@ -132,7 +132,7 @@ export const productCategories: ProductCategory[] = [
         id: "growthx",
         name: "GrowthX",
         description: "Growth-focused cross-sell and merchant acceleration programs.",
-        icon: Route,
+        icon: PathIcon,
         status: "coming-soon",
         href: "/products/growthx-coming-soon",
       },
@@ -145,7 +145,7 @@ export const partnerProducts: PartnerProduct[] = [
     id: "jio-wifi",
     name: "Jio Business WiFi",
     description: "High-speed enterprise WiFi for your business premises with dedicated bandwidth",
-    icon: Wifi,
+    icon: WifiHighIcon,
     partnerName: "Jio",
     discount: "Up to 30% off",
     benefits: [
@@ -161,7 +161,7 @@ export const partnerProducts: PartnerProduct[] = [
     id: "icici-lombard-insurance",
     name: "Business Insurance",
     description: "Comprehensive business insurance covering fire, theft, and natural disasters",
-    icon: ShieldCheck,
+    icon: ShieldCheckIcon,
     partnerName: "ICICI Lombard",
     discount: "15% lower premium",
     benefits: [
@@ -177,7 +177,7 @@ export const partnerProducts: PartnerProduct[] = [
     id: "delhivery-shipping",
     name: "Business Shipping",
     description: "Discounted shipping rates for e-commerce and retail businesses",
-    icon: Truck,
+    icon: TruckIcon,
     partnerName: "Delhivery",
     discount: "20% off shipping",
     benefits: [
@@ -193,7 +193,7 @@ export const partnerProducts: PartnerProduct[] = [
     id: "zoho-accounting",
     name: "Accounting Software",
     description: "Cloud-based GST-compliant accounting and invoicing software",
-    icon: FileText,
+    icon: FileTextIcon,
     partnerName: "Zoho Books",
     discount: "40% off annual plan",
     benefits: [
@@ -209,7 +209,7 @@ export const partnerProducts: PartnerProduct[] = [
     id: "upgrad-courses",
     name: "Business Courses",
     description: "Upskill with certified courses in digital marketing, finance, and management",
-    icon: GraduationCap,
+    icon: GraduationCapIcon,
     partnerName: "upGrad",
     discount: "25% scholarship",
     benefits: [
@@ -225,7 +225,7 @@ export const partnerProducts: PartnerProduct[] = [
     id: "hdfc-ergo-health",
     name: "Group Health Insurance",
     description: "Affordable health insurance for you and your employees",
-    icon: HeartPulse,
+    icon: HeartbeatIcon,
     partnerName: "HDFC ERGO",
     discount: "10% group discount",
     benefits: [
@@ -241,7 +241,7 @@ export const partnerProducts: PartnerProduct[] = [
     id: "awfis-coworking",
     name: "Co-working Space",
     description: "Flexible office spaces and meeting rooms across major cities",
-    icon: MonitorSmartphone,
+    icon: DevicesIcon,
     partnerName: "Awfis",
     discount: "First month free",
     benefits: [
@@ -257,7 +257,7 @@ export const partnerProducts: PartnerProduct[] = [
     id: "indian-oil-fuel",
     name: "Fleet Fuel Card",
     description: "Fuel cards with discounts and expense tracking for business vehicles",
-    icon: Fuel,
+    icon: GasPumpIcon,
     partnerName: "Indian Oil",
     discount: "₹2.50/litre savings",
     benefits: [
@@ -273,7 +273,7 @@ export const partnerProducts: PartnerProduct[] = [
     id: "aws-cloud",
     name: "Cloud Credits",
     description: "AWS cloud credits for startups and growing businesses",
-    icon: Cloud,
+    icon: CloudIcon,
     partnerName: "Amazon Web Services",
     discount: "Up to ₹5,000 credits",
     benefits: [

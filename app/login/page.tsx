@@ -1,15 +1,16 @@
 "use client"
 
 import Link from "next/link"
-import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { type FormEvent, useEffect, useMemo, useState } from "react"
-import { CaretDown, Moon, Sun } from "@phosphor-icons/react"
+import { CaretDownIcon, DotsThreeIcon, MoonIcon, SignOutIcon, SunIcon } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 
+import { AuthVisualPanel } from "@/components/onboarding/auth-visual-panel"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -20,18 +21,13 @@ import {
   readLanguagePreference,
   writeLanguagePreference,
 } from "@/lib/language-settings"
-import { readDummyAuthSession, writeDummyAuthSession } from "@/lib/dummy-auth"
+import { clearDummyAuthSession, readDummyAuthSession, writeDummyAuthSession } from "@/lib/dummy-auth"
 import { setThemeWithTransition } from "@/lib/theme-transition"
 
 const imgLine = "https://www.figma.com/api/mcp/asset/1c3d4486-78bf-42f4-bc1e-1a5ece78800e"
 const imgVector3 = "https://www.figma.com/api/mcp/asset/7964ee79-a0f1-4c95-b33b-37968f22bfb5"
 const imgVector4 = "https://www.figma.com/api/mcp/asset/d3e31bb0-de0f-4534-956b-21f94f744993"
 const imgVector5 = "https://www.figma.com/api/mcp/asset/9cefef26-dec3-4f3d-99d9-48e45ef80641"
-
-const Grainient = dynamic(() => import("@/components/Grainient"), {
-  ssr: false,
-  loading: () => <div className="h-full w-full bg-[linear-gradient(165deg,#365314_0%,#D9F99D_50%,#365314_100%)]" />,
-})
 
 const LOGIN_LANGUAGES = [
   { code: "en", label: "English" },
@@ -70,7 +66,6 @@ export default function LoginPage() {
 
   const [identifier, setIdentifier] = useState("")
   const [error, setError] = useState("")
-  const [showVisualPanel, setShowVisualPanel] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [languageCode, setLanguageCode] = useState(DEFAULT_LANGUAGE.code)
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false)
@@ -80,14 +75,6 @@ export default function LoginPage() {
       router.replace("/")
     }
   }, [router])
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)")
-    const update = () => setShowVisualPanel(mediaQuery.matches)
-    update()
-    mediaQuery.addEventListener("change", update)
-    return () => mediaQuery.removeEventListener("change", update)
-  }, [])
 
   useEffect(() => {
     setMounted(true)
@@ -119,44 +106,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-sidebar p-2">
       <div className="grid h-[calc(100vh-1rem)] w-full items-stretch grid-cols-1 gap-2 lg:grid-cols-2">
-        <div className="relative hidden h-full overflow-hidden rounded-md bg-[linear-gradient(165deg,#365314_0%,#D9F99D_50%,#365314_100%)] lg:block">
-          {showVisualPanel ? (
-            <div className="absolute inset-0 overflow-hidden">
-              <div className="absolute left-1/2 top-1/2 h-[1080px] w-[1080px] -translate-x-1/2 -translate-y-1/2">
-                <Grainient
-                  className="h-full w-full"
-                  color1="#365314"
-                  color2="#D9F99D"
-                  color3="#365314"
-                  timeSpeed={0.25}
-                  colorBalance={0}
-                  warpStrength={1}
-                  warpFrequency={5}
-                  warpSpeed={2}
-                  warpAmplitude={50}
-                  blendAngle={0}
-                  blendSoftness={0.05}
-                  rotationAmount={500}
-                  noiseScale={2}
-                  grainAmount={0.1}
-                  grainScale={2}
-                  grainAnimated={false}
-                  contrast={1.5}
-                  gamma={1}
-                  saturation={1}
-                  centerX={0}
-                  centerY={0}
-                  zoom={0.9}
-                />
-              </div>
-            </div>
-          ) : null}
-          <div className="pointer-events-none absolute inset-0">
-            <img alt="" className="size-full object-cover" src="/brand/login-left-overlay.svg" />
-          </div>
-        </div>
-
-        <section className="relative flex h-full rounded-md bg-background p-5 sm:p-8 lg:p-10">
+        <section className="relative flex h-full overflow-y-auto rounded-md bg-background p-5 sm:p-8 lg:p-10">
           <div className="absolute left-5 right-5 top-5 flex items-center justify-between sm:left-8 sm:right-8 sm:top-8 lg:left-10 lg:right-10 lg:top-10">
             <div className="p-1">
               <img
@@ -173,7 +123,7 @@ export default function LoginPage() {
                 onClick={() => setThemeWithTransition(setTheme, isDark ? "light" : "dark")}
                 aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
               >
-                {isDark ? <Sun size={16} weight="regular" /> : <Moon size={16} weight="regular" />}
+                {isDark ? <SunIcon size={16} weight="regular" /> : <MoonIcon size={16} weight="regular" />}
               </button>
 
               <DropdownMenu open={languageMenuOpen} onOpenChange={setLanguageMenuOpen}>
@@ -183,7 +133,7 @@ export default function LoginPage() {
                     type="button"
                   >
                     {selectedLanguage.label}
-                    <CaretDown size={16} weight="regular" />
+                    <CaretDownIcon size={16} weight="regular" />
                   </button>
                 </DropdownMenuTrigger>
 
@@ -214,16 +164,44 @@ export default function LoginPage() {
                   </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 data-[state=open]:bg-accent"
+                    type="button"
+                    aria-label="Account menu"
+                  >
+                    <DotsThreeIcon size={20} weight="bold" />
+                  </button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent
+                  align="end"
+                  sideOffset={8}
+                  className="w-44 rounded-[10px] border border-border bg-popover p-1 text-popover-foreground shadow-md"
+                >
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      clearDummyAuthSession()
+                      router.replace("/login")
+                    }}
+                  >
+                    <SignOutIcon className="h-3.5 w-3.5" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
-          <div className="mx-auto flex w-full max-w-[320px] items-center justify-center">
+          <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col pt-24 sm:pt-28">
             <form className="w-full space-y-8" onSubmit={onContinue}>
               <div className="space-y-2">
                 <h1 className="text-2xl font-semibold leading-8 text-card-foreground">Login to your account</h1>
                 <p className="text-sm font-medium leading-5 text-muted-foreground">
                   Don’t have an account?{" "}
-                  <Link href="/signup" className="text-primary underline underline-offset-2">
+                  <Link href="/signup/email" className="text-primary underline underline-offset-2">
                     Sign up
                   </Link>
                 </p>
@@ -296,6 +274,8 @@ export default function LoginPage() {
             </form>
           </div>
         </section>
+
+        <AuthVisualPanel />
       </div>
     </div>
   )

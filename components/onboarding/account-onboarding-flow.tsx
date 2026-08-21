@@ -15,18 +15,17 @@ import { PageHeader } from "@/components/ui/panels"
 import { cn } from "@/lib/utils"
 import { readDummyAuthSession, writeDummyAuthSession } from "@/lib/dummy-auth"
 import {
-  Bot,
-  Building2,
-  CheckCircle2,
-  Circle,
-  FileText,
-  Landmark,
-  MapPin,
-  MessageSquare,
-  SendHorizontal,
-  User,
-} from "lucide-react"
-
+  BankIcon,
+  BuildingsIcon,
+  ChatIcon,
+  CheckCircleIcon,
+  CircleIcon,
+  FileTextIcon,
+  MapPinIcon,
+  PaperPlaneRightIcon,
+  RobotIcon,
+  UserIcon,
+} from "@phosphor-icons/react"
 type AccountStepId = "account" | "business" | "kyc" | "payout" | "activate"
 
 type ChatMessage = {
@@ -67,11 +66,11 @@ const accountSteps: Array<{ id: AccountStepId; title: string; caption: string }>
 ]
 
 const kycSections = [
-  { id: "company-info", label: "Company info", icon: Building2 },
-  { id: "company-address", label: "Company address", icon: MapPin },
-  { id: "ownership", label: "Ownership details", icon: User },
-  { id: "documents", label: "Company documents", icon: FileText },
-  { id: "expected", label: "Expected activity", icon: Landmark },
+  { id: "company-info", label: "Company info", icon: BuildingsIcon },
+  { id: "company-address", label: "Company address", icon: MapPinIcon },
+  { id: "ownership", label: "Ownership details", icon: UserIcon },
+  { id: "documents", label: "Company documents", icon: FileTextIcon },
+  { id: "expected", label: "Expected activity", icon: BankIcon },
 ]
 
 const productOptions = ["Checkout", "POS Terminal", "Payment Links", "Merchant Lending"]
@@ -396,9 +395,9 @@ export function AccountOnboardingFlow({
               return (
                 <div key={step.id} className="flex items-center gap-2.5">
                   {completed ? (
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                    <CheckCircleIcon className="h-4 w-4 text-primary" />
                   ) : (
-                    <Circle className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
+                    <CircleIcon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
                   )}
                   <p className={cn("text-sm", active ? "font-medium text-foreground" : "text-muted-foreground")}>{step.title}</p>
                 </div>
@@ -726,7 +725,7 @@ export function AccountOnboardingFlow({
 
         <aside className="hidden min-h-0 overflow-hidden rounded-xl border border-border/70 bg-card lg:flex lg:flex-col">
           <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <ChatIcon className="h-4 w-4 text-muted-foreground" />
             <p className="text-sm font-medium text-foreground">Assistant</p>
           </div>
 
@@ -742,7 +741,7 @@ export function AccountOnboardingFlow({
                 )}
               >
                 <div className="mb-1 flex items-center gap-1.5">
-                  {message.role === "assistant" ? <Bot className="h-3 w-3" /> : <User className="h-3 w-3" />}
+                  {message.role === "assistant" ? <RobotIcon className="h-3 w-3" /> : <UserIcon className="h-3 w-3" />}
                   <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                     {message.role === "assistant" ? "Assistant" : "You"}
                   </span>
@@ -761,7 +760,7 @@ export function AccountOnboardingFlow({
             />
             <div className="flex items-center justify-end gap-2">
               <Button size="sm" type="submit" className="h-8 gap-1.5 text-xs" disabled={Boolean(demoMode)}>
-                <SendHorizontal className="h-3.5 w-3.5" />
+                <PaperPlaneRightIcon className="h-3.5 w-3.5" />
                 Send
               </Button>
             </div>

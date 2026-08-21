@@ -4,20 +4,20 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
-  Bell,
-  Building2,
-  Globe2,
-  LogOut,
-  Menu,
-  MessageSquareText,
-  Moon,
-  Search,
-  Shield,
-  SlidersHorizontal,
-  Sun,
-  UserCircle2,
-  Users,
-} from "lucide-react"
+  BellIcon,
+  BuildingsIcon,
+  ChatTextIcon,
+  GlobeIcon,
+  ListIcon,
+  MagnifyingGlassIcon,
+  MoonIcon,
+  ShieldIcon,
+  SignOutIcon,
+  SlidersHorizontalIcon,
+  SunIcon,
+  UserCircleIcon,
+  UsersIcon,
+} from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -170,7 +170,7 @@ export function V2Topbar({ pathname, onMenuClick, isMobile = false }: V2TopbarPr
               onClick={onMenuClick}
               aria-label="Open navigation menu"
             >
-              <Menu className="h-4 w-4" />
+              <ListIcon className="h-4 w-4" />
             </Button>
           ) : null}
           <Link
@@ -197,12 +197,12 @@ export function V2Topbar({ pathname, onMenuClick, isMobile = false }: V2TopbarPr
               title="Search (Ctrl/Cmd + K)"
               onClick={openGlobalSearch}
             >
-              <Search className="h-4 w-4" />
+              <MagnifyingGlassIcon className="h-4 w-4" />
             </Button>
           </div>
         ) : (
           <div ref={searchWrapRef} className="relative w-full">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               ref={searchInputRef}
               value={query}
@@ -282,7 +282,7 @@ export function V2Topbar({ pathname, onMenuClick, isMobile = false }: V2TopbarPr
                 )}
                 aria-label="Change language"
               >
-                <Globe2 className="h-4 w-4" />
+                <GlobeIcon className="h-4 w-4" />
                 {!isMobile ? <span>{selectedLanguage.label}</span> : null}
               </Button>
             </DropdownMenuTrigger>
@@ -314,7 +314,7 @@ export function V2Topbar({ pathname, onMenuClick, isMobile = false }: V2TopbarPr
             onClick={() => setThemeWithTransition(setTheme, isDark ? "light" : "dark")}
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
           >
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
           </Button>
 
           <Button
@@ -324,7 +324,7 @@ export function V2Topbar({ pathname, onMenuClick, isMobile = false }: V2TopbarPr
             aria-label="Notifications"
             onClick={() => setNotificationsOpen(true)}
           >
-            <Bell className="h-4 w-4" />
+            <BellIcon className="h-4 w-4" />
             {notificationCount > 0 ? (
               <span className="absolute right-1 top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
                 {notificationCount}
@@ -339,7 +339,7 @@ export function V2Topbar({ pathname, onMenuClick, isMobile = false }: V2TopbarPr
                 size="icon-sm"
                 className="h-9 w-9 text-foreground hover:bg-primary/10"
               >
-                <UserCircle2 className="h-4 w-4" />
+                <UserCircleIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -349,29 +349,29 @@ export function V2Topbar({ pathname, onMenuClick, isMobile = false }: V2TopbarPr
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => router.push(`${ROUTES.settings.root}?module=profile&panel=profile`)}>
-                <UserCircle2 className="mr-2 h-3.5 w-3.5" />
+                <UserCircleIcon className="mr-2 h-3.5 w-3.5" />
                 Profile
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => router.push(`${ROUTES.settings.root}?module=business-details&panel=business-details`)}>
-                <Building2 className="mr-2 h-3.5 w-3.5" />
+                <BuildingsIcon className="mr-2 h-3.5 w-3.5" />
                 Business details
               </DropdownMenuItem>
               {isAdmin ? (
                 <DropdownMenuItem onSelect={() => router.push(`${ROUTES.settings.root}?module=users&panel=users`)}>
-                  <Users className="mr-2 h-3.5 w-3.5" />
+                  <UsersIcon className="mr-2 h-3.5 w-3.5" />
                   Users management
                 </DropdownMenuItem>
               ) : null}
               <DropdownMenuItem onSelect={() => router.push(`${ROUTES.settings.root}?module=preferences&panel=preferences`)}>
-                <SlidersHorizontal className="mr-2 h-3.5 w-3.5" />
+                <SlidersHorizontalIcon className="mr-2 h-3.5 w-3.5" />
                 Preferences
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => router.push(`${ROUTES.settings.root}?module=security&panel=security`)}>
-                <Shield className="mr-2 h-3.5 w-3.5" />
+                <ShieldIcon className="mr-2 h-3.5 w-3.5" />
                 Security
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => router.push(`${ROUTES.settings.root}?module=feedback&panel=feedback`)}>
-                <MessageSquareText className="mr-2 h-3.5 w-3.5" />
+                <ChatTextIcon className="mr-2 h-3.5 w-3.5" />
                 Feedback
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -381,7 +381,7 @@ export function V2Topbar({ pathname, onMenuClick, isMobile = false }: V2TopbarPr
                   router.replace("/login")
                 }}
               >
-                <LogOut className="mr-2 h-3.5 w-3.5" />
+                <SignOutIcon className="mr-2 h-3.5 w-3.5" />
                 Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -394,7 +394,7 @@ export function V2Topbar({ pathname, onMenuClick, isMobile = false }: V2TopbarPr
           side="right"
           a11yTitle="Notifications"
           a11yDescription="Recent updates and system alerts."
-          className="w-full border-l border-border/60 bg-background p-0 sm:max-w-[390px]"
+          className="w-full p-0 sm:max-w-[390px]"
         >
           <div className="flex h-full flex-col">
             <div className="border-b border-border/60 bg-muted/25 px-4 py-3">

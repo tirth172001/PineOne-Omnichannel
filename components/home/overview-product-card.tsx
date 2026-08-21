@@ -2,7 +2,7 @@
 
 import type { ComponentType } from "react"
 import Link from "next/link"
-import { ArrowUpRight } from "lucide-react"
+import { ArrowUpRightIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -49,7 +49,7 @@ export function OverviewProductCard({
       <Button asChild variant="outline" size="sm" className="mt-3 h-8 w-full text-xs">
         <Link href={href}>
           Explore
-          <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
+          <ArrowUpRightIcon className="ml-1.5 h-3.5 w-3.5" />
         </Link>
       </Button>
     </article>

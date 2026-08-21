@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { TrendingUp, TrendingDown, ArrowUpRight } from "lucide-react"
+import { ArrowUpRightIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AnimatedNumberText } from "@/components/ui/animated-number-text"
@@ -20,7 +20,7 @@ export function BusinessHealthCard() {
         <CardContent className="px-5 py-4">
           <AnimatedNumberText value="₹2,34,86,400.54" className="text-2xl font-bold text-foreground" />
           <div className="flex items-center gap-1 text-xs text-success mt-1">
-            <TrendingUp className="h-3 w-3" /> <AnimatedNumberText value="+5.2%" />
+            <TrendUpIcon className="h-3 w-3" /> <AnimatedNumberText value="+5.2%" />
           </div>
           <div className="h-28 mt-2">
             <HighchartsPanelChart
@@ -33,7 +33,7 @@ export function BusinessHealthCard() {
             />
           </div>
           <Button variant="link" className="p-0 h-auto text-xs text-primary mt-2" asChild>
-            <Link href="/online-payments">View payment details <ArrowUpRight className="h-3.5 w-3.5" /></Link>
+            <Link href="/online-payments">View payment details <ArrowUpRightIcon className="h-3.5 w-3.5" /></Link>
           </Button>
         </CardContent>
       </Card>
@@ -64,7 +64,7 @@ export function BusinessHealthCard() {
         <CardContent className="px-5 py-4">
           <AnimatedNumberText value="₹86,400" className="text-2xl font-bold text-foreground" />
           <div className="flex items-center gap-1 text-xs text-destructive mt-1">
-            <TrendingDown className="h-3 w-3" /> <AnimatedNumberText value="234" /> txns
+            <TrendDownIcon className="h-3 w-3" /> <AnimatedNumberText value="234" /> txns
           </div>
           <div className="h-28 mt-2">
             <HighchartsPanelChart

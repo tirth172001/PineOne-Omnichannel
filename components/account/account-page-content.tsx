@@ -17,9 +17,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { PanelEmpty } from "@/components/ui/panels"
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
 import { Separator } from "@/components/ui/separator"
-import { TransactionStyleTable } from "@/components/shared/transaction-style-table"
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
 import {
   Sheet,
   SheetContent,
@@ -38,7 +38,7 @@ import {
   readLanguagePreference,
   writeLanguagePreference,
 } from "@/lib/language-settings"
-import { AlertTriangle, ChevronDown, MoreVertical, Search } from "lucide-react"
+import { CaretDownIcon, DotsThreeVerticalIcon, MagnifyingGlassIcon, WarningIcon } from "@phosphor-icons/react"
 import { AccountPageShell } from "./account-page-shell"
 import { DetailSidepanelShell } from "@/components/shared/activity-timeline-sidepanel"
 
@@ -990,7 +990,6 @@ export function AccountPageContent({ page, embedded = false }: AccountPageConten
   const primaryRoleFilters = useMemo(() => rankedRoleFilters.slice(0, 3), [rankedRoleFilters])
   const overflowRoleFilters = useMemo(() => rankedRoleFilters.slice(3), [rankedRoleFilters])
   const [pendingSearchQuery, setPendingSearchQuery] = useState("")
-  const [usersSearchQuery, setUsersSearchQuery] = useState("")
 
   function approvePendingUser(id: string) {
     setPendingUsers((prev) => {
@@ -1071,30 +1070,21 @@ export function AccountPageContent({ page, embedded = false }: AccountPageConten
     )
   }, [pendingUsers, pendingSearchQuery])
   const filteredManagedUsers = useMemo(() => {
-    const query = usersSearchQuery.trim().toLowerCase()
-    return managedUsers.filter((entry) => {
-      const roleMatch = roleFilter === "all" || entry.role.toLowerCase() === roleFilter
-      if (!roleMatch) return false
-      if (!query) return true
-      return [entry.fullName, entry.email, entry.role, entry.createdOn, entry.lastModifiedOn]
-        .join(" ")
-        .toLowerCase()
-        .includes(query)
-    })
-  }, [managedUsers, roleFilter, usersSearchQuery])
+    return managedUsers.filter((entry) => roleFilter === "all" || entry.role.toLowerCase() === roleFilter)
+  }, [managedUsers, roleFilter])
   const selectedPendingCount = selectedPendingIds.length
   const isAllPendingSelected =
     filteredPendingUsers.length > 0 &&
     filteredPendingUsers.every((entry) => selectedPendingIds.includes(entry.id))
 
-  const pendingUserColumns = useMemo(
+  const pendingUserColumns = useMemo<DataTableColumn<PendingUser>[]>(
     () => [
       {
-        key: "selection",
+        id: "selection",
         header: "SELECT",
-        headerClassName: "h-10 min-w-[64px] px-3 text-sm font-medium text-muted-foreground text-center",
-        cellClassName: "px-3 text-center",
-        render: (row: PendingUser) => (
+        width: 64,
+        align: "center",
+        cell: (row) => (
           <Checkbox
             checked={selectedPendingIds.includes(row.id)}
             onCheckedChange={(checked) =>
@@ -1107,56 +1097,56 @@ export function AccountPageContent({ page, embedded = false }: AccountPageConten
         ),
       },
       {
-        key: "fullName",
+        id: "fullName",
         header: "FULL NAME",
-        headerClassName: "h-10 min-w-[180px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: PendingUser) => row.fullName,
+        width: 180,
+        cell: (row) => row.fullName,
       },
       {
-        key: "email",
+        id: "email",
         header: "EMAIL ID",
-        headerClassName: "h-10 min-w-[220px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: PendingUser) => row.email,
+        width: 220,
+        cell: (row) => row.email,
       },
       {
-        key: "role",
+        id: "role",
         header: "REQUESTED ROLE",
-        headerClassName: "h-10 min-w-[160px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: PendingUser) => (
+        width: 160,
+        cell: (row) => (
           <Badge variant="outline" className={rolePillClass(row.role)}>
             {row.role}
           </Badge>
         ),
       },
       {
-        key: "scope",
+        id: "scope",
         header: "ACCESS SCOPE",
-        headerClassName: "h-10 min-w-[180px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: PendingUser) => row.scope,
+        width: 180,
+        cell: (row) => row.scope,
       },
       {
-        key: "requestedBy",
+        id: "requestedBy",
         header: "REQUESTED BY",
-        headerClassName: "h-10 min-w-[150px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: PendingUser) => row.requestedBy,
+        width: 150,
+        cell: (row) => row.requestedBy,
       },
       {
-        key: "requestedOn",
+        id: "requestedOn",
         header: "REQUESTED ON",
-        headerClassName: "h-10 min-w-[170px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: PendingUser) => row.requestedOn,
+        width: 170,
+        cell: (row) => row.requestedOn,
       },
       {
-        key: "action",
+        id: "action",
         header: "ACTION",
-        headerClassName: "h-10 min-w-[100px] px-3 text-right text-sm font-medium text-muted-foreground",
-        cellClassName: "px-3 text-right",
-        render: (row: PendingUser) => (
+        width: 100,
+        align: "right",
+        cell: (row) => (
           <div className="flex justify-end">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-lg">
-                  <MoreVertical className="h-4 w-4" />
+                  <DotsThreeVerticalIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44 rounded-lg">
@@ -1177,53 +1167,55 @@ export function AccountPageContent({ page, embedded = false }: AccountPageConten
     [selectedPendingIds]
   )
 
-  const managedUserColumns = useMemo(
+  const managedUserColumns = useMemo<DataTableColumn<ManagedUser>[]>(
     () => [
       {
-        key: "fullName",
+        id: "fullName",
         header: "FULL NAME",
-        headerClassName: "h-10 min-w-[180px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: ManagedUser) => row.fullName,
+        width: 180,
+        getSearchValue: (row) =>
+          `${row.fullName} ${row.email} ${row.role} ${row.createdOn} ${row.lastModifiedOn}`,
+        cell: (row) => row.fullName,
       },
       {
-        key: "email",
+        id: "email",
         header: "EMAIL ID",
-        headerClassName: "h-10 min-w-[220px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: ManagedUser) => row.email,
+        width: 220,
+        cell: (row) => row.email,
       },
       {
-        key: "role",
+        id: "role",
         header: "ROLE",
-        headerClassName: "h-10 min-w-[160px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: ManagedUser) => (
+        width: 160,
+        cell: (row) => (
           <Badge variant="outline" className={rolePillClass(row.role)}>
             {row.role}
           </Badge>
         ),
       },
       {
-        key: "createdOn",
+        id: "createdOn",
         header: "CREATED ON",
-        headerClassName: "h-10 min-w-[170px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: ManagedUser) => row.createdOn,
+        width: 170,
+        cell: (row) => row.createdOn,
       },
       {
-        key: "lastModifiedOn",
+        id: "lastModifiedOn",
         header: "LAST MODIFIED ON",
-        headerClassName: "h-10 min-w-[190px] px-3 text-sm font-medium text-muted-foreground",
-        render: (row: ManagedUser) => row.lastModifiedOn,
+        width: 190,
+        cell: (row) => row.lastModifiedOn,
       },
       {
-        key: "action",
+        id: "action",
         header: "ACTION",
-        headerClassName: "h-10 min-w-[100px] px-3 text-right text-sm font-medium text-muted-foreground",
-        cellClassName: "px-3 text-right",
-        render: (_row: ManagedUser) => (
+        width: 100,
+        align: "right",
+        cell: () => (
           <div className="flex justify-end">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-lg">
-                  <MoreVertical className="h-4 w-4" />
+                  <DotsThreeVerticalIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44 rounded-lg">
@@ -1496,11 +1488,15 @@ export function AccountPageContent({ page, embedded = false }: AccountPageConten
         actions={usersHeaderActions}
       >
         {!isAdmin ? (
-          <PanelEmpty
-            icon={AlertTriangle}
-            title="Restricted access"
-            description="Only admins can manage users and invitations on this workspace."
-          />
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <WarningIcon className="h-4 w-4" />
+              </EmptyMedia>
+              <EmptyTitle>Restricted access</EmptyTitle>
+              <EmptyDescription>Only admins can manage users and invitations on this workspace.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <>
             <SectionCard
@@ -1531,7 +1527,7 @@ export function AccountPageContent({ page, embedded = false }: AccountPageConten
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="relative w-[240px]">
-                      <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         value={pendingSearchQuery}
                         onChange={(event) => setPendingSearchQuery(event.target.value)}
@@ -1562,14 +1558,13 @@ export function AccountPageContent({ page, embedded = false }: AccountPageConten
                     </DropdownMenu>
                   </div>
                 </div>
-                <TransactionStyleTable
-                  rows={filteredPendingUsers}
-                  rowKey={(row) => row.id}
+                <DataTable
+                  data={filteredPendingUsers}
+                  rowId={(row) => row.id}
                   columns={pendingUserColumns}
                   emptyText="No pending user approvals right now."
-                  minWidthClassName="min-w-[1220px]"
-                  selectedCount={selectedPendingCount}
-                  totalRowsLabel={filteredPendingUsers.length}
+                  tableClassName="min-w-[1220px]"
+                  showSearch={false}
                 />
               </div>
             </SectionCard>
@@ -1602,7 +1597,7 @@ export function AccountPageContent({ page, embedded = false }: AccountPageConten
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" className="h-8 gap-1.5 rounded-md px-2.5 text-sm">
-                            More <ChevronDown className="h-4 w-4" />
+                            More <CaretDownIcon className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-56">
@@ -1617,23 +1612,13 @@ export function AccountPageContent({ page, embedded = false }: AccountPageConten
                       </DropdownMenu>
                     ) : null}
                   </div>
-                  <div className="relative w-[260px]">
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      value={usersSearchQuery}
-                      onChange={(event) => setUsersSearchQuery(event.target.value)}
-                      placeholder="Search by name or email"
-                      className="h-8 rounded-md border-input pl-8 pr-3 text-sm"
-                    />
-                  </div>
                 </div>
-                <TransactionStyleTable
-                  rows={filteredManagedUsers}
-                  rowKey={(row) => row.id}
+                <DataTable
+                  data={filteredManagedUsers}
+                  rowId={(row) => row.id}
                   columns={managedUserColumns}
-                  minWidthClassName="min-w-[1080px]"
-                  selectedCount={0}
-                  totalRowsLabel={filteredManagedUsers.length}
+                  tableClassName="min-w-[1080px]"
+                  searchPlaceholder="Search by name or email"
                 />
               </div>
             </SectionCard>

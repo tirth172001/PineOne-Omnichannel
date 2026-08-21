@@ -15,13 +15,12 @@ import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { knowledgeTopics } from "@/lib/support-knowledge"
 import {
-  CreditCard,
-  MessageSquareText,
-  MonitorCheck,
-  ReceiptIndianRupee,
-  ShieldAlert,
-} from "lucide-react"
-
+  ChatTextIcon,
+  CreditCardIcon,
+  MonitorIcon,
+  ReceiptIcon,
+  ShieldWarningIcon,
+} from "@phosphor-icons/react"
 type SupportSection = "knowledge" | "queries"
 type SupportTicketStatus = "Open" | "In progress" | "Resolved"
 
@@ -72,10 +71,10 @@ const statusBadgeClass: Record<SupportTicketStatus, string> = {
 }
 
 function getTopicIcon(iconKey: string) {
-  if (iconKey === "checkout") return CreditCard
-  if (iconKey === "pos") return MonitorCheck
-  if (iconKey === "settlements") return ReceiptIndianRupee
-  return ShieldAlert
+  if (iconKey === "checkout") return CreditCardIcon
+  if (iconKey === "pos") return MonitorIcon
+  if (iconKey === "settlements") return ReceiptIcon
+  return ShieldWarningIcon
 }
 
 function SupportQueriesTable() {
@@ -231,7 +230,7 @@ export function SupportRouteContent({ section }: { section: SupportSection }) {
         actions={
           section === "queries" ? (
             <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={() => setRaiseRequestOpen(true)}>
-              <MessageSquareText className="h-3.5 w-3.5" />
+              <ChatTextIcon className="h-3.5 w-3.5" />
               Raise request
             </Button>
           ) : (
@@ -249,7 +248,7 @@ export function SupportRouteContent({ section }: { section: SupportSection }) {
           side="right"
           a11yTitle="Raise support request"
           a11yDescription="Chat with support assistant, run automated health checks, and raise a support request."
-          className="w-full border-l border-border/70 bg-background p-0 sm:max-w-[460px]"
+          className="w-full p-0 sm:max-w-[460px]"
         >
           <SupportRequestChatPanel pathname={pathname} onClose={() => setRaiseRequestOpen(false)} />
         </SheetContent>

@@ -7,8 +7,16 @@
  */
 
 import Link from "next/link"
-import { ArrowLeft, CheckCircle2, Circle, Clock3, Copy, Gavel, ShieldAlert, XCircle } from "lucide-react"
-
+import {
+  ArrowLeftIcon,
+  CheckCircleIcon,
+  CircleIcon,
+  ClockIcon,
+  CopyIcon,
+  GavelIcon,
+  ShieldWarningIcon,
+  XCircleIcon,
+} from "@phosphor-icons/react"
 import { StatusPill } from "@/components/shared/status-pill"
 import { Button } from "@/components/ui/button"
 import {
@@ -30,8 +38,8 @@ function DetailField({ label, value }: { label: string; value: React.ReactNode }
 
 export function DisputeDetailContent({ record }: { record: DisputeDetailRecord }) {
   const timeline = [
-    { id: "dispute-raised", title: "Dispute raised", timestamp: record.createdOn, icon: <ShieldAlert className="h-4 w-4 text-amber-600" /> },
-    { id: "evidence-due", title: `Evidence due ${record.dueDate}`, timestamp: record.createdOn, icon: <Clock3 className="h-4 w-4 text-amber-600" /> },
+    { id: "dispute-raised", title: "Dispute raised", timestamp: record.createdOn, icon: <ShieldWarningIcon className="h-4 w-4 text-amber-600" /> },
+    { id: "evidence-due", title: `Evidence due ${record.dueDate}`, timestamp: record.createdOn, icon: <ClockIcon className="h-4 w-4 text-amber-600" /> },
     {
       id: "current-status",
       title: disputeStatusLabel(record),
@@ -39,12 +47,12 @@ export function DisputeDetailContent({ record }: { record: DisputeDetailRecord }
       icon:
         record.status === "Closed" ? (
           record.outcome === "Won" ? (
-            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <CheckCircleIcon className="h-4 w-4 text-emerald-600" />
           ) : (
-            <XCircle className="h-4 w-4 text-red-600" />
+            <XCircleIcon className="h-4 w-4 text-red-600" />
           )
         ) : (
-          <Circle className="h-4 w-4 text-chart-4" />
+          <CircleIcon className="h-4 w-4 text-chart-4" />
         ),
     },
   ]
@@ -56,7 +64,7 @@ export function DisputeDetailContent({ record }: { record: DisputeDetailRecord }
         <div className="flex h-8 w-full items-center justify-between">
           <Button asChild variant="ghost" className="h-8 rounded-md px-2 text-xs text-foreground hover:bg-background/20">
             <Link href="/on-hold-disputes">
-              <ArrowLeft className="mr-1 h-4 w-4" />
+              <ArrowLeftIcon className="mr-1 h-4 w-4" />
               Back
             </Link>
           </Button>
@@ -64,7 +72,7 @@ export function DisputeDetailContent({ record }: { record: DisputeDetailRecord }
 
         <div className="mt-8 h-[140px]">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
-            <Gavel className="h-8 w-8 text-primary-foreground" />
+            <GavelIcon className="h-8 w-8 text-primary-foreground" />
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <p className="text-[36px] font-semibold leading-9 text-foreground">{record.amount}</p>
@@ -87,7 +95,7 @@ export function DisputeDetailContent({ record }: { record: DisputeDetailRecord }
                   value={
                     <span className="inline-flex items-center gap-2">
                       {record.id}
-                      <Copy className="h-4 w-4 text-muted-foreground" />
+                      <CopyIcon className="h-4 w-4 text-muted-foreground" />
                     </span>
                   }
                 />
@@ -96,7 +104,7 @@ export function DisputeDetailContent({ record }: { record: DisputeDetailRecord }
                   value={
                     <span className="inline-flex items-center gap-2">
                       {record.transactionId}
-                      <Copy className="h-4 w-4 text-muted-foreground" />
+                      <CopyIcon className="h-4 w-4 text-muted-foreground" />
                     </span>
                   }
                 />
@@ -118,7 +126,7 @@ export function DisputeDetailContent({ record }: { record: DisputeDetailRecord }
                   value={
                     <span className="inline-flex items-center gap-2">
                       6352699747
-                      <Copy className="h-4 w-4 text-muted-foreground" />
+                      <CopyIcon className="h-4 w-4 text-muted-foreground" />
                     </span>
                   }
                 />

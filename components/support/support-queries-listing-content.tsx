@@ -1,8 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Download } from "lucide-react"
-
+import { DownloadIcon } from "@phosphor-icons/react"
 import { TransactionStyleListingPage, type ListingColumn } from "@/components/shared/transaction-style-listing-page"
 import { type ListingFilter } from "@/components/shared/listing-page-primitives"
 import { Button } from "@/components/ui/button"
@@ -99,7 +98,7 @@ export function SupportQueriesListingContent() {
       filters={filters}
       rightActions={
         <Button variant="outline" className="rounded-[8px] border-border/70 bg-background">
-          <Download className="h-4 w-4" />
+          <DownloadIcon className="h-4 w-4" />
           Download filtered
         </Button>
       }

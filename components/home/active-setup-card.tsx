@@ -1,25 +1,30 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Check, ExternalLink, Smartphone, CreditCard, QrCode } from "lucide-react"
-
+import {
+  ArrowSquareOutIcon,
+  CheckIcon,
+  CreditCardIcon,
+  DeviceMobileIcon,
+  QrCodeIcon,
+} from "@phosphor-icons/react"
 const activeProducts = [
   {
     name: "POS terminal",
     status: "Active",
-    icon: Smartphone,
+    icon: DeviceMobileIcon,
     description: "Pine Labs Android POS",
   },
   {
     name: "Checkout",
     status: "Live",
-    icon: CreditCard,
+    icon: CreditCardIcon,
     description: "Cards, UPI, wallets, and netbanking",
   },
   {
     name: "Payment links",
     status: "Live",
-    icon: QrCode,
+    icon: QrCodeIcon,
     description: "Shared collections across channels",
   },
 ]
@@ -42,7 +47,7 @@ export function ActiveSetupCard() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <p className="font-medium text-foreground">{product.name}</p>
-                {product.isExternal && <ExternalLink className="h-3 w-3 text-muted-foreground" />}
+                {product.isExternal && <ArrowSquareOutIcon className="h-3 w-3 text-muted-foreground" />}
               </div>
               <p className="text-xs text-muted-foreground">{product.description}</p>
             </div>

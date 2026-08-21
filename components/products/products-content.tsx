@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowUpRight, CheckCircle2, Package, Search } from "lucide-react"
+import { ArrowUpRightIcon, CheckCircleIcon, MagnifyingGlassIcon, PackageIcon } from "@phosphor-icons/react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { PanelEmpty, PageHeader } from "@/components/ui/panels"
+import { PageHeader } from "@/components/ui/panels"
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
 import { AnimatedNumberText } from "@/components/ui/animated-number-text"
 import { productCategories } from "@/lib/products-data"
@@ -74,7 +75,7 @@ function ProductGrid({
                     <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 text-primary" asChild>
                       <Link href={product.href}>
                         Open
-                        <ArrowUpRight className="h-3.5 w-3.5" />
+                        <ArrowUpRightIcon className="h-3.5 w-3.5" />
                       </Link>
                     </Button>
                   )}
@@ -142,7 +143,7 @@ export function ProductsContent() {
         </div>
         <Separator className="my-4" />
         <div className="relative max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search products or categories..."
             value={query}
@@ -164,11 +165,15 @@ export function ProductsContent() {
           ))}
         </div>
       ) : (
-        <PanelEmpty
-          icon={Package}
-          title="No products found"
-          description="Try a different search term to view products across categories."
-        />
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <PackageIcon className="h-4 w-4" />
+            </EmptyMedia>
+            <EmptyTitle>No products found</EmptyTitle>
+            <EmptyDescription>Try a different search term to view products across categories.</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       )}
     </div>
   )
@@ -190,18 +195,22 @@ export function ProductsContent() {
       </div>
     </div>
   ) : (
-    <PanelEmpty
-      icon={Package}
-      title="Select a product"
-      description="Open a product from center to view prerequisites and next actions."
-    />
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <PackageIcon className="h-4 w-4" />
+        </EmptyMedia>
+        <EmptyTitle>Select a product</EmptyTitle>
+        <EmptyDescription>Open a product from center to view prerequisites and next actions.</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   )
 
   return (
     <>
       <PageHeader title="All products" description="Catalog, activation status, and operational handoff">
         <Badge variant="outline" className="text-xs gap-1.5 border-success/30 bg-success/10 text-success">
-          <CheckCircle2 className="h-3 w-3" />
+          <CheckCircleIcon className="h-3 w-3" />
           <AnimatedNumberText value={`${configuredProducts}`} className="text-xs" /> configured products
         </Badge>
         {selectedProduct && (

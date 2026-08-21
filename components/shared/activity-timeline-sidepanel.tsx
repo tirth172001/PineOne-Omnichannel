@@ -2,7 +2,13 @@
 
 import { useEffect, type ReactNode } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { Copy, CreditCard, SeparatorHorizontal, X, XCircle } from "lucide-react"
+import {
+  CopyIcon,
+  CreditCardIcon,
+  MinusIcon,
+  XCircleIcon,
+  XIcon,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 
 export type ActivityEventTone = "success" | "failed" | "processing" | "initiated"
@@ -34,14 +40,14 @@ function SidepanelFieldRow({ left, right, tall = false }: { left: LabelValue; ri
         <p className="text-sm leading-5 text-muted-foreground">{left.label}</p>
         <div className="flex items-center gap-1">
           <p className="text-sm leading-5 text-foreground">{left.value}</p>
-          {left.copyable ? <Copy className="h-4 w-4 text-muted-foreground" /> : null}
+          {left.copyable ? <CopyIcon className="h-4 w-4 text-muted-foreground" /> : null}
         </div>
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className="text-sm leading-5 text-muted-foreground">{right.label}</p>
         <div className="flex items-center gap-1">
           <p className="whitespace-pre-line text-sm leading-5 text-foreground">{right.value}</p>
-          {right.copyable ? <Copy className="h-4 w-4 text-muted-foreground" /> : null}
+          {right.copyable ? <CopyIcon className="h-4 w-4 text-muted-foreground" /> : null}
         </div>
       </div>
     </div>
@@ -74,13 +80,23 @@ export function DetailSidepanelShell({
     <AnimatePresence>
       {open ? (
         <>
+          <motion.div
+            key="detail-panel-backdrop"
+            className="fixed inset-0 z-40 bg-black/10 supports-backdrop-filter:backdrop-blur-xs"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            onClick={() => onOpenChange(false)}
+          />
+
           <motion.aside
             key="detail-panel-desktop"
-            className="fixed z-50 hidden overflow-hidden rounded-[18px] border border-muted bg-card lg:flex lg:flex-col"
+            className="fixed z-50 hidden overflow-hidden rounded-xl border border-muted bg-card lg:flex lg:flex-col"
             style={{
-              right: 8,
-              top: "calc(var(--dashboard-top-offset, 64px) + 8px)",
-              height: "calc(100vh - var(--dashboard-top-offset, 64px) - 16px)",
+              right: 16,
+              top: "calc(var(--dashboard-top-offset, 64px) + 16px)",
+              height: "calc(100vh - var(--dashboard-top-offset, 64px) - 32px)",
               width: desktopWidth,
             }}
             initial={{ x: 24, opacity: 0 }}
@@ -96,7 +112,7 @@ export function DetailSidepanelShell({
                 className="h-7 w-7 rounded-md border-input bg-input/30"
                 onClick={() => onOpenChange(false)}
               >
-                <X className="h-4 w-4" />
+                <XIcon className="h-4 w-4" />
                 <span className="sr-only">Close panel</span>
               </Button>
             </div>
@@ -105,7 +121,7 @@ export function DetailSidepanelShell({
 
           <motion.aside
             key="detail-panel-mobile"
-            className="fixed inset-x-2 bottom-3 z-50 h-[min(86dvh,980px)] overflow-hidden rounded-2xl border border-muted bg-card lg:hidden"
+            className="fixed inset-x-2 bottom-3 z-50 h-[min(86dvh,980px)] overflow-hidden rounded-xl border border-muted bg-card lg:hidden"
             initial={{ y: 24, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 16, opacity: 0 }}
@@ -120,7 +136,7 @@ export function DetailSidepanelShell({
                   className="h-7 w-7 rounded-md border-input bg-input/30"
                   onClick={() => onOpenChange(false)}
                 >
-                  <X className="h-4 w-4" />
+                  <XIcon className="h-4 w-4" />
                   <span className="sr-only">Close panel</span>
                 </Button>
               </div>
@@ -150,22 +166,22 @@ export function ActivityTimelineSidepanel({
                 <div className="flex flex-col gap-8">
                   <div className="flex flex-col gap-3">
                     <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary p-1.5">
-                      <CreditCard className="h-6 w-6 text-primary-foreground" />
+                      <CreditCardIcon className="h-6 w-6 text-primary-foreground" />
                     </div>
 
                     <div className="flex items-center gap-2">
                       <p className="text-[24px] font-semibold leading-8 text-foreground">₹20,00,000</p>
                       <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-1 text-xs leading-none text-foreground">
-                        <XCircle className="h-3 w-3 text-destructive" />
+                        <XCircleIcon className="h-3 w-3 text-destructive" />
                         Failure
                       </span>
                     </div>
 
                     <div className="flex items-center gap-3 text-sm leading-5 text-muted-foreground">
                       <span>HDFC credit card</span>
-                      <SeparatorHorizontal className="h-4 w-4 rotate-90 text-border" />
+                      <MinusIcon className="h-4 w-4 rotate-90 text-border" />
                       <span>xx8787</span>
-                      <SeparatorHorizontal className="h-4 w-4 rotate-90 text-border" />
+                      <MinusIcon className="h-4 w-4 rotate-90 text-border" />
                       <span>VISA network</span>
                     </div>
                   </div>

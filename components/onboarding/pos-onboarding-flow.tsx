@@ -16,30 +16,30 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  Building2,
-  CreditCard,
-  Smartphone,
-  MapPin,
-  CheckCircle2,
-  ArrowRight,
-  ArrowLeft,
-  Shield,
-  FileText,
-  Banknote,
-  Truck,
-  Clock,
-  HelpCircle,
-  Upload,
-  X,
-} from "lucide-react"
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  BuildingsIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  CreditCardIcon,
+  DeviceMobileIcon,
+  FileTextIcon,
+  MapPinIcon,
+  MoneyIcon,
+  QuestionIcon,
+  ShieldIcon,
+  TruckIcon,
+  UploadIcon,
+  XIcon,
+} from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 
 const steps = [
-  { id: 1, title: "Business Details", icon: Building2 },
-  { id: 2, title: "Bank Account", icon: Banknote },
-  { id: 3, title: "Choose Device", icon: Smartphone },
-  { id: 4, title: "Delivery", icon: MapPin },
-  { id: 5, title: "Review", icon: FileText },
+  { id: 1, title: "Business Details", icon: BuildingsIcon },
+  { id: 2, title: "Bank Account", icon: MoneyIcon },
+  { id: 3, title: "Choose Device", icon: DeviceMobileIcon },
+  { id: 4, title: "Delivery", icon: MapPinIcon },
+  { id: 5, title: "Review", icon: FileTextIcon },
 ]
 
 const deviceOptions = [
@@ -133,7 +133,7 @@ export function POSOnboardingFlow() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-          <Smartphone className="h-4 w-4" />
+          <DeviceMobileIcon className="h-4 w-4" />
           <span>POS Device Setup</span>
         </div>
         <h1 className="text-2xl font-semibold text-foreground">Get started with your POS machine</h1>
@@ -160,7 +160,7 @@ export function POSOnboardingFlow() {
                     )}
                   >
                     {status === "completed" ? (
-                      <CheckCircle2 className="h-5 w-5 text-primary-foreground" />
+                      <CheckCircleIcon className="h-5 w-5 text-primary-foreground" />
                     ) : (
                       <Icon
                         className={cn(
@@ -245,7 +245,7 @@ export function POSOnboardingFlow() {
                       onChange={(e) => updateFormData("gstin", e.target.value)}
                       className="bg-secondary border-border pr-10"
                     />
-                    <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-success" />
+                    <CheckCircleIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-success" />
                   </div>
                   <p className="text-xs text-success">Verified with GST portal</p>
                 </div>
@@ -259,7 +259,7 @@ export function POSOnboardingFlow() {
                       onChange={(e) => updateFormData("pan", e.target.value)}
                       className="bg-secondary border-border pr-10"
                     />
-                    <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-success" />
+                    <CheckCircleIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-success" />
                   </div>
                   <p className="text-xs text-success">Verified</p>
                 </div>
@@ -300,7 +300,7 @@ export function POSOnboardingFlow() {
               </div>
 
               <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-                <Shield className="h-4 w-4 text-primary shrink-0" />
+                <ShieldIcon className="h-4 w-4 text-primary shrink-0" />
                 <p className="text-sm text-muted-foreground">
                   Your information is encrypted and securely stored as per RBI guidelines.
                 </p>
@@ -379,14 +379,14 @@ export function POSOnboardingFlow() {
               <div className="space-y-3">
                 <Label>Or upload cancelled cheque / bank statement</Label>
                 <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
-                  <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <UploadIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                   <p className="text-sm font-medium text-foreground">Click to upload or drag and drop</p>
                   <p className="text-xs text-muted-foreground mt-1">PDF, JPG, PNG up to 5MB</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-2 p-3 rounded-lg bg-chart-3/10 border border-chart-3/20">
-                <Clock className="h-4 w-4 text-chart-3 shrink-0 mt-0.5" />
+                <ClockIcon className="h-4 w-4 text-chart-3 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-foreground">Quick settlement enabled</p>
                   <p className="text-xs text-muted-foreground">
@@ -426,7 +426,7 @@ export function POSOnboardingFlow() {
                     )}
                     <div className="flex gap-4">
                       <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-secondary">
-                        <Smartphone className="h-10 w-10 text-muted-foreground" />
+                        <DeviceMobileIcon className="h-10 w-10 text-muted-foreground" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-start justify-between">
@@ -463,7 +463,7 @@ export function POSOnboardingFlow() {
                           )}
                         >
                           {formData.selectedDevice === device.id && (
-                            <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
+                            <CheckCircleIcon className="h-3 w-3 text-primary-foreground" />
                           )}
                         </div>
                       </div>
@@ -601,7 +601,7 @@ export function POSOnboardingFlow() {
               </div>
 
               <div className="flex items-start gap-2 p-3 rounded-lg bg-secondary border border-border">
-                <Truck className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <TruckIcon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-foreground">Free installation included</p>
                   <p className="text-xs text-muted-foreground">
@@ -627,7 +627,7 @@ export function POSOnboardingFlow() {
                 <div className="rounded-lg border border-border p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-primary" />
+                      <BuildingsIcon className="h-4 w-4 text-primary" />
                       <h3 className="font-medium text-foreground">Business Details</h3>
                     </div>
                     <Button
@@ -663,7 +663,7 @@ export function POSOnboardingFlow() {
                 <div className="rounded-lg border border-border p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Banknote className="h-4 w-4 text-primary" />
+                      <MoneyIcon className="h-4 w-4 text-primary" />
                       <h3 className="font-medium text-foreground">Bank Account</h3>
                     </div>
                     <Button
@@ -701,7 +701,7 @@ export function POSOnboardingFlow() {
                 <div className="rounded-lg border border-border p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Smartphone className="h-4 w-4 text-primary" />
+                      <DeviceMobileIcon className="h-4 w-4 text-primary" />
                       <h3 className="font-medium text-foreground">Device Selection</h3>
                     </div>
                     <Button
@@ -716,7 +716,7 @@ export function POSOnboardingFlow() {
                   {formData.selectedDevice && (
                     <div className="flex items-center gap-3">
                       <div className="h-12 w-12 rounded-lg bg-secondary flex items-center justify-center">
-                        <Smartphone className="h-6 w-6 text-muted-foreground" />
+                        <DeviceMobileIcon className="h-6 w-6 text-muted-foreground" />
                       </div>
                       <div>
                         <p className="font-medium text-foreground">
@@ -735,7 +735,7 @@ export function POSOnboardingFlow() {
                 <div className="rounded-lg border border-border p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-primary" />
+                      <MapPinIcon className="h-4 w-4 text-primary" />
                       <h3 className="font-medium text-foreground">Delivery Address</h3>
                     </div>
                     <Button
@@ -824,19 +824,19 @@ export function POSOnboardingFlow() {
           disabled={currentStep === 1}
           className="gap-2 bg-transparent"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeftIcon className="h-4 w-4" />
           Back
         </Button>
 
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <HelpCircle className="h-4 w-4" />
+          <QuestionIcon className="h-4 w-4" />
           Need help? <Button variant="link" className="h-auto px-1 text-primary">Contact support</Button>
         </div>
 
         {currentStep < steps.length ? (
           <Button onClick={nextStep} className="gap-2">
             Continue
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRightIcon className="h-4 w-4" />
           </Button>
         ) : (
           <Button
@@ -844,7 +844,7 @@ export function POSOnboardingFlow() {
             disabled={!formData.acceptTerms}
             className="gap-2"
           >
-            <CheckCircle2 className="h-4 w-4" />
+            <CheckCircleIcon className="h-4 w-4" />
             Submit Application
           </Button>
         )}

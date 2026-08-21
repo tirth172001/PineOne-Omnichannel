@@ -1,33 +1,38 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, Clock, CreditCard, ShieldX, Wifi } from "lucide-react"
-
+import {
+  ClockIcon,
+  CreditCardIcon,
+  ShieldSlashIcon,
+  WarningCircleIcon,
+  WifiHighIcon,
+} from "@phosphor-icons/react"
 const failureReasons = [
   {
     reason: "Card declined by bank",
-    icon: CreditCard,
+    icon: CreditCardIcon,
     count: 8,
     percentage: 42,
     description: "Insufficient funds or bank restrictions",
   },
   {
     reason: "Transaction timeout",
-    icon: Clock,
+    icon: ClockIcon,
     count: 5,
     percentage: 26,
     description: "Payment took too long to process",
   },
   {
     reason: "Network issues",
-    icon: Wifi,
+    icon: WifiHighIcon,
     count: 3,
     percentage: 16,
     description: "Connectivity problems during transaction",
   },
   {
     reason: "Authentication failed",
-    icon: ShieldX,
+    icon: ShieldSlashIcon,
     count: 3,
     percentage: 16,
     description: "OTP or 3DS verification failed",
@@ -42,7 +47,7 @@ export function FailureReasons() {
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-medium">Failure Analysis</CardTitle>
         <div className="flex items-center gap-2 text-destructive">
-          <AlertCircle className="h-4 w-4" />
+          <WarningCircleIcon className="h-4 w-4" />
           <span className="text-sm font-medium">{totalFailures} failed today</span>
         </div>
       </CardHeader>

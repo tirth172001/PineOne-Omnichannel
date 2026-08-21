@@ -2,8 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronLeftIcon, ChevronRightIcon, CopyIcon } from "lucide-react"
-
+import { CaretLeftIcon, CaretRightIcon, CopyIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { componentRegistry } from "@/app/component-docs/_lib/component-registry"
 
@@ -45,7 +44,7 @@ export function DocsPageActions() {
           className="h-10 w-10 rounded-xl"
         >
           <Link href={prevHref} aria-label="Previous page">
-            <ChevronLeftIcon />
+            <CaretLeftIcon />
           </Link>
         </Button>
       ) : null}
@@ -58,7 +57,7 @@ export function DocsPageActions() {
           className="h-10 w-10 rounded-xl"
         >
           <Link href={nextHref} aria-label="Next page">
-            <ChevronRightIcon />
+            <CaretRightIcon />
           </Link>
         </Button>
       ) : null}

@@ -1,38 +1,34 @@
 import type { ComponentType } from "react"
 import {
-  ArrowsCounterClockwise,
-  ArrowUUpLeft,
-  Bank,
-  BookOpen as PhosphorBookOpen,
-  CashRegister,
-  Chats,
-  DotsThree,
-  FileMinus,
-  Gavel as PhosphorGavel,
-  Globe as PhosphorGlobe,
-  House,
-  Link as PhosphorLink,
-  MoneyWavy,
-  QrCode as PhosphorQrCode,
+  ActivityIcon,
+  ArrowCounterClockwiseIcon,
+  ArrowUUpLeftIcon,
+  ArrowsCounterClockwiseIcon,
+  ArrowsLeftRightIcon,
+  BankIcon,
+  BookOpenIcon,
+  BracketsCurlyIcon,
+  CashRegisterIcon,
+  ChatsIcon,
+  CreditCardIcon,
+  CurrencyInrIcon,
+  DotsThreeIcon,
+  FileArrowUpIcon,
+  FileMinusIcon,
+  FileTextIcon,
+  GavelIcon,
+  GiftIcon,
+  GlobeIcon,
+  GridFourIcon,
+  HouseIcon,
+  KeyIcon,
+  LinkIcon,
+  MoneyWavyIcon,
+  QrCodeIcon,
+  ShieldWarningIcon,
+  SlidersIcon,
+  WebhooksLogoIcon,
 } from "@phosphor-icons/react"
-import {
-  Activity,
-  ArrowLeftRight,
-  BadgeIndianRupee,
-  Braces,
-  CreditCard,
-  FileUp,
-  FileChartColumn,
-  Gift,
-  Globe,
-  Home,
-  LayoutGrid,
-  RotateCcw,
-  ShieldAlert,
-  KeyRound,
-  Settings2,
-  Webhook,
-} from "lucide-react"
 import { ROUTES } from "@/lib/navigation/routes"
 export type NavSubItem = {
   label: string
@@ -67,7 +63,7 @@ const sharedSupportSection: NavSection = {
   items: [
     {
       label: "Knowledge hub",
-      icon: PhosphorBookOpen,
+      icon: BookOpenIcon,
       href: ROUTES.support.knowledgeHub,
       matcher: (p) =>
         p.startsWith(ROUTES.support.knowledgeHub) ||
@@ -76,7 +72,7 @@ const sharedSupportSection: NavSection = {
     },
     {
       label: "Support queries",
-      icon: Chats,
+      icon: ChatsIcon,
       href: ROUTES.support.supportQueries,
       matcher: (p) =>
         p.startsWith(ROUTES.support.supportQueries) ||
@@ -91,13 +87,13 @@ const paymentsNavSections: NavSection[] = [
     items: [
       {
         label: "Overview",
-        icon: House,
+        icon: HouseIcon,
         href: ROUTES.home,
         matcher: (p) => p === ROUTES.home,
       },
       {
         label: "Payments",
-        icon: MoneyWavy,
+        icon: MoneyWavyIcon,
         href: ROUTES.transactions.root,
         matcher: (p) =>
           p === ROUTES.transactions.root ||
@@ -107,7 +103,7 @@ const paymentsNavSections: NavSection[] = [
       },
       {
         label: "Settlement",
-        icon: Bank,
+        icon: BankIcon,
         href: ROUTES.settlements.root,
         matcher: (p) =>
           p === ROUTES.settlements.root ||
@@ -117,7 +113,7 @@ const paymentsNavSections: NavSection[] = [
       },
       {
         label: "Dispute cases",
-        icon: PhosphorGavel,
+        icon: GavelIcon,
         href: ROUTES.disputes.root,
         matcher: (p) =>
           p === ROUTES.disputes.root ||
@@ -127,7 +123,7 @@ const paymentsNavSections: NavSection[] = [
       },
       {
         label: "Refunds",
-        icon: ArrowUUpLeft,
+        icon: ArrowUUpLeftIcon,
         href: ROUTES.refunds.root,
         matcher: (p) =>
           p === ROUTES.refunds.root ||
@@ -137,7 +133,7 @@ const paymentsNavSections: NavSection[] = [
       },
       {
         label: "Reports",
-        icon: FileMinus,
+        icon: FileMinusIcon,
         href: ROUTES.reports.root,
         matcher: (p) =>
           p === ROUTES.reports.root ||
@@ -152,7 +148,7 @@ const paymentsNavSections: NavSection[] = [
     items: [
       {
         label: "POS terminals",
-        icon: CashRegister,
+        icon: CashRegisterIcon,
         href: ROUTES.offlinePayments.manageDevices,
         matcher: (p) =>
           p.startsWith(ROUTES.offlinePayments.manageDevices) ||
@@ -163,7 +159,7 @@ const paymentsNavSections: NavSection[] = [
       },
       {
         label: "Store QR stickers",
-        icon: PhosphorQrCode,
+        icon: QrCodeIcon,
         href: ROUTES.products.inStoreQrSticker,
         matcher: (p) => p.startsWith(ROUTES.products.inStoreQrSticker),
       },
@@ -174,25 +170,25 @@ const paymentsNavSections: NavSection[] = [
     items: [
       {
         label: "Payment gateway",
-        icon: PhosphorGlobe,
+        icon: GlobeIcon,
         href: ROUTES.products.onlinePayments,
         matcher: (p) => p.startsWith(ROUTES.products.onlinePayments) || p.startsWith(ROUTES.onlinePayments.root),
       },
       {
         label: "Payment links",
-        icon: PhosphorLink,
+        icon: LinkIcon,
         href: ROUTES.paymentLinks.all,
         matcher: (p) => p.startsWith(ROUTES.paymentLinks.root),
       },
       {
         label: "Subscriptions",
-        icon: ArrowsCounterClockwise,
+        icon: ArrowsCounterClockwiseIcon,
         href: `${ROUTES.onlinePayments.configuration}?feature=subscription`,
         matcher: (p) => p.startsWith(ROUTES.onlinePayments.configuration),
       },
       {
         label: "More",
-        icon: DotsThree,
+        icon: DotsThreeIcon,
         href: ROUTES.products.otherProducts,
         matcher: (p) =>
           p.startsWith(ROUTES.products.otherProducts) ||
@@ -210,35 +206,35 @@ const cardsNavSections: NavSection[] = [
     items: [
       {
         label: "Overview",
-        icon: LayoutGrid,
+        icon: GridFourIcon,
         href: ROUTES.products.giftCardsComingSoon,
         matcher: (p) => p.startsWith(ROUTES.products.giftCardsComingSoon),
         comingSoon: true,
       },
       {
         label: "Card Programs",
-        icon: ArrowLeftRight,
+        icon: ArrowsLeftRightIcon,
         href: ROUTES.products.giftCardsComingSoon,
         matcher: (p) => p.startsWith(ROUTES.products.giftCardsComingSoon),
         comingSoon: true,
       },
       {
         label: "Issuance",
-        icon: BadgeIndianRupee,
+        icon: CurrencyInrIcon,
         href: ROUTES.products.giftCardsComingSoon,
         matcher: (p) => p.startsWith(ROUTES.products.giftCardsComingSoon),
         comingSoon: true,
       },
       {
         label: "Disputes",
-        icon: ShieldAlert,
+        icon: ShieldWarningIcon,
         href: ROUTES.products.giftCardsComingSoon,
         matcher: (p) => p.startsWith(ROUTES.products.giftCardsComingSoon),
         comingSoon: true,
       },
       {
         label: "Reports",
-        icon: FileChartColumn,
+        icon: FileTextIcon,
         href: ROUTES.products.giftCardsComingSoon,
         matcher: (p) => p.startsWith(ROUTES.products.giftCardsComingSoon),
         comingSoon: true,
@@ -250,13 +246,13 @@ const cardsNavSections: NavSection[] = [
     items: [
       {
         label: "Gift cards",
-        icon: Gift,
+        icon: GiftIcon,
         href: ROUTES.products.giftCardsComingSoon,
         matcher: (p) => p.startsWith(ROUTES.products.giftCardsComingSoon),
       },
       {
         label: "Card controls",
-        icon: ShieldAlert,
+        icon: ShieldWarningIcon,
         href: ROUTES.products.giftCardsComingSoon,
         matcher: (p) => p.startsWith(ROUTES.products.giftCardsComingSoon),
         comingSoon: true,
@@ -271,49 +267,49 @@ const crossBorderNavSections: NavSection[] = [
     items: [
       {
         label: "Overview",
-        icon: LayoutGrid,
+        icon: GridFourIcon,
         href: ROUTES.crossBorder.root,
         matcher: (p) => p === ROUTES.crossBorder.root,
       },
       {
         label: "Transactions",
-        icon: ArrowLeftRight,
+        icon: ArrowsLeftRightIcon,
         href: ROUTES.crossBorder.transactions,
         matcher: (p) => p.startsWith(ROUTES.crossBorder.transactions),
       },
       {
         label: "Settlement",
-        icon: BadgeIndianRupee,
+        icon: CurrencyInrIcon,
         href: ROUTES.crossBorder.settlements,
         matcher: (p) => p.startsWith(ROUTES.crossBorder.settlements),
       },
       {
         label: "Disputes",
-        icon: ShieldAlert,
+        icon: ShieldWarningIcon,
         href: ROUTES.crossBorder.disputes,
         matcher: (p) => p.startsWith(ROUTES.crossBorder.disputes),
       },
       {
         label: "Refunds",
-        icon: RotateCcw,
+        icon: ArrowCounterClockwiseIcon,
         href: ROUTES.crossBorder.refunds,
         matcher: (p) => p.startsWith(ROUTES.crossBorder.refunds),
       },
       {
         label: "Reports",
-        icon: FileChartColumn,
+        icon: FileTextIcon,
         href: ROUTES.crossBorder.reports,
         matcher: (p) => p.startsWith(ROUTES.crossBorder.reports),
       },
       {
         label: "Uploads",
-        icon: FileUp,
+        icon: FileArrowUpIcon,
         href: ROUTES.crossBorder.uploads,
         matcher: (p) => p.startsWith(ROUTES.crossBorder.uploads),
       },
       {
         label: "Configurations",
-        icon: Settings2,
+        icon: SlidersIcon,
         href: ROUTES.crossBorder.configurations,
         matcher: (p) => p.startsWith(ROUTES.crossBorder.configurations),
       },
@@ -324,7 +320,7 @@ const crossBorderNavSections: NavSection[] = [
     items: [
       {
         label: "Cross Border",
-        icon: Globe,
+        icon: GlobeIcon,
         href: ROUTES.crossBorder.root,
         matcher: (p) => p.startsWith(ROUTES.crossBorder.root),
       },
@@ -338,35 +334,35 @@ const fintechApisNavSections: NavSection[] = [
     items: [
       {
         label: "Overview",
-        icon: Braces,
+        icon: BracketsCurlyIcon,
         href: ROUTES.products.fintechApisComingSoon,
         matcher: (p) => p.startsWith(ROUTES.products.fintechApisComingSoon),
         comingSoon: true,
       },
       {
         label: "API keys",
-        icon: KeyRound,
+        icon: KeyIcon,
         href: ROUTES.products.fintechApisComingSoon,
         matcher: (p) => p.startsWith(ROUTES.products.fintechApisComingSoon),
         comingSoon: true,
       },
       {
         label: "Webhooks",
-        icon: Webhook,
+        icon: WebhooksLogoIcon,
         href: ROUTES.products.fintechApisComingSoon,
         matcher: (p) => p.startsWith(ROUTES.products.fintechApisComingSoon),
         comingSoon: true,
       },
       {
         label: "SDKs",
-        icon: Activity,
+        icon: ActivityIcon,
         href: ROUTES.products.fintechApisComingSoon,
         matcher: (p) => p.startsWith(ROUTES.products.fintechApisComingSoon),
         comingSoon: true,
       },
       {
         label: "API logs",
-        icon: FileChartColumn,
+        icon: FileTextIcon,
         href: ROUTES.products.fintechApisComingSoon,
         matcher: (p) => p.startsWith(ROUTES.products.fintechApisComingSoon),
         comingSoon: true,
@@ -378,7 +374,7 @@ const fintechApisNavSections: NavSection[] = [
     items: [
       {
         label: "Fintech APIs",
-        icon: Globe,
+        icon: GlobeIcon,
         href: ROUTES.products.fintechApisComingSoon,
         matcher: (p) => p.startsWith(ROUTES.products.fintechApisComingSoon),
       },
@@ -390,25 +386,25 @@ const fintechApisNavSections: NavSection[] = [
 const bottomNavItemsV3: BottomNavItem[] = [
   {
     label: "Overview",
-    icon: Home,
+    icon: HouseIcon,
     href: ROUTES.home,
     matcher: (pathname) => pathname === ROUTES.home,
   },
   {
     label: "Txn",
-    icon: ArrowLeftRight,
+    icon: ArrowsLeftRightIcon,
     href: ROUTES.transactions.root,
     matcher: (pathname) => pathname.startsWith(ROUTES.transactions.root),
   },
   {
     label: "Settle",
-    icon: BadgeIndianRupee,
+    icon: CurrencyInrIcon,
     href: ROUTES.settlements.root,
     matcher: (pathname) => pathname.startsWith(ROUTES.settlements.root),
   },
   {
     label: "Reports",
-    icon: FileChartColumn,
+    icon: FileTextIcon,
     href: ROUTES.reports.root,
     matcher: (pathname) => pathname.startsWith(ROUTES.reports.root),
   },

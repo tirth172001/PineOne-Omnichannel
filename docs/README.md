@@ -20,6 +20,8 @@ This folder documents product and UX decisions captured during iterative demo de
   - Login, create-account, OTP, and account onboarding/KYC flow behavior.
 - `docs/flows/settlements-v3.md`
   - V3 settlement UX behavior and data model (summary, toggles, batches, detail page).
+- `docs/flows/merchant-homepage.md`
+  - Merchant homepage decision document: needs-attention taxonomy, business snapshot, and related structural decisions (in progress).
 - `docs/decisions/decision-log.md`
   - Consolidated decision log with rationale and implementation impact.
 - `docs/implementation/periodic-progress-log.md`

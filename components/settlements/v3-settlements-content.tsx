@@ -4,36 +4,35 @@ import { useMemo, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
-  ArrowLeft,
-  Building2,
-  CalendarDays,
-  CheckCircle,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  CircleAlert,
-  Clock3,
-  Copy,
-  CreditCard,
-  Download,
-  ExternalLink,
-  FastForward,
-  Headphones,
-  Hourglass,
-  Info,
-  Mail,
-  QrCode,
-  ReceiptText,
-  RefreshCcw,
-  Search,
-  Settings2,
-  Smartphone,
-  WalletCards,
-  Zap,
-} from "lucide-react"
-
+  ArrowClockwiseIcon,
+  ArrowLeftIcon,
+  ArrowSquareOutIcon,
+  BuildingsIcon,
+  CalendarDotsIcon,
+  CaretDoubleLeftIcon,
+  CaretDoubleRightIcon,
+  CaretDownIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  CopyIcon,
+  CreditCardIcon,
+  DeviceMobileIcon,
+  DownloadIcon,
+  EnvelopeSimpleIcon,
+  FastForwardIcon,
+  HeadphonesIcon,
+  HourglassIcon,
+  InfoIcon,
+  LightningIcon,
+  MagnifyingGlassIcon,
+  QrCodeIcon,
+  ReceiptIcon,
+  SlidersIcon,
+  WalletIcon,
+  WarningCircleIcon,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -280,7 +279,7 @@ function HdfcMark({ size = 20 }: { size?: number }) {
 }
 
 function PaymentIcon({ method }: { method: PaymentMethod }) {
-  const Icon = method === "upi" ? QrCode : method === "card" ? CreditCard : Smartphone
+  const Icon = method === "upi" ? QrCodeIcon : method === "card" ? CreditCardIcon : DeviceMobileIcon
   return <Icon className="mt-0.5 h-4 w-4 text-muted-foreground" />
 }
 
@@ -359,10 +358,10 @@ function PaginationControls({
         </div>
         <span className="font-medium text-foreground">Page {page} of {totalPages}</span>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md" disabled={page <= 1} onClick={() => onPageChange(1)}><ChevronsLeft className="h-4 w-4" /></Button>
-          <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md" disabled={page <= 1} onClick={() => onPageChange(Math.max(1, page - 1))}><ChevronLeft className="h-4 w-4" /></Button>
-          <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md" disabled={page >= totalPages} onClick={() => onPageChange(Math.min(totalPages, page + 1))}><ChevronRight className="h-4 w-4" /></Button>
-          <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md" disabled={page >= totalPages} onClick={() => onPageChange(totalPages)}><ChevronsRight className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md" disabled={page <= 1} onClick={() => onPageChange(1)}><CaretDoubleLeftIcon className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md" disabled={page <= 1} onClick={() => onPageChange(Math.max(1, page - 1))}><CaretLeftIcon className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md" disabled={page >= totalPages} onClick={() => onPageChange(Math.min(totalPages, page + 1))}><CaretRightIcon className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md" disabled={page >= totalPages} onClick={() => onPageChange(totalPages)}><CaretDoubleRightIcon className="h-4 w-4" /></Button>
         </div>
       </div>
     </div>
@@ -490,7 +489,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
         <div className="relative z-10 px-8 py-6">
           <Button asChild variant="ghost" className="h-8 rounded-md px-2 text-sm text-foreground hover:bg-background/30">
             <Link href="/settlements">
-              <ArrowLeft className="mr-1 h-4 w-4" />
+              <ArrowLeftIcon className="mr-1 h-4 w-4" />
               Back
             </Link>
           </Button>
@@ -508,7 +507,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
               </div>
               <span className="mt-4 inline-flex h-6 items-center gap-1.5 rounded-full border border-border bg-background px-2.5 text-xs font-medium text-foreground">
                 UTR: {currentSettlement.utr}
-                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                <CopyIcon className="h-3.5 w-3.5 text-muted-foreground" />
               </span>
             </div>
 
@@ -527,7 +526,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                 <div className="pt-1 text-center">
                   <Button variant="link" className="h-6 gap-1 p-0 text-sm text-primary" onClick={() => setShowAllDeductions((prev) => !prev)}>
                     {showAllDeductions ? "View less" : "View all"}
-                    <ChevronDown className={`h-4 w-4 transition-transform ${showAllDeductions ? "rotate-180" : ""}`} />
+                    <CaretDownIcon className={`h-4 w-4 transition-transform ${showAllDeductions ? "rotate-180" : ""}`} />
                   </Button>
                 </div>
               </div>
@@ -545,7 +544,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
               <h2 className="text-xl font-semibold leading-7 text-foreground">{currentSettlement.transactionCount} Transactions included</h2>
               <div className="flex items-center gap-3">
                 <div className="relative w-[229px]">
-                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     placeholder="Search by Trxn ID"
                     value={searchQuery}
@@ -554,7 +553,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                   />
                 </div>
                 <Button size="sm" className="h-8">
-                  <Download className="h-4 w-4" />
+                  <DownloadIcon className="h-4 w-4" />
                   Download
                 </Button>
               </div>
@@ -624,7 +623,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
 
           <section className="mt-6 flex items-center gap-3">
             <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted">
-              <Headphones className="h-4 w-4 text-foreground" />
+              <HeadphonesIcon className="h-4 w-4 text-foreground" />
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-foreground">Need help with this settlement?</p>
@@ -641,7 +640,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
     <div className="px-8 py-8">
       <section className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-semibold leading-8 tracking-[-0.4px] text-foreground">Settlements</h1>
+          <h1 className="text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground">Settlements</h1>
           <Tabs value={channel} onValueChange={(value) => { setChannel(value as SettlementChannel); setPage(1) }}>
             <TabsList className="h-8 rounded-[8px] bg-muted p-1">
               <TabsTrigger value="in-store" className="h-6 rounded-[6px] border-transparent px-4 py-1 text-sm font-medium text-muted-foreground data-active:!border-transparent data-active:!bg-background data-active:!text-foreground">
@@ -655,7 +654,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
         </div>
         <Button asChild variant="outline" size="sm" className="h-8">
           <Link href="/settlements/preferences">
-            <Settings2 className="h-4 w-4" />
+            <SlidersIcon className="h-4 w-4" />
             Change settlement preferences
           </Link>
         </Button>
@@ -663,12 +662,12 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
 
       <section className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <RefreshCcw className="h-4 w-4" />
+          <ArrowClockwiseIcon className="h-4 w-4" />
           Settlement cycle: <span className="font-medium text-foreground">{channel === "online" ? "T+1 / T+2 days" : "T+1 days"}</span>
         </span>
         <span className="h-4 w-px bg-border" />
         <span className="inline-flex items-center gap-1.5">
-          <Building2 className="h-4 w-4" />
+          <BuildingsIcon className="h-4 w-4" />
           Settlement account: <HdfcMark size={14} /> <span className="font-medium text-foreground">HDFC bank, xx8787</span>
         </span>
       </section>
@@ -678,9 +677,9 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
       <section className="mt-6 overflow-hidden rounded-lg border border-border bg-card">
         <div className="grid md:grid-cols-2">
           <div className="flex min-w-0 flex-col border-b border-border md:border-r md:border-b-0">
-            <div className="flex h-16 items-center justify-between border-b border-border px-4">
+            <div className="flex h-14 items-center justify-between border-b border-border px-4">
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-6 w-6 text-foreground" />
+                <CheckCircleIcon className="h-5 w-5 text-foreground" />
                 <p className="text-base font-medium text-card-foreground">Settled amount</p>
               </div>
               <Tabs value={summaryPeriod} onValueChange={(value) => setSummaryPeriod(value as typeof summaryPeriod)}>
@@ -704,8 +703,8 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
           </div>
 
           <div className="flex min-w-0 flex-col">
-            <div className="flex h-16 items-center gap-2 border-b border-border px-4">
-              <Hourglass className="h-6 w-6 text-foreground" />
+            <div className="flex h-14 items-center gap-2 border-b border-border px-4">
+              <HourglassIcon className="h-5 w-5 text-foreground" />
               <p className="text-base font-medium text-card-foreground">Remaining amount</p>
             </div>
             <div className="flex min-h-[136px] flex-col gap-4 px-5 py-4">
@@ -725,7 +724,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                 <Button asChild variant="link" className="inline-flex h-5 items-center gap-1 p-0 text-sm text-primary underline">
                   <Link href="/on-hold-disputes">
                     View
-                    <ExternalLink className="h-3.5 w-3.5" />
+                    <ArrowSquareOutIcon className="h-3.5 w-3.5" />
                   </Link>
                 </Button>
               </div>
@@ -735,7 +734,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
 
         {channel === "in-store" ? (
           <div className="flex items-center gap-3 border-t border-border bg-[#eef2ff] px-4 py-3 dark:bg-[#1a1f3a]">
-            <Zap className="h-5 w-5 shrink-0 text-[#4f46e5] dark:text-[#a5b4fc]" />
+            <LightningIcon className="h-5 w-5 shrink-0 text-[#4f46e5] dark:text-[#a5b4fc]" />
             <p className="min-w-0 flex-1 text-sm font-medium text-foreground">
               Get some settlement in your account today via On-Demand settlement
             </p>
@@ -769,7 +768,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-muted-foreground">
                 Others
-                <Info className="h-4 w-4 text-muted-foreground" />
+                <InfoIcon className="h-4 w-4 text-muted-foreground" />
               </span>
               <span className="font-semibold text-destructive">- ₹{formatAmount(summary.othersAmount)}</span>
             </div>
@@ -784,7 +783,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
       <section className="mt-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative w-[229px]">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by UTR or Trxn ID"
               value={searchQuery}
@@ -799,7 +798,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8">
-                <CalendarDays className="h-4 w-4" />
+                <CalendarDotsIcon className="h-4 w-4" />
                 {dateFilter === "today" ? "Today" : "All dates"}
               </Button>
             </DropdownMenuTrigger>
@@ -814,7 +813,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8">
                 Status
-                <ChevronDown className="h-4 w-4" />
+                <CaretDownIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-44">
@@ -829,7 +828,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
               <Button variant="outline" size="sm" className="h-8">
                 More filters
                 <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-secondary px-1 text-xs text-secondary-foreground">3</span>
-                <ChevronDown className="h-4 w-4" />
+                <CaretDownIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="max-h-[520px] w-56 overflow-y-auto">
@@ -868,11 +867,11 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
 
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" className="h-8">
-            <Mail className="h-4 w-4" />
+            <EnvelopeSimpleIcon className="h-4 w-4" />
             Email filtered
           </Button>
           <Button variant="outline" size="sm" className="h-8">
-            <Download className="h-4 w-4" />
+            <DownloadIcon className="h-4 w-4" />
             Download filtered
           </Button>
         </div>
@@ -913,7 +912,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                       <TableCell className="px-3 align-top text-sm font-medium text-foreground">
                         <span className="inline-flex items-center gap-2">
                           {row.utr}
-                          {row.settlementType !== "Normal" ? <Zap className="h-4 w-4 text-muted-foreground" /> : null}
+                          {row.settlementType !== "Normal" ? <LightningIcon className="h-4 w-4 text-muted-foreground" /> : null}
                         </span>
                       </TableCell>
                       <TableCell className="px-3 align-top text-sm font-medium text-foreground">
@@ -941,7 +940,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                       <TableCell className="px-4 align-top">
                         <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                           <span>{row.utr}</span>
-                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                          <CopyIcon className="h-3.5 w-3.5 text-muted-foreground" />
                         </div>
                         <div className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
                           <span>{row.transactionCount} payments</span>
@@ -949,7 +948,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                             <>
                               <span className="h-3 w-px bg-border" />
                               <span className="inline-flex items-center gap-1 font-medium text-[#4f46e5] dark:text-[#a5b4fc]">
-                                <Zap className="h-3.5 w-3.5" />
+                                <LightningIcon className="h-3.5 w-3.5" />
                                 On-Demand
                               </span>
                             </>
@@ -957,7 +956,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                             <>
                               <span className="h-3 w-px bg-border" />
                               <span className="inline-flex items-center gap-1 font-medium text-success">
-                                <FastForward className="h-3.5 w-3.5" />
+                                <FastForwardIcon className="h-3.5 w-3.5" />
                                 Same-Day
                               </span>
                             </>
@@ -968,7 +967,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                       <TableCell className="px-4 align-top">
                         <span className="inline-flex items-center gap-1 text-sm font-medium text-foreground">
                           {rm(row.deductionsTotal)}
-                          <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                          <InfoIcon className="h-3.5 w-3.5 text-muted-foreground" />
                         </span>
                       </TableCell>
                       <TableCell className="px-4 align-top text-sm font-medium text-foreground">{rm(row.netAmount)}</TableCell>
@@ -1053,7 +1052,7 @@ export function V3SettlementPreferencesContent() {
       <div className="flex h-8 items-center justify-between">
         <Button asChild variant="ghost" size="sm" className="h-8 px-2">
           <Link href="/settlements">
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeftIcon className="h-4 w-4" />
             Back
           </Link>
         </Button>
@@ -1062,10 +1061,10 @@ export function V3SettlementPreferencesContent() {
 
       <section className="mt-8 flex flex-col gap-4">
         <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-card">
-          <Settings2 className="h-5 w-5 text-foreground" />
+          <SlidersIcon className="h-5 w-5 text-foreground" />
         </span>
         <div className="flex flex-wrap items-center gap-4">
-          <h1 className="text-3xl font-semibold leading-8 tracking-[-0.4px] text-foreground">Settlement preferences</h1>
+          <h1 className="text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground">Settlement preferences</h1>
           <Tabs value={channel} onValueChange={(value) => setChannel(value as SettlementChannel)}>
             <TabsList className="h-8 rounded-[8px] bg-muted p-1">
               <TabsTrigger value="in-store" className="h-6 rounded-[6px] border-transparent px-4 py-1 text-sm font-medium text-muted-foreground data-active:!border-transparent data-active:!bg-background data-active:!text-foreground">
@@ -1160,7 +1159,7 @@ export function V3SettlementPreferencesContent() {
         <TabsContent value="bank-accounts" className="pt-6">
           <section className="grid gap-3 lg:grid-cols-2">
             <div className="rounded-xl border border-border bg-card px-4 py-4">
-              <Building2 className="h-5 w-5 text-muted-foreground" />
+              <BuildingsIcon className="h-5 w-5 text-muted-foreground" />
               <p className="mt-3 text-sm font-semibold text-foreground">Active settlement account</p>
               <p className="mt-1 text-sm text-muted-foreground">This bank account receives settled payouts for {channelLabel(channel)} payments.</p>
               <div className="mt-4 rounded-lg bg-muted px-3 py-3">
@@ -1174,7 +1173,7 @@ export function V3SettlementPreferencesContent() {
               </div>
             </div>
             <div className="rounded-xl border border-border bg-card px-4 py-4">
-              <CircleAlert className="h-5 w-5 text-muted-foreground" />
+              <WarningCircleIcon className="h-5 w-5 text-muted-foreground" />
               <p className="mt-3 text-sm font-semibold text-foreground">Bank account checks</p>
               <p className="mt-1 text-sm text-muted-foreground">Use this area for verification status, retry notes, and account update requirements.</p>
               <div className="mt-4 space-y-2">

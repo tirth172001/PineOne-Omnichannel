@@ -1,68 +1,95 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Download } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { DotsThreeVerticalIcon, DownloadIcon, FileTextIcon } from "@phosphor-icons/react"
+import { toast } from "sonner"
 
 import { TransactionStyleListingPage, type ListingColumn } from "@/components/shared/transaction-style-listing-page"
 import { type ListingFilter } from "@/components/shared/listing-page-primitives"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { readDummyAuthSession } from "@/lib/dummy-auth"
+import {
+  getDeviceRows,
+  recordModeChange,
+  toggleDeviceStatus,
+  type DeviceMode,
+  type TerminalDeviceRow,
+} from "@/lib/terminal-devices-data"
 
-type PosRow = {
-  id: string
-  model: string
-  hardwareId: string
-  posId: string
-  installationDate: string
-  installationTime: string
-  storeName: string
-  storeAddress: string
-  status: "Standalone" | "Linked"
+function ModePill({ mode }: { mode: DeviceMode }) {
+  return (
+    <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-border/70 px-2 text-xs text-foreground">
+      <span className={mode === "Integrated" ? "h-1.5 w-1.5 rounded-full bg-primary" : "h-1.5 w-1.5 rounded-full bg-muted-foreground/50"} />
+      {mode}
+    </span>
+  )
 }
 
-const POS_ROWS: PosRow[] = [
-  {
-    id: "pos-1",
-    model: "A910",
-    hardwareId: "HRD-9033",
-    posId: "POS-1277",
-    installationDate: "21 Jun 2026",
-    installationTime: "9:00 AM",
-    storeName: "PineLabs - Noida Kiosk",
-    storeAddress: "PineLabs, Candor TechSpace, Noida, 584800",
-    status: "Standalone",
-  },
-  {
-    id: "pos-2",
-    model: "A77",
-    hardwareId: "HRD-9044",
-    posId: "POS-1284",
-    installationDate: "20 Jun 2026",
-    installationTime: "12:30 PM",
-    storeName: "PineLabs - Sector 35",
-    storeAddress: "PineLabs, Candor TechSpace, Noida, 584800",
-    status: "Linked",
-  },
-]
-
 export function PosTerminalsListingContent() {
+  const router = useRouter()
+  const [rows, setRows] = useState<TerminalDeviceRow[]>(() => getDeviceRows())
   const [search, setSearch] = useState("")
-  const [dateFilter, setDateFilter] = useState("7d")
+  const [dateFilter, setDateFilter] = useState("today")
   const [statusFilter, setStatusFilter] = useState("all")
 
-  const rows = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    return POS_ROWS.filter((row) => {
-      if (statusFilter !== "all" && row.status.toLowerCase() !== statusFilter) return false
-      if (!q) return true
-      return `${row.model} ${row.hardwareId} ${row.posId} ${row.storeName}`.toLowerCase().includes(q)
+  const filteredRows = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    return rows.filter((row) => {
+      if (statusFilter !== "all" && row.mode.toLowerCase() !== statusFilter) return false
+      if (!query) return true
+      return `${row.model} ${row.hardwareId} ${row.posId} ${row.storeName}`.toLowerCase().includes(query)
     })
-  }, [search, statusFilter])
+  }, [rows, search, statusFilter])
+
+  function currentActor() {
+    const session = readDummyAuthSession()
+    return { name: session?.name ?? "Admin", role: session?.role ?? "Admin" }
+  }
+
+  function handleChangeMode(device: TerminalDeviceRow, nextMode: DeviceMode) {
+    const { name, role } = currentActor()
+    const result = recordModeChange(device.id, nextMode, name, role)
+    if (!result) return
+    setRows((current) => current.map((row) => (row.id === device.id ? result.device : row)))
+    toast.success(`${device.model} switched to ${nextMode}`)
+  }
+
+  function handleToggleStatus(device: TerminalDeviceRow) {
+    const updated = toggleDeviceStatus(device.id)
+    if (!updated) return
+    setRows((current) => current.map((row) => (row.id === device.id ? updated : row)))
+    toast.success(`${device.model} ${updated.status === "Active" ? "reactivated" : "deactivated"}`)
+  }
+
+  function handleAddDevice() {
+    const first = rows[0]
+    const newRow: TerminalDeviceRow = {
+      ...first,
+      id: `dev-new-${Date.now()}`,
+      model: "Touch A910",
+      hardwareId: `HRD-${Math.floor(100000 + Math.random() * 900000)}`,
+      posId: `POS-${Math.floor(700000000 + Math.random() * 90000000)}`,
+      installationDate: "Just now",
+      installationTime: "",
+      mode: "Standalone",
+      status: "Active",
+    }
+    setRows((current) => [newRow, ...current])
+    toast.success(`${newRow.model} added`)
+  }
 
   const filters: ListingFilter[] = [
     {
       id: "date",
       type: "select",
-      label: "Date",
+      label: "Today",
       value: dateFilter,
       onValueChange: setDateFilter,
       options: [
@@ -80,19 +107,19 @@ export function PosTerminalsListingContent() {
       options: [
         { label: "All status", value: "all" },
         { label: "Standalone", value: "standalone" },
-        { label: "Linked", value: "linked" },
+        { label: "Integrated", value: "integrated" },
       ],
     },
     { id: "more", type: "button", label: "More filters", value: "", showCaret: true },
   ]
 
-  const columns: Array<ListingColumn<PosRow>> = [
+  const columns: Array<ListingColumn<TerminalDeviceRow>> = [
     {
       key: "model",
-      header: "Model & hardware ID",
+      header: "Hardware model ID",
       cell: (row) => (
         <div>
-          <p>{row.model}</p>
+          <p className="font-medium text-foreground">{row.model}</p>
           <p className="text-xs text-muted-foreground">{row.hardwareId}</p>
         </div>
       ),
@@ -119,40 +146,71 @@ export function PosTerminalsListingContent() {
       ),
     },
     {
-      key: "status",
-      header: "Status",
+      key: "mode",
+      header: "Mode",
+      cell: (row) => <ModePill mode={row.mode} />,
+    },
+    {
+      key: "action",
+      header: "Action",
+      align: "right",
       cell: (row) => (
-        <span className="inline-flex h-6 items-center rounded-full border border-border/70 px-2 text-xs">{row.status}</span>
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md border-border/70 bg-transparent">
+                <DotsThreeVerticalIcon className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem onSelect={() => handleChangeMode(row, row.mode === "Standalone" ? "Integrated" : "Standalone")}>
+                Change mode to {row.mode === "Standalone" ? "Integrated" : "Standalone"}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleToggleStatus(row)}>
+                {row.status === "Active" ? "Deactivate device" : "Reactivate device"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       ),
     },
   ]
 
   return (
     <TransactionStyleListingPage
-      title="POS terminals"
+      title="Terminal devices"
       primaryAction={
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="rounded-[8px] border-border/70 bg-background">Manage stores & users</Button>
-          <Button className="rounded-[8px] border border-primary/60 bg-primary text-primary-foreground hover:bg-primary/90">Add new device</Button>
+          <Button
+            variant="outline"
+            className="rounded-[8px] border-border/70 bg-background"
+            onClick={() => router.push("/offline-payments/manage-devices/audit-log")}
+          >
+            <FileTextIcon className="h-4 w-4" />
+            Audit log
+          </Button>
+          <Button
+            className="rounded-[8px] border border-primary/60 bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={handleAddDevice}
+          >
+            Add new device
+          </Button>
         </div>
       }
       search={search}
       onSearchChange={setSearch}
-      searchPlaceholder="Search device"
+      searchPlaceholder="Search by device ID"
       filters={filters}
       rightActions={
         <Button variant="outline" className="rounded-[8px] border-border/70 bg-background">
-          <Download className="h-4 w-4" />
+          <DownloadIcon className="h-4 w-4" />
           Download filtered
         </Button>
       }
-      summaryCards={[
-        { label: "Total devices", value: "214" },
-        { label: "Active locations", value: "86" },
-      ]}
       columns={columns}
-      rows={rows}
-      emptyText="No devices found."
+      rows={filteredRows}
+      emptyText="No devices found for current filters."
+      totalRows={filteredRows.length}
     />
   )
 }

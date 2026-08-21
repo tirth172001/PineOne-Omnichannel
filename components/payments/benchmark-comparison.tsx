@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingUp, TrendingDown } from "lucide-react"
+import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react"
 import { HighchartsPanelChart } from "@/components/ui/highcharts"
 
 const metrics = [
@@ -38,7 +38,7 @@ export function BenchmarkComparison() {
               <div key={item.metric} className="flex items-center justify-between text-xs border-b border-border pb-2 last:border-0">
                 <span className="text-muted-foreground">{item.metric}</span>
                 <span className={`font-medium ${positive ? "text-success" : "text-warning-foreground"}`}>
-                  {positive ? <TrendingUp className="inline h-3 w-3 mr-1" /> : <TrendingDown className="inline h-3 w-3 mr-1" />}
+                  {positive ? <TrendUpIcon className="inline h-3 w-3 mr-1" /> : <TrendDownIcon className="inline h-3 w-3 mr-1" />}
                   {item.yours}% vs {item.benchmark}%
                 </span>
               </div>

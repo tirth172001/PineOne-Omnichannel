@@ -6,8 +6,13 @@
  */
 
 import Link from "next/link"
-import { ArrowLeft, Circle, Copy, FileWarning, PauseCircle } from "lucide-react"
-
+import {
+  ArrowLeftIcon,
+  CircleIcon,
+  CopyIcon,
+  FileTextIcon,
+  PauseCircleIcon,
+} from "@phosphor-icons/react"
 import { StatusPill } from "@/components/shared/status-pill"
 import { Button } from "@/components/ui/button"
 import { onHoldStatusTone, type OnHoldRecord } from "@/components/on-hold-disputes/on-hold-disputes-data"
@@ -25,9 +30,9 @@ function DetailField({ label, value }: { label: string; value: React.ReactNode }
 
 export function OnHoldDetailContent({ record }: { record: OnHoldDetailRecord }) {
   const timeline = [
-    { id: "hold-created", title: "Payment placed on hold", timestamp: `${record.datePrimary}, ${record.dateSecondary}`, icon: <PauseCircle className="h-4 w-4 text-amber-600" /> },
-    { id: "doc-requested", title: "Document requested", timestamp: `${record.datePrimary}, ${record.dateSecondary}`, icon: <FileWarning className="h-4 w-4 text-amber-600" /> },
-    { id: "current-status", title: record.status, timestamp: `${record.datePrimary}, ${record.dateSecondary}`, icon: <Circle className="h-4 w-4 text-chart-4" /> },
+    { id: "hold-created", title: "Payment placed on hold", timestamp: `${record.datePrimary}, ${record.dateSecondary}`, icon: <PauseCircleIcon className="h-4 w-4 text-amber-600" /> },
+    { id: "doc-requested", title: "Document requested", timestamp: `${record.datePrimary}, ${record.dateSecondary}`, icon: <FileTextIcon className="h-4 w-4 text-amber-600" /> },
+    { id: "current-status", title: record.status, timestamp: `${record.datePrimary}, ${record.dateSecondary}`, icon: <CircleIcon className="h-4 w-4 text-chart-4" /> },
   ]
 
   return (
@@ -37,7 +42,7 @@ export function OnHoldDetailContent({ record }: { record: OnHoldDetailRecord }) 
         <div className="flex h-8 w-full items-center justify-between">
           <Button asChild variant="ghost" className="h-8 rounded-md px-2 text-xs text-foreground hover:bg-background/20">
             <Link href="/on-hold-disputes">
-              <ArrowLeft className="mr-1 h-4 w-4" />
+              <ArrowLeftIcon className="mr-1 h-4 w-4" />
               Back
             </Link>
           </Button>
@@ -45,7 +50,7 @@ export function OnHoldDetailContent({ record }: { record: OnHoldDetailRecord }) 
 
         <div className="mt-8 h-[140px]">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
-            <PauseCircle className="h-8 w-8 text-primary-foreground" />
+            <PauseCircleIcon className="h-8 w-8 text-primary-foreground" />
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <p className="text-[36px] font-semibold leading-9 text-foreground">{record.amount}</p>
@@ -68,7 +73,7 @@ export function OnHoldDetailContent({ record }: { record: OnHoldDetailRecord }) 
                   value={
                     <span className="inline-flex items-center gap-2">
                       {record.transactionId}
-                      <Copy className="h-4 w-4 text-muted-foreground" />
+                      <CopyIcon className="h-4 w-4 text-muted-foreground" />
                     </span>
                   }
                 />
@@ -89,7 +94,7 @@ export function OnHoldDetailContent({ record }: { record: OnHoldDetailRecord }) 
                   value={
                     <span className="inline-flex items-center gap-2">
                       6352699747
-                      <Copy className="h-4 w-4 text-muted-foreground" />
+                      <CopyIcon className="h-4 w-4 text-muted-foreground" />
                     </span>
                   }
                 />

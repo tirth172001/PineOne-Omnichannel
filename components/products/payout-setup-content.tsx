@@ -1,7 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight, CheckCircle2, Clock3, ShieldCheck, Wallet } from "lucide-react"
+import {
+  ArrowRightIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  ShieldCheckIcon,
+  WalletIcon,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PageHeader } from "@/components/ui/panels"
@@ -15,9 +21,9 @@ const setupSteps = [
 ]
 
 const benefits = [
-  { title: "Fast rollout", detail: "Most teams complete setup in under 15 minutes.", icon: Clock3 },
-  { title: "Enterprise-safe", detail: "Approval and limit controls reduce payout risk.", icon: ShieldCheck },
-  { title: "Operational clarity", detail: "Track batches and beneficiary states in one place.", icon: Wallet },
+  { title: "Fast rollout", detail: "Most teams complete setup in under 15 minutes.", icon: ClockIcon },
+  { title: "Enterprise-safe", detail: "Approval and limit controls reduce payout risk.", icon: ShieldCheckIcon },
+  { title: "Operational clarity", detail: "Track batches and beneficiary states in one place.", icon: WalletIcon },
 ]
 
 export function PayoutSetupContent() {
@@ -36,7 +42,7 @@ export function PayoutSetupContent() {
             <Button asChild className="h-9 gap-1.5">
               <Link href="/online-payments/configuration?feature=payout">
                 Start configuration
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRightIcon className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild variant="outline" className="h-9">
@@ -82,7 +88,7 @@ export function PayoutSetupContent() {
           </div>
           <div className="mt-4 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-100">
             <div className="flex items-center gap-2 font-medium">
-              <CheckCircle2 className="h-3.5 w-3.5" />
+              <CheckCircleIcon className="h-3.5 w-3.5" />
               Recommended next step
             </div>
             <p className="mt-1 text-emerald-100/85">

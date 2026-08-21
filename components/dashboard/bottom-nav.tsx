@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Menu } from "lucide-react"
+import { ListIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { getBottomNavItems } from "@/lib/navigation/navigation-model"
@@ -99,7 +99,7 @@ export function BottomNav({ pathname, hidden = false, onMenuClick }: BottomNavPr
           className="h-9 rounded-md px-2 text-[11px] text-muted-foreground"
           onClick={onMenuClick}
         >
-          <Menu className="mr-1 h-3.5 w-3.5" />
+          <ListIcon className="mr-1 h-3.5 w-3.5" />
           Menu
         </Button>
       </div>

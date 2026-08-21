@@ -2,44 +2,44 @@
 
 import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react"
 import {
-  AlertTriangle,
-  BarChart3,
-  Check,
-  ChevronDown,
-  ChevronLeft,
-  ChevronsLeft,
-  ChevronsRight,
-  Copy,
-  CreditCard,
-  Eye,
-  Globe,
-  Handshake,
-  KeyRound,
-  LifeBuoy,
-  Link2,
-  LogOut,
-  Mail,
-  Megaphone,
-  MoreVertical,
-  Pencil,
-  Phone,
-  Plug,
-  RotateCcw,
-  Repeat,
-  Route,
-  Search,
-  Server,
-  Settings2,
-  Smartphone,
-  Store,
-  Trash2,
-  UserCircle2,
-  UserMinus,
-  UserPlus,
-  Users,
-  Wallet,
-  X,
-} from "lucide-react"
+  ArrowCounterClockwiseIcon,
+  CaretDoubleLeftIcon,
+  CaretDoubleRightIcon,
+  CaretDownIcon,
+  CaretLeftIcon,
+  ChartBarIcon,
+  CheckIcon,
+  CopyIcon,
+  CreditCardIcon,
+  DeviceMobileIcon,
+  DotsThreeVerticalIcon,
+  EnvelopeSimpleIcon,
+  EyeIcon,
+  GlobeIcon,
+  HandshakeIcon,
+  HardDrivesIcon,
+  KeyIcon,
+  LifebuoyIcon,
+  LinkIcon,
+  MagnifyingGlassIcon,
+  MegaphoneIcon,
+  PathIcon,
+  PencilSimpleIcon,
+  PhoneIcon,
+  PlugIcon,
+  RepeatIcon,
+  SignOutIcon,
+  SlidersIcon,
+  StorefrontIcon,
+  TrashIcon,
+  UserCircleIcon,
+  UserMinusIcon,
+  UserPlusIcon,
+  UsersIcon,
+  WalletIcon,
+  WarningIcon,
+  XIcon,
+} from "@phosphor-icons/react"
 import { toast } from "sonner"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
@@ -92,8 +92,8 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { LogoMark } from "@/components/brand/logo-mark"
 import { SectionSummaryStrip } from "@/components/dashboard/section-summary-strip"
-import { TransactionStyleTable, type TransactionStyleColumn } from "@/components/shared/transaction-style-table"
 import { readDummyAuthSession } from "@/lib/dummy-auth"
 import { cn } from "@/lib/utils"
 import {
@@ -116,8 +116,23 @@ import {
   type RoleCatalogEntry,
   type RoleCatalogSystem,
 } from "@/lib/role-permissions"
+import {
+  formatTime,
+  INITIAL_ROSTER,
+  MONTHS,
+  type RosterEntry,
+  type UserStatus,
+} from "@/lib/user-roster-data"
+import { ManageStoresSection } from "@/components/account/manage-stores-section"
+import { ConfigureCheckoutSection } from "@/components/account/configure-checkout-section"
 
-export type SettingsModule = "personal-details" | "users" | "credentials" | "webhooks"
+export type SettingsModule =
+  | "personal-details"
+  | "manage-stores"
+  | "configure-checkout"
+  | "users"
+  | "credentials"
+  | "webhooks"
 
 export const SETTINGS_NAV_ITEMS: Array<{
   key: SettingsModule
@@ -125,10 +140,12 @@ export const SETTINGS_NAV_ITEMS: Array<{
   icon: ComponentType<{ className?: string }>
   adminOnly?: boolean
 }> = [
-  { key: "personal-details", label: "Personal details", icon: UserCircle2 },
-  { key: "users", label: "Users", icon: Users, adminOnly: true },
-  { key: "credentials", label: "Credentials", icon: KeyRound },
-  { key: "webhooks", label: "Webhooks", icon: Globe },
+  { key: "personal-details", label: "Personal details", icon: UserCircleIcon },
+  { key: "manage-stores", label: "Manage stores", icon: StorefrontIcon },
+  { key: "configure-checkout", label: "Configure checkout", icon: CreditCardIcon },
+  { key: "users", label: "Manage users & roles", icon: UsersIcon, adminOnly: true },
+  { key: "credentials", label: "Credentials", icon: KeyIcon },
+  { key: "webhooks", label: "Webhooks", icon: GlobeIcon },
 ]
 
 /* ---------------------------------- Sidebar --------------------------------- */
@@ -157,7 +174,7 @@ export function SettingsSidebarNav({
   return (
     <div className="flex h-full w-64 flex-col bg-sidebar">
       <div className="flex h-16 shrink-0 items-center bg-sidebar px-2">
-        <span className="px-4 text-[36px] font-semibold leading-none tracking-[-0.02em] text-foreground">ONE</span>
+        <LogoMark className="h-12 w-auto pr-4 text-foreground" />
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col justify-between overflow-y-auto bg-sidebar px-2 py-2">
@@ -167,7 +184,7 @@ export function SettingsSidebarNav({
             onClick={onBack}
             className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm leading-none text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
-            <ChevronLeft className="h-3.5 w-3.5 shrink-0" />
+            <CaretLeftIcon className="h-3.5 w-3.5 shrink-0" />
             <span>Back</span>
           </button>
 
@@ -201,7 +218,7 @@ export function SettingsSidebarNav({
           onClick={onLogout}
           className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm leading-none text-destructive transition-colors hover:bg-destructive/10"
         >
-          <LogOut className="h-3.5 w-3.5 shrink-0" />
+          <SignOutIcon className="h-3.5 w-3.5 shrink-0" />
           <span>Logout</span>
         </button>
       </div>
@@ -214,7 +231,7 @@ export function SettingsSidebarNav({
 function SettingsScreenHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 px-8 py-6">
-      <h1 className="text-[28px] font-bold leading-none tracking-[-0.01em] text-foreground">{title}</h1>
+      <h1 className="text-2xl font-bold leading-none tracking-[-0.01em] text-foreground">{title}</h1>
       {action}
     </div>
   )
@@ -282,7 +299,7 @@ function PersonalDetailsSection() {
           <SectionIntro title="Basic details" description="All your personal details related to your login" />
           <div className="space-y-3">
             <FieldRow
-              icon={UserCircle2}
+              icon={UserCircleIcon}
               label="Name"
               value={name}
               action={
@@ -292,7 +309,7 @@ function PersonalDetailsSection() {
               }
             />
             <FieldRow
-              icon={Phone}
+              icon={PhoneIcon}
               label="Registered number"
               value="+91 98765 43210"
               action={
@@ -302,7 +319,7 @@ function PersonalDetailsSection() {
               }
             />
             <FieldRow
-              icon={Mail}
+              icon={EnvelopeSimpleIcon}
               label="Registered email"
               value={email}
               action={
@@ -333,34 +350,34 @@ function CredentialsSection() {
           <SectionIntro title="Production credentials" description="You can use this credentials for live product" />
           <div className="space-y-3">
             <FieldRow
-              icon={Server}
+              icon={HardDrivesIcon}
               label="Merchant ID"
               value={merchantId}
               action={
                 <Button variant="outline" size="sm" onClick={() => copyToClipboard(merchantId, "Merchant ID")}>
-                  <Copy className="h-3.5 w-3.5" />
+                  <CopyIcon className="h-3.5 w-3.5" />
                   Copy
                 </Button>
               }
             />
             <FieldRow
-              icon={Server}
+              icon={HardDrivesIcon}
               label="Client ID"
               value={clientId}
               action={
                 <Button variant="outline" size="sm" onClick={() => copyToClipboard(clientId, "Client ID")}>
-                  <Copy className="h-3.5 w-3.5" />
+                  <CopyIcon className="h-3.5 w-3.5" />
                   Copy
                 </Button>
               }
             />
             <FieldRow
-              icon={KeyRound}
+              icon={KeyIcon}
               label="Secret key"
               value={"*".repeat(28)}
               action={
                 <Button variant="outline" size="sm" onClick={() => copyToClipboard(secretKey, "Secret key")}>
-                  <Copy className="h-3.5 w-3.5" />
+                  <CopyIcon className="h-3.5 w-3.5" />
                   Copy
                 </Button>
               }
@@ -388,7 +405,7 @@ function WebhooksSection() {
           />
           <div className="space-y-3">
             <FieldRow
-              icon={Globe}
+              icon={GlobeIcon}
               label="Added URL"
               value={url}
               action={
@@ -406,23 +423,8 @@ function WebhooksSection() {
 
 /* ------------------------------- Manage users data ------------------------------ */
 
-/** Invited: pending until the user accepts. Active: accepted and has access.
- *  Removed: access revoked by an admin — kept in the list (not deleted) so it
- *  can be reactivated later. */
-type UserStatus = "Active" | "Invited" | "Removed"
-
-/** A row in the Users table — always a person. Role definitions live separately
- *  in the role catalog (`ManagedRole`) and are shown in the Roles tab. */
-type RosterEntry = {
-  id: string
-  name: string
-  email: string
-  addedOnDate: string
-  addedOnTime: string
-  scope: string
-  role: string
-  status: UserStatus
-}
+/** Roster type/data now live in lib/user-roster-data.ts, shared with Manage stores'
+ *  store-detail Users tab and stores-data.ts's live "Users invited" count. */
 
 /** The live, editable role catalog used across Roles/Users/Invite — seeded from the
  *  real predefined roles (lib/role-permissions.ts) and grown with custom roles. */
@@ -444,46 +446,6 @@ const INITIAL_ROLE_CATALOG: ManagedRole[] = DEFAULT_ROLE_CATALOG.map((entry) => 
   permissionKeys: entry.permissionKeys,
 }))
 
-const FIRST_NAMES = [
-  "Karan", "Rajesh", "Siddharth", "Maya", "Priya", "Neha", "Aditi", "Tirth", "Vinay", "Ananya",
-  "Rohan", "Kavita", "Arjun", "Sneha", "Vikram", "Pooja", "Manish", "Divya", "Suresh", "Meera",
-  "Rahul", "Isha", "Nikhil", "Shreya", "Amit", "Ritu", "Sanjay", "Pallavi", "Gaurav", "Swati",
-]
-const LAST_NAMES = [
-  "Joshi", "Kumar", "Mehta", "Patel", "Singh", "Verma", "Sharma", "Trivedi", "Bansal", "Iyer",
-  "Nair", "Reddy", "Gupta", "Chawla", "Malhotra", "Kapoor", "Rao", "Desai", "Pillai", "Chopra",
-]
-const EMAIL_DOMAINS = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com"]
-/** Mix of offline and online predefined role names — must match INITIAL_ROLE_CATALOG entries exactly. */
-const ROLE_CYCLE = [
-  "Admin", "Store Manager", "Owner", "User Admin", "Accountant", "Store Cashier", "Operations", "Finance", "Support",
-]
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-
-function scopeForRoleName(roleName: string): string {
-  const entry = INITIAL_ROLE_CATALOG.find((role) => role.name === roleName)
-  return entry ? computeAccessScope(entry.permissionKeys) : "In-store"
-}
-
-const SEED_ROSTER: RosterEntry[] = [
-  { id: "role-0", name: "Admin", email: "tirthtrivedi17@gmail.com", addedOnDate: "19 Jun 2026", addedOnTime: "10:12 PM", scope: scopeForRoleName("Admin"), role: "Admin", status: "Active" },
-  { id: "role-1", name: "Karan Joshi", email: "karanjoshi77@gmail.com", addedOnDate: "23 Jun 2026", addedOnTime: "01:20 PM", scope: scopeForRoleName("Store Manager"), role: "Store Manager", status: "Active" },
-  { id: "role-2", name: "Rajesh Kumar", email: "rajeshkumar84@yahoo.com", addedOnDate: "22 Jun 2026", addedOnTime: "09:45 AM", scope: scopeForRoleName("Owner"), role: "Owner", status: "Active" },
-  { id: "role-3", name: "Siddharth Mehta", email: "siddharthmehta01@gmail.com", addedOnDate: "26 Jun 2026", addedOnTime: "12:00 PM", scope: scopeForRoleName("User Admin"), role: "User Admin", status: "Active" },
-  { id: "role-4", name: "Maya Patel", email: "mayapatel92@gmail.com", addedOnDate: "24 Jun 2026", addedOnTime: "03:50 PM", scope: scopeForRoleName("Accountant"), role: "Accountant", status: "Active" },
-  { id: "role-5", name: "Priya Singh", email: "priyasingh65@yahoo.com", addedOnDate: "21 Jun 2026", addedOnTime: "02:30 PM", scope: scopeForRoleName("Store Cashier"), role: "Store Cashier", status: "Active" },
-  { id: "role-6", name: "Neha Verma", email: "nehaverma88@outlook.com", addedOnDate: "27 Jun 2026", addedOnTime: "04:30 PM", scope: scopeForRoleName("Admin"), role: "Admin", status: "Active" },
-  { id: "role-7", name: "Aditi Sharma", email: "aditisharma99@hotmail.com", addedOnDate: "20 Jun 2026", addedOnTime: "11:15 AM", scope: "In-store", role: "Admin", status: "Invited" },
-  { id: "role-8", name: "Tirth Trivedi", email: "tirthtrivedi17@gmail.com", addedOnDate: "25 Jun 2026", addedOnTime: "08:00 AM", scope: "In-store", role: "Admin", status: "Active" },
-  { id: "role-9", name: "Vinay Bansal", email: "vinaybansal44@hotmail.com", addedOnDate: "28 Jun 2026", addedOnTime: "05:55 PM", scope: "In-store", role: "Admin", status: "Active" },
-]
-
-function formatTime(hour24: number, minute: number) {
-  const period = hour24 >= 12 ? "PM" : "AM"
-  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12
-  return `${String(hour12).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${period}`
-}
-
 function formatNow() {
   const now = new Date()
   return {
@@ -491,34 +453,6 @@ function formatNow() {
     timeStr: formatTime(now.getHours(), now.getMinutes()),
   }
 }
-
-function buildGeneratedRosterEntry(index: number): RosterEntry {
-  const first = FIRST_NAMES[index % FIRST_NAMES.length]
-  const last = LAST_NAMES[(index * 3 + 7) % LAST_NAMES.length]
-  const domain = EMAIL_DOMAINS[(index * 2 + 1) % EMAIL_DOMAINS.length]
-  const role = ROLE_CYCLE[(index * 5 + 2) % ROLE_CYCLE.length]
-  const scope = scopeForRoleName(role)
-  const day = (index % 27) + 1
-  const month = MONTHS[(index * 7 + 3) % MONTHS.length]
-  const hour = (index * 3 + 6) % 24
-  const minute = (index * 11) % 60
-
-  return {
-    id: `role-${index}`,
-    name: `${first} ${last}`,
-    email: `${first.toLowerCase()}${last.toLowerCase()}${index}@${domain}`,
-    addedOnDate: `${day} ${month} 2026`,
-    addedOnTime: formatTime(hour, minute),
-    scope,
-    role,
-    status: index % 13 === 0 ? "Removed" : index % 7 === 0 ? "Invited" : "Active",
-  }
-}
-
-const INITIAL_ROSTER: RosterEntry[] = [
-  ...SEED_ROSTER,
-  ...Array.from({ length: 90 }, (_, i) => buildGeneratedRosterEntry(i + 10)),
-]
 
 function roleDotClass(role: string) {
   if (role === "Admin") return "bg-amber-500"
@@ -559,14 +493,14 @@ function StatusBadge({ status }: { status: UserStatus }) {
  *  the table wants to know at a glance, not how many permission rows make it up.
  *  Reuses the Store/Online iconography from the permissions sheets so the same
  *  channel reads the same way everywhere in this file. */
-function AccessScopeBadge({ scope }: { scope: AccessScope }) {
+export function AccessScopeBadge({ scope }: { scope: AccessScope }) {
   const showStore = scope !== "Online"
   const showGlobe = scope !== "In-store"
 
   return (
     <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-border bg-background px-2.5 text-xs font-medium text-foreground">
-      {showStore ? <Store className="h-3 w-3 text-muted-foreground" /> : null}
-      {showGlobe ? <Globe className="h-3 w-3 text-muted-foreground" /> : null}
+      {showStore ? <StorefrontIcon className="h-3 w-3 text-muted-foreground" /> : null}
+      {showGlobe ? <GlobeIcon className="h-3 w-3 text-muted-foreground" /> : null}
       {scope === "In-store and Online" ? "In-store & Online" : scope}
     </span>
   )
@@ -592,7 +526,7 @@ function CapabilityChips({ permissionKeys, max = 3 }: { permissionKeys: string[]
   return (
     <div className="flex flex-wrap items-center gap-1">
       {visible.map((group) => {
-        const GroupIcon = GROUP_ICON[group] ?? Server
+        const GroupIcon = GROUP_ICON[group] ?? HardDrivesIcon
         return (
           <span
             key={group}
@@ -633,7 +567,7 @@ function StepHeading({
           done ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
         )}
       >
-        {done ? <Check className="h-3.5 w-3.5" /> : number}
+        {done ? <CheckIcon className="h-3.5 w-3.5" /> : number}
       </span>
       <div className="min-w-0 text-left">
         <p className="text-sm font-semibold text-foreground">{title}</p>
@@ -702,17 +636,17 @@ function UserRowActions({
     <div className="flex items-center justify-end gap-1">
       {entry.status === "Invited" ? (
         <>
-          <IconActionButton label="Resend invite" icon={Mail} onClick={onResendInvite} />
-          <IconActionButton label="Edit" icon={Pencil} onClick={onEdit} />
-          <IconActionButton label="Cancel invite" icon={Trash2} onClick={onCancelInvite} destructive />
+          <IconActionButton label="Resend invite" icon={EnvelopeSimpleIcon} onClick={onResendInvite} />
+          <IconActionButton label="Edit" icon={PencilSimpleIcon} onClick={onEdit} />
+          <IconActionButton label="Cancel invite" icon={TrashIcon} onClick={onCancelInvite} destructive />
         </>
       ) : entry.status === "Active" ? (
         <>
-          <IconActionButton label="Edit" icon={Pencil} onClick={onEdit} />
-          <IconActionButton label="Remove user" icon={UserMinus} onClick={onRemove} destructive />
+          <IconActionButton label="Edit" icon={PencilSimpleIcon} onClick={onEdit} />
+          <IconActionButton label="Remove user" icon={UserMinusIcon} onClick={onRemove} destructive />
         </>
       ) : (
-        <IconActionButton label="Reactivate" icon={RotateCcw} onClick={onReactivate} />
+        <IconActionButton label="Reactivate" icon={ArrowCounterClockwiseIcon} onClick={onReactivate} />
       )}
     </div>
   )
@@ -733,8 +667,8 @@ function RoleRowActions({
 
   return (
     <div className="flex items-center justify-end gap-1">
-      <IconActionButton label="View permissions" icon={Eye} onClick={onView} />
-      {isCustom ? <IconActionButton label="Delete" icon={Trash2} onClick={onDelete} destructive /> : null}
+      <IconActionButton label="View permissions" icon={EyeIcon} onClick={onView} />
+      {isCustom ? <IconActionButton label="Delete" icon={TrashIcon} onClick={onDelete} destructive /> : null}
     </div>
   )
 }
@@ -771,23 +705,18 @@ function RolesTable({
   onView: (role: ManagedRole) => void
   onDelete: (role: ManagedRole) => void
 }) {
-  const [search, setSearch] = useState("")
   const [typeFilter, setTypeFilter] = useState<"all" | "system_default" | "custom">("all")
 
-  const normalizedSearch = search.trim().toLowerCase()
   const filteredRoles = useMemo(() => {
-    return roles.filter((role) => {
-      if (typeFilter !== "all" && role.roleType !== typeFilter) return false
-      if (!normalizedSearch) return true
-      return `${role.name} ${role.description}`.toLowerCase().includes(normalizedSearch)
-    })
-  }, [roles, typeFilter, normalizedSearch])
+    return roles.filter((role) => typeFilter === "all" || role.roleType === typeFilter)
+  }, [roles, typeFilter])
 
-  const columns: TransactionStyleColumn<ManagedRole>[] = [
+  const columns: DataTableColumn<ManagedRole>[] = [
     {
-      key: "role",
+      id: "role",
       header: "Role",
-      render: (row) => (
+      getSearchValue: (row) => `${row.name} ${row.description}`,
+      cell: (row) => (
         <div>
           <p className="text-sm font-semibold text-foreground">{row.name}</p>
           <p className="mt-0.5 text-sm text-muted-foreground">{row.description}</p>
@@ -795,80 +724,69 @@ function RolesTable({
       ),
     },
     {
-      key: "type",
+      id: "type",
       header: "Type",
-      render: (row) => <RoleTypeChip roleType={row.roleType} />,
+      cell: (row) => <RoleTypeChip roleType={row.roleType} />,
     },
     {
-      key: "access",
+      id: "access",
       header: "Access",
-      render: (row) => <AccessScopeBadge scope={computeAccessScope(row.permissionKeys)} />,
+      cell: (row) => <AccessScopeBadge scope={computeAccessScope(row.permissionKeys)} />,
     },
     {
-      key: "capabilities",
+      id: "capabilities",
       header: "Capabilities",
-      headerClassName: "h-10 min-w-[220px] px-3 text-sm font-medium text-muted-foreground",
-      render: (row) => <CapabilityChips permissionKeys={row.permissionKeys} />,
+      width: 220,
+      cell: (row) => <CapabilityChips permissionKeys={row.permissionKeys} />,
     },
     {
-      key: "usersAssigned",
+      id: "usersAssigned",
       header: "Users assigned",
-      render: (row) => (
+      cell: (row) => (
         <span className="text-sm text-foreground">
           {roster.filter((entry) => entry.role === row.name && entry.status !== "Removed").length}
         </span>
       ),
     },
     {
-      key: "action",
+      id: "action",
       header: "Actions",
-      cellClassName: "px-3 text-right",
-      render: (row) => <RoleRowActions role={row} onView={() => onView(row)} onDelete={() => onDelete(row)} />,
+      align: "right",
+      cell: (row) => <RoleRowActions role={row} onView={() => onView(row)} onDelete={() => onDelete(row)} />,
     },
   ]
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant={typeFilter === "all" ? "default" : "outline"}
-            className="h-8 rounded-md px-2.5 text-sm"
-            onClick={() => setTypeFilter("all")}
-          >
-            All
-          </Button>
-          <Button
-            variant={typeFilter === "system_default" ? "default" : "outline"}
-            className="h-8 rounded-md px-2.5 text-sm"
-            onClick={() => setTypeFilter("system_default")}
-          >
-            Predefined
-          </Button>
-          <Button
-            variant={typeFilter === "custom" ? "default" : "outline"}
-            className="h-8 rounded-md px-2.5 text-sm"
-            onClick={() => setTypeFilter("custom")}
-          >
-            Custom
-          </Button>
-        </div>
-        <div className="relative w-[260px]">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search roles by name or description"
-            className="h-8 rounded-md border-input pl-8 pr-3 text-sm"
-          />
-        </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant={typeFilter === "all" ? "default" : "outline"}
+          className="h-8 rounded-md px-2.5 text-sm"
+          onClick={() => setTypeFilter("all")}
+        >
+          All
+        </Button>
+        <Button
+          variant={typeFilter === "system_default" ? "default" : "outline"}
+          className="h-8 rounded-md px-2.5 text-sm"
+          onClick={() => setTypeFilter("system_default")}
+        >
+          Predefined
+        </Button>
+        <Button
+          variant={typeFilter === "custom" ? "default" : "outline"}
+          className="h-8 rounded-md px-2.5 text-sm"
+          onClick={() => setTypeFilter("custom")}
+        >
+          Custom
+        </Button>
       </div>
-      <TransactionStyleTable
-        rows={filteredRoles}
-        rowKey={(row) => row.id}
+      <DataTable
+        data={filteredRoles}
+        rowId={(row) => row.id}
         columns={columns}
-        minWidthClassName="min-w-[1160px]"
-        showSelection={false}
+        tableClassName="min-w-[1160px]"
+        searchPlaceholder="Search roles by name or description"
         emptyText="No roles match your search or filters."
       />
     </div>
@@ -892,7 +810,6 @@ function UsersTable({
   onCancelInvite: (row: RosterEntry) => void
   onResendInvite: (row: RosterEntry) => void
 }) {
-  const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | UserStatus>("all")
   const [roleFilter, setRoleFilter] = useState("all")
 
@@ -901,21 +818,20 @@ function UsersTable({
     [rows]
   )
 
-  const normalizedSearch = search.trim().toLowerCase()
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       if (statusFilter !== "all" && row.status !== statusFilter) return false
       if (roleFilter !== "all" && row.role !== roleFilter) return false
-      if (!normalizedSearch) return true
-      return `${row.name} ${row.email}`.toLowerCase().includes(normalizedSearch)
+      return true
     })
-  }, [rows, statusFilter, roleFilter, normalizedSearch])
+  }, [rows, statusFilter, roleFilter])
 
-  const columns: TransactionStyleColumn<RosterEntry>[] = [
+  const columns: DataTableColumn<RosterEntry>[] = [
     {
-      key: "user",
+      id: "user",
       header: "User",
-      render: (row) => (
+      getSearchValue: (row) => `${row.name} ${row.email}`,
+      cell: (row) => (
         <div className={cn(row.status === "Removed" && "opacity-60")}>
           <p className="text-sm font-semibold text-foreground">{row.name}</p>
           <p className="mt-0.5 text-sm text-muted-foreground">{row.email}</p>
@@ -923,18 +839,18 @@ function UsersTable({
       ),
     },
     {
-      key: "role",
+      id: "role",
       header: "Role",
-      render: (row) => (
+      cell: (row) => (
         <div className={cn(row.status === "Removed" && "opacity-60")}>
           <RoleBadge role={row.role} />
         </div>
       ),
     },
     {
-      key: "access",
+      id: "access",
       header: "Access",
-      render: (row) => {
+      cell: (row) => {
         const permissionKeys = roleCatalog.find((role) => role.name === row.role)?.permissionKeys ?? []
         return (
           <div className={cn(row.status === "Removed" && "opacity-60")}>
@@ -944,10 +860,10 @@ function UsersTable({
       },
     },
     {
-      key: "capabilities",
+      id: "capabilities",
       header: "Capabilities",
-      headerClassName: "h-10 min-w-[220px] px-3 text-sm font-medium text-muted-foreground",
-      render: (row) => {
+      width: 220,
+      cell: (row) => {
         const permissionKeys = roleCatalog.find((role) => role.name === row.role)?.permissionKeys ?? []
         return (
           <div className={cn(row.status === "Removed" && "opacity-60")}>
@@ -957,15 +873,15 @@ function UsersTable({
       },
     },
     {
-      key: "status",
+      id: "status",
       header: "Status",
-      render: (row) => <StatusBadge status={row.status} />,
+      cell: (row) => <StatusBadge status={row.status} />,
     },
     {
-      key: "action",
+      id: "action",
       header: "Actions",
-      cellClassName: "px-3 text-right",
-      render: (row) => (
+      align: "right",
+      cell: (row) => (
         <UserRowActions
           entry={row}
           onEdit={() => onEdit(row)}
@@ -980,72 +896,61 @@ function UsersTable({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant={statusFilter === "all" ? "default" : "outline"}
-            className="h-8 rounded-md px-2.5 text-sm"
-            onClick={() => setStatusFilter("all")}
-          >
-            All
-          </Button>
-          <Button
-            variant={statusFilter === "Active" ? "default" : "outline"}
-            className="h-8 rounded-md px-2.5 text-sm"
-            onClick={() => setStatusFilter("Active")}
-          >
-            Active
-          </Button>
-          <Button
-            variant={statusFilter === "Invited" ? "default" : "outline"}
-            className="h-8 rounded-md px-2.5 text-sm"
-            onClick={() => setStatusFilter("Invited")}
-          >
-            Invited
-          </Button>
-          <Button
-            variant={statusFilter === "Removed" ? "default" : "outline"}
-            className="h-8 rounded-md px-2.5 text-sm"
-            onClick={() => setStatusFilter("Removed")}
-          >
-            Removed
-          </Button>
-          <div className="h-6 w-px bg-border" />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 gap-1.5 rounded-md px-2.5 text-sm">
-                {roleFilter === "all" ? "All roles" : roleFilter}
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-52">
-              <DropdownMenuRadioGroup value={roleFilter} onValueChange={setRoleFilter}>
-                <DropdownMenuRadioItem value="all">All roles</DropdownMenuRadioItem>
-                {roleFilterOptions.map((role) => (
-                  <DropdownMenuRadioItem key={role} value={role}>
-                    {role}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <div className="relative w-[260px]">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by name or email"
-            className="h-8 rounded-md border-input pl-8 pr-3 text-sm"
-          />
-        </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant={statusFilter === "all" ? "default" : "outline"}
+          className="h-8 rounded-md px-2.5 text-sm"
+          onClick={() => setStatusFilter("all")}
+        >
+          All
+        </Button>
+        <Button
+          variant={statusFilter === "Active" ? "default" : "outline"}
+          className="h-8 rounded-md px-2.5 text-sm"
+          onClick={() => setStatusFilter("Active")}
+        >
+          Active
+        </Button>
+        <Button
+          variant={statusFilter === "Invited" ? "default" : "outline"}
+          className="h-8 rounded-md px-2.5 text-sm"
+          onClick={() => setStatusFilter("Invited")}
+        >
+          Invited
+        </Button>
+        <Button
+          variant={statusFilter === "Removed" ? "default" : "outline"}
+          className="h-8 rounded-md px-2.5 text-sm"
+          onClick={() => setStatusFilter("Removed")}
+        >
+          Removed
+        </Button>
+        <div className="h-6 w-px bg-border" />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 rounded-md px-2.5 text-sm">
+              {roleFilter === "all" ? "All roles" : roleFilter}
+              <CaretDownIcon className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-52">
+            <DropdownMenuRadioGroup value={roleFilter} onValueChange={setRoleFilter}>
+              <DropdownMenuRadioItem value="all">All roles</DropdownMenuRadioItem>
+              {roleFilterOptions.map((role) => (
+                <DropdownMenuRadioItem key={role} value={role}>
+                  {role}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-      <TransactionStyleTable
-        rows={filteredRows}
-        rowKey={(row) => row.id}
+      <DataTable
+        data={filteredRows}
+        rowId={(row) => row.id}
         columns={columns}
-        minWidthClassName="min-w-[1260px]"
-        showSelection={false}
+        tableClassName="min-w-[1260px]"
+        searchPlaceholder="Search by name or email"
         emptyText="No users match your search or filters."
       />
     </div>
@@ -1243,7 +1148,7 @@ function MigrationAuditSection({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon-sm" className="h-7 w-7 rounded-md">
-                <MoreVertical className="h-4 w-4" />
+                <DotsThreeVerticalIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -1266,14 +1171,14 @@ function MigrationAuditSection({
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center gap-3 border-b border-border/70 px-8 py-6">
         <Button variant="ghost" size="icon-sm" className="h-8 w-8" onClick={onBack} aria-label="Back to Manage users">
-          <ChevronLeft className="h-4 w-4" />
+          <CaretLeftIcon className="h-4 w-4" />
         </Button>
-        <h1 className="text-[28px] font-bold leading-none tracking-[-0.01em] text-foreground">Migration review</h1>
+        <h1 className="text-2xl font-bold leading-none tracking-[-0.01em] text-foreground">Migration review</h1>
       </div>
 
       <div className="flex-1 space-y-5 overflow-y-auto px-8 py-6">
         <Alert>
-          <AlertTriangle className="h-4 w-4" />
+          <WarningIcon className="h-4 w-4" />
           <AlertTitle>Review before committing</AlertTitle>
           <AlertDescription>
             This is a one-time mapping, not an ongoing sync. Approve or override each row, then commit — legacy Online
@@ -1326,24 +1231,24 @@ function permissionSetsEqual(a: string[], b: string[]) {
  *  distinct topics instead of one undifferentiated wall of switches. */
 const GROUP_ICON: Record<string, ComponentType<{ className?: string }>> = {
   // Shared across both channels
-  "Transactions & Settlements": Repeat,
-  Refunds: RotateCcw,
-  Reports: BarChart3,
-  "User & Role Management": Users,
-  "Merchant Settings & Configuration": Settings2,
-  Account: UserCircle2,
+  "Transactions & Settlements": RepeatIcon,
+  Refunds: ArrowCounterClockwiseIcon,
+  Reports: ChartBarIcon,
+  "User & Role Management": UsersIcon,
+  "Merchant Settings & Configuration": SlidersIcon,
+  Account: UserCircleIcon,
   // In-store only
-  "Service Requests": LifeBuoy,
-  "Campaigns & Offers": Megaphone,
-  "EMI World": CreditCard,
+  "Service Requests": LifebuoyIcon,
+  "Campaigns & Offers": MegaphoneIcon,
+  "EMI World": CreditCardIcon,
   // Online only
-  "Gateway Management": Plug,
-  "Routing Logic": Route,
-  "Payment Links": Link2,
-  "Payouts & Beneficiaries": Wallet,
-  IMEI: Smartphone,
-  "Partner Management": Handshake,
-  Credentials: KeyRound,
+  "Gateway Management": PlugIcon,
+  "Routing Logic": PathIcon,
+  "Payment Links": LinkIcon,
+  "Payouts & Beneficiaries": WalletIcon,
+  IMEI: DeviceMobileIcon,
+  "Partner Management": HandshakeIcon,
+  Credentials: KeyIcon,
 }
 
 function CreateRolePage({
@@ -1675,7 +1580,7 @@ function CreateRolePage({
                     {permissionsError ? <p className="text-xs text-destructive">{permissionsError}</p> : null}
 
                     <div className="relative">
-                      <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
@@ -1692,7 +1597,7 @@ function CreateRolePage({
                         const channelAll = channelCatalog[channel]
                         const selectedInChannel = channelAll.filter((permission) => selectedKeys.includes(permission.key)).length
                         const allChannelSelected = channelAll.length > 0 && selectedInChannel === channelAll.length
-                        const ChannelIcon = channel === "offline" ? Store : Globe
+                        const ChannelIcon = channel === "offline" ? StorefrontIcon : GlobeIcon
                         const title = channel === "offline" ? "In-store payments" : "Online payments"
 
                         return (
@@ -1724,7 +1629,7 @@ function CreateRolePage({
                             ) : (
                               <div className="columns-1 gap-3 lg:columns-2">
                                 {groups.map(({ group, permissions }) => {
-                                  const GroupIcon = GROUP_ICON[group] ?? Server
+                                  const GroupIcon = GROUP_ICON[group] ?? HardDrivesIcon
                                   const selectedCount = permissions.filter((permission) => selectedKeys.includes(permission.key)).length
                                   const allSelected = selectedCount === permissions.length
 
@@ -1782,8 +1687,8 @@ function CreateRolePage({
             ) : (
               <div className="max-h-[calc(100vh-360px)] space-y-4 overflow-y-auto">
                 {([
-                  { label: "In-store", icon: Store, items: selectedOffline },
-                  { label: "Online", icon: Globe, items: selectedOnline },
+                  { label: "In-store", icon: StorefrontIcon, items: selectedOffline },
+                  { label: "Online", icon: GlobeIcon, items: selectedOnline },
                 ] as const).map(({ label, icon: ChannelIcon, items }) =>
                   items.length > 0 ? (
                     <div key={label}>
@@ -1806,7 +1711,7 @@ function CreateRolePage({
                               className="shrink-0 text-muted-foreground hover:text-foreground"
                               onClick={() => togglePermission(permission.key, false)}
                             >
-                              <X className="h-3 w-3" />
+                              <XIcon className="h-3 w-3" />
                             </button>
                           </div>
                         ))}
@@ -1869,13 +1774,13 @@ function ViewRolePermissionsSheet({
               {offline.length > 0 ? (
                 <div>
                   <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                    <Store className="h-3.5 w-3.5" />
+                    <StorefrontIcon className="h-3.5 w-3.5" />
                     In-store
                   </p>
                   <div className="space-y-0.5">
                     {offline.map((permission) => (
                       <div key={permission.key} className="flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm text-foreground">
-                        <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                        <CheckIcon className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
                         <span className="truncate">{permission.label}</span>
                       </div>
                     ))}
@@ -1885,13 +1790,13 @@ function ViewRolePermissionsSheet({
               {online.length > 0 ? (
                 <div>
                   <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                    <Globe className="h-3.5 w-3.5" />
+                    <GlobeIcon className="h-3.5 w-3.5" />
                     Online
                   </p>
                   <div className="space-y-0.5">
                     {online.map((permission) => (
                       <div key={permission.key} className="flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm text-foreground">
-                        <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                        <CheckIcon className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
                         <span className="truncate">{permission.label}</span>
                       </div>
                     ))}
@@ -1904,12 +1809,12 @@ function ViewRolePermissionsSheet({
 
         <SheetFooter className="border-t border-border/70 px-6 py-4 sm:flex-row sm:justify-end">
           <Button variant="outline" onClick={() => role && onClone(role)}>
-            <Copy className="h-3.5 w-3.5" />
+            <CopyIcon className="h-3.5 w-3.5" />
             Create new role from this
           </Button>
           {isCustom && role ? (
             <Button onClick={() => onEdit(role)}>
-              <Pencil className="h-3.5 w-3.5" />
+              <PencilSimpleIcon className="h-3.5 w-3.5" />
               Edit this role
             </Button>
           ) : null}
@@ -2069,13 +1974,13 @@ function RolePermissionsPreview({ role }: { role: ManagedRole | undefined }) {
           {offline.length > 0 ? (
             <div>
               <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                <Store className="h-3.5 w-3.5" />
+                <StorefrontIcon className="h-3.5 w-3.5" />
                 In-store
               </p>
               <div className="space-y-0.5">
                 {offline.map((permission) => (
                   <div key={permission.key} className="flex items-center gap-1.5 rounded-md px-1.5 py-1 text-xs text-foreground">
-                    <Check className="h-3 w-3 shrink-0 text-emerald-500" />
+                    <CheckIcon className="h-3 w-3 shrink-0 text-emerald-500" />
                     <span className="truncate" title={permission.label}>
                       {permission.label}
                     </span>
@@ -2087,13 +1992,13 @@ function RolePermissionsPreview({ role }: { role: ManagedRole | undefined }) {
           {online.length > 0 ? (
             <div>
               <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                <Globe className="h-3.5 w-3.5" />
+                <GlobeIcon className="h-3.5 w-3.5" />
                 Online
               </p>
               <div className="space-y-0.5">
                 {online.map((permission) => (
                   <div key={permission.key} className="flex items-center gap-1.5 rounded-md px-1.5 py-1 text-xs text-foreground">
-                    <Check className="h-3 w-3 shrink-0 text-emerald-500" />
+                    <CheckIcon className="h-3 w-3 shrink-0 text-emerald-500" />
                     <span className="truncate" title={permission.label}>
                       {permission.label}
                     </span>
@@ -2304,7 +2209,7 @@ function InviteUserSheet({
             Cancel
           </Button>
           <Button onClick={handleInvite} disabled={!canInvite}>
-            <UserPlus className="h-3.5 w-3.5" />
+            <UserPlusIcon className="h-3.5 w-3.5" />
             Send invite
           </Button>
         </SheetFooter>
@@ -2637,13 +2542,13 @@ function ManageUsersSection() {
       <Tabs value={tab} onValueChange={(value) => setTab(value as "users" | "roles")} className="flex h-full flex-col gap-0">
         <div className="border-b border-border/70 px-8 pt-6">
           <div className="flex flex-wrap items-center justify-between gap-3 pb-5">
-            <h1 className="text-[28px] font-bold leading-none tracking-[-0.01em] text-foreground">Manage users</h1>
+            <h1 className="text-2xl font-bold leading-none tracking-[-0.01em] text-foreground">Manage users</h1>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={openCreateRole}>
                 Add custom role
               </Button>
               <Button size="sm" onClick={() => setInviteOpen(true)}>
-                <UserPlus className="h-3.5 w-3.5" />
+                <UserPlusIcon className="h-3.5 w-3.5" />
                 Invite user
               </Button>
             </div>
@@ -2662,7 +2567,7 @@ function ManageUsersSection() {
           <div className="px-8 pt-4">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
               <div className="flex items-center gap-2.5">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <WarningIcon className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
                 <p className="text-sm text-foreground">
                   <span className="font-medium">{pendingMigrationCount} user(s)</span> need migration review before Omni
                   permissions are finalized.
@@ -2765,6 +2670,10 @@ export function SettingsPanelContent({ module }: { module: SettingsModule }) {
   switch (module) {
     case "personal-details":
       return <PersonalDetailsSection />
+    case "manage-stores":
+      return <ManageStoresSection />
+    case "configure-checkout":
+      return <ConfigureCheckoutSection />
     case "users":
       return <ManageUsersSection />
     case "credentials":

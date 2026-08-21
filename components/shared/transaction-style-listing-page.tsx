@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
+import { CaretDoubleLeftIcon, CaretDoubleRightIcon, CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -61,7 +61,7 @@ export function TransactionStyleListingPage<Row extends { id?: string }>({
   searchPlaceholder: string
   filters: ListingFilter[]
   rightActions?: ReactNode
-  summaryCards: Array<{ label: string; value: string }>
+  summaryCards?: Array<{ label: string; value: string }>
   columns: Array<ListingColumn<Row>>
   rows: Row[]
   emptyText?: string
@@ -76,7 +76,7 @@ export function TransactionStyleListingPage<Row extends { id?: string }>({
         <div className={subTabs ? "px-8 pt-8 pb-0" : "px-8 pt-8 pb-8"}>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex flex-wrap items-center gap-4">
-              <h1 className="text-3xl font-semibold leading-8 tracking-[-0.4px] text-foreground">{title}</h1>
+              <h1 className="text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground">{title}</h1>
 
               {titleToggles ? (
                 <Tabs value={titleToggles.value} onValueChange={titleToggles.onValueChange}>
@@ -130,12 +130,14 @@ export function TransactionStyleListingPage<Row extends { id?: string }>({
           rightActions={rightActions}
         />
 
-        <ListingSummaryCards className="px-0 py-0" cards={summaryCards} />
+        {summaryCards && summaryCards.length > 0 ? (
+          <ListingSummaryCards className="px-0 py-0" cards={summaryCards} />
+        ) : null}
 
         <section className="space-y-6">
           <div className="overflow-hidden rounded-[8px] border border-border bg-background">
             <div className="overflow-x-auto">
-              <Table className="min-w-[1100px]">
+              <Table className="min-w-[68.75rem]">
                 <TableHeader>
                   <TableRow className="h-10 [&>th:first-child]:rounded-tl-[8px] [&>th:last-child]:rounded-tr-[8px]">
                     {columns.map((column) => (
@@ -150,14 +152,14 @@ export function TransactionStyleListingPage<Row extends { id?: string }>({
                 </TableHeader>
                 <TableBody>
                   {rows.length === 0 ? (
-                    <TableRow className="h-[72px] hover:bg-transparent">
+                    <TableRow className="h-[4.5rem] hover:bg-transparent">
                       <TableCell colSpan={columns.length} className="px-4 text-sm text-muted-foreground">
                         {emptyText}
                       </TableCell>
                     </TableRow>
                   ) : (
                     rows.map((row, index) => (
-                      <TableRow key={row.id ?? index} className="h-[72px]">
+                      <TableRow key={row.id ?? index} className="h-[4.5rem]">
                         {columns.map((column) => (
                           <TableCell
                             key={`${row.id ?? index}-${column.key}`}
@@ -198,16 +200,16 @@ export function TransactionStyleListingPage<Row extends { id?: string }>({
 
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-[8px] border-input bg-background opacity-50" disabled>
-                  <ChevronsLeft className="h-4 w-4" />
+                  <CaretDoubleLeftIcon className="h-4 w-4" />
                 </Button>
                 <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-[8px] border-input bg-background opacity-50" disabled>
-                  <ChevronLeft className="h-4 w-4" />
+                  <CaretLeftIcon className="h-4 w-4" />
                 </Button>
                 <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-[8px] border-input bg-background">
-                  <ChevronRight className="h-4 w-4" />
+                  <CaretRightIcon className="h-4 w-4" />
                 </Button>
                 <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-[8px] border-input bg-background">
-                  <ChevronsRight className="h-4 w-4" />
+                  <CaretDoubleRightIcon className="h-4 w-4" />
                 </Button>
               </div>
             </div>

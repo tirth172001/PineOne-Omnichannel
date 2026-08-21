@@ -2,17 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react"
 import {
-  ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
-  Columns3,
-  Filter,
-  GripVertical,
-  Pin,
-  PinOff,
-  Search,
-  SlidersHorizontal,
-} from "lucide-react"
+  ArrowsDownUpIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  ColumnsIcon,
+  DotsSixVerticalIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon,
+  PushPinIcon,
+  PushPinSlashIcon,
+  SlidersHorizontalIcon,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -575,7 +575,7 @@ export function DataTable<T>({
               <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
                 {showSearch && (
                   <div className="relative w-44">
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
@@ -588,7 +588,7 @@ export function DataTable<T>({
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 rounded-md px-2.5 text-xs">
-                      <Filter className="size-3.5" />
+                      <FunnelIcon className="size-3.5" />
                       Filters
                       {activeSecondaryFilterCount > 0 ? (
                         <span className="ml-0.5 rounded-sm bg-muted px-1 py-0.5 text-[10px] leading-none text-foreground">
@@ -643,7 +643,7 @@ export function DataTable<T>({
                           : `${sortDirection === "asc" ? "Ascending" : "Descending"} on ${activeSortLabel ?? "column"}`
                       }
                     >
-                      <ArrowUpDown className="size-3.5" />
+                      <ArrowsDownUpIcon className="size-3.5" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -696,7 +696,7 @@ export function DataTable<T>({
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-md" title="Columns">
-                      <Columns3 className="size-3.5" />
+                      <ColumnsIcon className="size-3.5" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-52">
@@ -780,7 +780,7 @@ export function DataTable<T>({
               <div className="space-y-2">
                 {showSearch ? (
                   <div className="relative w-full">
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
@@ -798,7 +798,7 @@ export function DataTable<T>({
                     title="Filters"
                     onClick={() => setMobileFiltersOpen(true)}
                   >
-                    <Filter className="size-3.5" />
+                    <FunnelIcon className="size-3.5" />
                     Filters
                     {activeSecondaryFilterCount > 0 ? (
                       <span className="ml-0.5 rounded-sm bg-muted px-1 py-0.5 text-[10px] leading-none text-foreground">
@@ -814,7 +814,7 @@ export function DataTable<T>({
                     title="Sort"
                     onClick={() => setMobileSortOpen(true)}
                   >
-                    <ArrowUpDown className="size-3.5" />
+                    <ArrowsDownUpIcon className="size-3.5" />
                     Sort
                   </Button>
                   <Button
@@ -825,7 +825,7 @@ export function DataTable<T>({
                     title="Customize visible fields"
                     onClick={() => setMobileColumnsOpen(true)}
                   >
-                    <Columns3 className="size-3.5" />
+                    <ColumnsIcon className="size-3.5" />
                     Customize
                   </Button>
                 </div>
@@ -902,7 +902,7 @@ export function DataTable<T>({
                                 )}
                                 aria-label={`Reorder ${column.header} column`}
                               >
-                                <GripVertical className="size-3" />
+                                <DotsSixVerticalIcon className="size-3" />
                               </button>
                             )}
                             {column.pinnable !== false && !pinned && (
@@ -915,7 +915,7 @@ export function DataTable<T>({
                                 onClick={() => togglePin(column.id)}
                                 aria-label={pinned ? `Unpin ${column.header} column` : `Pin ${column.header} column`}
                               >
-                                {pinned ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}
+                                {pinned ? <PushPinSlashIcon className="size-3.5" /> : <PushPinIcon className="size-3.5" />}
                               </button>
                             )}
                           </div>
@@ -934,7 +934,7 @@ export function DataTable<T>({
                             aria-label={`Unpin ${column.header} column`}
                             title="Unpin column"
                           >
-                            <Pin className="size-3.5" />
+                            <PushPinIcon className="size-3.5" />
                           </button>
                         )}
 
@@ -950,7 +950,7 @@ export function DataTable<T>({
                                 )}
                                 aria-label={`Reorder ${column.header} column`}
                               >
-                                <GripVertical className="size-3" />
+                                <DotsSixVerticalIcon className="size-3" />
                               </button>
                             )}
                             {column.pinnable !== false && !pinned && (
@@ -963,7 +963,7 @@ export function DataTable<T>({
                                 onClick={() => togglePin(column.id)}
                                 aria-label={pinned ? `Unpin ${column.header} column` : `Pin ${column.header} column`}
                               >
-                                {pinned ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}
+                                {pinned ? <PushPinSlashIcon className="size-3.5" /> : <PushPinIcon className="size-3.5" />}
                               </button>
                             )}
                           </div>
@@ -1064,7 +1064,7 @@ export function DataTable<T>({
               onClick={() => setPage((current) => Math.max(1, current - 1))}
               disabled={page <= 1}
             >
-              <ChevronLeft className="size-3.5" />
+              <CaretLeftIcon className="size-3.5" />
               Previous
             </Button>
           </div>
@@ -1105,7 +1105,7 @@ export function DataTable<T>({
               disabled={page >= totalPages}
             >
               Next
-              <ChevronRight className="size-3.5" />
+              <CaretRightIcon className="size-3.5" />
             </Button>
           </div>
         </div>
@@ -1114,7 +1114,7 @@ export function DataTable<T>({
       {!isMobile ? (
         <div className="flex items-center justify-center text-[11px] text-muted-foreground">
           <div className="inline-flex items-center gap-1.5">
-            <SlidersHorizontal className="size-3" />
+            <SlidersHorizontalIcon className="size-3" />
             <span>Drag headers to reorder. Pinning a column moves it to the left.</span>
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Monitor, Maximize2 } from "lucide-react"
+import { ArrowsOutIcon, MonitorIcon } from "@phosphor-icons/react"
 import {
   Dialog,
   DialogContent,
@@ -53,7 +53,7 @@ export function DemoSettingsDialog({ open, onOpenChange }: DemoSettingsDialogPro
         <DialogHeader>
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <Monitor className="h-4 w-4 text-primary" />
+              <MonitorIcon className="h-4 w-4 text-primary" />
             </div>
             <div>
               <DialogTitle className="text-base">Demo Settings</DialogTitle>
@@ -68,7 +68,7 @@ export function DemoSettingsDialog({ open, onOpenChange }: DemoSettingsDialogPro
           {/* Max width */}
           <div className="space-y-2.5">
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <Maximize2 className="h-3 w-3" />
+              <ArrowsOutIcon className="h-3 w-3" />
               Center panel max width
             </Label>
             <div className="grid grid-cols-3 gap-2">

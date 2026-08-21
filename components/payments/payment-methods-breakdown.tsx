@@ -1,12 +1,11 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CreditCard, QrCode, Smartphone, Wallet } from "lucide-react"
-
+import { CreditCardIcon, DeviceMobileIcon, QrCodeIcon, WalletIcon } from "@phosphor-icons/react"
 const paymentMethods = [
   {
     name: "Cards",
-    icon: CreditCard,
+    icon: CreditCardIcon,
     volume: "₹28.5K",
     transactions: 89,
     percentage: 57,
@@ -15,7 +14,7 @@ const paymentMethods = [
   },
   {
     name: "UPI",
-    icon: QrCode,
+    icon: QrCodeIcon,
     volume: "₹12.2K",
     transactions: 52,
     percentage: 33,
@@ -24,7 +23,7 @@ const paymentMethods = [
   },
   {
     name: "Wallets",
-    icon: Wallet,
+    icon: WalletIcon,
     volume: "₹1.8K",
     transactions: 15,
     percentage: 10,

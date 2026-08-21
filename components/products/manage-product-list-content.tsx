@@ -4,18 +4,18 @@ import Link from "next/link"
 import Image from "next/image"
 import type { ComponentType, ReactNode } from "react"
 import {
-  ArrowUpRight,
-  AudioLines,
-  CheckCircle2,
-  HandCoins,
-  Link2,
-  PackageCheck,
-  MonitorSmartphone,
-  QrCode,
-  Route,
-  Smartphone,
-  TabletSmartphone,
-} from "lucide-react"
+  ArrowUpRightIcon,
+  CheckCircleIcon,
+  DeviceMobileIcon,
+  DeviceTabletIcon,
+  DevicesIcon,
+  HandCoinsIcon,
+  LinkIcon,
+  PackageIcon,
+  PathIcon,
+  QrCodeIcon,
+  WaveformIcon,
+} from "@phosphor-icons/react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/ui/panels"
@@ -66,15 +66,15 @@ interface ManageProductListContentProps {
 }
 
 const IMAGE_ICON_MAP: Record<NonNullable<ManagedProduct["imageIconName"]>, ComponentType<{ className?: string }>> = {
-  tablet: TabletSmartphone,
-  phone: Smartphone,
-  handheld: HandCoins,
-  duo: MonitorSmartphone,
-  audio: AudioLines,
-  qr: QrCode,
-  checkout: PackageCheck,
-  routing: Route,
-  links: Link2,
+  tablet: DeviceTabletIcon,
+  phone: DeviceMobileIcon,
+  handheld: HandCoinsIcon,
+  duo: DevicesIcon,
+  audio: WaveformIcon,
+  qr: QrCodeIcon,
+  checkout: PackageIcon,
+  routing: PathIcon,
+  links: LinkIcon,
 }
 
 export function ManageProductListContent({
@@ -155,7 +155,7 @@ export function ManageProductListContent({
             </Badge>
           ) : product.configured ? (
             <Badge variant="outline" className="gap-1 border-success/35 bg-success/15 text-success text-[10px]">
-              <CheckCircle2 className="h-3 w-3" />
+              <CheckCircleIcon className="h-3 w-3" />
               Configured
             </Badge>
           ) : (
@@ -196,7 +196,7 @@ export function ManageProductListContent({
           >
             <Link href={action.href}>
               {action.label}
-              {action.showArrow === false ? null : <ArrowUpRight className="h-3.5 w-3.5" />}
+              {action.showArrow === false ? null : <ArrowUpRightIcon className="h-3.5 w-3.5" />}
             </Link>
           </Button>
         ))}

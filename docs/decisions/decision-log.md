@@ -1,6 +1,6 @@
 # Decision Log
 
-Last updated: 2026-04-17
+Last updated: 2026-08-04
 
 ## Format
 
@@ -130,6 +130,51 @@ Last updated: 2026-04-17
 - Decision: Use right-side panel for customization controls instead of modal-first behavior.
 - Rationale: Better continuity with dashboard editing workflows.
 - Touchpoints: sheet usage in overview modules.
+
+22. Area: Homepage needs-attention taxonomy
+- Decision: Only money-blocking issues appear on the homepage attention surface (KYC incomplete, bank account/beneficiary issue, disputes/on-hold items needing action, failed or on-hold settlements). Grouped by type with count + amount at risk, not shown per-record. Account-level blockers (KYC, bank account) rank above item-level blocks; item-level blocks order by deadline/how-long-outstanding, not amount.
+- Rationale: Keep the homepage from overwhelming merchants with informational or non-actionable alerts; aggregation by type also caps the surface at 5 cards with no unbounded-list case to design for.
+- Touchpoints: `docs/flows/merchant-homepage.md`, future `components/home/*` attention-surface implementation.
+
+81. Area: Homepage business snapshot structure
+- Decision: Four fixed modules in fixed priority order — Settlements, Transactions, Refunds, Disputes (no separate on-hold module). Shared Today/This Week/This Month range control, default Today (Settlements' next-payout content is exempt). Cards show absolute headline numbers, not charts; trend delta shown only on Transactions' success rate. Replaces `OverviewDetailCards`'s current format; does not revive the hidden `OverviewSnapshotChartCard` chart set.
+- Rationale: Settlements leads because payout uncertainty is the sharper anxiety for a small merchant than same-day transaction status. Cross-platform research (Stripe, Razorpay, Adyen, Paytm) shows homepage snapshots are consistently lightweight KPI cards, not charts — charts belong to a separate analytics destination. Raw trend deltas are noisy at small-merchant transaction volumes, so deltas are limited to rate-based metrics.
+- Touchpoints: `docs/flows/merchant-homepage.md`, future `components/home/*` snapshot implementation; supersedes `components/home/overview-detail-cards.tsx` and the hidden `OverviewSnapshotChartCard` block in `components/home/home-content.tsx` (~2756-2910).
+
+82. Area: Homepage reports touchpoint
+- Decision: No homepage touchpoint for reports — no attention item, no snapshot module, no quick-action button. Reports stays reachable only via its existing top-level sidebar nav item.
+- Rationale: Disqualified as an attention item by the money-blocking-only rule (entry 22/81's sibling decision); doesn't fit the snapshot's business-health definition either, since it's a utility action, not a metric. Sidebar nav already provides one-click access from the homepage, so a homepage button would add a redundant second path, not save a click. Neither Stripe's nor Razorpay's dashboard homepage surfaces a reports widget, reinforcing there's no pattern to build toward here.
+- Touchpoints: `docs/flows/merchant-homepage.md`; no code changes required.
+
+83. Area: Homepage channel representation
+- Decision: Snapshot modules and the attention surface show one channel-aggregated number for `"In-store and Online"` merchants, not a toggle — click-through lands on that module's list page, which already has its own in-store/online tab (defaulting to in-store). Whenever `AccessScope !== "In-store and Online"`, the section shows the existing `AccessScopeBadge` next to its heading, persistent, to disambiguate a role-scoped view from the whole business.
+- Rationale: Every underlying list page (transactions, settlements, refunds, on-hold-disputes) already has its own channel toggle, so duplicating it on the homepage would just double the interaction surface ticket 81 already ruled should stay lightweight. `AccessScope` reflects a role's permission keys, not the business's actual channels, so an unlabeled aggregate risks a role-scoped merchant mistaking a partial number for the whole business and panicking over apparently missing revenue.
+- Touchpoints: `docs/flows/merchant-homepage.md`, `lib/role-permissions.ts` (`AccessScope`, `computeAccessScope`), `components/account/settings-slide-panel.tsx` (`AccessScopeBadge`, reused rather than duplicated); future `components/home/*` snapshot and attention-surface implementation.
+
+84. Area: Homepage role → permission mapping
+- Decision: Each snapshot module and its matching Tier-2 attention card gates on a specific permission key (Transactions: `offline:transactions`/`online:view_all_transactions`; Settlements: `offline:settlements`/`online:view_settlement`; Refunds: any `Refunds`-group key; Disputes: piggybacks on the Transactions key, since no dedicated Disputes permission exists in the legacy catalog). Channel-scoped: visible if either channel's key is present. Tier-1 account blockers (KYC, bank account) both gate on `offline:financial_details`/any `Payouts & Beneficiaries`-group key. Roles left with nothing to show (User Admin, EMI World User, online Finance) or nearly nothing (online Support) get a plain empty-state message on the Overview page — no routing/landing-page changes.
+- Rationale: The permission catalog never modeled Disputes as its own group, so extending the Transactions gate is more faithful to the legacy system than inventing a new key. "Transactions & Settlements" is a shared group label but the keys are granular, so gating by group membership would wrongly grant Settlements visibility to roles (e.g. Store Cashier) that only hold the Transactions key. Tier-1 items are gated by financial oversight because ticket 01's click-to-fix-flow model only makes sense for a role that can act on the result.
+- Touchpoints: `docs/flows/merchant-homepage.md`, `lib/role-permissions.ts` (permission keys, groups, `OFFLINE_ROLE_PERMISSIONS`, `ONLINE_ROLE_PERMISSIONS`); future `components/home/*` snapshot and attention-surface implementation.
+
+85. Area: Homepage customization and empty states
+- Decision: Snapshot modules support show/hide only (no reorder), reviving the dead "Customize cards" sheet's shape with an updated card list. Attention items are never hideable — always fully shown. When all attention types are zero, show a positive "All caught up" state rather than collapsing the section. A brand-new merchant with zero transactions ever sees a distinct first-time state instead of four zeroed snapshot cards; an existing merchant with a quiet Today/Week/Month range sees real zero values.
+- Rationale: The dead sheet already matches the app's established right-side-panel customization pattern (entry 21), so reviving its shape avoids new interaction surface the ticket didn't ask for; reorder isn't offered because entry 81 already fixed the snapshot's priority order for a stated reason. Hiding attention items is a real-money risk, not a preference, unlike hiding a KPI card. A vanishing "nothing to see" section reads as broken; a positive all-clear message reassures instead. Four zeroed cards for a brand-new merchant looks like something's broken rather than "you haven't started yet," while a returning merchant's real zero is legitimate information worth showing as-is.
+- Touchpoints: `docs/flows/merchant-homepage.md`; `components/home/home-content.tsx` (dead `overviewSnapshotCards`/`overviewHiddenSnapshotCards` sheet, to be revived with an updated card list); future `components/home/*` snapshot and attention-surface implementation.
+
+86. Area: Homepage current-experience diagnosis
+- Decision: Diagnosed four concrete problems with today's homepage before attempting any redesign: (1) no visual differentiation between action-needed and informational cards in `OverviewDetailCards`; (2) two abandoned, never-shipped affordances already exist in the codebase for this exact gap (`home-content.tsx`'s hidden "Customize cards" sheet, unused `attention-strip.tsx`); (3) confirmed visual inconsistency via a design-system audit — the shared `Card` primitive is unused on the homepage, ten arbitrary text sizes appear on one page, no `tabular-nums` on currency figures; (4) a first ungrounded redesign attempt (three rejected prototype variants) reproduced the same inconsistency instead of fixing it, confirming principles must be locked before screens are attempted again.
+- Rationale: Establishes the evidence base that the follow-on UX/visual principles trace back to, mirroring a reference design doc's diagnosis-before-principles structure; prevents redesign work from re-guessing problems that are already concretely known.
+- Touchpoints: `docs/flows/merchant-homepage-design.md` §1, `.scratch/homepage-design-principles/issues/01-diagnose-current-homepage-ux.md`, `.scratch/homepage-design-principles/issues/02-audit-existing-design-system.md`.
+
+87. Area: Reusable UX & visual design principles
+- Decision: Locked seven reusable design principles, grounded in the merchant's mental model rather than implementation consistency: (1) "is something wrong" answered before anything else is read; (2) quiet by default, alarm only when money's actually blocked; (3) a number only earns a comparison if it's ambiguous alone; (4) "normal for me" beats a percentage; (5) numbers are scanned, not read; (6) size has to mean the same thing every time; (7) familiarity is functional, not decorative. Plus a confirmed note that industry vocabulary (Settlement, success rate) doesn't need simplifying here since this is a daily-habit dashboard, not a one-time flow, and two confirmed-compliant carryovers from the audit (color-system, layout-system).
+- Rationale: An initial draft of these principles was rejected for being implementation-consistency rules (tabular-nums, type scale enforcement, component reuse) rather than descriptions of how the merchant actually thinks — reworked through live grilling to trace each principle to the merchant's actual cognition (e.g. why a number needs a comparison, when alarm vs. reassurance is warranted) rather than engineering hygiene. "Ship it whole or not at all" was deliberately dropped from this set — real problem, but a process discipline, not merchant psychology, so it's deferred to the component-reuse/process-policy ticket instead.
+- Touchpoints: `docs/design/design-principles.md` §1, `docs/flows/merchant-homepage-design.md` §2, `.scratch/homepage-design-principles/issues/03-resolve-ux-visual-principles.md`.
+
+88. Area: Component-reuse and prototyping-process policy
+- Decision: An existing component may only be deviated from when it's missing a required visual state, has the wrong information density, or structurally can't express the needed interaction — preference alone doesn't qualify. A justified deviation is documented inline at its usage site and stays a one-off unless a second real usage appears, at which point it's proposed as a shared primitive; the ticket's driver decides, no separate approval step. Screen-design tickets build 3 structurally-different variants (flexing to 2 only when a genuine third would be manufactured), switchable via `?variant=`, reacted to live by the driver; losing variants are dropped from the working tree once a winner is picked, per the on-hold-disputes precedent. As part of locking this, the rejected first-round homepage prototype was deleted and `home-content.tsx` reverted to `OverviewDetailCards`.
+- Rationale: Turns the standing "use existing components first" instruction into a checkable rule instead of a vague preference; keeping the deviation bar concrete and the primitive-promotion trigger to "proven by a second usage" prevents speculative additions to `components/ui/*`. Reusing the on-hold-disputes variant process gives screen-design tickets a proven, repeatable format rather than re-deciding process per screen.
+- Touchpoints: `docs/design/design-principles.md` §2, `docs/flows/merchant-homepage-design.md` §3, `components/home/home-content.tsx`; deleted `components/home/prototype-homepage-overview.tsx`, `prototype-homepage-variants.tsx`, `prototype-homepage-data.ts`, `prototype-customize-sheet.tsx`, `components/prototype/prototype-switcher.tsx`.
 
 ### Transactions and Refunds
 
@@ -694,6 +739,66 @@ Last updated: 2026-04-17
   - `app/products/online-payments/page.tsx`
   - `app/products/in-store-payments/page.tsx`
   - `app/products/other-products/page.tsx`
+
+81. Area: Onboarding preview-panel cheat-sheet compliance (document/banking/owners/signatory cards)
+- Decision:
+  - Layout: split flat single-gap groupings into an explicit two-tier gap scale — `gap-2` (8px) within a group (label→content, icon→label header), `gap-4` (16px) between distinct groups — applied to the website/app-link section, the banking-account body, and the owners-list body, which previously used one flat gap for both.
+  - UI (concentric radius): content boxes nested inside the preview card's `rounded-2xl` shell (store location/photo, website browser-chrome, app-link card, bank-detail card, signatory empty-state) changed from `rounded-lg` to `rounded-sm` to stay concentric with the card's own radius minus its padding inset; the active/highlighted `DocumentBody` row (which sits at a shallower inset via `-mx-2`) changed from `rounded-lg` to `rounded-xl` for the same reason.
+  - UI (image outline): the storefront photo `<img>` gets `ring-1 ring-inset ring-black/8 dark:ring-white/8` — a 1px inset outline, 8% opacity, flipping black/white with the theme.
+- Rationale:
+  - Ticket 01 (`.scratch/onboarding-experience-v3/issues/01-cheat-sheet-audit-preview-cards.md`) applied the interface cheat sheet (https://interfaces.dev/cheat-sheet) to the existing preview-panel cards in `components/onboarding/onboarding-preview.tsx`, scoped to `document`/`banking`/`owners`/`signatory` modes (review-and-sign and the new product-intent cards are owned by other tickets).
+  - Verified live in the browser across the identity/category/store/website document sections, the banking body, and the owners body — no new `tsc` errors.
+- Touchpoints:
+  - `components/onboarding/onboarding-preview.tsx`
+
+82. Area: Onboarding core sequence — remove happy-path failure states
+- Decision:
+  - Removed the deliberate "first attempt always fails" behavior from business verification (Singpass and manual ACRA upload) and banking-statement upload — both now succeed on the first attempt, no retry/failure screen.
+  - Deleted `verification.failed` from `OnboardingProfile` (`components/onboarding/onboarding-profile.ts`) and the `"failed"` member of `banking.step`'s union; `Step` types in `business-verification/_variant-a.tsx` and `banking-details/_variant-a.tsx` dropped their `"failed"` variant entirely.
+  - Removed the `hasFailure`-driven destructive header/badge treatment and the `WarningCircleIcon` failure state in `onboarding-preview.tsx`'s `BankingBody`, and deleted the whole failure-copy JSX branch (icon, "Try again"/alternate-method buttons, "Contact support" link) from both `_variant-a.tsx` files.
+- Rationale:
+  - Ticket 02 (`.scratch/onboarding-experience-v3/issues/02-remove-happy-path-failure-states.md`) — this is a demo repo meant to show a clean happy path only; the injected first-attempt failure (originally added by v1 ticket 18 specifically so the failure design was reachable on every run-through) now works against that goal.
+  - `lending-application-flow.tsx`'s "Resend OTP" and `pos-onboarding-flow.tsx`'s failure states are separate flows outside `SEQUENCE` and were left untouched, per the ticket's explicit scope.
+- Touchpoints:
+  - `components/onboarding/onboarding-profile.ts`
+  - `components/onboarding/onboarding-preview.tsx`
+  - `app/onboarding/business-verification/_variant-a.tsx`
+  - `app/onboarding/banking-details/_variant-a.tsx`
+
+83. Area: Login screen — layout flip and account menu
+- Decision:
+  - Flipped `app/login/page.tsx`'s split so the credentials form renders left and `AuthVisualPanel` renders right (previously the reverse), matching the input-left/preview-right convention used throughout the rest of onboarding.
+  - Added a `DotsThreeIcon` dropdown menu to the top bar, immediately after the language switcher — a single "Logout" item (`SignOutIcon` + "Logout" copy, matching `account-route-content.tsx`'s convention) that clears the dummy-auth session (`lib/dummy-auth.ts`'s `clearDummyAuthSession`) and redirects to `/login`. No other items added — the menu's future scope (whether it appears in signup/onboarding shells too, and what else lands in it) is still open, tracked in the v3 map's "Not yet specified".
+- Rationale:
+  - Ticket 03 (`.scratch/onboarding-experience-v3/issues/03-login-layout-flip-and-account-menu.md`).
+  - Verified live in the browser: form is left/visual-panel-right, the three-dot menu opens showing "Logout" with the sign-out icon, and clicking it clears session without error.
+- Touchpoints:
+  - `app/login/page.tsx`
+
+84. Area: Review-and-sign panel visual consistency
+- Decision:
+  - The business-details summary (right column of `app/onboarding/review-and-sign/_variant-b.tsx`) now sits on the same green Grainient-animated backdrop (`components/onboarding/grainient-background.tsx`) as the rest of onboarding's preview panel / `auth-visual-panel.tsx`, instead of a plain white/card-surface panel — a floating white card (padding-inset, `rounded-2xl`, `shadow-lg`) renders on top of the animated background, matching `onboarding-preview.tsx`'s own framing pattern.
+  - The route **stays** in `FULL_WIDTH_ROUTES` (`components/onboarding/onboarding-sequence.ts` unchanged) rather than moving onto `OnboardingRailShell`'s generic input/preview split — `reviewGroups` is this screen's own static summary data, not threaded through the shared profile store `OnboardingPreview` reads from, so building a new "review" preview mode would just duplicate this file's grouping logic against a store it doesn't use. The screen keeps its own bespoke two-column grid (now `items-stretch` so both columns match height).
+  - Applied the interface cheat sheet's 8px-within/16px+-between group spacing to the field grid (`gap-y-2.5`→`gap-y-2`, `mb-2.5`→`mb-2`), since this is new/rebuilt card composition ticket 01's audit didn't cover.
+- Rationale:
+  - Ticket 04 (`.scratch/onboarding-experience-v3/issues/04-review-and-sign-panel-consistency.md`).
+  - Verified live in the browser: green panel renders correctly around the floating summary card, and the checkbox → "Sign agreement" → success-screen flow is unaffected.
+- Touchpoints:
+  - `app/onboarding/review-and-sign/_variant-b.tsx`
+
+85. Area: Store-address capture — three inline methods
+- Decision:
+  - `app/onboarding/store-verification/_variant-a.tsx` now offers three inline methods for the store address via a `Tabs` control (no side panel, per explicit user correction): paste a Google Maps link (unchanged), "Use current location" (browser Geolocation API, coordinates only — no reverse geocoding), or a full manual form (address line 1/2, landmark, district, city, state, country, pincode — required: line 1, city, state, country, pincode; optional: line 2, landmark, district).
+  - `OnboardingProfile["store"]` (`onboarding-profile.ts`) extended with `currentLocation: { latitude, longitude } | null` and `manualAddress: StoreManualAddress | null` alongside the existing `mapsLink`. Only the active method's field is ever populated — the other two stay null, so downstream reads never need to know which method was used beyond checking which field is non-null.
+  - Manual-address field naming matches the existing precedent in `components/onboarding/pos-onboarding-flow.tsx` (`addressLine1`, `addressLine2`, `city`, `state`, `pincode`) rather than `lib/store-identity.ts`'s flat `address: string` (a different domain's seeded data, not merged).
+  - `onboarding-preview.tsx` gained two shared helpers — `hasStoreAddress()` and `storeAddressSummary()` — as the single place that reads "is there an address" / "what should it say" regardless of which of the three methods was used; used by both the accordion section's complete/summary logic and the "N details confirmed" count.
+- Rationale:
+  - Ticket 08 (`.scratch/onboarding-experience-v3/issues/08-store-address-capture-methods.md`), the last open ticket on the v3 map.
+  - Verified live in the browser: all three tabs render; the manual form's 8 fields populate the preview panel's "Store location" summary correctly; the current-location error path renders correctly when geolocation is denied (expected in a sandboxed browser).
+- Touchpoints:
+  - `components/onboarding/onboarding-profile.ts`
+  - `app/onboarding/store-verification/_variant-a.tsx`
+  - `components/onboarding/onboarding-preview.tsx`
 
 ## Open Documentation TODOs
 

@@ -1,16 +1,16 @@
 "use client"
 
 import {
-  ArrowLeftRight,
-  BadgeIndianRupee,
-  FileChartColumn,
-  LayoutDashboard,
-  MonitorCog,
-  RotateCcw,
-  Settings2,
-  ShieldAlert,
-  Sparkles,
-} from "lucide-react"
+  ArrowCounterClockwiseIcon,
+  ArrowsLeftRightIcon,
+  CurrencyInrIcon,
+  FileTextIcon,
+  MonitorIcon,
+  ShieldWarningIcon,
+  SlidersIcon,
+  SparkleIcon,
+  SquaresFourIcon,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 
 export type ProductWorkspaceSection =
@@ -29,32 +29,32 @@ const baseSectionItems: Array<{
   label: string
   icon: React.ComponentType<{ className?: string }>
 }> = [
-  { key: "overview", label: "Overview", icon: LayoutDashboard },
-  { key: "transactions", label: "Transactions", icon: ArrowLeftRight },
-  { key: "settlements", label: "Settlements", icon: BadgeIndianRupee },
-  { key: "disputes", label: "Disputes", icon: ShieldAlert },
-  { key: "refunds", label: "Refunds", icon: RotateCcw },
-  { key: "reports", label: "Reports", icon: FileChartColumn },
+  { key: "overview", label: "Overview", icon: SquaresFourIcon },
+  { key: "transactions", label: "Transactions", icon: ArrowsLeftRightIcon },
+  { key: "settlements", label: "Settlements", icon: CurrencyInrIcon },
+  { key: "disputes", label: "Disputes", icon: ShieldWarningIcon },
+  { key: "refunds", label: "Refunds", icon: ArrowCounterClockwiseIcon },
+  { key: "reports", label: "Reports", icon: FileTextIcon },
 ]
 
 const configurationSectionItem: {
   key: ProductWorkspaceSection
   label: string
   icon: React.ComponentType<{ className?: string }>
-} = { key: "configurations", label: "Configurations", icon: Settings2 }
+} = { key: "configurations", label: "Configurations", icon: SlidersIcon }
 
 const manageDevicesSectionItem: {
   key: ProductWorkspaceSection
   label: string
   icon: React.ComponentType<{ className?: string }>
-} = { key: "manage-devices", label: "Manage Devices", icon: MonitorCog }
+} = { key: "manage-devices", label: "Manage Devices", icon: MonitorIcon }
 
 const tailSectionItems: Array<{
   key: ProductWorkspaceSection
   label: string
   icon: React.ComponentType<{ className?: string }>
 }> = [
-  { key: "vas", label: "Value Added Services", icon: Sparkles },
+  { key: "vas", label: "Value Added Services", icon: SparkleIcon },
 ]
 
 interface ProductWorkspaceNavProps {

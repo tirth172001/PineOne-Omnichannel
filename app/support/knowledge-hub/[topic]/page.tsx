@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PageHeader } from "@/components/ui/panels"
 import { getKnowledgeTopicBySlug } from "@/lib/support-knowledge"
-import { Clock3, PlayCircle } from "lucide-react"
-
+import { ClockIcon, PlayCircleIcon } from "@phosphor-icons/react"
 type PageProps = {
   params: Promise<{ topic: string }>
 }
@@ -66,7 +65,7 @@ export default async function KnowledgeTopicPage({ params }: PageProps) {
                       className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/70 p-3"
                     >
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                        <PlayCircle className="h-4 w-4" />
+                        <PlayCircleIcon className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-foreground">{video.title}</p>
@@ -74,7 +73,7 @@ export default async function KnowledgeTopicPage({ params }: PageProps) {
                         <div className="mt-2 flex items-center gap-2">
                           <Badge variant="outline" className="text-[10px]">{video.level}</Badge>
                           <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                            <Clock3 className="h-3.5 w-3.5" />
+                            <ClockIcon className="h-3.5 w-3.5" />
                             {video.duration}
                           </span>
                         </div>

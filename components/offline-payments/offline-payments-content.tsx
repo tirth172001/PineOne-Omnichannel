@@ -1,14 +1,24 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { CheckCircle2, MoreVertical, Settings, Smartphone, Wifi, WifiOff, X, XCircle } from "lucide-react"
+import {
+  CheckCircleIcon,
+  DeviceMobileIcon,
+  DotsThreeVerticalIcon,
+  GearIcon,
+  WifiHighIcon,
+  WifiSlashIcon,
+  XCircleIcon,
+  XIcon,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
-import { PanelEmpty, PageHeader } from "@/components/ui/panels"
+import { PageHeader } from "@/components/ui/panels"
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
 import { HighchartsPanelChart } from "@/components/ui/highcharts"
 import { WorkspaceShell } from "@/components/dashboard/workspace-shell"
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
@@ -149,7 +159,7 @@ function DeviceDetail({ device }: { device: DeviceRow }) {
     <div className="p-5 space-y-5">
       <div className="flex items-start gap-4">
         <div className={`flex h-12 w-12 items-center justify-center rounded-xl shrink-0 ${online ? "bg-success/10" : "bg-muted"}`}>
-          {online ? <Wifi className="h-6 w-6 text-success" /> : <WifiOff className="h-6 w-6 text-muted-foreground" />}
+          {online ? <WifiHighIcon className="h-6 w-6 text-success" /> : <WifiSlashIcon className="h-6 w-6 text-muted-foreground" />}
         </div>
         <div className="flex-1">
           <p className="text-lg font-bold text-foreground">{device.name}</p>
@@ -162,7 +172,7 @@ function DeviceDetail({ device }: { device: DeviceRow }) {
           </div>
         </div>
         <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs shrink-0">
-          <Settings className="h-3.5 w-3.5" />Configure
+          <GearIcon className="h-3.5 w-3.5" />Configure
         </Button>
       </div>
 
@@ -184,7 +194,7 @@ function DeviceDetail({ device }: { device: DeviceRow }) {
 
       {!online && (
         <div className="flex items-start gap-2.5 rounded-lg bg-warning/10 px-3 py-3">
-          <WifiOff className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+          <WifiSlashIcon className="h-4 w-4 text-warning shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-warning-foreground">Device Offline</p>
             <p className="text-xs text-warning-foreground/80 mt-0.5">Check network connectivity and power supply. Last seen 2 hours ago.</p>
@@ -204,7 +214,7 @@ function DeviceDetail({ device }: { device: DeviceRow }) {
                 return (
                   <div key={t.id} className="flex items-center gap-3 py-2">
                     <div className={`flex h-7 w-7 items-center justify-center rounded-md shrink-0 ${success ? "bg-success/10" : "bg-destructive/10"}`}>
-                      {success ? <CheckCircle2 className="h-3.5 w-3.5 text-success" /> : <XCircle className="h-3.5 w-3.5 text-destructive" />}
+                      {success ? <CheckCircleIcon className="h-3.5 w-3.5 text-success" /> : <XCircleIcon className="h-3.5 w-3.5 text-destructive" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-foreground">{t.card}</p>
@@ -489,7 +499,7 @@ export function OfflinePaymentsContent({
       cell: (device) => (
         <div className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border/70 bg-muted/40 text-muted-foreground">
-            <Smartphone className="h-4 w-4" />
+            <DeviceMobileIcon className="h-4 w-4" />
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-foreground">{device.hardwareId}</p>
@@ -567,7 +577,7 @@ export function OfflinePaymentsContent({
           }}
           aria-label="Open row actions"
         >
-          <MoreVertical className="h-4 w-4" />
+          <DotsThreeVerticalIcon className="h-4 w-4" />
         </Button>
       ),
     },
@@ -1186,15 +1196,19 @@ export function OfflinePaymentsContent({
         </div>
       </div>
     ) : selectedDevice ? <DeviceDetail device={selectedDevice} /> : (
-      <PanelEmpty
-        icon={Wifi}
-        title={navSection === "manage-devices" ? "Select a device" : "Select a row"}
-        description={
-          navSection === "manage-devices"
-            ? "Click a POS device to view its status, transactions and configuration."
-            : "Click any row in the table to open detail context."
-        }
-      />
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <WifiHighIcon className="h-4 w-4" />
+          </EmptyMedia>
+          <EmptyTitle>{navSection === "manage-devices" ? "Select a device" : "Select a row"}</EmptyTitle>
+          <EmptyDescription>
+            {navSection === "manage-devices"
+              ? "Click a POS device to view its status, transactions and configuration."
+              : "Click any row in the table to open detail context."}
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     )
   ) : (
     <div className="mt-0 overflow-auto px-5 py-4 space-y-6">
@@ -1254,7 +1268,7 @@ export function OfflinePaymentsContent({
             setRightTab("detail")
           }}
         >
-          <X className="h-4 w-4" />
+          <XIcon className="h-4 w-4" />
         </Button>
       </div>
       <Separator />

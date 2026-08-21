@@ -1,7 +1,7 @@
 "use client"
 
 import { type ComponentType } from "react"
-import { Braces, CreditCard, Globe2, IndianRupee } from "lucide-react"
+import { BracketsCurlyIcon, CreditCardIcon, CurrencyInrIcon, GlobeIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
@@ -17,10 +17,10 @@ const RAIL_ITEMS: Array<{
   label: string
   icon: ComponentType<{ className?: string }>
 }> = [
-  { key: "payments", label: "Payments", icon: IndianRupee },
-  { key: "cross-border", label: "Cross Border", icon: Globe2 },
-  { key: "cards", label: "Cards", icon: CreditCard },
-  { key: "fintech-apis", label: "Fintech APIs", icon: Braces },
+  { key: "payments", label: "Payments", icon: CurrencyInrIcon },
+  { key: "cross-border", label: "Cross Border", icon: GlobeIcon },
+  { key: "cards", label: "Cards", icon: CreditCardIcon },
+  { key: "fintech-apis", label: "Fintech APIs", icon: BracketsCurlyIcon },
 ]
 
 export function V2ProductRail({ activeProduct, onProductChange }: V2ProductRailProps) {

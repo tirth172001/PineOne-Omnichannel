@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutGrid, Moon, MousePointer2, Move, Sun, Wrench } from "lucide-react"
+import {
+  ArrowsOutCardinalIcon,
+  CursorIcon,
+  GridFourIcon,
+  MoonIcon,
+  SunIcon,
+  WrenchIcon,
+} from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -249,7 +256,7 @@ export function FloatingDemoFab() {
               className="pointer-events-none absolute inset-[-3px] rounded-full border border-white/30 opacity-0 transition-opacity duration-200 group-hover/button:opacity-100 dark:border-black/20"
             />
             <span className="flex h-11 w-11 items-center justify-center">
-              <Wrench className="h-4.5 w-4.5 transition-transform duration-200 group-hover/button:rotate-[-10deg]" />
+              <WrenchIcon className="h-4.5 w-4.5 transition-transform duration-200 group-hover/button:rotate-[-10deg]" />
             </span>
           </Button>
         </PopoverTrigger>
@@ -277,7 +284,7 @@ export function FloatingDemoFab() {
                       className="h-8 justify-start text-xs"
                       onClick={() => handleCaseNavigation(item.href)}
                     >
-                      <LayoutGrid className="h-3.5 w-3.5" />
+                      <GridFourIcon className="h-3.5 w-3.5" />
                       {item.label}
                     </Button>
                   )
@@ -336,7 +343,7 @@ export function FloatingDemoFab() {
                   className="h-8 text-xs"
                   onClick={() => setThemeWithTransition(setTheme, "light")}
                 >
-                  <Sun className="h-3.5 w-3.5" />
+                  <SunIcon className="h-3.5 w-3.5" />
                   Light
                 </Button>
                 <Button
@@ -346,7 +353,7 @@ export function FloatingDemoFab() {
                   className="h-8 text-xs"
                   onClick={() => setThemeWithTransition(setTheme, "dark")}
                 >
-                  <Moon className="h-3.5 w-3.5" />
+                  <MoonIcon className="h-3.5 w-3.5" />
                   Dark
                 </Button>
                 <Button
@@ -360,14 +367,14 @@ export function FloatingDemoFab() {
                     saveFabPosition(dockPosition)
                   }}
                 >
-                  <Move className="h-3.5 w-3.5" />
+                  <ArrowsOutCardinalIcon className="h-3.5 w-3.5" />
                   Reset
                 </Button>
               </div>
             </div>
 
             <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <MousePointer2 className="h-3.5 w-3.5" />
+              <CursorIcon className="h-3.5 w-3.5" />
               Drag this button to reposition it. Position is saved automatically.
             </p>
           </div>

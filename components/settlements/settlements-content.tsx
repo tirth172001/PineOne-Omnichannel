@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { BellRing, Download } from "lucide-react"
-
+import { BellRingingIcon, DownloadIcon } from "@phosphor-icons/react"
 import {
   ListingSummaryCards,
   ListingToolbar,
@@ -115,7 +114,7 @@ export function SettlementsContent() {
           <div className="mt-6 rounded-[8px] border border-border/60 bg-[var(--olive-surface-main)] px-4 py-3">
             <div className="flex items-center justify-between gap-3">
               <p className="flex items-center gap-2 text-sm text-foreground">
-                <BellRing className="h-4 w-4 text-primary" />₹20,00,000 upcoming settlement in xx9898, HDFC bank by 7 Aug 2026, 10:00 AM
+                <BellRingingIcon className="h-4 w-4 text-primary" />₹20,00,000 upcoming settlement in xx9898, HDFC bank by 7 Aug 2026, 10:00 AM
               </p>
               <Button variant="outline" className="rounded-[8px] border-border/70 bg-background">
                 Pause settlement
@@ -135,7 +134,7 @@ export function SettlementsContent() {
           filters={filters}
           rightActions={
             <Button variant="outline" className="rounded-[8px] border-border/70 bg-background">
-              <Download className="h-4 w-4" />
+              <DownloadIcon className="h-4 w-4" />
               Download filtered
             </Button>
           }

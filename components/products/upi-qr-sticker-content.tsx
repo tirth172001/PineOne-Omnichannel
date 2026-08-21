@@ -3,18 +3,18 @@
 import Link from "next/link"
 import { useMemo, useState } from "react"
 import {
-  ArrowDownUp,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Columns3,
-  Copy,
-  Download,
-  Search,
-  Store,
-} from "lucide-react"
+  ArrowsDownUpIcon,
+  CaretDoubleLeftIcon,
+  CaretDoubleRightIcon,
+  CaretDownIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  ColumnsIcon,
+  CopyIcon,
+  DownloadIcon,
+  MagnifyingGlassIcon,
+  StorefrontIcon,
+} from "@phosphor-icons/react"
 import { DetailSidepanelShell } from "@/components/shared/activity-timeline-sidepanel"
 import { Button } from "@/components/ui/button"
 import {
@@ -166,7 +166,7 @@ function QrMatrixPreview({ seed, backgroundColor }: { seed: string; backgroundCo
 
       <div className="flex items-center justify-center gap-2 bg-background px-6 py-2">
         <p className="text-sm font-medium text-foreground">UPI ID / VPA: 6352699747@ptyes</p>
-        <Copy className="h-4 w-4 text-muted-foreground" />
+        <CopyIcon className="h-4 w-4 text-muted-foreground" />
       </div>
     </div>
   )
@@ -188,7 +188,7 @@ function StoreQrPreviewPanel({
       <div className="flex-1 space-y-6 overflow-y-auto p-6">
         <section className="space-y-3">
           <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-muted p-1.5">
-            <Store className="h-6 w-6 text-primary" />
+            <StorefrontIcon className="h-6 w-6 text-primary" />
           </div>
           <div>
             <p className="text-[40px] font-semibold leading-[1.06] tracking-[-0.03em] text-foreground">{row.storeName}</p>
@@ -338,7 +338,7 @@ export function UpiQrStickerContent() {
             <h1 className="text-[30px] font-semibold leading-8 tracking-[-0.4px] text-foreground">Store QR stickers</h1>
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative w-[229px]">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
@@ -356,7 +356,7 @@ export function UpiQrStickerContent() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium">
                     {statusFilter === "all" ? "All status" : "Active"}
-                    <ChevronDown className="h-4 w-4" />
+                    <CaretDownIcon className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-48">
@@ -373,7 +373,7 @@ export function UpiQrStickerContent() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium">
                     {dateFilter === "today" ? "Today" : dateFilter === "7d" ? "Last 7D" : "All dates"}
-                    <ChevronDown className="h-4 w-4" />
+                    <CaretDownIcon className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-48">
@@ -399,13 +399,13 @@ export function UpiQrStickerContent() {
                 className="h-8 w-[51px] rounded-md"
                 onClick={() => setSortDirection((current) => (current === "asc" ? "desc" : "asc"))}
               >
-                <ArrowDownUp className="h-4 w-4" />
+                <ArrowsDownUpIcon className="h-4 w-4" />
               </Button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon-sm" className="h-8 w-[51px] rounded-md">
-                    <Columns3 className="h-4 w-4" />
+                    <ColumnsIcon className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -437,7 +437,7 @@ export function UpiQrStickerContent() {
 
               <div className="h-6 w-px bg-border/70" />
               <Button variant="ghost" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium" onClick={exportAll}>
-                <Download className="h-4 w-4" />
+                <DownloadIcon className="h-4 w-4" />
                 Export all
               </Button>
             </div>
@@ -527,7 +527,7 @@ export function UpiQrStickerContent() {
                 <span className="text-sm font-medium text-foreground">Page {page} of {totalPages}</span>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="icon-sm" className="h-8 w-8 rounded-md border-border/60 bg-background/80" disabled={page <= 1} onClick={() => setPage(1)}>
-                    <ChevronsLeft className="h-4 w-4" />
+                    <CaretDoubleLeftIcon className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
@@ -536,7 +536,7 @@ export function UpiQrStickerContent() {
                     disabled={page <= 1}
                     onClick={() => setPage((current) => Math.max(1, current - 1))}
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <CaretLeftIcon className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
@@ -545,7 +545,7 @@ export function UpiQrStickerContent() {
                     disabled={page >= totalPages}
                     onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <CaretRightIcon className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
@@ -554,7 +554,7 @@ export function UpiQrStickerContent() {
                     disabled={page >= totalPages}
                     onClick={() => setPage(totalPages)}
                   >
-                    <ChevronsRight className="h-4 w-4" />
+                    <CaretDoubleRightIcon className="h-4 w-4" />
                   </Button>
                 </div>
               </div>

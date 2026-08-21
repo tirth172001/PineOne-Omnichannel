@@ -1,15 +1,15 @@
 "use client"
 
-import { CreditCard, Smartphone, Link2, ArrowUpRight } from "lucide-react"
+import { ArrowUpRightIcon, CreditCardIcon, DeviceMobileIcon, LinkIcon } from "@phosphor-icons/react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { HighchartsPanelChart } from "@/components/ui/highcharts"
 
 const products = [
-  { name: "Checkout", href: "/online-payments", icon: CreditCard, color: "var(--color-primary)", series: [145,178,156,198,167,89,67] },
-  { name: "POS Terminal", href: "/offline-payments", icon: Smartphone, color: "var(--color-chart-2)", series: [245,278,238,312,289,195,168] },
-  { name: "Payment Links", href: "/payment-links", icon: Link2, color: "var(--color-chart-4)", series: [22,28,18,35,24,15,14] },
+  { name: "Checkout", href: "/online-payments", icon: CreditCardIcon, color: "var(--color-primary)", series: [145,178,156,198,167,89,67] },
+  { name: "POS Terminal", href: "/offline-payments", icon: DeviceMobileIcon, color: "var(--color-chart-2)", series: [245,278,238,312,289,195,168] },
+  { name: "Payment Links", href: "/payment-links", icon: LinkIcon, color: "var(--color-chart-4)", series: [22,28,18,35,24,15,14] },
 ]
 
 export function ProductOverviewCards() {
@@ -27,7 +27,7 @@ export function ProductOverviewCards() {
                 <CardTitle className="text-sm">{p.name}</CardTitle>
               </div>
               <Button variant="ghost" size="sm" asChild>
-                <Link href={p.href}>Open <ArrowUpRight className="h-3.5 w-3.5" /></Link>
+                <Link href={p.href}>Open <ArrowUpRightIcon className="h-3.5 w-3.5" /></Link>
               </Button>
             </CardHeader>
             <CardContent className="p-4">
