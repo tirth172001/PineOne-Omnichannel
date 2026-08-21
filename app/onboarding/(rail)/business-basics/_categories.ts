@@ -1,5 +1,5 @@
 import type { Icon } from "@phosphor-icons/react"
-import { BriefcaseIcon, CoffeeIcon, StorefrontIcon, WrenchIcon } from "@phosphor-icons/react"
+import { BriefcaseIcon, CoffeeIcon, StorefrontIcon, WrenchIcon } from "@phosphor-icons/react/ssr"
 
 export type CategoryOption = { id: string; label: string }
 export type CategoryGroup = { id: string; label: string; icon: Icon; options: CategoryOption[] }

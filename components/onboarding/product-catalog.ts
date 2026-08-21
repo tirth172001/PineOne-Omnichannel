@@ -5,8 +5,8 @@ import {
   LinkIcon,
   QrCodeIcon,
   StorefrontIcon,
-  type Icon,
-} from "@phosphor-icons/react"
+} from "@phosphor-icons/react/ssr"
+import type { Icon } from "@phosphor-icons/react"
 
 // Ticket 05 (.scratch/onboarding-experience-v3/issues/05-product-intent-taxonomy-and-field-rules.md):
 // four top-level categories are the selection unit for both the business-name teaser row and the

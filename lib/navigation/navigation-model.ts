@@ -28,7 +28,7 @@ import {
   ShieldWarningIcon,
   SlidersIcon,
   WebhooksLogoIcon,
-} from "@phosphor-icons/react"
+} from "@phosphor-icons/react/ssr"
 import { ROUTES } from "@/lib/navigation/routes"
 export type NavSubItem = {
   label: string

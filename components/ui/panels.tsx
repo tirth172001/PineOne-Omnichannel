@@ -19,7 +19,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { ArrowLeftIcon } from "@phosphor-icons/react"
+import { ArrowLeftIcon } from "@phosphor-icons/react/ssr"
 /* Container: flex row, fills remaining height */
 export function PanelGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (

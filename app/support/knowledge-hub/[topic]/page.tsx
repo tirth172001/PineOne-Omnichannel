@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PageHeader } from "@/components/ui/panels"
 import { getKnowledgeTopicBySlug } from "@/lib/support-knowledge"
-import { ClockIcon, PlayCircleIcon } from "@phosphor-icons/react"
+import { ClockIcon, PlayCircleIcon } from "@phosphor-icons/react/ssr"
 type PageProps = {
   params: Promise<{ topic: string }>
 }

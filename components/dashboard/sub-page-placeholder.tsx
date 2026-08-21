@@ -1,4 +1,4 @@
-import { ArrowLeftIcon } from "@phosphor-icons/react"
+import { ArrowLeftIcon } from "@phosphor-icons/react/ssr"
 import Link from "next/link"
 
 interface SubPagePlaceholderProps {

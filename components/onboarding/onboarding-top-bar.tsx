@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CaretDownIcon, DotsThreeIcon, SignOutIcon } from "@phosphor-icons/react"
+import { CaretDownIcon, DotsThreeIcon, SignOutIcon } from "@phosphor-icons/react/ssr"
 import { useTheme } from "next-themes"
 import {
   DropdownMenu,
