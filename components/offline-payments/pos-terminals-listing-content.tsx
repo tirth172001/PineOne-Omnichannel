@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation"
 import { DotsThreeVerticalIcon, DownloadIcon, FileTextIcon } from "@phosphor-icons/react"
 import { toast } from "sonner"
 
-import { TransactionStyleListingPage, type ListingColumn } from "@/components/shared/transaction-style-listing-page"
+import { useDateRangeFilter } from "@/components/shared/date-range-filter"
 import { type ListingFilter } from "@/components/shared/listing-page-primitives"
+import { useMoreFiltersPanel, type MoreFilterCategory } from "@/components/shared/more-filters-panel"
+import { TransactionStyleListingPage, type ListingColumn } from "@/components/shared/transaction-style-listing-page"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -32,12 +34,34 @@ function ModePill({ mode }: { mode: DeviceMode }) {
   )
 }
 
+const moreFilterCategories: MoreFilterCategory[] = [
+  {
+    id: "model",
+    label: "Hardware model",
+    display: "card",
+    selectionMode: "multi",
+    options: [
+      { id: "Touch A910", label: "Touch A910" },
+      { id: "Touch B920", label: "Touch B920" },
+      { id: "Touch C930", label: "Touch C930" },
+      { id: "Touch D940", label: "Touch D940" },
+      { id: "Touch E950", label: "Touch E950" },
+      { id: "Touch F960", label: "Touch F960" },
+      { id: "Touch G970", label: "Touch G970" },
+      { id: "Touch H980", label: "Touch H980" },
+      { id: "Touch I990", label: "Touch I990" },
+      { id: "Touch J1000", label: "Touch J1000" },
+    ],
+  },
+]
+
 export function PosTerminalsListingContent() {
   const router = useRouter()
   const [rows, setRows] = useState<TerminalDeviceRow[]>(() => getDeviceRows())
   const [search, setSearch] = useState("")
-  const [dateFilter, setDateFilter] = useState("today")
   const [statusFilter, setStatusFilter] = useState("all")
+  const dateRangeFilter = useDateRangeFilter({ initialPresetId: "today" })
+  const moreFilters = useMoreFiltersPanel(moreFilterCategories)
 
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -86,18 +110,7 @@ export function PosTerminalsListingContent() {
   }
 
   const filters: ListingFilter[] = [
-    {
-      id: "date",
-      type: "select",
-      label: "Today",
-      value: dateFilter,
-      onValueChange: setDateFilter,
-      options: [
-        { label: "Today", value: "today" },
-        { label: "Last 7D", value: "7d" },
-        { label: "All dates", value: "all" },
-      ],
-    },
+    dateRangeFilter.filter,
     {
       id: "status",
       type: "select",
@@ -110,7 +123,6 @@ export function PosTerminalsListingContent() {
         { label: "Integrated", value: "integrated" },
       ],
     },
-    { id: "more", type: "button", label: "More filters", value: "", showCaret: true },
   ]
 
   const columns: Array<ListingColumn<TerminalDeviceRow>> = [
@@ -190,7 +202,6 @@ export function PosTerminalsListingContent() {
             Audit log
           </Button>
           <Button
-            className="rounded-[8px] border border-primary/60 bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={handleAddDevice}
           >
             Add new device
@@ -201,6 +212,7 @@ export function PosTerminalsListingContent() {
       onSearchChange={setSearch}
       searchPlaceholder="Search by device ID"
       filters={filters}
+      {...moreFilters.toolbarProps}
       rightActions={
         <Button variant="outline" className="rounded-[8px] border-border/70 bg-background">
           <DownloadIcon className="h-4 w-4" />

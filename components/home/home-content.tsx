@@ -37,6 +37,8 @@ import { ProductWorkspaceNav, type ProductWorkspaceSection } from "@/components/
 import { PageHeader } from "@/components/ui/panels"
 import { OverviewSnapshotChartCard } from "@/components/home/overview-snapshot-chart-card"
 import { OverviewDetailCards } from "@/components/home/overview-detail-cards"
+import { OverviewAppDownloadCard } from "@/components/home/overview-app-download-card"
+import { OverviewExploreProducts } from "@/components/home/overview-explore-products"
 import { TransactionStateBranchFlow, type BranchFlowNode } from "@/components/home/transaction-state-branch-flow"
 import { AnimatedNumberText } from "@/components/ui/animated-number-text"
 import { SectionSummaryStrip, type SectionSummaryMetric } from "@/components/dashboard/section-summary-strip"
@@ -2022,7 +2024,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
         title: "Disputes need action today",
         description: `${disputesPendingAction} dispute${disputesPendingAction === 1 ? "" : "s"} are waiting for evidence submission before SLA.`,
         ctaLabel: "Review disputes",
-        href: "/on-hold-disputes",
+        href: "/disputes",
       }
     : {
         title: "Drive the next payment milestone",
@@ -2723,7 +2725,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
       value={navSection}
       onChange={(nextSection) => {
         if (nextSection === "disputes") {
-          router.push("/on-hold-disputes")
+          router.push("/disputes")
           return
         }
         setNavSection(nextSection)
@@ -2735,9 +2737,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
     <div
       className={cn(
         "p-4",
-        navSection === "overview"
-          ? "flex min-h-[calc(100vh-8rem)] items-center justify-center"
-          : "h-full overflow-y-auto space-y-4"
+        navSection === "overview" ? "flex h-full justify-center overflow-y-auto" : "h-full overflow-y-auto space-y-4"
       )}
     >
       {reportToast ? (
@@ -2748,10 +2748,14 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
       ) : null}
       {navSection === "overview" ? (
         <>
-          <section className="w-full max-w-[1120px] space-y-6">
-            <h3 className="text-2xl font-semibold leading-[1.05] text-foreground">overview</h3>
+          <section className="w-full max-w-[640px] space-y-6">
+            <h3 className="text-2xl font-semibold leading-[1.05] text-foreground">Overview</h3>
 
             <OverviewDetailCards />
+
+            <OverviewAppDownloadCard />
+
+            <OverviewExploreProducts />
 
             <div className="hidden space-y-3">
               {!overviewHiddenSnapshotCards.includes("transaction-state-flow") ? (
@@ -2877,7 +2881,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
               {!overviewHiddenSnapshotCards.includes("disputes") ? (
                 <OverviewSnapshotChartCard
                   title="Disputes"
-                  actionHref="/on-hold-disputes"
+                  actionHref="/disputes"
                   actionLabel="Disputes"
                   chartOptions={snapshotDisputeTrendOptions}
                   metrics={

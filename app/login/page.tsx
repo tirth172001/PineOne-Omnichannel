@@ -7,6 +7,7 @@ import { CaretDownIcon, DotsThreeIcon, MoonIcon, SignOutIcon, SunIcon } from "@p
 import { useTheme } from "next-themes"
 
 import { AuthVisualPanel } from "@/components/onboarding/auth-visual-panel"
+import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -218,13 +219,9 @@ export default function LoginPage() {
                   }}
                 />
 
-                <button
-                  className="h-8 w-full cursor-pointer rounded-lg bg-primary px-2.5 text-sm font-medium text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-                  type="submit"
-                  disabled={!canSubmit}
-                >
+                <Button type="submit" className="w-full" disabled={!canSubmit}>
                   Continue
-                </button>
+                </Button>
 
                 <div className="relative flex items-center justify-center">
                   <div className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2">

@@ -10,11 +10,12 @@ import {
   ChatIcon,
   CreditCardIcon,
   FileTextIcon,
+  GavelIcon,
   GearIcon,
   HouseIcon,
   LinkIcon,
   MoonIcon,
-  PauseCircleIcon,
+  PaletteIcon,
   SignOutIcon,
   StorefrontIcon,
   SunIcon,
@@ -58,7 +59,7 @@ const navGroups: Array<{ label?: string; items: ShellNavItem[] }> = [
       { label: "Overview", href: "/", icon: HouseIcon },
       { label: "Payments", href: "/transactions", icon: CreditCardIcon },
       { label: "Settlement", href: "/settlements", icon: WalletIcon },
-      { label: "On-hold & disputes", href: "/on-hold-disputes", icon: PauseCircleIcon },
+      { label: "Disputes", href: "/disputes", icon: GavelIcon },
       { label: "Refunds", href: "/refunds", icon: ArrowCounterClockwiseIcon },
       { label: "Reports", href: "/reports", icon: FileTextIcon },
     ],
@@ -68,7 +69,7 @@ const navGroups: Array<{ label?: string; items: ShellNavItem[] }> = [
     items: [
       { label: "Terminal devices", href: "/offline-payments/manage-devices", icon: StorefrontIcon },
       { label: "Payment links", href: "/payment-links", icon: LinkIcon },
-      { label: "Subscriptions", href: "/products/other-products", icon: ArrowCounterClockwiseIcon },
+      { label: "Checkout", href: "/checkout", icon: PaletteIcon },
     ],
   },
 ]
@@ -214,6 +215,19 @@ function SidebarNav({
         <div className="mt-6">
           <p className="mb-1 px-2 text-xs font-medium text-muted-foreground/90">Other</p>
           <div className="space-y-1">
+            <Link
+              href="/support"
+              className={cn(
+                "flex h-8 items-center gap-2 rounded-md px-2 text-sm leading-none transition-colors",
+                isHrefActive("/support")
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}
+            >
+              <ChatIcon className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Support</span>
+            </Link>
+
             <button
               type="button"
               onClick={() => onOpenSettings("personal-details")}
@@ -222,19 +236,6 @@ function SidebarNav({
               <GearIcon className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">Account settings</span>
             </button>
-
-            <Link
-              href="/support/support-queries"
-              className={cn(
-                "flex h-8 items-center gap-2 rounded-md px-2 text-sm leading-none transition-colors",
-                isHrefActive("/support/support-queries")
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              )}
-            >
-              <ChatIcon className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">Support queries</span>
-            </Link>
           </div>
         </div>
       </nav>

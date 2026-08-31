@@ -5,13 +5,17 @@ import { CaretDoubleLeftIcon, CaretDoubleRightIcon, CaretLeftIcon, CaretRightIco
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
+  LINE_TAB_TRIGGER_CLASSES,
+  LINE_TABS_LIST_CLASSES,
   ListingSummaryCards,
   ListingToolbar,
+  PAGE_HEADING_CLASSES,
   type ListingFilter,
 } from "@/components/shared/listing-page-primitives"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { cn } from "@/lib/utils"
 
 export type ListingColumn<Row> = {
   key: string
@@ -35,6 +39,7 @@ type SubtabConfig = {
 
 export function TransactionStyleListingPage<Row extends { id?: string }>({
   title,
+  subtitle,
   titleToggles,
   subTabs,
   primaryAction,
@@ -42,10 +47,17 @@ export function TransactionStyleListingPage<Row extends { id?: string }>({
   onSearchChange,
   searchPlaceholder,
   filters,
+  moreFiltersContent,
+  moreFiltersOpen,
+  onMoreFiltersOpenChange,
+  moreFiltersCount,
+  moreFiltersActive,
   rightActions,
+  customToolbar,
   summaryCards,
   columns,
   rows,
+  onRowClick,
   emptyText = "No rows found.",
   totalRows = 100,
   page = 1,
@@ -53,6 +65,7 @@ export function TransactionStyleListingPage<Row extends { id?: string }>({
   rowsPerPage = "10",
 }: {
   title: string
+  subtitle?: string
   titleToggles?: ToggleConfig
   subTabs?: SubtabConfig
   primaryAction?: ReactNode
@@ -60,11 +73,20 @@ export function TransactionStyleListingPage<Row extends { id?: string }>({
   onSearchChange: (value: string) => void
   searchPlaceholder: string
   filters: ListingFilter[]
+  moreFiltersContent?: ReactNode
+  moreFiltersOpen?: boolean
+  onMoreFiltersOpenChange?: (open: boolean) => void
+  moreFiltersCount?: number
+  moreFiltersActive?: boolean
   rightActions?: ReactNode
+  /** Replaces the built-in search/filters toolbar entirely, for pages whose filter row doesn't fit the generic search+filters shape (e.g. a combined field-selector search). */
+  customToolbar?: ReactNode
   summaryCards?: Array<{ label: string; value: string }>
   columns: Array<ListingColumn<Row>>
   rows: Row[]
-  emptyText?: string
+  /** Makes each row clickable (e.g. opening a detail side panel) — adds cursor-pointer + hover affordance. */
+  onRowClick?: (row: Row) => void
+  emptyText?: ReactNode
   totalRows?: number
   page?: number
   totalPages?: number
@@ -76,7 +98,10 @@ export function TransactionStyleListingPage<Row extends { id?: string }>({
         <div className={subTabs ? "px-8 pt-8 pb-0" : "px-8 pt-8 pb-8"}>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex flex-wrap items-center gap-4">
-              <h1 className="text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground">{title}</h1>
+              <div>
+                <h1 className={PAGE_HEADING_CLASSES}>{title}</h1>
+                {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
+              </div>
 
               {titleToggles ? (
                 <Tabs value={titleToggles.value} onValueChange={titleToggles.onValueChange}>
@@ -102,13 +127,9 @@ export function TransactionStyleListingPage<Row extends { id?: string }>({
         {subTabs ? (
           <div className="px-8 pt-8 pb-0">
             <Tabs value={subTabs.value} onValueChange={subTabs.onValueChange}>
-              <TabsList variant="line" className="h-8 gap-6 bg-transparent p-0">
+              <TabsList variant="line" className={LINE_TABS_LIST_CLASSES}>
                 {subTabs.items.map((item) => (
-                  <TabsTrigger
-                    key={item.value}
-                    value={item.value}
-                    className="h-8 rounded-none border-x-0 border-t-0 border-b-2 border-transparent bg-transparent px-0 py-0 text-sm font-medium text-muted-foreground data-active:!border-x-0 data-active:!border-t-0 data-active:!border-b-2 data-active:!border-primary data-active:!bg-transparent data-active:!text-primary data-active:!shadow-none group-data-[variant=line]/tabs-list:data-active:after:opacity-0"
-                  >
+                  <TabsTrigger key={item.value} value={item.value} className={LINE_TAB_TRIGGER_CLASSES}>
                     {item.label}
                   </TabsTrigger>
                 ))}
@@ -121,14 +142,21 @@ export function TransactionStyleListingPage<Row extends { id?: string }>({
       </section>
 
       <div className="space-y-6 px-8 pt-8 pb-8">
-        <ListingToolbar
-          className="px-0 py-0"
-          search={search}
-          onSearchChange={onSearchChange}
-          searchPlaceholder={searchPlaceholder}
-          filters={filters}
-          rightActions={rightActions}
-        />
+        {customToolbar ?? (
+          <ListingToolbar
+            className="px-0 py-0"
+            search={search}
+            onSearchChange={onSearchChange}
+            searchPlaceholder={searchPlaceholder}
+            filters={filters}
+            moreFiltersContent={moreFiltersContent}
+            moreFiltersOpen={moreFiltersOpen}
+            onMoreFiltersOpenChange={onMoreFiltersOpenChange}
+            moreFiltersCount={moreFiltersCount}
+            moreFiltersActive={moreFiltersActive}
+            rightActions={rightActions}
+          />
+        )}
 
         {summaryCards && summaryCards.length > 0 ? (
           <ListingSummaryCards className="px-0 py-0" cards={summaryCards} />
@@ -152,14 +180,18 @@ export function TransactionStyleListingPage<Row extends { id?: string }>({
                 </TableHeader>
                 <TableBody>
                   {rows.length === 0 ? (
-                    <TableRow className="h-[4.5rem] hover:bg-transparent">
-                      <TableCell colSpan={columns.length} className="px-4 text-sm text-muted-foreground">
+                    <TableRow className={cn(typeof emptyText === "string" ? "h-[4.5rem]" : "h-auto", "hover:bg-transparent")}>
+                      <TableCell colSpan={columns.length} className={cn(typeof emptyText === "string" ? "px-4 text-sm text-muted-foreground" : "p-0")}>
                         {emptyText}
                       </TableCell>
                     </TableRow>
                   ) : (
                     rows.map((row, index) => (
-                      <TableRow key={row.id ?? index} className="h-[4.5rem]">
+                      <TableRow
+                        key={row.id ?? index}
+                        className={cn("h-[4.5rem]", onRowClick ? "cursor-pointer" : "")}
+                        onClick={onRowClick ? () => onRowClick(row) : undefined}
+                      >
                         {columns.map((column) => (
                           <TableCell
                             key={`${row.id ?? index}-${column.key}`}

@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { CaretLeftIcon, DownloadIcon } from "@phosphor-icons/react"
-import { TransactionStyleListingPage, type ListingColumn } from "@/components/shared/transaction-style-listing-page"
+import { useDateRangeFilter } from "@/components/shared/date-range-filter"
 import { type ListingFilter } from "@/components/shared/listing-page-primitives"
+import { TransactionStyleListingPage, type ListingColumn } from "@/components/shared/transaction-style-listing-page"
 import { Button } from "@/components/ui/button"
 import { getAuditRows, type DeviceAuditRow, type DeviceMode } from "@/lib/terminal-devices-data"
 
@@ -21,8 +22,8 @@ export function DeviceAuditLogContent() {
   const router = useRouter()
   const rows = useMemo(() => getAuditRows(), [])
   const [search, setSearch] = useState("")
-  const [dateFilter, setDateFilter] = useState("all")
   const [storeFilter, setStoreFilter] = useState("all")
+  const dateRangeFilter = useDateRangeFilter()
 
   const storeOptions = useMemo(() => {
     const names = Array.from(new Set(rows.map((row) => row.storeName)))
@@ -39,18 +40,7 @@ export function DeviceAuditLogContent() {
   }, [rows, search, storeFilter])
 
   const filters: ListingFilter[] = [
-    {
-      id: "date",
-      type: "select",
-      label: "Today",
-      value: dateFilter,
-      onValueChange: setDateFilter,
-      options: [
-        { label: "Today", value: "today" },
-        { label: "Last 7D", value: "7d" },
-        { label: "All dates", value: "all" },
-      ],
-    },
+    dateRangeFilter.filter,
     {
       id: "store",
       type: "select",

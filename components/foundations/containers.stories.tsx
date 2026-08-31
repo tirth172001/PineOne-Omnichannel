@@ -26,8 +26,7 @@ export const Scale: Story = {
             px={1440}
             maxPx={1700}
             usages={[
-              "components/on-hold-disputes/dispute-detail-content.tsx",
-              "components/on-hold-disputes/on-hold-detail-content.tsx",
+              "components/disputes/dispute-detail-content.tsx",
               "components/onboarding/account-onboarding-flow.tsx:388",
               "components/transactions/transaction-detail-content.tsx",
             ]}
@@ -204,7 +203,7 @@ export const Scale: Story = {
             maxPx={512}
             usages={[
               "components/ui/alert-dialog.tsx, ui/tooltip.tsx (xs token)",
-              "app/login/page.tsx:220, account/configure-checkout-section.tsx:179 (arbitrary — same value, different syntax)",
+              "app/login/page.tsx:220, checkout/checkout-content.tsx:179 (arbitrary — same value, different syntax)",
             ]}
           />
           <ContainerWidthBar label="224px" px={224} maxPx={512} usages={["components/settlements/v3-settlements-content.tsx:586"]} />

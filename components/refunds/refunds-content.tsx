@@ -2,27 +2,20 @@
 
 import { useMemo, useState } from "react"
 import {
-  CalendarDotsIcon,
   CaretDoubleLeftIcon,
   CaretDoubleRightIcon,
-  CaretDownIcon,
   CaretLeftIcon,
   CaretRightIcon,
   ChecksIcon,
   DownloadIcon,
   EnvelopeSimpleIcon,
-  MagnifyingGlassIcon,
   SpinnerIcon,
 } from "@phosphor-icons/react"
+import { useDateRangeFilter } from "@/components/shared/date-range-filter"
+import { ListingToolbar, PAGE_HEADING_CLASSES, type ListingFilter } from "@/components/shared/listing-page-primitives"
+import { useMoreFiltersPanel, type MoreFilterCategory } from "@/components/shared/more-filters-panel"
+import { SummaryCardGroup } from "@/components/shared/summary-card-group"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -40,7 +33,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { SummaryCardGroup } from "@/components/shared/summary-card-group"
 
 type RefundStatus = "Pending" | "Success" | "Failed" | "Session expired" | "Cancelled" | "User cancelled"
 
@@ -87,13 +79,28 @@ function RefundStatusBadge({ status }: { status: RefundStatus }) {
   )
 }
 
+const moreFilterCategories: MoreFilterCategory[] = [
+  {
+    id: "amount-type",
+    label: "Amount type",
+    display: "badge",
+    selectionMode: "multi",
+    searchable: false,
+    options: [
+      { id: "EMI", label: "EMI" },
+      { id: "PX", label: "PX" },
+    ],
+  },
+]
+
 export function RefundsContent() {
   const [channel, setChannel] = useState<"in-store" | "online">("in-store")
   const [search, setSearch] = useState("")
-  const [dateFilter, setDateFilter] = useState<"today" | "all">("today")
   const [statusFilter, setStatusFilter] = useState<"all" | RefundStatus>("all")
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [page, setPage] = useState(1)
+  const dateRangeFilter = useDateRangeFilter()
+  const moreFilters = useMoreFiltersPanel(moreFilterCategories)
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -108,11 +115,29 @@ export function RefundsContent() {
   const clampedPage = Math.min(page, totalPages)
   const pagedRows = filtered.slice((clampedPage - 1) * rowsPerPage, (clampedPage - 1) * rowsPerPage + rowsPerPage)
 
+  const filters: ListingFilter[] = [
+    dateRangeFilter.filter,
+    {
+      id: "status",
+      type: "select",
+      label: "Status",
+      value: statusFilter,
+      onValueChange: (value) => {
+        setStatusFilter(value as typeof statusFilter)
+        setPage(1)
+      },
+      options: [
+        { label: "All statuses", value: "all" },
+        ...refundStatuses.map((status) => ({ label: status, value: status })),
+      ],
+    },
+  ]
+
   return (
     <div>
       <section className="flex flex-wrap items-center justify-between gap-4 px-8 pt-8">
         <div className="flex flex-wrap items-center gap-4">
-          <h1 className="text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground">Refunds</h1>
+          <h1 className={PAGE_HEADING_CLASSES}>Refunds</h1>
           <Tabs value={channel} onValueChange={(value) => { setChannel(value as typeof channel); setPage(1) }}>
             <TabsList className="h-8 rounded-[8px] bg-muted p-1">
               <TabsTrigger value="in-store" className="h-6 rounded-[6px] border-transparent px-4 py-1 text-sm font-medium text-muted-foreground data-active:!border-transparent data-active:!bg-background data-active:!text-foreground">In-store payments</TabsTrigger>
@@ -155,64 +180,28 @@ export function RefundsContent() {
         />
       </section>
 
-      <section className="flex flex-wrap items-center justify-between gap-4 px-8 py-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative w-[229px]">
-            <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search by any ID"
-              value={search}
-              onChange={(event) => { setSearch(event.target.value); setPage(1) }}
-              className="h-8 rounded-md pl-8"
-            />
-          </div>
-          <div className="h-6 w-px bg-border" />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8">
-                <CalendarDotsIcon className="h-4 w-4" />
-                {dateFilter === "today" ? "Today" : "All dates"}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-40">
-              <DropdownMenuRadioGroup value={dateFilter} onValueChange={(value) => setDateFilter(value as typeof dateFilter)}>
-                <DropdownMenuRadioItem value="today">Today</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="all">All dates</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8">
-                Status
-                <CaretDownIcon className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuRadioGroup value={statusFilter} onValueChange={(value) => { setStatusFilter(value as typeof statusFilter); setPage(1) }}>
-                <DropdownMenuRadioItem value="all">All statuses</DropdownMenuRadioItem>
-                {refundStatuses.map((status) => <DropdownMenuRadioItem key={status} value={status}>{status}</DropdownMenuRadioItem>)}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button variant="outline" size="sm" className="h-8">
-            More filters
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-secondary px-1 text-xs text-secondary-foreground">3</span>
-            <CaretDownIcon className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" className="h-8">
-            <EnvelopeSimpleIcon className="h-4 w-4" />
-            Email filtered
-          </Button>
-          <Button variant="outline" size="sm" className="h-8">
-            <DownloadIcon className="h-4 w-4" />
-            Download filtered
-          </Button>
-        </div>
-      </section>
+      <ListingToolbar
+        search={search}
+        onSearchChange={(value) => {
+          setSearch(value)
+          setPage(1)
+        }}
+        searchPlaceholder="Search by any ID"
+        filters={filters}
+        {...moreFilters.toolbarProps}
+        rightActions={
+          <>
+            <Button variant="outline" size="sm" className="h-8">
+              <EnvelopeSimpleIcon className="h-4 w-4" />
+              Email filtered
+            </Button>
+            <Button variant="outline" size="sm" className="h-8">
+              <DownloadIcon className="h-4 w-4" />
+              Download filtered
+            </Button>
+          </>
+        }
+      />
 
       <section className="px-8 pb-6">
         <div className="overflow-hidden rounded-lg border border-border bg-card">

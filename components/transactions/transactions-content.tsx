@@ -2,28 +2,31 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import type { DateRange } from "react-day-picker"
 import {
-  ArrowClockwiseIcon,
-  CalendarIcon,
   CaretDoubleLeftIcon,
   CaretDoubleRightIcon,
   CaretDownIcon,
   CaretLeftIcon,
   CaretRightIcon,
-  ClockIcon,
   DownloadIcon,
   EnvelopeSimpleIcon,
-  MagnifyingGlassIcon,
   SlidersHorizontalIcon,
   WalletIcon,
   XIcon,
 } from "@phosphor-icons/react"
 import {
+  getDefaultDateRangePresets,
+  useDateRangeFilter,
+  type DateRangePreset,
+} from "@/components/shared/date-range-filter"
+import {
+  LINE_TAB_TRIGGER_CLASSES,
+  LINE_TABS_LIST_CLASSES,
   ListingPageHeader,
   ListingToolbar,
   type ListingFilter,
 } from "@/components/shared/listing-page-primitives"
+import { useMoreFiltersPanel, type MoreFilterCategory } from "@/components/shared/more-filters-panel"
 import { DetailSidepanelShell } from "@/components/shared/activity-timeline-sidepanel"
 import { SummaryCardGroup, type SummaryCardItem } from "@/components/shared/summary-card-group"
 import { StatusPill } from "@/components/shared/status-pill"
@@ -31,10 +34,7 @@ import { TransactionsPlatformShell } from "@/components/transactions/transaction
 import { transactionRows } from "@/components/transactions/transactions-data"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Separator } from "@/components/ui/separator"
 import {
   Select,
@@ -52,11 +52,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { cn } from "@/lib/utils"
 
 type ListingMode = "in-store" | "online"
 type OnlineView = "order" | "payments"
-type DateFilter = "today" | "7d" | "30d"
 type StatusFilter =
   | "all"
   | "pending"
@@ -68,23 +66,11 @@ type StatusFilter =
   | "session-expired"
   | "user-cancelled"
 
-type MoreFilterCategoryKey =
-  | "stores"
-  | "payment-modes"
-  | "hardware-id"
-  | "terminal-id"
-  | "pos-id"
-  | "transaction-modes"
-  | "zones"
-  | "batch-status"
-
 type MoreFilterOption = {
   id: string
   label: string
   description?: string
 }
-
-type MoreFilterSelections = Record<MoreFilterCategoryKey, string[]>
 
 function formatInr(amount: number) {
   return `₹ ${amount.toLocaleString("en-MY")}`
@@ -112,92 +98,6 @@ function toStatusFilterKey(label: string): StatusFilter {
   return "failed"
 }
 
-function formatDateForInput(date?: Date) {
-  if (!date) return ""
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  })
-}
-
-function parseTimeParts(value: string) {
-  const match = value.match(/^(\d{1,2}):(\d{2})\s(AM|PM)$/)
-  if (!match) return { hour: "10", minute: "30", period: "AM" as "AM" | "PM" }
-  return { hour: match[1], minute: match[2], period: match[3] as "AM" | "PM" }
-}
-
-function TimePickerPopover({
-  value,
-  onChange,
-}: {
-  value: string
-  onChange: (value: string) => void
-}) {
-  const { hour, minute, period } = parseTimeParts(value)
-
-  const updateTime = (next: Partial<{ hour: string; minute: string; period: "AM" | "PM" }>) => {
-    const nextHour = next.hour ?? hour
-    const nextMinute = next.minute ?? minute
-    const nextPeriod = next.period ?? period
-    onChange(`${nextHour}:${nextMinute} ${nextPeriod}`)
-  }
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" className="justify-start">
-          <ClockIcon className="h-4 w-4" />
-          {value}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={8} className="w-auto p-3">
-        <div className="flex items-center gap-2">
-          <Select value={hour} onValueChange={(nextHour) => updateTime({ hour: nextHour })}>
-            <SelectTrigger className="w-[72px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: 12 }, (_, idx) => {
-                const hr = String(idx + 1)
-                return (
-                  <SelectItem key={hr} value={hr}>
-                    {hr}
-                  </SelectItem>
-                )
-              })}
-            </SelectContent>
-          </Select>
-
-          <span className="text-sm text-muted-foreground">:</span>
-
-          <Select value={minute} onValueChange={(nextMinute) => updateTime({ minute: nextMinute })}>
-            <SelectTrigger className="w-[72px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {["00", "15", "30", "45"].map((mm) => (
-                <SelectItem key={mm} value={mm}>
-                  {mm}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={period} onValueChange={(nextPeriod) => updateTime({ period: nextPeriod as "AM" | "PM" })}>
-            <SelectTrigger className="w-[76px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="AM">AM</SelectItem>
-              <SelectItem value="PM">PM</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </PopoverContent>
-    </Popover>
-  )
-}
 
 export function TransactionsContent() {
   const router = useRouter()
@@ -205,35 +105,15 @@ export function TransactionsContent() {
   const [mode, setMode] = useState<ListingMode>("in-store")
   const [onlineView, setOnlineView] = useState<OnlineView>("order")
   const [search, setSearch] = useState("")
-  const [dateFilter, setDateFilter] = useState<DateFilter>("30d")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [paymentModeFilter, setPaymentModeFilter] = useState<"all" | "upi" | "card" | "netbanking">("all")
   const [providerFilter, setProviderFilter] = useState<string>("all")
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<"all" | "order" | "payment">("all")
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [page, setPage] = useState(1)
-  const [dateOverlayOpen, setDateOverlayOpen] = useState(false)
-  const [datePresetDraft, setDatePresetDraft] = useState<"today" | "yesterday" | "week" | "30d" | "custom">("today")
-  const [datePresetApplied, setDatePresetApplied] = useState<"today" | "yesterday" | "week" | "30d" | "custom">("today")
-  const [dateRangeDraft, setDateRangeDraft] = useState<DateRange | undefined>(() => {
-    const from = new Date(2025, 0, 12)
-    return { from, to: new Date(from) }
-  })
-  const [dateRangeApplied, setDateRangeApplied] = useState<DateRange | undefined>(() => {
-    const from = new Date(2025, 0, 12)
-    return { from, to: new Date(from) }
-  })
-  const [startTimeDraft, setStartTimeDraft] = useState("10:30 AM")
-  const [endTimeDraft, setEndTimeDraft] = useState("10:30 AM")
-  const [startTimeApplied, setStartTimeApplied] = useState("10:30 AM")
-  const [endTimeApplied, setEndTimeApplied] = useState("10:30 AM")
-  const [activeDateField, setActiveDateField] = useState<"start" | "end">("start")
   const [emailPanelOpen, setEmailPanelOpen] = useState(false)
   const [emailDraft, setEmailDraft] = useState("")
   const [addedEmailIds, setAddedEmailIds] = useState(["tirth@setu.co", "passport130872@gmail.com"])
-  const [moreFiltersOpen, setMoreFiltersOpen] = useState(false)
-  const [activeMoreFilterKey, setActiveMoreFilterKey] = useState<MoreFilterCategoryKey>("stores")
-  const [moreFilterSearch, setMoreFilterSearch] = useState("")
 
   const suggestedEmailIds = useMemo(
     () => [
@@ -245,19 +125,6 @@ export function TransactionsContent() {
     ],
     []
   )
-
-  const baseMoreFilterSelection: MoreFilterSelections = {
-    stores: ["store-0"],
-    "payment-modes": [],
-    "hardware-id": [],
-    "terminal-id": ["terminal-0", "terminal-1"],
-    "pos-id": [],
-    "transaction-modes": [],
-    zones: [],
-    "batch-status": [],
-  }
-  const [draftMoreFilters, setDraftMoreFilters] = useState(baseMoreFilterSelection)
-  const [appliedMoreFilters, setAppliedMoreFilters] = useState(baseMoreFilterSelection)
 
   const modeRows = useMemo(() => {
     const targetType =
@@ -274,37 +141,169 @@ export function TransactionsContent() {
     return new Date(Math.max(...timestamps))
   }, [modeRows])
 
+  const storeOptions = useMemo<MoreFilterOption[]>(() => {
+    const seen = new Map<string, string>()
+    modeRows.forEach((row) => {
+      if (!seen.has(row.storeName)) seen.set(row.storeName, row.storeAddress)
+    })
+
+    return Array.from(seen.entries()).map(([label, description], index) => ({
+      id: `store-${index}`,
+      label,
+      description,
+    }))
+  }, [modeRows])
+
+  const moreFilterCategories: MoreFilterCategory[] = useMemo(
+    () => [
+      { id: "stores", label: "Stores", display: "card", selectionMode: "multi", options: storeOptions },
+      {
+        id: "payment-modes",
+        label: "Payment modes",
+        display: "card",
+        selectionMode: "multi",
+        options: [
+          { id: "upi", label: "UPI" },
+          { id: "card", label: "Card" },
+          { id: "netbanking", label: "Net banking" },
+        ],
+      },
+      {
+        id: "hardware-id",
+        label: "Hardware ID",
+        display: "card",
+        selectionMode: "multi",
+        options: [
+          { id: "hw-1001", label: "HW-1001" },
+          { id: "hw-1002", label: "HW-1002" },
+          { id: "hw-1003", label: "HW-1003" },
+        ],
+      },
+      {
+        id: "terminal-id",
+        label: "Terminal ID (TID)",
+        display: "card",
+        selectionMode: "multi",
+        options: [
+          { id: "terminal-0", label: "97893918238" },
+          { id: "terminal-1", label: "97902118241" },
+          { id: "terminal-2", label: "98010429157" },
+          { id: "terminal-3", label: "98155281722" },
+        ],
+      },
+      {
+        id: "pos-id",
+        label: "POS ID",
+        display: "card",
+        selectionMode: "multi",
+        options: [
+          { id: "pos-101", label: "495745794579" },
+          { id: "pos-102", label: "495745794580" },
+          { id: "pos-103", label: "495745794581" },
+        ],
+      },
+      {
+        id: "transaction-modes",
+        label: "Transaction modes",
+        display: "card",
+        selectionMode: "multi",
+        options: [
+          { id: "payment", label: "Payment" },
+          { id: "order", label: "Order" },
+        ],
+      },
+      {
+        id: "zones",
+        label: "Zones",
+        display: "card",
+        selectionMode: "multi",
+        options: [
+          { id: "north", label: "North" },
+          { id: "south", label: "South" },
+          { id: "west", label: "West" },
+          { id: "east", label: "East" },
+        ],
+      },
+      {
+        id: "batch-status",
+        label: "Batch status",
+        display: "card",
+        selectionMode: "multi",
+        options: [
+          { id: "open", label: "Open" },
+          { id: "closed", label: "Closed" },
+          { id: "settled", label: "Settled" },
+        ],
+      },
+    ],
+    [storeOptions]
+  )
+
+  const moreFilters = useMoreFiltersPanel(moreFilterCategories)
+
+  const datePresets: DateRangePreset[] = useMemo(() => {
+    if (!latestDate) return getDefaultDateRangePresets()
+    return [
+      { id: "today", label: "Today", getRange: () => ({ from: latestDate, to: latestDate }) },
+      {
+        id: "yesterday",
+        label: "Yesterday",
+        getRange: () => {
+          const day = new Date(latestDate)
+          day.setDate(day.getDate() - 1)
+          return { from: day, to: day }
+        },
+      },
+      {
+        id: "week",
+        label: "This week",
+        getRange: () => {
+          const from = new Date(latestDate)
+          from.setDate(from.getDate() - 6)
+          return { from, to: latestDate }
+        },
+      },
+      {
+        id: "30d",
+        label: "Last 30 days",
+        getRange: () => {
+          const from = new Date(latestDate)
+          from.setDate(from.getDate() - 29)
+          return { from, to: latestDate }
+        },
+      },
+      { id: "custom", label: "Custom" },
+    ]
+  }, [latestDate])
+  const dateRangeFilter = useDateRangeFilter({ presets: datePresets, initialPresetId: "30d" })
+
   const filteredRows = useMemo(() => {
     const normalizedQuery = search.trim().toLowerCase()
     const storeNameCatalog = Array.from(new Set(modeRows.map((row) => row.storeName)))
-    const selectedStoreNames = appliedMoreFilters.stores
+    const appliedStores = moreFilters.applied.stores ?? []
+    const appliedPaymentModes = moreFilters.applied["payment-modes"] ?? []
+    const appliedTransactionModes = moreFilters.applied["transaction-modes"] ?? []
+    const selectedStoreNames = appliedStores
       .map((id) => Number(id.replace("store-", "")))
       .map((index) => storeNameCatalog[index])
       .filter((value): value is string => Boolean(value))
 
-    const windowStart =
-      dateFilter === "today" && latestDate
-        ? new Date(latestDate.getFullYear(), latestDate.getMonth(), latestDate.getDate(), 0, 0, 0)
-        : dateFilter === "7d" && latestDate
-          ? new Date(new Date(latestDate).setDate(latestDate.getDate() - 6))
-          : dateFilter === "30d" && latestDate
-            ? new Date(new Date(latestDate).setDate(latestDate.getDate() - 29))
-            : null
+    const appliedRange = dateRangeFilter.applied.range
+    const windowStart = appliedRange?.from ? new Date(appliedRange.from) : null
+    if (windowStart) windowStart.setHours(0, 0, 0, 0)
+    const windowEnd = appliedRange?.to ? new Date(appliedRange.to) : windowStart
+    if (windowEnd) windowEnd.setHours(23, 59, 59, 999)
 
     return modeRows.filter((row) => {
       if (statusFilter !== "all" && toStatusFilterKey(row.status.label) !== statusFilter) return false
       if (mode === "in-store" && selectedStoreNames.length && !selectedStoreNames.includes(row.storeName)) return false
-      if (
-        mode === "in-store" &&
-        appliedMoreFilters["payment-modes"].length &&
-        !appliedMoreFilters["payment-modes"].includes(row.paymentMode)
-      ) {
+      if (mode === "in-store" && appliedPaymentModes.length && !appliedPaymentModes.includes(row.paymentMode)) {
         return false
       }
       if (
         mode === "in-store" &&
-        appliedMoreFilters["transaction-modes"].length &&
-        !appliedMoreFilters["transaction-modes"].includes(row.transactionType.toLowerCase())
+        appliedTransactionModes.length &&
+        !appliedTransactionModes.includes(row.transactionType.toLowerCase())
       ) {
         return false
       }
@@ -315,9 +314,9 @@ export function TransactionsContent() {
       if (mode === "in-store" && paymentModeFilter !== "all" && row.paymentMode !== paymentModeFilter) return false
       if (mode === "in-store" && providerFilter !== "all" && row.provider !== providerFilter) return false
 
-      if (windowStart) {
+      if (windowStart && windowEnd) {
         const rowDate = parseDisplayDate(row.date, row.time)
-        if (!rowDate || rowDate < windowStart) return false
+        if (!rowDate || rowDate < windowStart || rowDate > windowEnd) return false
       }
 
       if (!normalizedQuery) return true
@@ -342,11 +341,10 @@ export function TransactionsContent() {
       return blob.includes(normalizedQuery)
     })
   }, [
-    appliedMoreFilters,
-    dateFilter,
-    latestDate,
+    dateRangeFilter.applied,
     mode,
     modeRows,
+    moreFilters.applied,
     paymentModeFilter,
     providerFilter,
     search,
@@ -373,16 +371,6 @@ export function TransactionsContent() {
     ]
   }, [filteredRows])
 
-  const dateLabel =
-    datePresetApplied === "today"
-      ? "Today"
-      : datePresetApplied === "yesterday"
-        ? "Yesterday"
-        : datePresetApplied === "week"
-          ? "This week"
-          : datePresetApplied === "30d"
-            ? "Last 30 days"
-            : "Custom"
   const paginationEnabled = true
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage))
@@ -390,7 +378,7 @@ export function TransactionsContent() {
   useEffect(() => {
     setPage(1)
   }, [
-    dateFilter,
+    dateRangeFilter.applied,
     mode,
     onlineView,
     paymentModeFilter,
@@ -407,28 +395,9 @@ export function TransactionsContent() {
       setTransactionTypeFilter("all")
       setPaymentModeFilter("all")
       setProviderFilter("all")
-      setMoreFiltersOpen(false)
+      moreFilters.toolbarProps.onMoreFiltersOpenChange(false)
     }
   }, [mode])
-
-  useEffect(() => {
-    if (!moreFiltersOpen) return
-    setDraftMoreFilters(appliedMoreFilters)
-    setMoreFilterSearch("")
-  }, [appliedMoreFilters, moreFiltersOpen])
-
-  useEffect(() => {
-    setMoreFilterSearch("")
-  }, [activeMoreFilterKey])
-
-  useEffect(() => {
-    if (!dateOverlayOpen) return
-    setDatePresetDraft(datePresetApplied)
-    setDateRangeDraft(dateRangeApplied)
-    setStartTimeDraft(startTimeApplied)
-    setEndTimeDraft(endTimeApplied)
-    setActiveDateField("start")
-  }, [dateOverlayOpen, datePresetApplied, dateRangeApplied, startTimeApplied, endTimeApplied])
 
   const visibleRows = useMemo(() => {
     if (!paginationEnabled) return filteredRows
@@ -461,340 +430,9 @@ export function TransactionsContent() {
     return [{ label: "All providers", value: "all" }, ...options.map((option) => ({ label: option, value: option }))]
   }, [])
 
-  const storeOptions = useMemo<MoreFilterOption[]>(() => {
-    const seen = new Map<string, string>()
-    modeRows.forEach((row) => {
-      if (!seen.has(row.storeName)) seen.set(row.storeName, row.storeAddress)
-    })
-
-    return Array.from(seen.entries()).map(([label, description], index) => ({
-      id: `store-${index}`,
-      label,
-      description,
-    }))
-  }, [modeRows])
-
-  const moreFilterCatalog = useMemo<Record<MoreFilterCategoryKey, { label: string; options: MoreFilterOption[] }>>(
-    () => ({
-      stores: { label: "Stores", options: storeOptions },
-      "payment-modes": {
-        label: "Payment modes",
-        options: [
-          { id: "upi", label: "UPI" },
-          { id: "card", label: "Card" },
-          { id: "netbanking", label: "Net banking" },
-        ],
-      },
-      "hardware-id": {
-        label: "Hardware ID",
-        options: [
-          { id: "hw-1001", label: "HW-1001" },
-          { id: "hw-1002", label: "HW-1002" },
-          { id: "hw-1003", label: "HW-1003" },
-        ],
-      },
-      "terminal-id": {
-        label: "Terminal ID (TID)",
-        options: [
-          { id: "terminal-0", label: "97893918238" },
-          { id: "terminal-1", label: "97902118241" },
-          { id: "terminal-2", label: "98010429157" },
-          { id: "terminal-3", label: "98155281722" },
-        ],
-      },
-      "pos-id": {
-        label: "POS ID",
-        options: [
-          { id: "pos-101", label: "495745794579" },
-          { id: "pos-102", label: "495745794580" },
-          { id: "pos-103", label: "495745794581" },
-        ],
-      },
-      "transaction-modes": {
-        label: "Transaction modes",
-        options: [
-          { id: "payment", label: "Payment" },
-          { id: "order", label: "Order" },
-        ],
-      },
-      zones: {
-        label: "Zones",
-        options: [
-          { id: "north", label: "North" },
-          { id: "south", label: "South" },
-          { id: "west", label: "West" },
-          { id: "east", label: "East" },
-        ],
-      },
-      "batch-status": {
-        label: "Batch status",
-        options: [
-          { id: "open", label: "Open" },
-          { id: "closed", label: "Closed" },
-          { id: "settled", label: "Settled" },
-        ],
-      },
-    }),
-    [storeOptions]
-  )
-
-  const activeMoreFilter = moreFilterCatalog[activeMoreFilterKey]
-
-  const filteredMoreFilterOptions = useMemo(() => {
-    const query = moreFilterSearch.trim().toLowerCase()
-    if (!query) return activeMoreFilter.options
-    return activeMoreFilter.options.filter((option) => {
-      const blob = `${option.label} ${option.description ?? ""}`.toLowerCase()
-      return blob.includes(query)
-    })
-  }, [activeMoreFilter.options, moreFilterSearch])
-
-  const selectedCountByCategory = useMemo(
-    () =>
-      (Object.keys(moreFilterCatalog) as MoreFilterCategoryKey[]).reduce<Record<MoreFilterCategoryKey, number>>(
-        (acc, key) => {
-          acc[key] = draftMoreFilters[key].length
-          return acc
-        },
-        {
-          stores: 0,
-          "payment-modes": 0,
-          "hardware-id": 0,
-          "terminal-id": 0,
-          "pos-id": 0,
-          "transaction-modes": 0,
-          zones: 0,
-          "batch-status": 0,
-        }
-      ),
-    [draftMoreFilters, moreFilterCatalog]
-  )
-
-  const totalAppliedMoreFilterCount = useMemo(
-    () => Object.values(appliedMoreFilters).reduce((sum, values) => sum + values.length, 0),
-    [appliedMoreFilters]
-  )
-
-  const isAllVisibleSelected =
-    filteredMoreFilterOptions.length > 0 &&
-    filteredMoreFilterOptions.every((option) => draftMoreFilters[activeMoreFilterKey].includes(option.id))
-
-  const toggleMoreFilterOption = (category: MoreFilterCategoryKey, optionId: string) => {
-    setDraftMoreFilters((current) => {
-      const exists = current[category].includes(optionId)
-      return {
-        ...current,
-        [category]: exists
-          ? current[category].filter((id) => id !== optionId)
-          : [...current[category], optionId],
-      }
-    })
-  }
-
-  const toggleSelectAllVisible = () => {
-    setDraftMoreFilters((current) => {
-      const currentSet = new Set(current[activeMoreFilterKey])
-      const allSelected = filteredMoreFilterOptions.every((option) => currentSet.has(option.id))
-      const next = allSelected
-        ? current[activeMoreFilterKey].filter(
-            (id) => !filteredMoreFilterOptions.some((option) => option.id === id)
-          )
-        : Array.from(new Set([...current[activeMoreFilterKey], ...filteredMoreFilterOptions.map((option) => option.id)]))
-
-      return {
-        ...current,
-        [activeMoreFilterKey]: next,
-      }
-    })
-  }
-
-  const clearMoreFilters = () => {
-    const cleared: MoreFilterSelections = {
-      stores: [],
-      "payment-modes": [],
-      "hardware-id": [],
-      "terminal-id": [],
-      "pos-id": [],
-      "transaction-modes": [],
-      zones: [],
-      "batch-status": [],
-    }
-    setDraftMoreFilters(cleared)
-    setAppliedMoreFilters(cleared)
-  }
-
-  const applyMoreFilters = () => {
-    setAppliedMoreFilters(draftMoreFilters)
-    setMoreFiltersOpen(false)
-  }
-
-  const clearDateDraft = () => {
-    setDatePresetDraft("today")
-    const today = new Date()
-    setDateRangeDraft({ from: today, to: today })
-    setStartTimeDraft("10:30 AM")
-    setEndTimeDraft("10:30 AM")
-  }
-
-  const applyDateDraft = () => {
-    setDatePresetApplied(datePresetDraft)
-    setDateRangeApplied(dateRangeDraft)
-    setStartTimeApplied(startTimeDraft)
-    setEndTimeApplied(endTimeDraft)
-    if (datePresetDraft === "today") setDateFilter("today")
-    if (datePresetDraft === "week") setDateFilter("7d")
-    if (datePresetDraft === "30d") setDateFilter("30d")
-    setDateOverlayOpen(false)
-  }
-
-  const moreFilterCategoryOrder: MoreFilterCategoryKey[] = [
-    "stores",
-    "payment-modes",
-    "hardware-id",
-    "terminal-id",
-    "pos-id",
-    "transaction-modes",
-    "zones",
-    "batch-status",
-  ]
-
   const filters: ListingFilter[] = useMemo(() => {
-    const datePresetItems: Array<{ key: "today" | "yesterday" | "week" | "30d" | "custom"; label: string }> = [
-      { key: "today", label: "Today" },
-      { key: "yesterday", label: "Yesterday" },
-      { key: "week", label: "This week" },
-      { key: "30d", label: "Last 30 days" },
-      { key: "custom", label: "Custom" },
-    ]
-
     const sharedFilters: ListingFilter[] = [
-      {
-        id: "date",
-        type: "button",
-        label: "",
-        value: dateLabel,
-        icon: <CalendarIcon className="h-4 w-4" />,
-        active: dateOverlayOpen,
-        showCaret: true,
-        popoverOpen: dateOverlayOpen,
-        onPopoverOpenChange: setDateOverlayOpen,
-        popoverContentClassName: "w-[760px]",
-        popoverContent: (
-          <div className="overflow-hidden rounded-[12px] border border-[var(--tx-border-subtle,var(--border))] bg-[var(--tx-surface-panel,var(--sidebar))]">
-            <div className="flex items-center justify-between p-3">
-              <h3 className="text-[20px] font-semibold leading-7 text-foreground">Date range</h3>
-              <div className="flex items-center gap-3">
-                <Button variant="link" className="h-auto p-0 text-primary" onClick={clearDateDraft}>
-                  Clear filter
-                </Button>
-                <Button onClick={applyDateDraft}>Apply</Button>
-              </div>
-            </div>
-            <Separator />
-            <div className="grid min-h-0 flex-1 grid-cols-[180px_1fr] gap-3 p-3">
-              <div className="space-y-1">
-                {datePresetItems.map((preset) => (
-                  <Button
-                    key={preset.key}
-                    type="button"
-                    variant="ghost"
-                    className={cn(
-                      "w-full justify-start",
-                      datePresetDraft === preset.key ? "bg-accent text-foreground font-semibold hover:bg-accent" : ""
-                    )}
-                    onClick={() => {
-                      setDatePresetDraft(preset.key)
-                      const today = new Date()
-                      if (preset.key === "today") {
-                        setDateRangeDraft({ from: today, to: today })
-                        setActiveDateField("start")
-                      } else if (preset.key === "yesterday") {
-                        const yesterday = new Date(today)
-                        yesterday.setDate(today.getDate() - 1)
-                        setDateRangeDraft({ from: yesterday, to: yesterday })
-                        setActiveDateField("start")
-                      } else if (preset.key === "week") {
-                        const from = new Date(today)
-                        from.setDate(today.getDate() - 6)
-                        setDateRangeDraft({ from, to: today })
-                        setActiveDateField("start")
-                      } else if (preset.key === "30d") {
-                        const from = new Date(today)
-                        from.setDate(today.getDate() - 29)
-                        setDateRangeDraft({ from, to: today })
-                        setActiveDateField("start")
-                      }
-                    }}
-                  >
-                    {preset.label}
-                  </Button>
-                ))}
-              </div>
-
-              <div className="flex min-h-0 flex-col gap-3">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <p className="text-base font-semibold text-foreground">Start date & time</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        className={cn("justify-start", activeDateField === "start" ? "border-ring" : "")}
-                        onClick={() => setActiveDateField("start")}
-                      >
-                        <CalendarIcon className="h-4 w-4" />
-                        {formatDateForInput(dateRangeDraft?.from) || "Select date"}
-                      </Button>
-                      <TimePickerPopover value={startTimeDraft} onChange={setStartTimeDraft} />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-base font-semibold text-foreground">End date & time</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        className={cn("justify-start", activeDateField === "end" ? "border-ring" : "")}
-                        onClick={() => setActiveDateField("end")}
-                      >
-                        <CalendarIcon className="h-4 w-4" />
-                        {formatDateForInput(dateRangeDraft?.to) || "Select date"}
-                      </Button>
-                      <TimePickerPopover value={endTimeDraft} onChange={setEndTimeDraft} />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="overflow-auto rounded-lg border border-[var(--tx-border-subtle,var(--border))] bg-[var(--tx-surface-panel,var(--background))] p-2">
-                  <div className="mb-2 inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs text-foreground">
-                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
-                    Selecting {activeDateField === "start" ? "start date" : "end date"}
-                  </div>
-                  <Calendar
-                    mode="single"
-                    numberOfMonths={2}
-                    selected={activeDateField === "start" ? dateRangeDraft?.from : dateRangeDraft?.to}
-                    onSelect={(selectedDate) => {
-                      if (!selectedDate) return
-                      if (activeDateField === "start") {
-                        setDateRangeDraft((current) => ({
-                          from: selectedDate,
-                          to: current?.to && current.to >= selectedDate ? current.to : selectedDate,
-                        }))
-                        setActiveDateField("end")
-                      } else {
-                        setDateRangeDraft((current) => ({
-                          from: current?.from && current.from <= selectedDate ? current.from : selectedDate,
-                          to: selectedDate,
-                        }))
-                      }
-                      setDatePresetDraft("custom")
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        ),
-      },
+      dateRangeFilter.filter,
       {
         id: "status",
         type: "select",
@@ -848,18 +486,13 @@ export function TransactionsContent() {
       },
     ]
   }, [
-    dateLabel,
+    dateRangeFilter.filter,
     mode,
     paymentModeFilter,
     providerFilter,
     providerOptions,
     statusFilter,
     statusOptions,
-    dateOverlayOpen,
-    datePresetDraft,
-    dateRangeDraft,
-    startTimeDraft,
-    endTimeDraft,
     transactionTypeFilter,
   ])
 
@@ -888,30 +521,19 @@ export function TransactionsContent() {
           onToggleChange={(value) => setMode(value as ListingMode)}
           primaryAction={
             mode === "online" ? (
-              <Button className="rounded-[8px] border border-primary/60 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button>
                 Verify IMEI No
               </Button>
-            ) : (
-              <Button variant="outline" className="rounded-[8px] border-[var(--tx-border-strong,var(--border))] bg-[var(--tx-surface-panel,var(--background))]">
-                <ArrowClockwiseIcon className="h-4 w-4" />
-                Refresh
-              </Button>
-            )
+            ) : undefined
           }
           tabs={
             mode === "online" ? (
               <Tabs value={onlineView} onValueChange={(value) => setOnlineView(value as OnlineView)}>
-                <TabsList variant="line" className="h-8 gap-6 bg-transparent p-0">
-                  <TabsTrigger
-                    value="order"
-                    className="h-8 rounded-none border-x-0 border-t-0 border-b-2 border-transparent bg-transparent px-0 py-0 text-sm font-medium text-muted-foreground data-active:!border-x-0 data-active:!border-t-0 data-active:!border-b-2 data-active:!border-primary data-active:!bg-transparent data-active:!text-primary data-active:!shadow-none group-data-[variant=line]/tabs-list:data-active:after:opacity-0"
-                  >
+                <TabsList variant="line" className={LINE_TABS_LIST_CLASSES}>
+                  <TabsTrigger value="order" className={LINE_TAB_TRIGGER_CLASSES}>
                     By Order
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="payments"
-                    className="h-8 rounded-none border-x-0 border-t-0 border-b-2 border-transparent bg-transparent px-0 py-0 text-sm font-medium text-muted-foreground data-active:!border-x-0 data-active:!border-t-0 data-active:!border-b-2 data-active:!border-primary data-active:!bg-transparent data-active:!text-primary data-active:!shadow-none group-data-[variant=line]/tabs-list:data-active:after:opacity-0"
-                  >
+                  <TabsTrigger value="payments" className={LINE_TAB_TRIGGER_CLASSES}>
                     By payments
                   </TabsTrigger>
                 </TabsList>
@@ -927,113 +549,11 @@ export function TransactionsContent() {
             onSearchChange={setSearch}
             searchPlaceholder={mode === "in-store" ? "Search by any ID" : "Search by any value"}
             filters={filters}
-            onMoreFilters={() => undefined}
-            moreFiltersCount={mode === "in-store" ? totalAppliedMoreFilterCount : undefined}
-            moreFiltersOpen={mode === "in-store" ? moreFiltersOpen : undefined}
-            moreFiltersActive={mode === "in-store" ? moreFiltersOpen : undefined}
-            onMoreFiltersOpenChange={mode === "in-store" ? setMoreFiltersOpen : undefined}
-            moreFiltersContent={
-              mode === "in-store" ? (
-                <div className="flex h-[620px] flex-col overflow-hidden rounded-[12px] border border-[var(--tx-border-subtle,var(--border))] bg-[var(--tx-surface-panel,var(--sidebar))]">
-                  <div className="flex items-center justify-between px-3 py-3">
-                    <h3 className="text-[20px] font-semibold leading-7 text-foreground">More filters</h3>
-                    <div className="flex items-center gap-3">
-                      <Button variant="link" className="h-auto p-0 text-primary" onClick={clearMoreFilters}>
-                        Clear filter
-                      </Button>
-                      <Button onClick={applyMoreFilters}>Apply</Button>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="grid min-h-0 flex-1 grid-cols-[220px_1fr] gap-0 p-3">
-                    <div className="pr-3">
-                      <div className="space-y-1">
-                        {moreFilterCategoryOrder.map((category) => {
-                          const categoryMeta = moreFilterCatalog[category]
-                          const count = selectedCountByCategory[category]
-                          return (
-                            <button
-                              key={category}
-                              type="button"
-                              onClick={() => setActiveMoreFilterKey(category)}
-                              className={cn(
-                                "flex h-10 w-full items-center justify-between rounded-[8px] px-3 text-left text-sm font-normal text-foreground transition-colors",
-                                activeMoreFilterKey === category
-                                  ? "bg-accent text-foreground font-semibold"
-                                  : "hover:bg-accent/70"
-                              )}
-                            >
-                              <span>{categoryMeta.label}</span>
-                              {count > 0 ? (
-                                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-[var(--tx-surface-chip,var(--olive-surface-main))] px-1.5 text-xs font-medium text-[var(--tx-text-primary,var(--foreground))]">
-                                  {count}
-                                </span>
-                              ) : null}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="flex min-h-0 flex-col pl-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-base font-semibold text-foreground">{activeMoreFilter.label}</h4>
-                        <Button variant="link" className="h-auto p-0 text-primary" onClick={toggleSelectAllVisible}>
-                          {isAllVisibleSelected ? "Deselect all" : "Select all"}
-                        </Button>
-                      </div>
-
-                      <div className="relative mt-3">
-                        <MagnifyingGlassIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          value={moreFilterSearch}
-                          onChange={(event) => setMoreFilterSearch(event.target.value)}
-                          placeholder={`Search ${activeMoreFilter.label.toLowerCase()}`}
-                          className="pl-9"
-                        />
-                      </div>
-
-                      <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-                        {filteredMoreFilterOptions.map((option) => {
-                          const checked = draftMoreFilters[activeMoreFilterKey].includes(option.id)
-                          return (
-                            <label
-                              key={option.id}
-                              className={cn(
-                                "flex cursor-pointer items-start justify-between rounded-[8px] border px-3 py-2",
-                                checked
-                                  ? "border-primary/70 bg-[var(--tx-surface-hover,var(--muted))]"
-                                  : "border-[var(--tx-border-subtle,var(--border))] bg-transparent"
-                              )}
-                            >
-                              <div className="min-w-0 pr-3">
-                                <p className="truncate text-sm font-medium text-foreground">{option.label}</p>
-                                {option.description ? (
-                                  <p className="truncate text-sm text-muted-foreground">{option.description}</p>
-                                ) : null}
-                              </div>
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={() => toggleMoreFilterOption(activeMoreFilterKey, option.id)}
-                                className="mt-1"
-                              />
-                            </label>
-                          )
-                        })}
-
-                        {filteredMoreFilterOptions.length === 0 ? (
-                          <div className="rounded-[8px] border border-dashed border-[var(--tx-border-subtle,var(--border))] p-4 text-sm text-[var(--tx-text-secondary,var(--muted-foreground))]">
-                            No results found.
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : undefined
-            }
+            moreFiltersCount={mode === "in-store" ? moreFilters.toolbarProps.moreFiltersCount : undefined}
+            moreFiltersOpen={mode === "in-store" ? moreFilters.toolbarProps.moreFiltersOpen : undefined}
+            moreFiltersActive={mode === "in-store" ? moreFilters.toolbarProps.moreFiltersActive : undefined}
+            onMoreFiltersOpenChange={mode === "in-store" ? moreFilters.toolbarProps.onMoreFiltersOpenChange : undefined}
+            moreFiltersContent={mode === "in-store" ? moreFilters.toolbarProps.moreFiltersContent : undefined}
             rightActions={
               mode === "online" ? (
                 <>

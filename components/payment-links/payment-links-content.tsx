@@ -2,39 +2,49 @@
 
 import { useEffect, useMemo, useState } from "react"
 import {
-  ArrowsDownUpIcon,
   CaretDoubleLeftIcon,
   CaretDoubleRightIcon,
-  CaretDownIcon,
   CaretLeftIcon,
   CaretRightIcon,
   CheckIcon,
-  ColumnsIcon,
   CopyIcon,
-  DownloadIcon,
   MagnifyingGlassIcon,
 } from "@phosphor-icons/react"
+import {
+  PaymentLinksFiltersBar,
+  type ColumnKey,
+  type SortDirection,
+  type StatusFilter,
+} from "@/components/payment-links/payment-links-filters-bar"
+import {
+  getDefaultDateRangePresets,
+  useDateRangeFilter,
+  type DateRangePreset,
+} from "@/components/shared/date-range-filter"
+import { useMoreFiltersPanel, type MoreFilterCategory } from "@/components/shared/more-filters-panel"
 import { StatusPill, type StatusTone } from "@/components/shared/status-pill"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 type PaymentLinkStatus = "Expired" | "Success" | "Initiated" | "Failed"
-type StatusFilter = "all" | "expired" | "success" | "initiated" | "failed"
-type DateFilter = "today" | "7d" | "all"
-type SortDirection = "asc" | "desc"
-type ColumnKey = "creationDate" | "paymentLink" | "transactionId" | "amount" | "expiryDate" | "status"
+
+const moreFilterCategories: MoreFilterCategory[] = [
+  {
+    id: "status",
+    label: "Status",
+    display: "badge",
+    selectionMode: "multi",
+    searchable: false,
+    options: [
+      { id: "expired", label: "Expired" },
+      { id: "success", label: "Success" },
+      { id: "initiated", label: "Initiated" },
+      { id: "failed", label: "Failed" },
+    ],
+  },
+]
 
 type PaymentLinkRow = {
   id: string
@@ -194,7 +204,6 @@ function PaymentLinksTable({
 export function PaymentLinksContent() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
-  const [dateFilter, setDateFilter] = useState<DateFilter>("today")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [page, setPage] = useState(1)
@@ -216,30 +225,39 @@ export function PaymentLinksContent() {
     }, null)
   }, [])
 
+  const datePresets: DateRangePreset[] = latestDate
+    ? [
+        { id: "today", label: "Today", getRange: () => ({ from: latestDate, to: latestDate }) },
+        {
+          id: "7d",
+          label: "Last 7 days",
+          getRange: () => {
+            const from = new Date(latestDate)
+            from.setDate(from.getDate() - 6)
+            return { from, to: latestDate }
+          },
+        },
+        { id: "all", label: "All time", getRange: () => ({ from: undefined, to: undefined }) },
+      ]
+    : getDefaultDateRangePresets()
+  const dateRangeFilter = useDateRangeFilter({ presets: datePresets, initialPresetId: "today", showTime: false })
+  const moreFilters = useMoreFiltersPanel(moreFilterCategories)
+
   const filteredRows = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase()
-
-    const rangeStart =
-      dateFilter === "all" || !latestDate
-        ? null
-        : (() => {
-            const start = new Date(latestDate)
-            if (dateFilter === "today") {
-              start.setHours(0, 0, 0, 0)
-            } else {
-              start.setDate(start.getDate() - 6)
-              start.setHours(0, 0, 0, 0)
-            }
-            return start
-          })()
+    const appliedRange = dateRangeFilter.applied.range
 
     return allRows
       .filter((row) => {
         if (statusFilter !== "all" && row.status.toLowerCase() !== statusFilter) return false
 
-        if (rangeStart) {
+        if (appliedRange?.from && appliedRange?.to) {
           const createdAt = parseDate(row.creationDate, row.creationTime)
-          if (createdAt < rangeStart || createdAt > latestDate!) return false
+          const rangeStart = new Date(appliedRange.from)
+          rangeStart.setHours(0, 0, 0, 0)
+          const rangeEnd = new Date(appliedRange.to)
+          rangeEnd.setHours(23, 59, 59, 999)
+          if (createdAt < rangeStart || createdAt > rangeEnd) return false
         }
 
         if (!normalizedQuery) return true
@@ -264,7 +282,7 @@ export function PaymentLinksContent() {
         const second = parseDate(b.creationDate, b.creationTime).getTime()
         return sortDirection === "asc" ? first - second : second - first
       })
-  }, [dateFilter, latestDate, searchQuery, sortDirection, statusFilter])
+  }, [dateRangeFilter.applied, searchQuery, sortDirection, statusFilter])
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage))
 
@@ -362,108 +380,21 @@ export function PaymentLinksContent() {
             <Button variant="outline" className="h-8 rounded-md px-2.5 text-sm font-medium">
               Manage pay modes
             </Button>
-            <Button className="h-8 rounded-md px-2.5 text-sm font-medium">Create new link</Button>
+            <Button>Create new link</Button>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex flex-wrap items-center gap-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium">
-                  {statusFilter === "all" ? "All status" : statusFilter[0].toUpperCase() + statusFilter.slice(1)}
-                  <CaretDownIcon className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuLabel>Status</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
-                  <DropdownMenuRadioItem value="all">All status</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="expired">Expired</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="success">Success</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="initiated">Initiated</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="failed">Failed</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium">
-                  {dateFilter === "today" ? "Today" : dateFilter === "7d" ? "Last 7 days" : "All time"}
-                  <CaretDownIcon className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuLabel>Date</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={dateFilter} onValueChange={(value) => setDateFilter(value as DateFilter)}>
-                  <DropdownMenuRadioItem value="today">Today</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="7d">Last 7 days</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="all">All dates</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button variant="outline" className="h-8 rounded-md px-2.5 text-sm font-medium">
-              More filters
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="h-8 w-[51px] rounded-md"
-              onClick={() => setSortDirection((current) => (current === "asc" ? "desc" : "asc"))}
-              aria-label="Sort rows"
-            >
-              <ArrowsDownUpIcon className="h-4 w-4" />
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon-sm" className="h-8 w-[51px] rounded-md" aria-label="Select columns">
-                  <ColumnsIcon className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {([
-                  ["creationDate", "Creation date"],
-                  ["paymentLink", "Payment link"],
-                  ["transactionId", "Transaction ID"],
-                  ["amount", "Amount"],
-                  ["expiryDate", "Expiry date"],
-                  ["status", "Status"],
-                ] as Array<[ColumnKey, string]>).map(([key, label]) => (
-                  <DropdownMenuCheckboxItem
-                    key={key}
-                    checked={visibleColumns[key]}
-                    onCheckedChange={(checked) => {
-                      setVisibleColumns((current) => {
-                        const next = { ...current, [key]: checked === true }
-                        const visibleCount = Object.values(next).filter(Boolean).length
-                        return visibleCount === 0 ? current : next
-                      })
-                    }}
-                    onSelect={(event) => event.preventDefault()}
-                  >
-                    {label}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <div className="h-6 w-px bg-border/70" />
-            <Button variant="ghost" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium" onClick={exportAllRows}>
-              <DownloadIcon className="h-4 w-4" />
-              Export all
-            </Button>
-          </div>
-        </div>
+        <PaymentLinksFiltersBar
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          dateRangeFilter={dateRangeFilter}
+          moreFilters={moreFilters}
+          sortDirection={sortDirection}
+          onToggleSort={() => setSortDirection((current) => (current === "asc" ? "desc" : "asc"))}
+          visibleColumns={visibleColumns}
+          onVisibleColumnsChange={setVisibleColumns}
+          onExportAll={exportAllRows}
+        />
       </div>
 
       <div className="px-8 pb-6">

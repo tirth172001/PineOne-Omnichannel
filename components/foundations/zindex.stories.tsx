@@ -43,8 +43,7 @@ export const Scale: Story = {
               "components/home/transaction-state-branch-flow.tsx",
               "components/dashboard/v2-sidebar.tsx",
               "components/transactions/transaction-detail-content.tsx",
-              "components/on-hold-disputes/on-hold-detail-content.tsx",
-              "components/on-hold-disputes/dispute-detail-content.tsx",
+              "components/disputes/dispute-detail-content.tsx",
               "components/settlements/v3-settlements-content.tsx",
               "components/transactions/transactions-platform-shell.tsx",
             ]}

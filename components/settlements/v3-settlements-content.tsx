@@ -6,9 +6,7 @@ import { useRouter } from "next/navigation"
 import {
   ArrowClockwiseIcon,
   ArrowLeftIcon,
-  ArrowSquareOutIcon,
   BuildingsIcon,
-  CalendarDotsIcon,
   CaretDoubleLeftIcon,
   CaretDoubleRightIcon,
   CaretDownIcon,
@@ -33,16 +31,11 @@ import {
   WalletIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react"
+import { BankLogo } from "@/components/shared/bank-logo"
+import { useDateRangeFilter } from "@/components/shared/date-range-filter"
+import { ListingToolbar, PAGE_HEADING_CLASSES, type ListingFilter } from "@/components/shared/listing-page-primitives"
+import { useMoreFiltersPanel, type MoreFilterCategory } from "@/components/shared/more-filters-panel"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -264,19 +257,46 @@ function paymentMethodLabel(method: PaymentMethod) {
   return "Net banking"
 }
 
-function HdfcMark({ size = 20 }: { size?: number }) {
-  return (
-    <span
-      aria-hidden
-      className="relative inline-flex shrink-0 items-center justify-center bg-white"
-      style={{ width: size, height: size }}
-    >
-      <span className="absolute inset-0 bg-[#ed1c24]" />
-      <span className="absolute inset-[22%] bg-white" />
-      <span className="absolute inset-[36%] bg-[#0073bc]" />
-    </span>
-  )
-}
+const settlementMoreFilterCategories: MoreFilterCategory[] = [
+  {
+    id: "type",
+    label: "Settlement type",
+    display: "list",
+    selectionMode: "single",
+    searchable: false,
+    options: settlementTypes.map((type) => ({ id: type, label: type })),
+  },
+  {
+    id: "payment",
+    label: "Payment method",
+    display: "list",
+    selectionMode: "single",
+    searchable: false,
+    options: paymentMethods.map((method) => ({ id: method, label: paymentMethodLabel(method) })),
+  },
+  {
+    id: "bank",
+    label: "Acquiring bank",
+    display: "list",
+    selectionMode: "single",
+    searchable: false,
+    options: banks.map((bank) => ({ id: bank.toLowerCase(), label: bank })),
+  },
+  {
+    id: "tid",
+    label: "TID",
+    display: "list",
+    selectionMode: "single",
+    options: tids.map((tid) => ({ id: tid, label: tid })),
+  },
+  {
+    id: "store",
+    label: "Store",
+    display: "list",
+    selectionMode: "single",
+    options: stores.map((store) => ({ id: store, label: store })),
+  },
+]
 
 function PaymentIcon({ method }: { method: PaymentMethod }) {
   const Icon = method === "upi" ? QrCodeIcon : method === "card" ? CreditCardIcon : DeviceMobileIcon
@@ -299,20 +319,6 @@ function StatusBadge({ status }: { status: SettlementStatus }) {
     <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-border bg-background px-2.5 text-xs font-medium text-foreground">
       <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
       {status}
-    </span>
-  )
-}
-
-function BankMark({ bank, size = 16 }: { bank: BankName; size?: number }) {
-  if (bank === "HDFC") return <HdfcMark size={size} />
-  const color = bank === "ICICI" ? "#ae282e" : bank === "AXIS" ? "#97144d" : "#1f4e96"
-  return (
-    <span
-      aria-hidden
-      className="inline-flex shrink-0 items-center justify-center rounded-[3px] font-bold leading-none text-white"
-      style={{ width: size, height: size, backgroundColor: color, fontSize: size * 0.56 }}
-    >
-      {bank[0]}
     </span>
   )
 }
@@ -380,13 +386,14 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
   const [deductionsOpen, setDeductionsOpen] = useState(false)
   const [showAllDeductions, setShowAllDeductions] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [dateFilter, setDateFilter] = useState<"today" | "all">("today")
   const [statusFilter, setStatusFilter] = useState<"all" | SettlementStatus>("all")
-  const [typeFilter, setTypeFilter] = useState<"all" | SettlementType>("all")
-  const [paymentFilter, setPaymentFilter] = useState<"all" | PaymentMethod>("all")
-  const [bankFilter, setBankFilter] = useState<"all" | Lowercase<BankName>>("all")
-  const [storeFilter, setStoreFilter] = useState<"all" | string>("all")
-  const [tidFilter, setTidFilter] = useState<"all" | string>("all")
+  const dateRangeFilter = useDateRangeFilter()
+  const moreFilters = useMoreFiltersPanel(settlementMoreFilterCategories)
+  const typeFilter = moreFilters.applied.type?.[0] ?? "all"
+  const paymentFilter = (moreFilters.applied.payment?.[0] as PaymentMethod | undefined) ?? "all"
+  const bankFilter = (moreFilters.applied.bank?.[0] as Lowercase<BankName> | undefined) ?? "all"
+  const storeFilter = moreFilters.applied.store?.[0] ?? "all"
+  const tidFilter = moreFilters.applied.tid?.[0] ?? "all"
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [page, setPage] = useState(1)
   const [detailRowsPerPage, setDetailRowsPerPage] = useState(10)
@@ -438,12 +445,11 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
       const paymentOk = paymentFilter === "all" || row.paymentMethod === paymentFilter
       const storeOk = storeFilter === "all" || row.store === storeFilter
       const tidOk = tidFilter === "all" || row.tid === tidFilter
-      const dateOk = dateFilter === "all" || dateFilter === "today"
-      if (!bankOk || !statusOk || !typeOk || !paymentOk || !storeOk || !tidOk || !dateOk) return false
+      if (!bankOk || !statusOk || !typeOk || !paymentOk || !storeOk || !tidOk) return false
       if (!query) return true
       return `${row.batchId} ${row.utr} ${row.bankName} ${row.acquiringBank} ${row.tid} ${row.store}`.toLowerCase().includes(query)
     })
-  }, [bankFilter, channelRows, dateFilter, paymentFilter, searchQuery, statusFilter, storeFilter, tidFilter, typeFilter])
+  }, [bankFilter, channelRows, paymentFilter, searchQuery, statusFilter, storeFilter, tidFilter, typeFilter])
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage))
   const clampedPage = Math.min(page, totalPages)
@@ -496,7 +502,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
 
           <div className="mt-6 grid gap-8 lg:grid-cols-2">
             <div className="min-w-0">
-              <HdfcMark size={48} />
+              <BankLogo bank={currentSettlement.bankName} size={48} />
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <h1 className="text-[32px] font-semibold leading-9 text-foreground">{rm(currentSettlement.netAmount)}</h1>
                 <StatusBadge status={currentSettlement.status} />
@@ -636,11 +642,29 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
     )
   }
 
+  const settlementFilters: ListingFilter[] = [
+    dateRangeFilter.filter,
+    {
+      id: "status",
+      type: "select",
+      label: "Status",
+      value: statusFilter,
+      onValueChange: (value) => {
+        setStatusFilter(value as typeof statusFilter)
+        setPage(1)
+      },
+      options: [
+        { label: "All statuses", value: "all" },
+        ...statuses.map((status) => ({ label: status, value: status })),
+      ],
+    },
+  ]
+
   return (
     <div className="px-8 py-8">
       <section className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground">Settlements</h1>
+          <h1 className={PAGE_HEADING_CLASSES}>Settlements</h1>
           <Tabs value={channel} onValueChange={(value) => { setChannel(value as SettlementChannel); setPage(1) }}>
             <TabsList className="h-8 rounded-[8px] bg-muted p-1">
               <TabsTrigger value="in-store" className="h-6 rounded-[6px] border-transparent px-4 py-1 text-sm font-medium text-muted-foreground data-active:!border-transparent data-active:!bg-background data-active:!text-foreground">
@@ -668,7 +692,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
         <span className="h-4 w-px bg-border" />
         <span className="inline-flex items-center gap-1.5">
           <BuildingsIcon className="h-4 w-4" />
-          Settlement account: <HdfcMark size={14} /> <span className="font-medium text-foreground">HDFC bank, xx8787</span>
+          Settlement account: <BankLogo bank="HDFC" size={14} /> <span className="font-medium text-foreground">HDFC bank, xx8787</span>
         </span>
       </section>
 
@@ -721,12 +745,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                 <Button variant="link" className="h-5 p-0 text-sm text-primary underline">View</Button>
                 <span className="h-4 w-px bg-border" />
                 <span><span className="text-destructive">{summary.onHoldCount}</span> <span className="text-muted-foreground">payments on hold</span></span>
-                <Button asChild variant="link" className="inline-flex h-5 items-center gap-1 p-0 text-sm text-primary underline">
-                  <Link href="/on-hold-disputes">
-                    View
-                    <ArrowSquareOutIcon className="h-3.5 w-3.5" />
-                  </Link>
-                </Button>
+                <Button variant="link" className="h-5 p-0 text-sm text-primary underline">View</Button>
               </div>
             </div>
           </div>
@@ -780,102 +799,29 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
         </SheetContent>
       </Sheet>
 
-      <section className="mt-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative w-[229px]">
-            <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search by UTR or Trxn ID"
-              value={searchQuery}
-              onChange={(event) => {
-                setSearchQuery(event.target.value)
-                setPage(1)
-              }}
-              className="h-8 rounded-md pl-8"
-            />
-          </div>
-          <div className="h-6 w-px bg-border" />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8">
-                <CalendarDotsIcon className="h-4 w-4" />
-                {dateFilter === "today" ? "Today" : "All dates"}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-40">
-              <DropdownMenuRadioGroup value={dateFilter} onValueChange={(value) => { setDateFilter(value as typeof dateFilter); setPage(1) }}>
-                <DropdownMenuRadioItem value="today">Today</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="all">All dates</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8">
-                Status
-                <CaretDownIcon className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-44">
-              <DropdownMenuRadioGroup value={statusFilter} onValueChange={(value) => { setStatusFilter(value as typeof statusFilter); setPage(1) }}>
-                <DropdownMenuRadioItem value="all">All statuses</DropdownMenuRadioItem>
-                {statuses.map((status) => <DropdownMenuRadioItem key={status} value={status}>{status}</DropdownMenuRadioItem>)}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8">
-                More filters
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-secondary px-1 text-xs text-secondary-foreground">3</span>
-                <CaretDownIcon className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="max-h-[520px] w-56 overflow-y-auto">
-              <DropdownMenuLabel>Settlement type</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={typeFilter} onValueChange={(value) => { setTypeFilter(value as typeof typeFilter); setPage(1) }}>
-                <DropdownMenuRadioItem value="all">All types</DropdownMenuRadioItem>
-                {settlementTypes.map((type) => <DropdownMenuRadioItem key={type} value={type}>{type}</DropdownMenuRadioItem>)}
-              </DropdownMenuRadioGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Payment method</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={paymentFilter} onValueChange={(value) => { setPaymentFilter(value as typeof paymentFilter); setPage(1) }}>
-                <DropdownMenuRadioItem value="all">All methods</DropdownMenuRadioItem>
-                {paymentMethods.map((method) => <DropdownMenuRadioItem key={method} value={method}>{paymentMethodLabel(method)}</DropdownMenuRadioItem>)}
-              </DropdownMenuRadioGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Acquiring bank</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={bankFilter} onValueChange={(value) => { setBankFilter(value as typeof bankFilter); setPage(1) }}>
-                <DropdownMenuRadioItem value="all">All banks</DropdownMenuRadioItem>
-                {banks.map((bank) => <DropdownMenuRadioItem key={bank} value={bank.toLowerCase()}>{bank}</DropdownMenuRadioItem>)}
-              </DropdownMenuRadioGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>TID</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={tidFilter} onValueChange={(value) => { setTidFilter(value); setPage(1) }}>
-                <DropdownMenuRadioItem value="all">All TIDs</DropdownMenuRadioItem>
-                {tids.map((tid) => <DropdownMenuRadioItem key={tid} value={tid}>{tid}</DropdownMenuRadioItem>)}
-              </DropdownMenuRadioGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Store</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={storeFilter} onValueChange={(value) => { setStoreFilter(value); setPage(1) }}>
-                <DropdownMenuRadioItem value="all">All stores</DropdownMenuRadioItem>
-                {stores.map((store) => <DropdownMenuRadioItem key={store} value={store}>{store}</DropdownMenuRadioItem>)}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" className="h-8">
-            <EnvelopeSimpleIcon className="h-4 w-4" />
-            Email filtered
-          </Button>
-          <Button variant="outline" size="sm" className="h-8">
-            <DownloadIcon className="h-4 w-4" />
-            Download filtered
-          </Button>
-        </div>
-      </section>
+      <ListingToolbar
+        className="mt-6 px-0 py-0"
+        search={searchQuery}
+        onSearchChange={(value) => {
+          setSearchQuery(value)
+          setPage(1)
+        }}
+        searchPlaceholder="Search by UTR or Trxn ID"
+        filters={settlementFilters}
+        {...moreFilters.toolbarProps}
+        rightActions={
+          <>
+            <Button variant="outline" size="sm" className="h-8">
+              <EnvelopeSimpleIcon className="h-4 w-4" />
+              Email filtered
+            </Button>
+            <Button variant="outline" size="sm" className="h-8">
+              <DownloadIcon className="h-4 w-4" />
+              Download filtered
+            </Button>
+          </>
+        }
+      />
 
       <section className="mt-7 space-y-4">
         <div className="overflow-hidden rounded-lg border border-border bg-card">
@@ -977,7 +923,7 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                       </TableCell>
                       <TableCell className="px-4 align-top">
                         <div className="flex items-center gap-2">
-                          <BankMark bank={row.acquiringBank} />
+                          <BankLogo bank={row.acquiringBank} />
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-foreground">{row.acquiringBank} bank</p>
                             <p className="mt-0.5 text-sm text-muted-foreground">{row.accountLabel}</p>
@@ -1064,7 +1010,7 @@ export function V3SettlementPreferencesContent() {
           <SlidersIcon className="h-5 w-5 text-foreground" />
         </span>
         <div className="flex flex-wrap items-center gap-4">
-          <h1 className="text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground">Settlement preferences</h1>
+          <h1 className={PAGE_HEADING_CLASSES}>Settlement preferences</h1>
           <Tabs value={channel} onValueChange={(value) => setChannel(value as SettlementChannel)}>
             <TabsList className="h-8 rounded-[8px] bg-muted p-1">
               <TabsTrigger value="in-store" className="h-6 rounded-[6px] border-transparent px-4 py-1 text-sm font-medium text-muted-foreground data-active:!border-transparent data-active:!bg-background data-active:!text-foreground">

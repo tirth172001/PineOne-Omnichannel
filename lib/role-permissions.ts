@@ -200,7 +200,19 @@ export const ONLINE_ROLE_PERMISSIONS: Record<string, string[]> = {
   Support: onlineKeys("Initiate Refunds", "View Gateway Configuration", "Generate Reports"),
 }
 
-export type RoleCatalogSystem = "offline" | "online"
+export type RoleCatalogSystem = "offline" | "online" | "both"
+
+/** Derives which system(s) a role actually touches from its permission keys — the
+ *  canonical source of truth. A role is never authored as "both" directly; it's
+ *  "both" because it happens to hold at least one permission from each channel
+ *  (this is how custom roles, which can mix channels, get categorized too). */
+export function deriveRoleSystem(permissionKeys: string[]): RoleCatalogSystem {
+  const hasOffline = permissionKeys.some((key) => key.startsWith("offline:"))
+  const hasOnline = permissionKeys.some((key) => key.startsWith("online:"))
+  if (hasOffline && hasOnline) return "both"
+  if (hasOnline) return "online"
+  return "offline"
+}
 
 export type RoleCatalogEntry = {
   id: string
@@ -209,6 +221,14 @@ export type RoleCatalogEntry = {
   description: string
   permissionKeys: string[]
 }
+
+/** Universal fallback role — where a user lands when the role they held gets
+ *  deleted. Deliberately minimal: enough to see transactions/settlements/reports
+ *  read-only on both channels, nothing that can act or change anything. */
+const VIEWER_PERMISSIONS = [
+  ...offlineKeys("Reports", "Profile"),
+  ...onlineKeys("View All Transactions", "View Settlements"),
+]
 
 export const DEFAULT_ROLE_CATALOG: RoleCatalogEntry[] = [
   { id: "cat-off-owner", name: "Owner", system: "offline", description: "Full access to every in-store feature, including refund approvals.", permissionKeys: OFFLINE_ROLE_PERMISSIONS.Owner },
@@ -222,4 +242,5 @@ export const DEFAULT_ROLE_CATALOG: RoleCatalogEntry[] = [
   { id: "cat-on-operations", name: "Operations", system: "online", description: "Views all transactions and generates reports.", permissionKeys: ONLINE_ROLE_PERMISSIONS.Operations },
   { id: "cat-on-finance", name: "Finance", system: "online", description: "Updates gateway configuration and generates reports.", permissionKeys: ONLINE_ROLE_PERMISSIONS.Finance },
   { id: "cat-on-support", name: "Support", system: "online", description: "Initiates refunds, views gateway configuration, and generates reports.", permissionKeys: ONLINE_ROLE_PERMISSIONS.Support },
+  { id: "cat-viewer", name: "Viewer", system: "both", description: "Universal fallback role — read-only visibility into transactions, settlements, and reports across both channels.", permissionKeys: VIEWER_PERMISSIONS },
 ]

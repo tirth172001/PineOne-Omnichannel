@@ -1,10 +1,10 @@
-import { SupportRouteContent } from "@/components/support/support-route-content"
+import { SupportLandingContent } from "@/components/support/support-landing-content"
 import { TransactionsPlatformShell } from "@/components/transactions/transactions-platform-shell"
 
 export default function SupportPage() {
   return (
     <TransactionsPlatformShell>
-      <SupportRouteContent section="queries" />
+      <SupportLandingContent />
     </TransactionsPlatformShell>
   )
 }

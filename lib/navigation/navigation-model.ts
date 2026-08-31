@@ -64,20 +64,15 @@ const sharedSupportSection: NavSection = {
     {
       label: "Knowledge hub",
       icon: BookOpenIcon,
-      href: ROUTES.support.knowledgeHub,
-      matcher: (p) =>
-        p.startsWith(ROUTES.support.knowledgeHub) ||
-        p.startsWith(ROUTES.support.faqs) ||
-        p.startsWith(ROUTES.support.trainingVideos),
+      href: ROUTES.support.faqs,
+      matcher: (p) => p.startsWith(ROUTES.support.faqs) || p.startsWith(ROUTES.support.videos),
     },
     {
-      label: "Support queries",
+      label: "Support tickets",
       icon: ChatsIcon,
-      href: ROUTES.support.supportQueries,
+      href: ROUTES.support.tickets,
       matcher: (p) =>
-        p.startsWith(ROUTES.support.supportQueries) ||
-        p.startsWith(ROUTES.support.ticketHistory) ||
-        p === ROUTES.support.root,
+        p.startsWith(ROUTES.support.tickets) || p.startsWith(ROUTES.support.chat) || p === ROUTES.support.root,
     },
   ],
 }

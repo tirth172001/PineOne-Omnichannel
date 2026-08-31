@@ -2,13 +2,29 @@
 
 import { useMemo, useState } from "react"
 import { DownloadIcon } from "@phosphor-icons/react"
-import { ListingToolbar, type ListingFilter } from "@/components/shared/listing-page-primitives"
+import { useDateRangeFilter } from "@/components/shared/date-range-filter"
+import {
+  LINE_TAB_TRIGGER_CLASSES,
+  LINE_TABS_LIST_CLASSES,
+  ListingToolbar,
+  PAGE_HEADING_CLASSES,
+  type ListingFilter,
+} from "@/components/shared/listing-page-primitives"
+import { useMoreFiltersPanel, type MoreFilterCategory } from "@/components/shared/more-filters-panel"
 import { StatusPill, type StatusTone } from "@/components/shared/status-pill"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { TransactionReportPanel } from "@/components/reports/transaction-report-panel"
+import { SettlementReportPanel } from "@/components/reports/settlement-report-panel"
+import { ScheduleReportPanel } from "@/components/reports/schedule-report-panel"
+
+/** Only "Transaction" has the full filters + columns generate flow (per Figma); every other
+ *  section — including "Settlement report" — reuses the simple name + date range panel. */
+const TRANSACTION_REPORT_HEADING = "Transaction"
 
 const historyRows = [
   {
@@ -46,29 +62,85 @@ const scheduleRows = [
   },
 ]
 
-const reportSections = [
+export const reportSections = [
   {
-    heading: "Transaction reports",
+    heading: "Transaction",
     cards: [
-      { title: "TFR report", description: "Transaction fee reports" },
-      { title: "CFR report", description: "Customer feedback reports" },
+      { title: "All transactions report", description: "Every transaction across products and channels" },
+      { title: "EMI Trxn report", description: "EMI conversions and repayment schedule" },
+      { title: "Reward Txn report", description: "Reward point accruals and redemptions" },
+      { title: "UPI Txn report", description: "UPI collect and pay transactions" },
+      { title: "Wallet Txn report", description: "Wallet load, spend, and balance activity" },
+      { title: "NBFC Txn report", description: "NBFC-partnered lending transactions" },
+      { title: "Insurance report", description: "Insurance premium and claim transactions" },
+      { title: "DCC report", description: "Dynamic currency conversion transactions" },
     ],
   },
   {
-    heading: "Settlement reports",
+    heading: "Financial report",
+    cards: [{ title: "FIRC report", description: "Foreign inward remittance certificates" }],
+  },
+  {
+    heading: "Refund report",
+    cards: [{ title: "Refund report", description: "All refund requests and their status" }],
+  },
+  {
+    heading: "Sales summary report",
     cards: [
-      { title: "MPR report", description: "Merchant payout reports" },
-      { title: "SRR report", description: "Settlement reconciliation reports" },
-      { title: "FCR report", description: "Fraud check reports" },
-      { title: "DPR report", description: "Dispute payment reports" },
+      { title: "POS sales report", description: "Sales summary by POS device", offlineOnly: true },
+      { title: "Store sales report", description: "Sales summary by store", offlineOnly: true },
+      { title: "Acquirer sales report", description: "Sales summary grouped by acquirer" },
+      { title: "Issuer sales report", description: "Sales summary grouped by card issuer" },
+      { title: "UPI sales report", description: "Sales summary for UPI transactions" },
     ],
   },
   {
-    heading: "Refund reports",
+    heading: "Settlement report",
     cards: [
-      { title: "RFR report", description: "Refund request reports" },
-      { title: "RPR report", description: "Refund processing reports" },
-      { title: "RCR report", description: "Refund completion reports" },
+      { title: "MPR", description: "Merchant payout report" },
+      { title: "Batch detail report", description: "Settlement batch level breakdown" },
+    ],
+  },
+  {
+    heading: "Terminal reports",
+    cards: [
+      { title: "TID installation report", description: "TID installation activity log", offlineOnly: true },
+      { title: "TID deinstallation report", description: "TID deinstallation activity log", offlineOnly: true },
+      { title: "POS installation report", description: "POS device installation activity log", offlineOnly: true },
+      { title: "POS deinstallation report", description: "POS device deinstallation activity log", offlineOnly: true },
+    ],
+  },
+]
+
+const moreFilterCategories: MoreFilterCategory[] = [
+  {
+    id: "category",
+    label: "Report category",
+    display: "card",
+    selectionMode: "multi",
+    options: reportSections.map((section) => ({ id: section.heading, label: section.heading })),
+  },
+  {
+    id: "channel",
+    label: "Channel",
+    display: "list",
+    selectionMode: "single",
+    searchable: false,
+    options: [
+      { id: "online", label: "Online" },
+      { id: "offline", label: "Offline" },
+    ],
+  },
+  {
+    id: "format",
+    label: "Format",
+    display: "badge",
+    selectionMode: "multi",
+    searchable: false,
+    options: [
+      { id: "csv", label: "CSV" },
+      { id: "xlsx", label: "XLSX" },
+      { id: "pdf", label: "PDF" },
     ],
   },
 ]
@@ -84,8 +156,15 @@ function toReportTone(status: string): StatusTone {
 export function ReportsContent() {
   const [topTab, setTopTab] = useState<"reports" | "history" | "schedule">("reports")
   const [search, setSearch] = useState("")
-  const [dateFilter, setDateFilter] = useState("7d")
   const [statusFilter, setStatusFilter] = useState("all")
+  const dateRangeFilter = useDateRangeFilter({ initialPresetId: "week" })
+  const moreFilters = useMoreFiltersPanel(moreFilterCategories)
+  const [generatePanel, setGeneratePanel] = useState<{ kind: "transaction" | "settlement"; title: string } | null>(null)
+  const [scheduleOpen, setScheduleOpen] = useState(false)
+
+  function openGeneratePanel(sectionHeading: string, title: string) {
+    setGeneratePanel({ kind: sectionHeading === TRANSACTION_REPORT_HEADING ? "transaction" : "settlement", title })
+  }
 
   const historyFiltered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -104,18 +183,7 @@ export function ReportsContent() {
   }, [search])
 
   const filters: ListingFilter[] = [
-    {
-      id: "date",
-      type: "select",
-      label: "Date",
-      value: dateFilter,
-      onValueChange: setDateFilter,
-      options: [
-        { label: "Today", value: "today" },
-        { label: "Last 7D", value: "7d" },
-        { label: "Last 30D", value: "30d" },
-      ],
-    },
+    dateRangeFilter.filter,
     {
       id: "status",
       type: "select",
@@ -129,13 +197,6 @@ export function ReportsContent() {
         { label: "Failed", value: "failed" },
       ],
     },
-    {
-      id: "more",
-      type: "button",
-      label: "More filters",
-      value: "",
-      showCaret: true,
-    },
   ]
 
   return (
@@ -143,12 +204,16 @@ export function ReportsContent() {
       <section>
         <div className="px-8 pt-8 pb-0">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <h1 className="text-2xl font-semibold leading-none text-foreground">Reports</h1>
+            <h1 className={PAGE_HEADING_CLASSES}>Reports</h1>
             <div className="flex items-center gap-3">
-              <Button variant="outline" className="rounded-[8px] border-border/70 bg-background">
+              <Button
+                variant="outline"
+                className="rounded-[8px] border-border/70 bg-background"
+                onClick={() => setScheduleOpen(true)}
+              >
                 Schedule report
               </Button>
-              <Button className="rounded-[8px] border border-primary/60 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button onClick={() => openGeneratePanel(TRANSACTION_REPORT_HEADING, "All transactions report")}>
                 Generate report
               </Button>
             </div>
@@ -157,23 +222,14 @@ export function ReportsContent() {
 
         <div className="px-8 pt-8 pb-0">
           <Tabs value={topTab} onValueChange={(value) => setTopTab(value as "reports" | "history" | "schedule")}>
-            <TabsList variant="line" className="h-8 gap-6 bg-transparent p-0">
-              <TabsTrigger
-                value="reports"
-                className="h-8 rounded-none border-x-0 border-t-0 border-b-2 border-transparent bg-transparent px-0 py-0 text-sm font-medium text-muted-foreground data-active:!border-x-0 data-active:!border-t-0 data-active:!border-b-2 data-active:!border-primary data-active:!bg-transparent data-active:!text-primary data-active:!shadow-none group-data-[variant=line]/tabs-list:data-active:after:opacity-0"
-              >
+            <TabsList variant="line" className={LINE_TABS_LIST_CLASSES}>
+              <TabsTrigger value="reports" className={LINE_TAB_TRIGGER_CLASSES}>
                 Reports
               </TabsTrigger>
-              <TabsTrigger
-                value="history"
-                className="h-8 rounded-none border-x-0 border-t-0 border-b-2 border-transparent bg-transparent px-0 py-0 text-sm font-medium text-muted-foreground data-active:!border-x-0 data-active:!border-t-0 data-active:!border-b-2 data-active:!border-primary data-active:!bg-transparent data-active:!text-primary data-active:!shadow-none group-data-[variant=line]/tabs-list:data-active:after:opacity-0"
-              >
+              <TabsTrigger value="history" className={LINE_TAB_TRIGGER_CLASSES}>
                 History
               </TabsTrigger>
-              <TabsTrigger
-                value="schedule"
-                className="h-8 rounded-none border-x-0 border-t-0 border-b-2 border-transparent bg-transparent px-0 py-0 text-sm font-medium text-muted-foreground data-active:!border-x-0 data-active:!border-t-0 data-active:!border-b-2 data-active:!border-primary data-active:!bg-transparent data-active:!text-primary data-active:!shadow-none group-data-[variant=line]/tabs-list:data-active:after:opacity-0"
-              >
+              <TabsTrigger value="schedule" className={LINE_TAB_TRIGGER_CLASSES}>
                 Schedule
               </TabsTrigger>
             </TabsList>
@@ -192,14 +248,25 @@ export function ReportsContent() {
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   {section.cards.map((card) => (
                     <Card key={card.title} className="rounded-[8px] bg-background p-4 ring-border/60">
-                      <CardHeader className="space-y-1 p-0">
-                        <CardTitle className="text-base font-semibold text-foreground">{card.title}</CardTitle>
+                      <CardHeader className="p-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <CardTitle className="text-base font-semibold text-foreground">{card.title}</CardTitle>
+                          {card.offlineOnly ? (
+                            <Badge variant="outline" className="text-xs text-muted-foreground">
+                              Offline only
+                            </Badge>
+                          ) : null}
+                        </div>
                         <CardDescription className="text-sm font-normal text-muted-foreground">
                           {card.description}
                         </CardDescription>
                       </CardHeader>
-                      <CardFooter className="border-t-0 bg-transparent px-0 pt-4 pb-3">
-                        <Button variant="outline" className="w-full">
+                      <CardFooter className="mt-auto border-t-0 bg-transparent px-0 pt-4 pb-3">
+                        <Button
+                          variant="outline"
+                          className="w-full rounded-[6px]"
+                          onClick={() => openGeneratePanel(section.heading, card.title)}
+                        >
                           Generate
                         </Button>
                       </CardFooter>
@@ -217,6 +284,7 @@ export function ReportsContent() {
               onSearchChange={setSearch}
               searchPlaceholder="Search reports"
               filters={filters}
+              {...moreFilters.toolbarProps}
               rightActions={
                 <>
                   <Button variant="outline" className="rounded-[8px] border-border/70 bg-background">
@@ -284,6 +352,20 @@ export function ReportsContent() {
           </>
         )}
       </div>
+
+      <TransactionReportPanel
+        open={generatePanel?.kind === "transaction"}
+        onOpenChange={(next) => setGeneratePanel(next ? generatePanel : null)}
+        reportTitle={generatePanel?.kind === "transaction" ? generatePanel.title : ""}
+      />
+
+      <SettlementReportPanel
+        open={generatePanel?.kind === "settlement"}
+        onOpenChange={(next) => setGeneratePanel(next ? generatePanel : null)}
+        reportTitle={generatePanel?.kind === "settlement" ? generatePanel.title : ""}
+      />
+
+      <ScheduleReportPanel open={scheduleOpen} onOpenChange={setScheduleOpen} />
     </div>
   )
 }

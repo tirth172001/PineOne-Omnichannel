@@ -1,12 +1,17 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { CaretLeftIcon, CopyIcon, DotsThreeVerticalIcon, QrCodeIcon } from "@phosphor-icons/react"
+import { CaretDownIcon, CaretLeftIcon, CopyIcon, DotsThreeVerticalIcon, QrCodeIcon } from "@phosphor-icons/react"
 import { toast } from "sonner"
 
-import { TransactionStyleListingPage, type ListingColumn } from "@/components/shared/transaction-style-listing-page"
+import { AddDevicePanel } from "@/components/account/add-device-panel"
+import { AddUserPanel } from "@/components/account/add-user-panel"
+import { StoreQrPanel } from "@/components/account/store-qr-panel"
+import { useDateRangeFilter } from "@/components/shared/date-range-filter"
 import { type ListingFilter } from "@/components/shared/listing-page-primitives"
+import { TransactionStyleListingPage, type ListingColumn } from "@/components/shared/transaction-style-listing-page"
 import { Button } from "@/components/ui/button"
+import { ButtonGroup } from "@/components/ui/button-group"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,6 +78,7 @@ function StoresListView({ onSelectStore }: { onSelectStore: (storeId: string) =>
   const [stores, setStores] = useState<StoreRecord[]>(() => STORE_RECORDS)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const dateRangeFilter = useDateRangeFilter()
 
   const filteredStores = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -100,14 +106,7 @@ function StoresListView({ onSelectStore }: { onSelectStore: (storeId: string) =>
   }
 
   const filters: ListingFilter[] = [
-    {
-      id: "date",
-      type: "select",
-      label: "Today",
-      value: "all",
-      onValueChange: () => {},
-      options: [{ label: "All dates", value: "all" }],
-    },
+    dateRangeFilter.filter,
     {
       id: "status",
       type: "select",
@@ -155,7 +154,6 @@ function StoresListView({ onSelectStore }: { onSelectStore: (storeId: string) =>
       title="Manage stores"
       primaryAction={
         <Button
-          className="rounded-[8px] border border-primary/60 bg-primary text-primary-foreground hover:bg-primary/90"
           onClick={handleAddStore}
         >
           Add new store
@@ -194,7 +192,10 @@ function StoreDetailView({ storeId, onBack }: { storeId: string; onBack: () => v
   const [deviceRows, setDeviceRows] = useState<TerminalDeviceRow[]>(() =>
     getDeviceRows().filter((row) => row.storeId === storeId)
   )
-  const users: RosterEntry[] = useMemo(() => usersForStore(storeId), [storeId])
+  const [users, setUsers] = useState<RosterEntry[]>(() => usersForStore(storeId))
+  const [qrPanelOpen, setQrPanelOpen] = useState(false)
+  const [addDeviceOpen, setAddDeviceOpen] = useState(false)
+  const [addUserOpen, setAddUserOpen] = useState(false)
 
   function currentActor() {
     const session = readDummyAuthSession()
@@ -309,17 +310,39 @@ function StoreDetailView({ storeId, onBack }: { storeId: string; onBack: () => v
           <Button
             variant="outline"
             className="rounded-[8px] border-border/70 bg-background"
-            onClick={() => toast("QR editing isn't available in this preview")}
+            onClick={() => setQrPanelOpen(true)}
           >
             <QrCodeIcon className="h-4 w-4" />
             View &amp; edit store QR
           </Button>
-          <Button
-            className="rounded-[8px] border border-primary/60 bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={() => toast(tab === "devices" ? "Add device isn't available from here yet" : "Add user isn't available from here yet")}
-          >
-            Add
-          </Button>
+          <ButtonGroup>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="gap-1.5">
+                  Add
+                  <CaretDownIcon className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setTab("devices")
+                    setAddDeviceOpen(true)
+                  }}
+                >
+                  Add device
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setTab("users")
+                    setAddUserOpen(true)
+                  }}
+                >
+                  Add user
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </ButtonGroup>
         </div>
       </div>
       <div className="border-b border-border/70 px-8 pt-3">
@@ -416,6 +439,23 @@ function StoreDetailView({ storeId, onBack }: { storeId: string; onBack: () => v
           </div>
         </div>
       </div>
+
+      <StoreQrPanel open={qrPanelOpen} onOpenChange={setQrPanelOpen} store={store} />
+
+      <AddDevicePanel
+        open={addDeviceOpen}
+        onOpenChange={setAddDeviceOpen}
+        store={store}
+        onAdd={(device) => setDeviceRows((current) => [device, ...current])}
+      />
+
+      <AddUserPanel
+        open={addUserOpen}
+        onOpenChange={setAddUserOpen}
+        store={store}
+        roster={users}
+        onAdd={(user) => setUsers((current) => [user, ...current])}
+      />
     </div>
   )
 }

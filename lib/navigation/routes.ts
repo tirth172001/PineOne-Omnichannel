@@ -11,7 +11,7 @@ export const ROUTES = {
     root: "/settlements",
   },
   disputes: {
-    root: "/on-hold-disputes",
+    root: "/disputes",
   },
   refunds: {
     root: "/refunds",
@@ -74,11 +74,10 @@ export const ROUTES = {
   },
   support: {
     root: "/support",
-    knowledgeHub: "/support/knowledge-hub",
-    supportQueries: "/support/support-queries",
-    ticketHistory: "/support/ticket-history",
+    tickets: "/support/tickets",
+    chat: "/support/chat",
     faqs: "/support/faqs",
-    trainingVideos: "/support/training-videos",
+    videos: "/support/videos",
   },
   settings: {
     root: "/settings",

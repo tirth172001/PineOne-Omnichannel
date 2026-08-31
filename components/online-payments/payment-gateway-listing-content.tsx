@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react"
 import { DownloadIcon } from "@phosphor-icons/react"
-import { TransactionStyleListingPage, type ListingColumn } from "@/components/shared/transaction-style-listing-page"
+import { useDateRangeFilter } from "@/components/shared/date-range-filter"
 import { type ListingFilter } from "@/components/shared/listing-page-primitives"
+import { useMoreFiltersPanel, type MoreFilterCategory } from "@/components/shared/more-filters-panel"
+import { TransactionStyleListingPage, type ListingColumn } from "@/components/shared/transaction-style-listing-page"
 import { Button } from "@/components/ui/button"
 
 type GatewayRow = {
@@ -43,10 +45,33 @@ const GATEWAY_ROWS: GatewayRow[] = [
   },
 ]
 
+const moreFilterCategories: MoreFilterCategory[] = [
+  {
+    id: "payment-mode",
+    label: "Payment mode",
+    display: "badge",
+    selectionMode: "multi",
+    searchable: false,
+    options: [
+      { id: "UPI", label: "UPI" },
+      { id: "Card", label: "Card" },
+    ],
+  },
+  {
+    id: "transaction-type",
+    label: "Transaction type",
+    display: "list",
+    selectionMode: "single",
+    searchable: false,
+    options: [{ id: "Payment", label: "Payment" }],
+  },
+]
+
 export function PaymentGatewayListingContent() {
   const [search, setSearch] = useState("")
-  const [dateFilter, setDateFilter] = useState("7d")
   const [statusFilter, setStatusFilter] = useState("all")
+  const dateRangeFilter = useDateRangeFilter()
+  const moreFilters = useMoreFiltersPanel(moreFilterCategories)
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -58,18 +83,7 @@ export function PaymentGatewayListingContent() {
   }, [search, statusFilter])
 
   const filters: ListingFilter[] = [
-    {
-      id: "date",
-      type: "select",
-      label: "Date",
-      value: dateFilter,
-      onValueChange: setDateFilter,
-      options: [
-        { label: "Today", value: "today" },
-        { label: "Last 7D", value: "7d" },
-        { label: "Last 30D", value: "30d" },
-      ],
-    },
+    dateRangeFilter.filter,
     {
       id: "status",
       type: "select",
@@ -82,7 +96,6 @@ export function PaymentGatewayListingContent() {
         { label: "Failed", value: "failed" },
       ],
     },
-    { id: "more", type: "button", label: "More filters", value: "", showCaret: true },
   ]
 
   const columns: Array<ListingColumn<GatewayRow>> = [
@@ -107,11 +120,12 @@ export function PaymentGatewayListingContent() {
   return (
     <TransactionStyleListingPage
       title="Payment gateway"
-      primaryAction={<Button className="rounded-[8px] border border-primary/60 bg-primary text-primary-foreground hover:bg-primary/90">View insights</Button>}
+      primaryAction={<Button>View insights</Button>}
       search={search}
       onSearchChange={setSearch}
       searchPlaceholder="Search by any value"
       filters={filters}
+      {...moreFilters.toolbarProps}
       rightActions={
         <Button variant="outline" className="rounded-[8px] border-border/70 bg-background">
           <DownloadIcon className="h-4 w-4" />

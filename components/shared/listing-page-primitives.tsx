@@ -3,16 +3,18 @@
 import { CaretDownIcon, MagnifyingGlassIcon } from "@phosphor-icons/react"
 import type { ReactNode } from "react"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Separator } from "@/components/ui/separator"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 
@@ -25,6 +27,16 @@ type FilterOption = {
   label: string
   value: string
 }
+
+/** Canonical page-title style, shared by every top-level module (Reports, Refunds, Disputes, Payments, Settlements, Checkout, Settings screens, ...). */
+export const PAGE_HEADING_CLASSES = "text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground"
+
+/** Wrapper for the underline-style ("line") tab row used for a page's primary content tabs (e.g. Reports/History/Schedule). */
+export const LINE_TABS_LIST_CLASSES = "h-8 gap-6 bg-transparent p-0"
+
+/** Trigger style for the underline-style ("line") tabs — pair with `variant="line"` on TabsList and LINE_TABS_LIST_CLASSES. */
+export const LINE_TAB_TRIGGER_CLASSES =
+  "h-8 rounded-none border-x-0 border-t-0 border-b-2 border-transparent bg-transparent px-0 py-0 text-sm font-medium text-muted-foreground data-active:!border-x-0 data-active:!border-t-0 data-active:!border-b-2 data-active:!border-primary data-active:!bg-transparent data-active:!text-primary data-active:!shadow-none group-data-[variant=line]/tabs-list:data-active:after:opacity-0"
 
 export type ListingFilter = {
   id: string
@@ -64,7 +76,7 @@ export function ListingPageHeader({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-4">
-              <h1 className="text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground">{title}</h1>
+              <h1 className={PAGE_HEADING_CLASSES}>{title}</h1>
               <Tabs value={activeToggle} onValueChange={onToggleChange}>
                 <TabsList className="h-8 rounded-[8px] bg-muted p-1">
                   {toggles.map((toggle) => (
@@ -91,22 +103,44 @@ export function ListingPageHeader({
   )
 }
 
+export const FILTER_BUTTON_FOCUS_CLASSES =
+  "aria-expanded:border-ring aria-expanded:bg-accent aria-expanded:text-accent-foreground"
+export const FILTER_BUTTON_CARET_CLASSES =
+  "size-4 text-muted-foreground transition-transform duration-200 group-aria-expanded/button:rotate-180"
+
 function FilterControl({ filter }: { filter: ListingFilter }) {
   if (filter.type === "select") {
+    const options = filter.options ?? []
+    const selectedLabel = options.find((option) => option.value === filter.value)?.label ?? filter.label
+
     return (
-      <Select value={filter.value} onValueChange={filter.onValueChange}>
-        <SelectTrigger className="h-8 min-w-[120px] rounded-[8px] border-input bg-background px-3 text-sm">
-          {filter.icon}
-          <SelectValue placeholder={filter.label} />
-        </SelectTrigger>
-        <SelectContent>
-          {(filter.options ?? []).map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            className={cn(
+              "h-8 gap-1.5 rounded-[8px] border-input bg-background text-sm font-medium",
+              FILTER_BUTTON_FOCUS_CLASSES
+            )}
+          >
+            {filter.icon}
+            {selectedLabel}
+            <CaretDownIcon className={FILTER_BUTTON_CARET_CLASSES} />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-48">
+          <DropdownMenuLabel>{filter.label}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuRadioGroup value={filter.value} onValueChange={filter.onValueChange}>
+            {options.map((option) => (
+              <DropdownMenuRadioItem key={option.value} value={option.value}>
+                {option.label}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
     )
   }
 
@@ -115,7 +149,8 @@ function FilterControl({ filter }: { filter: ListingFilter }) {
       type="button"
       variant="outline"
       className={cn(
-        "h-8 rounded-[8px] border-input bg-background text-sm shadow-xs",
+        "h-8 rounded-[8px] border-input bg-background text-sm",
+        FILTER_BUTTON_FOCUS_CLASSES,
         filter.active ? "bg-accent text-accent-foreground" : ""
       )}
       onClick={filter.onClick}
@@ -123,7 +158,7 @@ function FilterControl({ filter }: { filter: ListingFilter }) {
       {filter.icon}
       {filter.label}
       <span className="text-foreground">{filter.value}</span>
-      {filter.showCaret ? <CaretDownIcon className="size-4 text-muted-foreground" /> : null}
+      {filter.showCaret ? <CaretDownIcon className={FILTER_BUTTON_CARET_CLASSES} /> : null}
     </Button>
   )
 
@@ -179,22 +214,22 @@ export function ListingToolbar({
   const inlineFilters = showInlineFilters ? filters : filters.slice(0, 2)
   const extraFilterCount = showInlineFilters ? 0 : filters.length - inlineFilters.length
   const displayMoreFiltersCount = moreFiltersCount ?? extraFilterCount
+  const showMoreFiltersButton = !showInlineFilters || Boolean(moreFiltersContent) || Boolean(onMoreFilters)
 
   const moreFiltersButton = (
     <Button
       type="button"
       variant="outline"
-      className={cn(
-        "h-8 shrink-0 rounded-[8px] border-input bg-background text-sm shadow-xs",
-        moreFiltersActive ? "bg-accent text-accent-foreground" : ""
-      )}
+      className={cn("h-8 shrink-0 rounded-[8px] border-input bg-background text-sm", FILTER_BUTTON_FOCUS_CLASSES)}
       onClick={moreFiltersContent ? undefined : onMoreFilters}
     >
       More filters
-      <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-secondary px-1.5 text-sm text-secondary-foreground">
-        {displayMoreFiltersCount}
-      </span>
-      <CaretDownIcon className="size-4 text-muted-foreground" />
+      {displayMoreFiltersCount > 0 ? (
+        <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-muted px-1.5 text-sm text-muted-foreground">
+          {displayMoreFiltersCount}
+        </span>
+      ) : null}
+      <CaretDownIcon className={FILTER_BUTTON_CARET_CLASSES} />
     </Button>
   )
 
@@ -218,7 +253,7 @@ export function ListingToolbar({
             <FilterControl key={filter.id} filter={filter} />
           ))}
 
-          {!showInlineFilters ? (
+          {showMoreFiltersButton ? (
             moreFiltersContent ? (
               <Popover open={moreFiltersOpen} onOpenChange={onMoreFiltersOpenChange}>
                 <PopoverTrigger asChild>{moreFiltersButton}</PopoverTrigger>

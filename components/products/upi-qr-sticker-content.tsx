@@ -10,12 +10,22 @@ import {
   CaretLeftIcon,
   CaretRightIcon,
   ColumnsIcon,
-  CopyIcon,
   DownloadIcon,
   MagnifyingGlassIcon,
   StorefrontIcon,
 } from "@phosphor-icons/react"
 import { DetailSidepanelShell } from "@/components/shared/activity-timeline-sidepanel"
+import { QrMatrixPreview, qrBackgroundSwatches } from "@/components/shared/qr-matrix-preview"
+import {
+  getDefaultDateRangePresets,
+  useDateRangeFilter,
+  type DateRangePreset,
+} from "@/components/shared/date-range-filter"
+import {
+  FILTER_BUTTON_CARET_CLASSES,
+  FILTER_BUTTON_FOCUS_CLASSES,
+} from "@/components/shared/listing-page-primitives"
+import { useMoreFiltersPanel, type MoreFilterCategory } from "@/components/shared/more-filters-panel"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -28,13 +38,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { cn } from "@/lib/utils"
 
-type DateFilter = "today" | "7d" | "all"
 type StatusFilter = "all" | "active"
 type SortDirection = "asc" | "desc"
 type ColumnKey = "creationDate" | "storeName" | "status" | "action"
+
+const moreFilterCategories: MoreFilterCategory[] = [
+  {
+    id: "status",
+    label: "Status",
+    display: "badge",
+    selectionMode: "multi",
+    searchable: false,
+    options: [{ id: "active", label: "Active" }],
+  },
+]
 
 type StoreQrRow = {
   id: string
@@ -59,117 +81,14 @@ const storeRows: StoreQrRow[] = [
   { id: "qr-10", creationDate: "20 Jun 2026", creationTime: "6:00 PM", storeName: "PineLabs - Sector 11", storeAddress: "PineLabs, Candor TechSpace, Noida, 584800", status: "Active", upiId: "6352699747@ptyes" },
 ]
 
-const qrBackgroundSwatches = ["#FFFFFF", "#5478F8", "#4FD387", "#053B29", "#43A114", "#CC8108"] as const
-
 function parseDate(row: StoreQrRow) {
   return new Date(`${row.creationDate} ${row.creationTime}`)
-}
-
-function hashSeed(input: string) {
-  let hash = 0
-  for (let index = 0; index < input.length; index += 1) {
-    hash = (hash << 5) - hash + input.charCodeAt(index)
-    hash |= 0
-  }
-  return Math.abs(hash)
-}
-
-function isFinder(x: number, y: number, ox: number, oy: number) {
-  if (x < ox || x >= ox + 7 || y < oy || y >= oy + 7) return false
-  const lx = x - ox
-  const ly = y - oy
-  if (lx === 0 || lx === 6 || ly === 0 || ly === 6) return true
-  if (lx >= 2 && lx <= 4 && ly >= 2 && ly <= 4) return true
-  return false
-}
-
-function createQrMatrix(seed: string, size = 29) {
-  const base = hashSeed(seed)
-  const matrix: boolean[][] = Array.from({ length: size }, () => Array.from({ length: size }, () => false))
-  const finderOffsets: [number, number][] = [
-    [0, 0],
-    [size - 7, 0],
-    [0, size - 7],
-  ]
-
-  for (let y = 0; y < size; y += 1) {
-    for (let x = 0; x < size; x += 1) {
-      if (finderOffsets.some(([ox, oy]) => isFinder(x, y, ox, oy))) {
-        matrix[y][x] = true
-        continue
-      }
-      const value = ((x + 17) * 2246822519) ^ ((y + 31) * 3266489917) ^ base
-      const normalized = Math.abs(Math.sin(value) * 10000) % 1
-      matrix[y][x] = normalized > 0.55
-    }
-  }
-
-  return matrix
 }
 
 function toCsvField(value: string | number) {
   const text = String(value)
   if (!/[",\n]/.test(text)) return text
   return `"${text.replace(/"/g, "\"\"")}"`
-}
-
-function QrMatrixPreview({ seed, backgroundColor }: { seed: string; backgroundColor: string }) {
-  const matrix = useMemo(() => createQrMatrix(seed), [seed])
-  const darkBackground = backgroundColor !== "#FFFFFF"
-  const qrColor = darkBackground ? "#FFFFFF" : "#1F1F1F"
-  const subTextColor = darkBackground ? "rgba(255,255,255,0.85)" : "#333333"
-
-  return (
-    <div className="w-full overflow-hidden rounded-md border border-border/70">
-      <div className="flex flex-col items-center justify-center gap-6 px-6 py-9" style={{ backgroundColor }}>
-        <div className="text-center">
-          <p className="text-[43px] font-semibold leading-none tracking-[-0.03em]" style={{ color: qrColor }}>
-            pine labs
-          </p>
-          <p className="mt-2 text-sm font-medium" style={{ color: subTextColor }}>
-            Scan & pay via any UPI apps
-          </p>
-        </div>
-
-        <div
-          className="grid"
-          style={{
-            gridTemplateColumns: `repeat(${matrix[0]?.length ?? 0}, minmax(0, 1fr))`,
-            gap: 2,
-          }}
-        >
-          {matrix.flatMap((row, rowIndex) =>
-            row.map((filled, colIndex) => (
-              <div key={`${rowIndex}-${colIndex}`} className="flex h-[8px] w-[8px] items-center justify-center">
-                {filled ? <span className="h-full w-full rounded-[1px]" style={{ backgroundColor: qrColor }} /> : null}
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {["PhonePe", "Paytm", "GPay", "CRED", "+50"].map((label) => (
-            <span
-              key={label}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-medium"
-              style={{
-                borderColor: darkBackground ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.18)",
-                color: darkBackground ? "#FFFFFF" : "#1F1F1F",
-                backgroundColor: darkBackground ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.72)",
-              }}
-            >
-              {label}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-center gap-2 bg-background px-6 py-2">
-        <p className="text-sm font-medium text-foreground">UPI ID / VPA: 6352699747@ptyes</p>
-        <CopyIcon className="h-4 w-4 text-muted-foreground" />
-      </div>
-    </div>
-  )
 }
 
 function StoreQrPreviewPanel({
@@ -199,7 +118,7 @@ function StoreQrPreviewPanel({
           </Button>
         </section>
 
-        <QrMatrixPreview seed={`${row.id}-${row.upiId}-${backgroundColor}`} backgroundColor={backgroundColor} />
+        <QrMatrixPreview seed={`${row.id}-${row.upiId}-${backgroundColor}`} backgroundColor={backgroundColor} upiId={row.upiId} />
 
         <section className="flex items-center justify-center gap-2">
           {qrBackgroundSwatches.map((swatch) => {
@@ -242,7 +161,6 @@ function StoreQrPreviewPanel({
 export function UpiQrStickerContent() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
-  const [dateFilter, setDateFilter] = useState<DateFilter>("today")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [page, setPage] = useState(1)
@@ -267,18 +185,29 @@ export function UpiQrStickerContent() {
     []
   )
 
+  const datePresets: DateRangePreset[] = latestDate
+    ? [
+        { id: "today", label: "Today", getRange: () => ({ from: latestDate, to: latestDate }) },
+        {
+          id: "7d",
+          label: "Last 7D",
+          getRange: () => {
+            const from = new Date(latestDate)
+            from.setDate(from.getDate() - 6)
+            return { from, to: latestDate }
+          },
+        },
+        { id: "all", label: "All dates", getRange: () => ({ from: undefined, to: undefined }) },
+      ]
+    : getDefaultDateRangePresets()
+  const dateRangeFilter = useDateRangeFilter({ presets: datePresets, initialPresetId: "today", showTime: false })
+  const moreFilters = useMoreFiltersPanel(moreFilterCategories)
+
   const filteredRows = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase()
-
-    const rangeStart =
-      dateFilter === "all" || !latestDate
-        ? null
-        : (() => {
-            const start = new Date(latestDate)
-            if (dateFilter === "today") start.setHours(0, 0, 0, 0)
-            if (dateFilter === "7d") start.setDate(start.getDate() - 6)
-            return start
-          })()
+    const appliedRange = dateRangeFilter.applied.range
+    const rangeStart = appliedRange?.from ? new Date(appliedRange.from) : null
+    if (rangeStart) rangeStart.setHours(0, 0, 0, 0)
 
     return storeRows
       .filter((row) => {
@@ -295,7 +224,7 @@ export function UpiQrStickerContent() {
         const direction = sortDirection === "asc" ? 1 : -1
         return (first - second) * direction
       })
-  }, [dateFilter, latestDate, searchQuery, sortDirection, statusFilter])
+  }, [dateRangeFilter.applied, searchQuery, sortDirection, statusFilter])
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage))
   const pagedRows = useMemo(() => {
@@ -346,7 +275,7 @@ export function UpiQrStickerContent() {
                   className="h-8 rounded-md border-input pl-8 pr-3 text-sm"
                 />
               </div>
-              <Button className="h-8 rounded-md px-2.5 text-sm font-medium">Create QR for a store</Button>
+              <Button>Create QR for a store</Button>
             </div>
           </div>
 
@@ -354,9 +283,12 @@ export function UpiQrStickerContent() {
             <div className="flex flex-wrap items-center gap-3">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium">
+                  <Button
+                    variant="outline"
+                    className={cn("h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium", FILTER_BUTTON_FOCUS_CLASSES)}
+                  >
                     {statusFilter === "all" ? "All status" : "Active"}
-                    <CaretDownIcon className="h-4 w-4" />
+                    <CaretDownIcon className={FILTER_BUTTON_CARET_CLASSES} />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-48">
@@ -369,27 +301,41 @@ export function UpiQrStickerContent() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium">
-                    {dateFilter === "today" ? "Today" : dateFilter === "7d" ? "Last 7D" : "All dates"}
-                    <CaretDownIcon className="h-4 w-4" />
+              <Popover open={dateRangeFilter.filter.popoverOpen} onOpenChange={dateRangeFilter.filter.onPopoverOpenChange}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium", FILTER_BUTTON_FOCUS_CLASSES)}
+                  >
+                    {dateRangeFilter.filter.icon}
+                    {dateRangeFilter.filter.value}
+                    <CaretDownIcon className={FILTER_BUTTON_CARET_CLASSES} />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-48">
-                  <DropdownMenuLabel>Date range</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup value={dateFilter} onValueChange={(value) => setDateFilter(value as DateFilter)}>
-                    <DropdownMenuRadioItem value="today">Today</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="7d">Last 7D</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="all">All dates</DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </PopoverTrigger>
+                <PopoverContent align="start" sideOffset={10} className="w-[760px] gap-0 border-0 p-0 shadow-none ring-0">
+                  {dateRangeFilter.filter.popoverContent}
+                </PopoverContent>
+              </Popover>
 
-              <Button variant="outline" className="h-8 rounded-md px-2.5 text-sm font-medium">
-                More filters
-              </Button>
+              <Popover open={moreFilters.toolbarProps.moreFiltersOpen} onOpenChange={moreFilters.toolbarProps.onMoreFiltersOpenChange}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("h-8 gap-1.5 rounded-md px-2.5 text-sm font-medium", FILTER_BUTTON_FOCUS_CLASSES)}
+                  >
+                    More filters
+                    {moreFilters.toolbarProps.moreFiltersCount > 0 ? (
+                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-muted px-1 text-xs text-muted-foreground">
+                        {moreFilters.toolbarProps.moreFiltersCount}
+                      </span>
+                    ) : null}
+                    <CaretDownIcon className={FILTER_BUTTON_CARET_CLASSES} />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" sideOffset={10} className="w-[820px] gap-0 border-0 p-0 shadow-none ring-0">
+                  {moreFilters.toolbarProps.moreFiltersContent}
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="flex items-center gap-3">
