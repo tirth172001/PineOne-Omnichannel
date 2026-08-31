@@ -996,6 +996,7 @@ export function DataTable<T>({
                       role={onRowClick ? "button" : undefined}
                       tabIndex={onRowClick ? 0 : undefined}
                       className={cn(
+                        "group",
                         onRowClick &&
                           "cursor-pointer transition-colors hover:bg-accent/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                         selected && "bg-accent/45"
@@ -1009,8 +1010,9 @@ export function DataTable<T>({
                         }
                       }}
                     >
-                      {visibleOrderedColumns.map((column) => {
+                      {visibleOrderedColumns.map((column, columnIndex) => {
                         const pinned = pinnedColumnIds.includes(column.id)
+                        const isLastColumn = columnIndex === visibleOrderedColumns.length - 1
                         const cellStyle = pinned
                           ? {
                               position: "sticky" as const,
@@ -1027,10 +1029,28 @@ export function DataTable<T>({
                               column.align === "right" && "text-right",
                               column.align === "center" && "text-center",
                               pinned && (selected ? "bg-accent/45" : "bg-card"),
+                              isLastColumn && onRowClick && "relative",
                               column.className
                             )}
                           >
                             {renderColumnCell(row, column)}
+                            {isLastColumn && onRowClick ? (
+                              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center bg-gradient-to-l from-card via-card/95 to-transparent py-1 pr-2 pl-10 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="pointer-events-auto h-7 gap-1 rounded-md px-2 text-xs text-primary hover:bg-transparent hover:text-primary"
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    onRowClick(row)
+                                  }}
+                                >
+                                  View details
+                                  <CaretRightIcon className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            ) : null}
                           </TableCell>
                         )
                       })}

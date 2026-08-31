@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { CaretRightIcon } from "@phosphor-icons/react"
 
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
@@ -91,6 +93,38 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
   )
 }
 
+/** Drop into the last <TableCell> of a row that navigates to a detail page (the
+ *  row itself should have the `group` class and its own onClick/router.push).
+ *  Fades in a "View details" CTA over a gradient that blends into the cell's
+ *  existing content instead of covering it abruptly. */
+function TableRowViewDetailsCell({
+  className,
+  children,
+  onViewDetails,
+  ...props
+}: React.ComponentProps<"td"> & { onViewDetails: () => void }) {
+  return (
+    <TableCell className={cn("relative", className)} {...props}>
+      {children}
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center bg-gradient-to-l from-card via-card/95 to-transparent py-1 pr-2 pl-10 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="pointer-events-auto h-7 gap-1 rounded-md px-2 text-xs text-primary hover:bg-transparent hover:text-primary"
+          onClick={(event) => {
+            event.stopPropagation()
+            onViewDetails()
+          }}
+        >
+          View details
+          <CaretRightIcon className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </TableCell>
+  )
+}
+
 function TableCaption({
   className,
   ...props
@@ -112,5 +146,6 @@ export {
   TableHead,
   TableRow,
   TableCell,
+  TableRowViewDetailsCell,
   TableCaption,
 }

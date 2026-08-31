@@ -27,7 +27,6 @@ import {
   PhoneIcon,
   PlugIcon,
   RepeatIcon,
-  SignOutIcon,
   SlidersIcon,
   StorefrontIcon,
   TrashIcon,
@@ -87,7 +86,6 @@ import {
 } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { LogoMark } from "@/components/brand/logo-mark"
 import {
   LINE_TAB_TRIGGER_CLASSES,
   LINE_TABS_LIST_CLASSES,
@@ -128,121 +126,10 @@ import {
   type RosterEntry,
   type UserStatus,
 } from "@/lib/user-roster-data"
-import { ManageStoresSection } from "@/components/account/manage-stores-section"
 
-export type SettingsModule =
-  | "personal-details"
-  | "manage-stores"
-  | "users"
-  | "credentials"
-  | "webhooks"
-
-export const SETTINGS_NAV_ITEMS: Array<{
-  key: SettingsModule
-  label: string
-  icon: ComponentType<{ className?: string }>
-  adminOnly?: boolean
-}> = [
-  { key: "personal-details", label: "Personal details", icon: UserCircleIcon },
-  { key: "manage-stores", label: "Manage stores", icon: StorefrontIcon },
-  { key: "users", label: "Manage users & roles", icon: UsersIcon, adminOnly: true },
-  { key: "credentials", label: "Credentials", icon: KeyIcon },
-  { key: "webhooks", label: "Webhooks", icon: GlobeIcon },
-]
-
-/* ---------------------------------- Sidebar --------------------------------- */
-
-export function SettingsSidebarNav({
-  activeModule,
-  onSelect,
-  onBack,
-  onLogout,
-}: {
-  activeModule: SettingsModule
-  onSelect: (module: SettingsModule) => void
-  onBack: () => void
-  onLogout: () => void
-}) {
-  const [isAdmin, setIsAdmin] = useState(true)
-
-  useEffect(() => {
-    const session = readDummyAuthSession()
-    if (!session) return
-    setIsAdmin(session.role.toLowerCase() === "admin")
-  }, [])
-
-  const visibleItems = SETTINGS_NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin)
-
-  return (
-    <div className="flex h-full w-64 flex-col bg-sidebar">
-      <div className="flex h-16 shrink-0 items-center bg-sidebar px-2">
-        <LogoMark className="h-12 w-auto pr-4 text-foreground" />
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col justify-between overflow-y-auto bg-sidebar px-2 py-2">
-        <div>
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm leading-none text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          >
-            <CaretLeftIcon className="h-3.5 w-3.5 shrink-0" />
-            <span>Back</span>
-          </button>
-
-          <div className="mt-2 space-y-1">
-            {visibleItems.map((item) => {
-              const Icon = item.icon
-              const active = item.key === activeModule
-
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => onSelect(item.key)}
-                  className={cn(
-                    "flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm leading-none transition-colors",
-                    active
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={onLogout}
-          className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm leading-none text-destructive transition-colors hover:bg-destructive/10"
-        >
-          <SignOutIcon className="h-3.5 w-3.5 shrink-0" />
-          <span>Logout</span>
-        </button>
-      </div>
-    </div>
-  )
-}
+export type AccountSettingsTab = "personal-details" | "credentials" | "webhooks"
 
 /* --------------------------------- Shared bits ------------------------------- */
-
-function SettingsScreenHeader({ title, action }: { title: string; action?: ReactNode }) {
-  return (
-    <>
-      <div className="px-8 pt-8 pb-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <h1 className={PAGE_HEADING_CLASSES}>{title}</h1>
-          {action ? <div className="shrink-0">{action}</div> : null}
-        </div>
-      </div>
-      <Separator />
-    </>
-  )
-}
 
 function FieldRow({
   icon: Icon,
@@ -269,11 +156,22 @@ function FieldRow({
   )
 }
 
-function SectionIntro({ title, description }: { title: string; description: string }) {
+function SectionIntro({
+  title,
+  description,
+  action,
+}: {
+  title: string
+  description: string
+  action?: ReactNode
+}) {
   return (
-    <div>
-      <p className="text-base font-semibold text-foreground">{title}</p>
-      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <p className="text-base font-semibold text-foreground">{title}</p>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+      </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   )
 }
@@ -299,44 +197,39 @@ function PersonalDetailsSection() {
   }, [])
 
   return (
-    <div className="flex h-full flex-col">
-      <SettingsScreenHeader title="Personal details" action={<Button>Change password</Button>} />
-      <div className="flex-1 overflow-y-auto px-8 py-8">
-        <div className="grid w-full max-w-[1360px] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <SectionIntro title="Basic details" description="All your personal details related to your login" />
-          <div className="space-y-3">
-            <FieldRow
-              icon={UserCircleIcon}
-              label="Name"
-              value={name}
-              action={
-                <Button variant="outline" size="sm">
-                  Update
-                </Button>
-              }
-            />
-            <FieldRow
-              icon={PhoneIcon}
-              label="Registered number"
-              value="+91 98765 43210"
-              action={
-                <Button variant="outline" size="sm">
-                  Update
-                </Button>
-              }
-            />
-            <FieldRow
-              icon={EnvelopeSimpleIcon}
-              label="Registered email"
-              value={email}
-              action={
-                <Button variant="outline" size="sm">
-                  Update
-                </Button>
-              }
-            />
-          </div>
-        </div>
+    <div className="grid w-full max-w-[1360px] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <SectionIntro title="Basic details" description="All your personal details related to your login" />
+      <div className="space-y-3">
+        <FieldRow
+          icon={UserCircleIcon}
+          label="Name"
+          value={name}
+          action={
+            <Button variant="outline" size="sm">
+              Update
+            </Button>
+          }
+        />
+        <FieldRow
+          icon={PhoneIcon}
+          label="Registered number"
+          value="+91 98765 43210"
+          action={
+            <Button variant="outline" size="sm">
+              Update
+            </Button>
+          }
+        />
+        <FieldRow
+          icon={EnvelopeSimpleIcon}
+          label="Registered email"
+          value={email}
+          action={
+            <Button variant="outline" size="sm">
+              Update
+            </Button>
+          }
+        />
       </div>
     </div>
   )
@@ -350,47 +243,42 @@ function CredentialsSection() {
   const secretKey = "sk_live_9F72xLp84QzTn5W1yRVdKt"
 
   return (
-    <div className="flex h-full flex-col">
-      <SettingsScreenHeader title="Credentials" />
-      <div className="flex-1 overflow-y-auto px-8 py-8">
-        <div className="grid w-full max-w-[1360px] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <SectionIntro title="Production credentials" description="You can use this credentials for live product" />
-          <div className="space-y-3">
-            <FieldRow
-              icon={HardDrivesIcon}
-              label="Merchant ID"
-              value={merchantId}
-              action={
-                <Button variant="outline" size="sm" onClick={() => copyToClipboard(merchantId, "Merchant ID")}>
-                  <CopyIcon className="h-3.5 w-3.5" />
-                  Copy
-                </Button>
-              }
-            />
-            <FieldRow
-              icon={HardDrivesIcon}
-              label="Client ID"
-              value={clientId}
-              action={
-                <Button variant="outline" size="sm" onClick={() => copyToClipboard(clientId, "Client ID")}>
-                  <CopyIcon className="h-3.5 w-3.5" />
-                  Copy
-                </Button>
-              }
-            />
-            <FieldRow
-              icon={KeyIcon}
-              label="Secret key"
-              value={"*".repeat(28)}
-              action={
-                <Button variant="outline" size="sm" onClick={() => copyToClipboard(secretKey, "Secret key")}>
-                  <CopyIcon className="h-3.5 w-3.5" />
-                  Copy
-                </Button>
-              }
-            />
-          </div>
-        </div>
+    <div className="grid w-full max-w-[1360px] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <SectionIntro title="Production credentials" description="You can use this credentials for live product" />
+      <div className="space-y-3">
+        <FieldRow
+          icon={HardDrivesIcon}
+          label="Merchant ID"
+          value={merchantId}
+          action={
+            <Button variant="outline" size="sm" onClick={() => copyToClipboard(merchantId, "Merchant ID")}>
+              <CopyIcon className="h-3.5 w-3.5" />
+              Copy
+            </Button>
+          }
+        />
+        <FieldRow
+          icon={HardDrivesIcon}
+          label="Client ID"
+          value={clientId}
+          action={
+            <Button variant="outline" size="sm" onClick={() => copyToClipboard(clientId, "Client ID")}>
+              <CopyIcon className="h-3.5 w-3.5" />
+              Copy
+            </Button>
+          }
+        />
+        <FieldRow
+          icon={KeyIcon}
+          label="Secret key"
+          value={"*".repeat(28)}
+          action={
+            <Button variant="outline" size="sm" onClick={() => copyToClipboard(secretKey, "Secret key")}>
+              <CopyIcon className="h-3.5 w-3.5" />
+              Copy
+            </Button>
+          }
+        />
       </div>
     </div>
   )
@@ -402,27 +290,22 @@ function WebhooksSection() {
   const [url] = useState("https://www.pinelabs.com/updates")
 
   return (
-    <div className="flex h-full flex-col">
-      <SettingsScreenHeader title="Webhook" />
-      <div className="flex-1 overflow-y-auto px-8 py-8">
-        <div className="grid w-full max-w-[1360px] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <SectionIntro
-            title="Webhook URL"
-            description="Your transaction status and other information will be provided on this URL"
-          />
-          <div className="space-y-3">
-            <FieldRow
-              icon={GlobeIcon}
-              label="Added URL"
-              value={url}
-              action={
-                <Button variant="outline" size="sm" onClick={() => toast.success("URL added successfully")}>
-                  Update
-                </Button>
-              }
-            />
-          </div>
-        </div>
+    <div className="grid w-full max-w-[1360px] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <SectionIntro
+        title="Webhook URL"
+        description="Your transaction status and other information will be provided on this URL"
+      />
+      <div className="space-y-3">
+        <FieldRow
+          icon={GlobeIcon}
+          label="Added URL"
+          value={url}
+          action={
+            <Button variant="outline" size="sm" onClick={() => toast.success("URL added successfully")}>
+              Update
+            </Button>
+          }
+        />
       </div>
     </div>
   )
@@ -2202,7 +2085,7 @@ function PendingApprovalsPage({
 
 /* ------------------------------- Manage users shell ----------------------------- */
 
-function ManageUsersSection() {
+export function ManageUsersSection() {
   const [screen, setScreen] = useState<"list" | "migration" | "role-form" | "pending-approvals">("list")
   const [tab, setTab] = useState<"users" | "roles">("users")
 
@@ -2660,21 +2543,47 @@ function ManageUsersSection() {
   )
 }
 
-/* ---------------------------------- Dispatcher ---------------------------------- */
+/* ------------------------------- Account settings ----------------------------- */
 
-export function SettingsPanelContent({ module }: { module: SettingsModule }) {
-  switch (module) {
-    case "personal-details":
-      return <PersonalDetailsSection />
-    case "manage-stores":
-      return <ManageStoresSection />
-    case "users":
-      return <ManageUsersSection />
-    case "credentials":
-      return <CredentialsSection />
-    case "webhooks":
-      return <WebhooksSection />
-    default:
-      return null
-  }
+export function AccountSettingsContent() {
+  const [tab, setTab] = useState<AccountSettingsTab>("personal-details")
+
+  return (
+    <div className="w-full">
+      <section>
+        <div className="px-8 pt-8 pb-0">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <h1 className={PAGE_HEADING_CLASSES}>Account settings</h1>
+            <div className="flex items-center gap-3">
+              <Button>Change password</Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-8 pt-8 pb-0">
+          <Tabs value={tab} onValueChange={(value) => setTab(value as AccountSettingsTab)}>
+            <TabsList variant="line" className={LINE_TABS_LIST_CLASSES}>
+              <TabsTrigger value="personal-details" className={LINE_TAB_TRIGGER_CLASSES}>
+                Personal details
+              </TabsTrigger>
+              <TabsTrigger value="credentials" className={LINE_TAB_TRIGGER_CLASSES}>
+                Credentials
+              </TabsTrigger>
+              <TabsTrigger value="webhooks" className={LINE_TAB_TRIGGER_CLASSES}>
+                Webhooks
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        <Separator />
+      </section>
+
+      <div className="px-8 pt-8 pb-8">
+        {tab === "personal-details" ? <PersonalDetailsSection /> : null}
+        {tab === "credentials" ? <CredentialsSection /> : null}
+        {tab === "webhooks" ? <WebhooksSection /> : null}
+      </div>
+    </div>
+  )
 }

@@ -14,7 +14,15 @@ import { useMoreFiltersPanel, type MoreFilterCategory } from "@/components/share
 import { StatusPill, type StatusTone } from "@/components/shared/status-pill"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableRowViewDetailsCell,
+} from "@/components/ui/table"
 
 const settlementRows = [
   {
@@ -170,7 +178,7 @@ export function SettlementsContent() {
                   {rows.map((row) => (
                     <TableRow
                       key={row.utr}
-                      className="h-[72px] cursor-pointer"
+                      className="group h-[72px] cursor-pointer"
                       onClick={() => router.push(`/settlements/${row.batchId}`)}
                     >
                       <TableCell className="px-4 text-sm text-foreground">{row.utr}</TableCell>
@@ -179,9 +187,12 @@ export function SettlementsContent() {
                       <TableCell className="px-4 text-sm text-foreground">{row.bankAccount}</TableCell>
                       <TableCell className="px-4 text-sm text-foreground">{row.settlementDate}</TableCell>
                       <TableCell className="px-4 text-sm text-foreground">{row.initiationDate}</TableCell>
-                      <TableCell className="px-4 text-sm text-foreground">
+                      <TableRowViewDetailsCell
+                        className="px-4 text-sm text-foreground"
+                        onViewDetails={() => router.push(`/settlements/${row.batchId}`)}
+                      >
                         <StatusPill label={row.status} tone={toSettlementTone(row.status)} />
-                      </TableCell>
+                      </TableRowViewDetailsCell>
                     </TableRow>
                   ))}
                 </TableBody>

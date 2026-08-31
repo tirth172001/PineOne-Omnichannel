@@ -51,6 +51,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableRowViewDetailsCell,
 } from "@/components/ui/table"
 
 type ListingMode = "in-store" | "online"
@@ -609,7 +610,7 @@ export function TransactionsContent() {
                     {visibleRows.map((row) => (
                       <TableRow
                         key={row.transactionId}
-                        className="h-[4.5rem] cursor-pointer"
+                        className="group h-[4.5rem] cursor-pointer"
                         onClick={() =>
                           router.push(
                             `/transactions/${row.transactionId}?channel=${mode === "online" ? "online" : "in-store"}`
@@ -635,9 +636,16 @@ export function TransactionsContent() {
                             <p className="text-xs text-[var(--tx-text-secondary,var(--muted-foreground))]">{row.time}</p>
                           </div>
                         </TableCell>
-                        <TableCell className="px-4">
+                        <TableRowViewDetailsCell
+                          className="px-4"
+                          onViewDetails={() =>
+                            router.push(
+                              `/transactions/${row.transactionId}?channel=${mode === "online" ? "online" : "in-store"}`
+                            )
+                          }
+                        >
                           <StatusPill label={row.status.label} tone={row.status.tone} />
-                        </TableCell>
+                        </TableRowViewDetailsCell>
                       </TableRow>
                     ))}
 

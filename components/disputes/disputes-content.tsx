@@ -16,6 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableRowViewDetailsCell,
 } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -162,7 +163,7 @@ export function DisputesContent() {
                 {filteredDisputes.map((row) => (
                   <TableRow
                     key={row.id}
-                    className="h-16 cursor-pointer align-top"
+                    className="group h-16 cursor-pointer align-top"
                     onClick={() => router.push(`/disputes/${row.id}`)}
                   >
                     <TableCell className="px-4 align-top text-sm text-foreground">{row.createdOn}</TableCell>
@@ -171,7 +172,12 @@ export function DisputesContent() {
                     <TableCell className="px-4 align-top text-sm text-foreground">{row.amount}</TableCell>
                     <TableCell className="px-4 align-top text-sm text-foreground">{row.dueDate}</TableCell>
                     <TableCell className="px-4 align-top"><StatusPill label={disputeStatusLabel(row)} tone={disputeStatusTone(row)} /></TableCell>
-                    <TableCell className="px-4 align-top text-sm text-foreground">{disputeActionLabel(row)}</TableCell>
+                    <TableRowViewDetailsCell
+                      className="px-4 align-top text-sm text-foreground"
+                      onViewDetails={() => router.push(`/disputes/${row.id}`)}
+                    >
+                      {disputeActionLabel(row)}
+                    </TableRowViewDetailsCell>
                   </TableRow>
                 ))}
               </TableBody>

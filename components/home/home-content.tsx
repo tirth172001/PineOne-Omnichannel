@@ -2736,7 +2736,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
   const centerMain = (
     <div
       className={cn(
-        "p-4",
+        "px-4 pt-[96px] pb-4",
         navSection === "overview" ? "flex h-full justify-center overflow-y-auto" : "h-full overflow-y-auto space-y-4"
       )}
     >
@@ -2748,14 +2748,18 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
       ) : null}
       {navSection === "overview" ? (
         <>
-          <section className="w-full max-w-[640px] space-y-6">
+          <section className="w-full max-w-[1320px] space-y-6">
             <h3 className="text-2xl font-semibold leading-[1.05] text-foreground">Overview</h3>
 
-            <OverviewDetailCards />
-
-            <OverviewAppDownloadCard />
-
-            <OverviewExploreProducts />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[7fr_3fr]">
+              <div className="min-w-0 space-y-4">
+                <OverviewDetailCards />
+              </div>
+              <div className="min-w-0 space-y-6">
+                <OverviewAppDownloadCard />
+                <OverviewExploreProducts />
+              </div>
+            </div>
 
             <div className="hidden space-y-3">
               {!overviewHiddenSnapshotCards.includes("transaction-state-flow") ? (
