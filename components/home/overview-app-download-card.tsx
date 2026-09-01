@@ -8,7 +8,7 @@ export function OverviewAppDownloadCard() {
     <article className="overflow-hidden rounded-[8px] border border-border/60 bg-background">
       <div className="flex flex-col gap-6 p-6">
         <div>
-          <p className="text-xl font-semibold leading-tight text-foreground">
+          <p className="font-heading text-xl font-light leading-tight text-foreground">
             Empower your business with the PineOne app!
           </p>
           <p className="mt-2 text-sm text-muted-foreground">

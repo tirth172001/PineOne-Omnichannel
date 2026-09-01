@@ -40,8 +40,13 @@
   --sidebar-ring: oklch(0.715 0.000 0.000);
   --app-shell-surface: #f5f5f5;
   --font-sans: "Inter Display", Inter, sans-serif;
-  --font-mono: Geist Mono, monospace;
+  --font-mono: var(--font-geist-mono), monospace;
   --radius: 0.625rem;
+
+  /* Tailwind Preflight reads this to set `html`'s font-feature-settings —
+     tabular + lining figures, applied before any other rule so it can't lose
+     a cascade fight with font-variant-numeric. */
+  --default-font-feature-settings: "tnum" 1, "lnum" 1;
 
   --success: oklch(0.56 0.122 144);
   --success-foreground: oklch(0.98 0.005 110);
@@ -270,7 +275,7 @@
   --shadow-blur: var(--shadow-blur);
   --shadow-y: var(--shadow-y);
   --shadow-x: var(--shadow-x);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-platypi), var(--font-sans);
 }
 
 @layer base {
@@ -284,6 +289,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Tabular + lining figures everywhere — numbers stay fixed-width
+       (no jitter as values change) with a normal (non-slashed) zero. */
+    font-variant-numeric: tabular-nums lining-nums;
   }
   html {
     @apply font-sans;

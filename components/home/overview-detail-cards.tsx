@@ -11,11 +11,14 @@ import {
   DotsThreeCircleIcon,
   GavelIcon,
   InfoIcon,
+  LightningIcon,
   LockIcon,
   MoneyWavyIcon,
   QrCodeIcon,
 } from "@phosphor-icons/react"
 import { LogoMark } from "@/components/brand/logo-mark"
+import { disputeRecords, type DisputeStatus } from "@/components/disputes/disputes-data"
+import { refundRows, type RefundStatus } from "@/components/refunds/refunds-content"
 import { BankLogo } from "@/components/shared/bank-logo"
 import { StatusPill, type StatusTone } from "@/components/shared/status-pill"
 import { Button } from "@/components/ui/button"
@@ -74,6 +77,21 @@ const DISPUTE_STATS: Record<
 
 const DISPUTES_HREF = "/disputes"
 
+const REFUND_STATUS_TONE: Record<RefundStatus, StatusTone> = {
+  Pending: "processing",
+  Success: "success",
+  Failed: "failed",
+  "Session expired": "failed",
+  Cancelled: "failed",
+  "User cancelled": "failed",
+}
+
+const DISPUTE_STATUS_TONE: Record<DisputeStatus, StatusTone> = {
+  "Action pending": "initiated",
+  Reviewing: "processing",
+  Closed: "success",
+}
+
 /** Groups "Net banking" under the "Others" bucket shown in the design, with its
  *  own icon/color per slice of the payment-mode distribution chart. */
 const PAY_METHOD_DISPLAY: Record<PaymentMode, { label: string; icon: typeof QrCodeIcon; color: string }> = {
@@ -94,12 +112,6 @@ const PAYMENT_STATUS_OPTIONS: ReadonlyArray<{ value: PaymentStatusKey; label: st
   { value: "failed", label: "Failed" },
 ]
 
-const PAYMENT_STATUS_BADGE_CLASS: Record<PaymentStatusKey, string> = {
-  success: "bg-success/10 text-success",
-  pending: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  failed: "bg-destructive/10 text-destructive",
-}
-
 /** "Initiated" has no dedicated tab here — it reads as in-progress, so it
  *  joins "Pending" the same way it would in a merchant's mental model. */
 function paymentStatusBucket(tone: StatusTone): PaymentStatusKey {
@@ -118,7 +130,7 @@ function RangeToggle<T extends string>({
   options: ReadonlyArray<{ value: T; label: string; icon?: React.ReactNode }>
 }) {
   return (
-    <div className="flex items-center gap-1 rounded-md border border-border/70 bg-muted p-1">
+    <div className="flex items-center gap-1 rounded-md bg-muted p-1">
       {options.map((option) => (
         <button
           key={option.value}
@@ -157,7 +169,7 @@ function CardHeader({
   right?: React.ReactNode
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 pb-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4">
       <div className="flex items-center gap-2">
         {Icon ? <Icon className="h-4 w-4 text-muted-foreground" /> : null}
         <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">{title}</p>
@@ -186,9 +198,9 @@ function CardFooter({ label, href }: { label: string; href: string }) {
  *  fade out. Works on any pre-formatted "₹1,84,567.72"-style string. */
 function DimmedDecimalAmount({ value, className }: { value: string; className?: string }) {
   const dotIndex = value.lastIndexOf(".")
-  if (dotIndex === -1) return <span className={className}>{value}</span>
+  if (dotIndex === -1) return <span className={cn("tabular-nums", className)}>{value}</span>
   return (
-    <span className={className}>
+    <span className={cn("tabular-nums", className)}>
       {value.slice(0, dotIndex)}
       <span className="text-[14px] text-muted-foreground/50">{value.slice(dotIndex)}</span>
     </span>
@@ -260,14 +272,7 @@ function TransactionsOverviewCard() {
           value={`₹${formatInrAmount(modeTotalAmount)}`}
           className="text-[24px] font-semibold leading-none text-foreground"
         />
-        <span
-          className={cn(
-            "mt-3 inline-flex h-6 items-center rounded-full px-2.5 text-xs font-medium",
-            PAYMENT_STATUS_BADGE_CLASS[statusFilter]
-          )}
-        >
-          {modeTotalCount} Transactions
-        </span>
+        <p className="mt-1 text-sm tabular-nums text-muted-foreground">{modeTotalCount} Transactions</p>
       </div>
 
       {modeTotalCount > 0 ? (
@@ -311,13 +316,13 @@ function TransactionsOverviewCard() {
                   <div className="flex min-w-0 items-center gap-2">
                     <meta.icon className="h-5 w-5 shrink-0 text-muted-foreground" />
                     <span className="shrink-0 text-sm font-medium text-foreground">{meta.label}</span>
-                    <span className="truncate text-sm text-muted-foreground">{count} Transactions</span>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
                     <DimmedDecimalAmount
                       value={`₹${formatInrAmount(amount)}`}
-                      className="text-sm font-medium text-foreground"
+                      className="truncate text-sm text-muted-foreground"
                     />
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-sm font-medium tabular-nums text-foreground">{count} Transactions</span>
                     <CaretRightIcon className="h-4 w-4 text-muted-foreground" />
                   </div>
                 </Link>
@@ -368,14 +373,9 @@ function SettlementsOverviewCard() {
         )}
       >
         <DimmedDecimalAmount value={stats.total} className="text-[24px] font-semibold leading-none text-foreground" />
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-          <span className="inline-flex h-6 items-center rounded-full bg-success/10 px-2.5 text-xs font-medium text-success">
-            {stats.transactions} Transactions
-          </span>
-          <span className="inline-flex h-6 items-center rounded-full bg-muted px-2.5 text-xs font-medium text-foreground">
-            {stats.settlements} Settlements
-          </span>
-        </div>
+        <p className="mt-1 text-sm tabular-nums text-muted-foreground">
+          {stats.transactions} Transactions · {stats.settlements} Settlements
+        </p>
       </div>
 
       <div className="flex items-center justify-between gap-3 border-t border-border/60 px-4 py-3">
@@ -398,6 +398,7 @@ function SettlementsOverviewCard() {
 function RefundsOverviewCard() {
   const [range, setRange] = useState<"today" | "yesterday">("today")
   const stats = REFUND_STATS[range]
+  const recentRefunds = refundRows.slice(0, 3)
 
   return (
     <article className="rounded-[8px] border border-border/60 bg-background">
@@ -409,9 +410,29 @@ function RefundsOverviewCard() {
 
       <div className="flex flex-col items-center border-t border-border/60 px-4 py-6 text-center">
         <DimmedDecimalAmount value={stats.total} className="text-[24px] font-semibold leading-none text-foreground" />
-        <span className="mt-3 inline-flex h-6 items-center rounded-full bg-success/10 px-2.5 text-xs font-medium text-success">
-          {stats.transactions} Transactions
-        </span>
+        <p className="mt-1 text-sm tabular-nums text-muted-foreground">{stats.transactions} Transactions</p>
+      </div>
+
+      <div className="border-t border-border/60">
+        {recentRefunds.map((row, index) => (
+          <Link
+            key={row.id}
+            href="/refunds"
+            className={cn(
+              "flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/40",
+              index > 0 && "border-t border-border/50"
+            )}
+          >
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate text-sm font-medium text-foreground">{row.refundId}</span>
+              <span className="text-xs tabular-nums text-muted-foreground">{row.amount}</span>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <StatusPill label={row.status} tone={REFUND_STATUS_TONE[row.status]} />
+              <CaretRightIcon className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </Link>
+        ))}
       </div>
 
       <CardFooter label="View all refunds" href="/refunds" />
@@ -422,6 +443,7 @@ function RefundsOverviewCard() {
 function DisputesOverviewCard() {
   const [range, setRange] = useState<"today" | "yesterday">("today")
   const stats = DISPUTE_STATS[range]
+  const recentDisputes = disputeRecords.slice(0, 3)
 
   return (
     <article className="rounded-[8px] border border-border/60 bg-background">
@@ -433,12 +455,31 @@ function DisputesOverviewCard() {
 
       <div className="flex flex-col items-center border-t border-border/60 px-4 py-6 text-center">
         <DimmedDecimalAmount value={stats.total} className="text-[24px] font-semibold leading-none text-foreground" />
+        <p className="mt-1 text-sm tabular-nums text-muted-foreground">
+          {stats.open} open · {stats.inReview} in review · {stats.closed} closed
+        </p>
+      </div>
 
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
-          <StatusPill label={`${stats.open} open`} tone="initiated" />
-          <StatusPill label={`${stats.inReview} in review`} tone="processing" />
-          <StatusPill label={`${stats.closed} closed`} tone="success" />
-        </div>
+      <div className="border-t border-border/60">
+        {recentDisputes.map((row, index) => (
+          <Link
+            key={row.id}
+            href={`/disputes/${row.id}`}
+            className={cn(
+              "flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/40",
+              index > 0 && "border-t border-border/50"
+            )}
+          >
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate text-sm font-medium text-foreground">{row.id}</span>
+              <span className="text-xs tabular-nums text-muted-foreground">{row.amount}</span>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <StatusPill label={row.status} tone={DISPUTE_STATUS_TONE[row.status]} />
+              <CaretRightIcon className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </Link>
+        ))}
       </div>
 
       <CardFooter label="Dispute history" href={DISPUTES_HREF} />
@@ -462,6 +503,22 @@ function ScopeBanner({ profile }: { profile: BusinessProfile }) {
   )
 }
 
+/** Same on-demand settlement callout shown on the Settlements page itself
+ *  (v3-settlements-content.tsx), for in-store businesses only there too. */
+function OnDemandSettlementBanner() {
+  return (
+    <div className="flex items-center gap-3 rounded-[8px] border border-border/60 bg-[#eef2ff] px-4 py-3 dark:bg-[#1a1f3a]">
+      <LightningIcon className="h-5 w-5 shrink-0 text-[#4f46e5] dark:text-[#a5b4fc]" />
+      <p className="min-w-0 flex-1 text-sm font-medium text-foreground">
+        Get some settlement in your account today via On-Demand settlement
+      </p>
+      <Button variant="outline" size="sm" className="h-8 shrink-0 bg-background">
+        Settle now
+      </Button>
+    </div>
+  )
+}
+
 export function OverviewDetailCards() {
   const profile = useActiveBusinessProfile()
 
@@ -470,12 +527,16 @@ export function OverviewDetailCards() {
   const canViewRefunds = businessProfileHasAnyPermission(profile, REFUNDS_PERMISSIONS)
 
   const hasAnyCard = canViewTransactions || canViewSettlements || canViewRefunds
+  // On-demand settlement is an in-store/POS concept, same gate the Settlements
+  // page itself uses (channel === "in-store") for this banner.
+  const showOnDemandSettlement = canViewSettlements && businessProfileAccessScope(profile) !== "Online"
 
   return (
     <section className="w-full space-y-4">
       <ScopeBanner profile={profile} />
 
       {canViewTransactions ? <TransactionsOverviewCard /> : null}
+      {showOnDemandSettlement ? <OnDemandSettlementBanner /> : null}
       {canViewSettlements ? <SettlementsOverviewCard /> : null}
       {canViewRefunds ? <RefundsOverviewCard /> : null}
       {canViewRefunds ? <DisputesOverviewCard /> : null}

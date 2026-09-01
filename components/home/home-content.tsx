@@ -2749,7 +2749,7 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
       {navSection === "overview" ? (
         <>
           <section className="w-full max-w-[1320px] space-y-6">
-            <h3 className="text-2xl font-semibold leading-[1.05] text-foreground">Overview</h3>
+            <h3 className="font-heading text-2xl font-light leading-[1.05] text-foreground">Overview</h3>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[7fr_3fr]">
               <div className="min-w-0 space-y-4">

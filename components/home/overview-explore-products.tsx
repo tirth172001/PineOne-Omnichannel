@@ -53,7 +53,7 @@ export function OverviewExploreProducts() {
 
   return (
     <section className="space-y-3">
-      <h3 className="text-base font-semibold text-foreground">Explore pine products</h3>
+      <h3 className="font-heading text-base font-light text-foreground">Explore pine products</h3>
 
       <div className="overflow-hidden rounded-[8px] border border-border/60 bg-background">
         {visibleProducts.map((product, index) => (

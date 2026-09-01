@@ -29,7 +29,7 @@ type FilterOption = {
 }
 
 /** Canonical page-title style, shared by every top-level module (Reports, Refunds, Disputes, Payments, Settlements, Checkout, Settings screens, ...). */
-export const PAGE_HEADING_CLASSES = "text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground"
+export const PAGE_HEADING_CLASSES = "font-heading text-2xl font-light leading-8 tracking-[-0.4px] text-foreground"
 
 /** Wrapper for the underline-style ("line") tab row used for a page's primary content tabs (e.g. Reports/History/Schedule). */
 export const LINE_TABS_LIST_CLASSES = "h-8 gap-6 bg-transparent p-0"

@@ -34,9 +34,9 @@ import {
 } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-type RefundStatus = "Pending" | "Success" | "Failed" | "Session expired" | "Cancelled" | "User cancelled"
+export type RefundStatus = "Pending" | "Success" | "Failed" | "Session expired" | "Cancelled" | "User cancelled"
 
-type RefundRow = {
+export type RefundRow = {
   id: string
   transactionId: string
   refundId: string
@@ -49,7 +49,7 @@ type RefundRow = {
   status: RefundStatus
 }
 
-const refundRows: RefundRow[] = [
+export const refundRows: RefundRow[] = [
   { id: "r1", transactionId: "1525039333", refundId: "1525039333", datePrimary: "16 Aug 2026", dateSecondary: "10:10 PM", storeName: "PineLabs - Noida Kiosk", storeAddress: "PineLabs, Candor TechSpace, Noida, 584800", amount: "₹ 10,000", amountSub: "EMI", status: "Pending" },
   { id: "r2", transactionId: "1525039336", refundId: "1525039336", datePrimary: "18 Aug 2026", dateSecondary: "9:30 PM", storeName: "PineLabs - Sector 35", storeAddress: "PineLabs, Candor TechSpace, Noida, 584800", amount: "₹ 30,000", amountSub: "EMI", status: "Success" },
   { id: "r3", transactionId: "1525039339", refundId: "1525039339", datePrimary: "20 Aug 2026", dateSecondary: "3:00 PM", storeName: "PineLabs - Sector 21", storeAddress: "PineLabs, Candor TechSpace, Noida, 584800", amount: "₹ 15,000", amountSub: "EMI", status: "Failed" },
