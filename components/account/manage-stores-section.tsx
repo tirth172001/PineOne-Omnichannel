@@ -163,20 +163,8 @@ function StoresListView({ onSelectStore }: { onSelectStore: (storeId: string) =>
       onSearchChange={setSearch}
       searchPlaceholder="Search by store name"
       filters={filters}
-      columns={columns.map((column) => ({
-        ...column,
-        cell: (row: StoreRecord) => (
-          <div
-            className="cursor-pointer"
-            onClick={(event) => {
-              if ((event.target as HTMLElement).closest("button")) return
-              onSelectStore(row.storeId)
-            }}
-          >
-            {column.cell(row)}
-          </div>
-        ),
-      }))}
+      columns={columns}
+      onRowClick={(row) => onSelectStore(row.storeId)}
       rows={filteredStores}
       emptyText="No stores found for current filters."
       totalRows={filteredStores.length}

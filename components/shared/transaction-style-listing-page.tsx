@@ -14,7 +14,15 @@ import {
 } from "@/components/shared/listing-page-primitives"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableRowViewDetailsCell,
+} from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 
 export type ListingColumn<Row> = {
@@ -189,17 +197,31 @@ export function TransactionStyleListingPage<Row extends { id?: string }>({
                     rows.map((row, index) => (
                       <TableRow
                         key={row.id ?? index}
-                        className={cn("h-[4.5rem]", onRowClick ? "cursor-pointer" : "")}
+                        className={cn("h-[4.5rem]", onRowClick ? "group cursor-pointer" : "")}
                         onClick={onRowClick ? () => onRowClick(row) : undefined}
                       >
-                        {columns.map((column) => (
-                          <TableCell
-                            key={`${row.id ?? index}-${column.key}`}
-                            className={`px-3 text-sm text-foreground ${column.align === "right" ? "text-right" : ""}`}
-                          >
-                            {column.cell(row)}
-                          </TableCell>
-                        ))}
+                        {columns.map((column, columnIndex) => {
+                          const isLastColumn = columnIndex === columns.length - 1
+                          const cellClassName = `px-3 text-sm text-foreground ${column.align === "right" ? "text-right" : ""}`
+
+                          if (isLastColumn && onRowClick) {
+                            return (
+                              <TableRowViewDetailsCell
+                                key={`${row.id ?? index}-${column.key}`}
+                                className={cellClassName}
+                                onViewDetails={() => onRowClick(row)}
+                              >
+                                {column.cell(row)}
+                              </TableRowViewDetailsCell>
+                            )
+                          }
+
+                          return (
+                            <TableCell key={`${row.id ?? index}-${column.key}`} className={cellClassName}>
+                              {column.cell(row)}
+                            </TableCell>
+                          )
+                        })}
                       </TableRow>
                     ))
                   )}

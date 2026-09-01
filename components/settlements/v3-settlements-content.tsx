@@ -58,6 +58,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableRowViewDetailsCell,
 } from "@/components/ui/table"
 
 type SettlementChannel = "in-store" | "online"
@@ -581,7 +582,11 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                   </TableHeader>
                   <TableBody>
                     {detailPagedRows.map((row, index) => (
-                      <TableRow key={`${row.id}-${index}`} className="h-16 cursor-pointer align-top" onClick={() => router.push(`/transactions/${row.id}`)}>
+                      <TableRow
+                        key={`${row.id}-${index}`}
+                        className="group h-16 cursor-pointer align-top"
+                        onClick={() => router.push(`/transactions/${row.id}`)}
+                      >
                         <TableCell className="px-4 align-top text-sm font-medium text-foreground">{row.id}</TableCell>
                         <TableCell className="px-4 align-top">
                           <p className="text-sm font-medium text-foreground">{row.paymentDate}</p>
@@ -602,7 +607,12 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                         </TableCell>
                         <TableCell className="px-4 text-right align-top text-sm font-medium text-foreground">{rm(row.transactionAmount)}</TableCell>
                         <TableCell className="px-4 text-right align-top text-sm font-medium text-foreground">{rm(row.totalDeduction)}</TableCell>
-                        <TableCell className="px-4 text-right align-top text-sm font-medium text-foreground">{rm(row.payoutAmount)}</TableCell>
+                        <TableRowViewDetailsCell
+                          className="px-4 text-right align-top"
+                          onViewDetails={() => router.push(`/transactions/${row.id}`)}
+                        >
+                          <span className="text-sm font-medium text-foreground">{rm(row.payoutAmount)}</span>
+                        </TableRowViewDetailsCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -854,7 +864,11 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
               <TableBody>
                 {pagedRows.map((row) => (
                   channel === "online" ? (
-                    <TableRow key={row.id} className="h-16 cursor-pointer align-top" onClick={() => router.push(`/settlements/${row.batchId}`)}>
+                    <TableRow
+                      key={row.id}
+                      className="group h-16 cursor-pointer align-top"
+                      onClick={() => router.push(`/settlements/${row.batchId}`)}
+                    >
                       <TableCell className="px-3 align-top text-sm font-medium text-foreground">
                         <span className="inline-flex items-center gap-2">
                           {row.utr}
@@ -876,13 +890,20 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                         <p className="text-sm text-muted-foreground">Refunds + chargebacks</p>
                       </TableCell>
                       <TableCell className="px-3 align-top"><StatusBadge status={row.status} /></TableCell>
-                      <TableCell className="px-3 align-top">
+                      <TableRowViewDetailsCell
+                        className="px-3 align-top"
+                        onViewDetails={() => router.push(`/settlements/${row.batchId}`)}
+                      >
                         <p className="text-sm font-medium text-foreground">{row.settlementCycle}</p>
                         <p className="text-sm text-muted-foreground">{row.odsEnabled ? `ODS till ${row.odsCutoff}` : row.weekendSettlementEnabled ? "Weekend enabled" : "Standard"}</p>
-                      </TableCell>
+                      </TableRowViewDetailsCell>
                     </TableRow>
                   ) : (
-                    <TableRow key={row.id} className="h-16 cursor-pointer align-top" onClick={() => router.push(`/settlements/${row.batchId}`)}>
+                    <TableRow
+                      key={row.id}
+                      className="group h-16 cursor-pointer align-top"
+                      onClick={() => router.push(`/settlements/${row.batchId}`)}
+                    >
                       <TableCell className="px-4 align-top">
                         <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                           <span>{row.utr}</span>
@@ -930,7 +951,12 @@ export function V3SettlementsContent({ initialBatchId }: V3SettlementsContentPro
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="px-4 align-top"><StatusBadge status={row.status} /></TableCell>
+                      <TableRowViewDetailsCell
+                        className="px-4 align-top"
+                        onViewDetails={() => router.push(`/settlements/${row.batchId}`)}
+                      >
+                        <StatusBadge status={row.status} />
+                      </TableRowViewDetailsCell>
                     </TableRow>
                   )
                 ))}
