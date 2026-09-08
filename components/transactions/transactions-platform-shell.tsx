@@ -41,7 +41,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { LogoMark } from "@/components/brand/logo-mark"
 import { NavVisibilityProvider } from "@/components/dashboard/nav-visibility-context"
-import { AccountSettingsContent, ManageUsersSection } from "@/components/account/settings-slide-panel"
+import { ManageUsersSection } from "@/components/account/settings-slide-panel"
 import { ManageStoresSection } from "@/components/account/manage-stores-section"
 import {
   BUSINESS_PROFILES,
@@ -52,7 +52,7 @@ import { clearDummyAuthSession, readDummyAuthSession } from "@/lib/dummy-auth"
 import { setThemeWithTransition } from "@/lib/theme-transition"
 import { cn } from "@/lib/utils"
 
-type PlatformPanel = "manage-stores" | "manage-users" | "account-settings"
+type PlatformPanel = "manage-stores" | "manage-users"
 
 interface TransactionsPlatformShellProps {
   children: ReactNode
@@ -345,19 +345,19 @@ function SidebarNav({
               <span className="truncate">Support</span>
             </Link>
 
-            <button
-              type="button"
-              onClick={() => togglePanel("account-settings")}
+            <Link
+              href="/account-settings"
+              onClick={closePanel}
               className={cn(
-                "flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm leading-none transition-colors",
-                activePanel === "account-settings"
+                "flex h-8 items-center gap-2 rounded-md px-2 text-sm leading-none transition-colors",
+                isHrefActive("/account-settings")
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
               <GearIcon className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">Account settings</span>
-            </button>
+            </Link>
           </div>
         </div>
       </nav>
@@ -375,8 +375,6 @@ function PlatformPanelContent({ panel }: { panel: PlatformPanel }) {
       return <ManageStoresSection />
     case "manage-users":
       return <ManageUsersSection />
-    case "account-settings":
-      return <AccountSettingsContent />
     default:
       return null
   }

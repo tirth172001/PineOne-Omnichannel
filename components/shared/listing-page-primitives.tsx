@@ -23,13 +23,13 @@ type ToggleItem = {
   value: string
 }
 
-type FilterOption = {
+export type FilterOption = {
   label: string
   value: string
 }
 
 /** Canonical page-title style, shared by every top-level module (Reports, Refunds, Disputes, Payments, Settlements, Checkout, Settings screens, ...). */
-export const PAGE_HEADING_CLASSES = "font-heading text-2xl font-light leading-8 tracking-[-0.4px] text-foreground"
+export const PAGE_HEADING_CLASSES = "font-heading text-2xl font-semibold leading-8 tracking-[-0.4px] text-foreground"
 
 /** Wrapper for the underline-style ("line") tab row used for a page's primary content tabs (e.g. Reports/History/Schedule). */
 export const LINE_TABS_LIST_CLASSES = "h-8 gap-6 bg-transparent p-0"
@@ -108,7 +108,7 @@ export const FILTER_BUTTON_FOCUS_CLASSES =
 export const FILTER_BUTTON_CARET_CLASSES =
   "size-4 text-muted-foreground transition-transform duration-200 group-aria-expanded/button:rotate-180"
 
-function FilterControl({ filter }: { filter: ListingFilter }) {
+export function FilterControl({ filter }: { filter: ListingFilter }) {
   if (filter.type === "select") {
     const options = filter.options ?? []
     const selectedLabel = options.find((option) => option.value === filter.value)?.label ?? filter.label

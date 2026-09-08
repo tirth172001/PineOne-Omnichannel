@@ -75,7 +75,7 @@ function ModePill({ mode }: { mode: DeviceMode }) {
 /* ------------------------------------- List ------------------------------------- */
 
 function StoresListView({ onSelectStore }: { onSelectStore: (storeId: string) => void }) {
-  const [stores, setStores] = useState<StoreRecord[]>(() => STORE_RECORDS)
+  const stores = STORE_RECORDS
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const dateRangeFilter = useDateRangeFilter()
@@ -88,22 +88,6 @@ function StoresListView({ onSelectStore }: { onSelectStore: (storeId: string) =>
       return `${store.name} ${store.storeId} ${store.merchantId}`.toLowerCase().includes(query)
     })
   }, [stores, search, statusFilter])
-
-  function handleAddStore() {
-    const index = stores.length + 1
-    const newStore: StoreRecord = {
-      id: `store-new-${Date.now()}`,
-      storeId: `STR-${Date.now()}`,
-      merchantId: `MER-${Date.now()}`,
-      name: `PineLabs - New Store ${index}`,
-      address: "PineLabs, Candor TechSpace, Noida, 584800",
-      status: "Active",
-      createdOnDate: "Just now",
-      createdOnTime: "",
-    }
-    setStores((current) => [newStore, ...current])
-    toast.success(`${newStore.name} added`)
-  }
 
   const filters: ListingFilter[] = [
     dateRangeFilter.filter,
@@ -123,16 +107,6 @@ function StoresListView({ onSelectStore }: { onSelectStore: (storeId: string) =>
 
   const columns: Array<ListingColumn<StoreRecord>> = [
     {
-      key: "createdOn",
-      header: "Created on",
-      cell: (row) => (
-        <div>
-          <p>{row.createdOnDate}</p>
-          <p className="text-xs text-muted-foreground">{row.createdOnTime}</p>
-        </div>
-      ),
-    },
-    {
       key: "name",
       header: "Store name",
       cell: (row) => (
@@ -142,8 +116,17 @@ function StoresListView({ onSelectStore }: { onSelectStore: (storeId: string) =>
         </div>
       ),
     },
+    {
+      key: "createdOn",
+      header: "Created on",
+      cell: (row) => (
+        <div>
+          <p>{row.createdOnDate}</p>
+          <p className="text-xs text-muted-foreground">{row.createdOnTime}</p>
+        </div>
+      ),
+    },
     { key: "storeId", header: "Store ID", cell: (row) => <CopyableId value={row.storeId} /> },
-    { key: "merchantId", header: "Merchant ID", cell: (row) => <CopyableId value={row.merchantId} /> },
     { key: "status", header: "Status", cell: (row) => <StatusPillSmall active={row.status === "Active"} /> },
     { key: "terminals", header: "Terminals linked", cell: (row) => terminalsLinkedCount(row.storeId) },
     { key: "users", header: "Users invited", cell: (row) => usersInvitedForStore(row.storeId) },
@@ -152,13 +135,6 @@ function StoresListView({ onSelectStore }: { onSelectStore: (storeId: string) =>
   return (
     <TransactionStyleListingPage
       title="Manage stores"
-      primaryAction={
-        <Button
-          onClick={handleAddStore}
-        >
-          Add new store
-        </Button>
-      }
       search={search}
       onSearchChange={setSearch}
       searchPlaceholder="Search by store name"

@@ -16,6 +16,7 @@ import {
   unionKeys,
   type AccessScope,
 } from "@/lib/role-permissions"
+import { STORE_RECORDS, type StoreRecord } from "@/lib/stores-data"
 
 export type BusinessProfile = {
   id: string
@@ -41,6 +42,14 @@ export const BUSINESS_PROFILES: BusinessProfile[] = [
     stage: "Single store",
     roleLabel: "Store Manager",
     description: "One physical store, run day-to-day by a Store Manager. No online storefront.",
+    permissionKeys: OFFLINE_ROLE_PERMISSIONS["Store Manager"],
+  },
+  {
+    id: "multi-store-manager",
+    businessName: "Vijay Sales — Noida cluster",
+    stage: "Multiple stores",
+    roleLabel: "Store Manager",
+    description: "A handful of physical stores in one cluster, run by a Store Manager. No online storefront.",
     permissionKeys: OFFLINE_ROLE_PERMISSIONS["Store Manager"],
   },
   {
@@ -111,4 +120,21 @@ export function businessProfileHasAnyPermission(profile: BusinessProfile, permis
 
 export function businessProfileAccessScope(profile: BusinessProfile): AccessScope {
   return computeAccessScope(profile.permissionKeys)
+}
+
+/** No per-profile store list exists in the demo data yet, so this infers one from
+ *  the profile shape: online-only profiles run no physical stores, the single-store
+ *  profile is pinned to exactly one store record, the multi-store manager sees a
+ *  small cluster, and the omnichannel admin sees the full store list — matching
+ *  the "single store" vs "multiple stores" distinction the store/channel filters
+ *  key off of. */
+export function businessProfileStores(profile: BusinessProfile): StoreRecord[] {
+  if (businessProfileAccessScope(profile) === "Online") return []
+  if (profile.id === "single-store") return STORE_RECORDS.slice(0, 1)
+  if (profile.id === "multi-store-manager") return STORE_RECORDS.slice(0, 4)
+  return STORE_RECORDS
+}
+
+export function businessProfileIsMultiStore(profile: BusinessProfile): boolean {
+  return businessProfileStores(profile).length > 1
 }

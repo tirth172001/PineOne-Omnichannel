@@ -1,13 +1,17 @@
 import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
-import { GeistMono } from 'geist/font/mono'
-import { Platypi } from 'next/font/google'
+import localFont from 'next/font/local'
 import './globals.css'
 
-const platypi = Platypi({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-platypi',
+const interDisplay = localFont({
+  src: [
+    { path: '../public/fonts/inter-display/InterDisplay-Light.woff2', weight: '300', style: 'normal' },
+    { path: '../public/fonts/inter-display/InterDisplay-Regular.woff2', weight: '400', style: 'normal' },
+    { path: '../public/fonts/inter-display/InterDisplay-Medium.woff2', weight: '500', style: 'normal' },
+    { path: '../public/fonts/inter-display/InterDisplay-SemiBold.woff2', weight: '600', style: 'normal' },
+    { path: '../public/fonts/inter-display/InterDisplay-Bold.woff2', weight: '700', style: 'normal' },
+  ],
+  variable: '--font-inter-display',
   display: 'swap',
 })
 import { ThemeProvider } from "@/components/theme-provider"
@@ -44,7 +48,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`font-sans ${GeistMono.variable} ${platypi.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`font-sans ${interDisplay.variable}`}>
       <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"

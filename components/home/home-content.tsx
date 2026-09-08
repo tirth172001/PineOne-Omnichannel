@@ -36,9 +36,10 @@ import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { ProductWorkspaceNav, type ProductWorkspaceSection } from "@/components/dashboard/product-workspace-nav"
 import { PageHeader } from "@/components/ui/panels"
 import { OverviewSnapshotChartCard } from "@/components/home/overview-snapshot-chart-card"
-import { OverviewDetailCards } from "@/components/home/overview-detail-cards"
-import { OverviewAppDownloadCard } from "@/components/home/overview-app-download-card"
+import { OverviewDetailCards, StoreScopeNote, useOverviewScope } from "@/components/home/overview-detail-cards"
+import { OverviewAnalyticsSection } from "@/components/home/overview-analytics-section"
 import { OverviewExploreProducts } from "@/components/home/overview-explore-products"
+import { FilterControl } from "@/components/shared/listing-page-primitives"
 import { TransactionStateBranchFlow, type BranchFlowNode } from "@/components/home/transaction-state-branch-flow"
 import { AnimatedNumberText } from "@/components/ui/animated-number-text"
 import { SectionSummaryStrip, type SectionSummaryMetric } from "@/components/dashboard/section-summary-strip"
@@ -1188,8 +1189,16 @@ function PerformanceCard({
   )
 }
 
+function getTimeOfDayGreeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return "Good morning"
+  if (hour < 17) return "Good afternoon"
+  return "Good evening"
+}
+
 export function HomeContent({ initialSection = "overview" }: { initialSection?: ProductWorkspaceSection } = {}) {
   const router = useRouter()
+  const overviewScope = useOverviewScope()
   const [navSection, setNavSection] = useState<ProductWorkspaceSection>(initialSection)
   const [overviewDateRange, setOverviewDateRange] = useState<"last-7-days" | "last-30-days" | "last-90-days">("last-7-days")
   const [overviewProductFilter, setOverviewProductFilter] = useState<"all" | "Checkout" | "POS Terminal" | "Payment Links">("all")
@@ -2748,17 +2757,48 @@ export function HomeContent({ initialSection = "overview" }: { initialSection?: 
       ) : null}
       {navSection === "overview" ? (
         <>
-          <section className="w-full max-w-[1320px] space-y-6">
-            <h3 className="font-heading text-2xl font-light leading-[1.05] text-foreground">Overview</h3>
+          <section className="w-full max-w-[1100px]">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h3 className="flex flex-wrap items-center gap-2 font-heading text-2xl font-semibold leading-[1.3] text-foreground">
+                  {getTimeOfDayGreeting()}, Tirth Trivedi
+                  <Badge variant="outline">{overviewScope.profile.roleLabel}</Badge>
+                </h3>
+                <StoreScopeNote
+                  isMultiStore={overviewScope.isMultiStore}
+                  stores={overviewScope.stores}
+                  storeIds={overviewScope.storeIds}
+                  onStoreIdsChange={overviewScope.setStoreIds}
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {overviewScope.showChannelFilter ? <FilterControl filter={overviewScope.channelFilter} /> : null}
+              </div>
+            </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[7fr_3fr]">
-              <div className="min-w-0 space-y-4">
-                <OverviewDetailCards />
-              </div>
-              <div className="min-w-0 space-y-6">
-                <OverviewAppDownloadCard />
-                <OverviewExploreProducts />
-              </div>
+            <div className="mt-6">
+              <OverviewDetailCards
+                stores={overviewScope.stores}
+                isMultiStore={overviewScope.isMultiStore}
+                showChannelFilter={overviewScope.showChannelFilter}
+                channel={overviewScope.channel}
+                storeIds={overviewScope.storeIds}
+              />
+            </div>
+
+            <div className="mt-16">
+              <OverviewAnalyticsSection
+                stores={overviewScope.stores}
+                isMultiStore={overviewScope.isMultiStore}
+                showChannelFilter={overviewScope.showChannelFilter}
+                channel={overviewScope.channel}
+                storeIds={overviewScope.storeIds}
+                onStoreIdsChange={overviewScope.setStoreIds}
+              />
+            </div>
+
+            <div className="mt-16">
+              <OverviewExploreProducts />
             </div>
 
             <div className="hidden space-y-3">

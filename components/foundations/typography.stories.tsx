@@ -39,16 +39,13 @@ export const Families: Story = {
   render: () => (
     <div className="space-y-6">
       <div>
-        <p className="mb-1 font-mono text-xs text-muted-foreground">--font-sans / --font-heading</p>
+        <p className="mb-1 font-mono text-xs text-muted-foreground">--font-sans / --font-mono / --font-heading</p>
         <p className="font-sans text-2xl text-foreground">Inter Display — The quick brown fox jumps over the lazy dog</p>
       </div>
-      <div>
-        <p className="mb-1 font-mono text-xs text-muted-foreground">--font-mono</p>
-        <p className="font-mono text-2xl text-foreground">Geist Mono — The quick brown fox jumps over the lazy dog</p>
-      </div>
       <p className="text-sm text-muted-foreground">
-        <code>font-heading</code> aliases to the same sans font (<code>--font-heading: var(--font-sans)</code> in{" "}
-        <code>app/globals.css</code>) — there is currently no separate display typeface.
+        Inter Display is the only typeface in the project — <code>--font-sans</code>, <code>--font-mono</code>, and{" "}
+        <code>--font-heading</code> all alias to it in <code>app/globals.css</code>. Headings (
+        <code>font-heading</code>) render at <code>font-semibold</code> by convention.
       </p>
     </div>
   ),

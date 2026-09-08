@@ -56,6 +56,13 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -66,7 +73,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group"
 import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   Select,
   SelectContent,
@@ -84,6 +93,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -127,7 +137,7 @@ import {
   type UserStatus,
 } from "@/lib/user-roster-data"
 
-export type AccountSettingsTab = "personal-details" | "credentials" | "webhooks"
+export type AccountSettingsTab = "personal-details" | "credentials" | "webhooks" | "refunds"
 
 /* --------------------------------- Shared bits ------------------------------- */
 
@@ -307,6 +317,392 @@ function WebhooksSection() {
           }
         />
       </div>
+    </div>
+  )
+}
+
+/* ---------------------------------- Refunds ------------------------------------ */
+
+/** Lets an admin grant refund access to individual Store Managers and Accountants —
+ *  Owners and Admins always have refund access, so this dialog only manages the two
+ *  roles whose access is opt-in. Selections are staged in `draft` until Apply. */
+function RefundAccessDialog({
+  open,
+  onOpenChange,
+  storeManagers,
+  accountants,
+  selectedIds,
+  onApply,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  storeManagers: RosterEntry[]
+  accountants: RosterEntry[]
+  selectedIds: string[]
+  onApply: (ids: string[]) => void
+}) {
+  const [group, setGroup] = useState<"store-managers" | "accountants">("store-managers")
+  const [search, setSearch] = useState("")
+  const [storeFilter, setStoreFilter] = useState("all")
+  const [draft, setDraft] = useState<string[]>(selectedIds)
+
+  useEffect(() => {
+    if (!open) return
+    setDraft(selectedIds)
+    setSearch("")
+    setStoreFilter("all")
+    setGroup("store-managers")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  const groupUsers = group === "store-managers" ? storeManagers : accountants
+  const filteredUsers = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    return groupUsers.filter((user) => {
+      if (storeFilter !== "all" && !user.storeIds?.includes(storeFilter)) return false
+      if (!query) return true
+      return `${user.name} ${user.email}`.toLowerCase().includes(query)
+    })
+  }, [groupUsers, search, storeFilter])
+
+  const allFilteredSelected = filteredUsers.length > 0 && filteredUsers.every((user) => draft.includes(user.id))
+  const selectedInGroupCount = groupUsers.filter((user) => draft.includes(user.id)).length
+
+  function toggleUser(id: string) {
+    setDraft((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
+  }
+
+  function toggleAllFiltered(checked: boolean) {
+    const ids = filteredUsers.map((user) => user.id)
+    setDraft((current) => {
+      if (checked) return Array.from(new Set([...current, ...ids]))
+      const idSet = new Set(ids)
+      return current.filter((item) => !idSet.has(item))
+    })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg gap-0 p-0">
+        <DialogHeader className="border-b border-border/70 px-5 py-4">
+          <DialogTitle>Select users</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 px-5 py-4">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="relative flex-1">
+              <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search users"
+                className="h-9 pl-8 text-sm"
+              />
+            </div>
+            <Select value={storeFilter} onValueChange={setStoreFilter}>
+              <SelectTrigger className="h-9 w-full text-xs sm:w-44">
+                <SelectValue placeholder="Filter by store" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All stores</SelectItem>
+                {STORE_IDENTITIES.map((store) => (
+                  <SelectItem key={store.storeId} value={store.storeId}>
+                    {store.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant={group === "store-managers" ? "default" : "outline"}
+              size="sm"
+              className="h-7 rounded-full text-xs"
+              onClick={() => setGroup("store-managers")}
+            >
+              Store Managers ({storeManagers.length})
+            </Button>
+            <Button
+              type="button"
+              variant={group === "accountants" ? "default" : "outline"}
+              size="sm"
+              className="h-7 rounded-full text-xs"
+              onClick={() => setGroup("accountants")}
+            >
+              Accountants ({accountants.length})
+            </Button>
+          </div>
+
+          <p className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            List also contains store managers managing more than 1 store
+          </p>
+
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <Checkbox checked={allFilteredSelected} onCheckedChange={(checked) => toggleAllFiltered(checked === true)} />
+              Select all
+            </label>
+            <span className="text-xs text-muted-foreground">
+              {selectedInGroupCount}/{groupUsers.length} users selected
+            </span>
+          </div>
+
+          <div className="max-h-64 overflow-y-auto rounded-md border border-border/70">
+            {filteredUsers.length === 0 ? (
+              <p className="px-3 py-6 text-center text-xs text-muted-foreground">No users found.</p>
+            ) : (
+              <div className="divide-y divide-border/60">
+                {filteredUsers.map((user) => (
+                  <label
+                    key={user.id}
+                    className="flex cursor-pointer items-center justify-between gap-2 px-3 py-2.5 text-sm text-foreground"
+                  >
+                    <span className="min-w-0 truncate">{user.name}</span>
+                    <Checkbox checked={draft.includes(user.id)} onCheckedChange={() => toggleUser(user.id)} />
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter className="border-t border-border/70 px-5 py-4 sm:justify-end">
+          <Button variant="outline" onClick={() => setDraft(selectedIds)}>
+            Reset
+          </Button>
+          <Button
+            onClick={() => {
+              onApply(draft)
+              onOpenChange(false)
+              toast.success("Refund access updated")
+            }}
+          >
+            Apply
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function RefundsSettingsSection() {
+  const [refundsEnabled, setRefundsEnabled] = useState(false)
+  const [adminApprovalRequired, setAdminApprovalRequired] = useState(true)
+  const [adminApprovalEditable, setAdminApprovalEditable] = useState(false)
+  const [otpRequired, setOtpRequired] = useState(false)
+  const [partialRefundAllowed, setPartialRefundAllowed] = useState<"yes" | "no">("no")
+  const [paymentModes, setPaymentModes] = useState({ upi: true, card: true, smsPay: true })
+  const [refundLimit, setRefundLimit] = useState("1")
+  const [accessUserIds, setAccessUserIds] = useState<string[]>([])
+  const [editUsersOpen, setEditUsersOpen] = useState(false)
+
+  const storeManagerUsers = useMemo(
+    () => INITIAL_ROSTER.filter((user) => user.status !== "Deactivated" && user.role === "Store Manager"),
+    []
+  )
+  const accountantUsers = useMemo(
+    () => INITIAL_ROSTER.filter((user) => user.status !== "Deactivated" && user.role === "Accountant"),
+    []
+  )
+  const ownerCount = useMemo(
+    () => INITIAL_ROSTER.filter((user) => user.status !== "Deactivated" && user.role === "Owner").length,
+    []
+  )
+  const adminCount = useMemo(
+    () => INITIAL_ROSTER.filter((user) => user.status !== "Deactivated" && user.role === "Admin").length,
+    []
+  )
+  const selectedStoreManagerCount = storeManagerUsers.filter((user) => accessUserIds.includes(user.id)).length
+  const selectedAccountantCount = accountantUsers.filter((user) => accessUserIds.includes(user.id)).length
+  const totalAccessCount = ownerCount + adminCount + selectedStoreManagerCount + selectedAccountantCount
+  const allPaymentModesChecked = paymentModes.upi && paymentModes.card && paymentModes.smsPay
+
+  return (
+    <div className="w-full max-w-[1360px] space-y-8">
+      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <SectionIntro
+          title="Refunds via Pine Labs One"
+          description="Enable refunds to start offering them for different transactions."
+        />
+        <div className="space-y-3">
+          <FieldRow
+            icon={ArrowCounterClockwiseIcon}
+            label="Enable refunds"
+            value={refundsEnabled ? "Enabled" : "Disabled"}
+            action={<Switch checked={refundsEnabled} onCheckedChange={setRefundsEnabled} />}
+          />
+        </div>
+      </div>
+
+      <div className={cn("space-y-8", !refundsEnabled && "pointer-events-none opacity-50")}>
+        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <SectionIntro
+            title="User access"
+            description="Owners and admins always have refund access. Grant it to store managers and accountants here."
+          />
+          <div className="space-y-3">
+            <FieldRow
+              icon={UsersIcon}
+              label={`${totalAccessCount} users have access`}
+              value={`${ownerCount} Owner · ${adminCount} Admins · ${selectedStoreManagerCount} Store Managers · ${selectedAccountantCount} Accountant`}
+              action={
+                <Button variant="outline" size="sm" onClick={() => setEditUsersOpen(true)}>
+                  Edit users
+                </Button>
+              }
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <SectionIntro title="Security controls" description="Add extra checks before a refund is processed." />
+          <div className="space-y-3">
+            <FieldRow
+              icon={KeyIcon}
+              label="Admin approval required"
+              value="Requires an admin to approve refunds initiated by store managers or accountants"
+              action={
+                <div className="flex items-center gap-3">
+                  {!adminApprovalEditable ? (
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-primary hover:underline"
+                      onClick={() => setAdminApprovalEditable(true)}
+                    >
+                      Edit
+                    </button>
+                  ) : null}
+                  <Switch
+                    checked={adminApprovalRequired}
+                    disabled={!adminApprovalEditable}
+                    onCheckedChange={setAdminApprovalRequired}
+                  />
+                </div>
+              }
+            />
+            <FieldRow
+              icon={DeviceMobileIcon}
+              label="OTP based authentication"
+              value="Send an OTP to the customer before processing their refund"
+              action={<Switch checked={otpRequired} onCheckedChange={setOtpRequired} />}
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <SectionIntro title="Refund type" description="Choose whether store staff can issue partial refunds." />
+          <div className="space-y-3">
+            <FieldRow
+              icon={RepeatIcon}
+              label="Partial refund"
+              value="Allow refunding less than the full transaction amount"
+              action={
+                <RadioGroup
+                  value={partialRefundAllowed}
+                  onValueChange={(value) => setPartialRefundAllowed(value as "yes" | "no")}
+                  className="flex w-auto items-center gap-4"
+                >
+                  <label className="flex items-center gap-1.5 text-sm text-foreground">
+                    <RadioGroupItem value="yes" /> Yes
+                  </label>
+                  <label className="flex items-center gap-1.5 text-sm text-foreground">
+                    <RadioGroupItem value="no" /> No
+                  </label>
+                </RadioGroup>
+              }
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <SectionIntro title="Payment modes" description="Choose which payment modes support refunds." />
+          <div className="space-y-3">
+            <FieldRow
+              icon={WalletIcon}
+              label="All payment modes"
+              value="Enable refunds across every supported payment mode"
+              action={
+                <Checkbox
+                  checked={allPaymentModesChecked}
+                  onCheckedChange={(checked) =>
+                    setPaymentModes({ upi: checked === true, card: checked === true, smsPay: checked === true })
+                  }
+                />
+              }
+            />
+            <FieldRow
+              icon={LinkIcon}
+              label="UPI"
+              value="Refunds for transactions paid via UPI"
+              action={
+                <Checkbox
+                  checked={paymentModes.upi}
+                  onCheckedChange={(checked) => setPaymentModes((current) => ({ ...current, upi: checked === true }))}
+                />
+              }
+            />
+            <FieldRow
+              icon={CreditCardIcon}
+              label="Card"
+              value="Refunds for transactions paid via card"
+              action={
+                <Checkbox
+                  checked={paymentModes.card}
+                  onCheckedChange={(checked) => setPaymentModes((current) => ({ ...current, card: checked === true }))}
+                />
+              }
+            />
+            <FieldRow
+              icon={PhoneIcon}
+              label="SMS Pay"
+              value="Refunds for transactions paid via SMS Pay"
+              action={
+                <Checkbox
+                  checked={paymentModes.smsPay}
+                  onCheckedChange={(checked) => setPaymentModes((current) => ({ ...current, smsPay: checked === true }))}
+                />
+              }
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <SectionIntro
+            title="Refund limit"
+            description="Refunds above this amount always require admin approval."
+          />
+          <div className="space-y-3">
+            <FieldRow
+              icon={HardDrivesIcon}
+              label="Limit processed without approval"
+              value={`₹${refundLimit || 0}`}
+              action={
+                <InputGroup className="h-9 w-32">
+                  <InputGroupAddon>
+                    <InputGroupText>₹</InputGroupText>
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    value={refundLimit}
+                    onChange={(event) => setRefundLimit(event.target.value.replace(/[^0-9]/g, ""))}
+                    inputMode="numeric"
+                  />
+                </InputGroup>
+              }
+            />
+          </div>
+        </div>
+      </div>
+
+      <RefundAccessDialog
+        open={editUsersOpen}
+        onOpenChange={setEditUsersOpen}
+        storeManagers={storeManagerUsers}
+        accountants={accountantUsers}
+        selectedIds={accessUserIds}
+        onApply={setAccessUserIds}
+      />
     </div>
   )
 }
@@ -2572,6 +2968,9 @@ export function AccountSettingsContent() {
               <TabsTrigger value="webhooks" className={LINE_TAB_TRIGGER_CLASSES}>
                 Webhooks
               </TabsTrigger>
+              <TabsTrigger value="refunds" className={LINE_TAB_TRIGGER_CLASSES}>
+                Refunds
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -2583,6 +2982,7 @@ export function AccountSettingsContent() {
         {tab === "personal-details" ? <PersonalDetailsSection /> : null}
         {tab === "credentials" ? <CredentialsSection /> : null}
         {tab === "webhooks" ? <WebhooksSection /> : null}
+        {tab === "refunds" ? <RefundsSettingsSection /> : null}
       </div>
     </div>
   )
