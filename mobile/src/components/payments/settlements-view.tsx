@@ -281,9 +281,9 @@ export function SettlementsView() {
             ) : (
               <ListRowLine
                 left={
-                  <View style={styles.inlineRow}>
+                  <View style={styles.bankRow}>
                     <BankLogo bank={row.acquiringBank} />
-                    <Text variant="bodySmall" style={muted}>
+                    <Text variant="bodySmall" style={[muted, styles.shrink]} numberOfLines={1}>
                       {row.acquiringBank} bank · {row.accountLabel} · {row.transactionCount} payments
                     </Text>
                   </View>
@@ -351,6 +351,9 @@ const styles = StyleSheet.create({
   summaryTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   summaryBody: { padding: CARD_PADDING, gap: 8 },
   inlineRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
+  // Logo and text stay on one line; the text truncates rather than wrapping under the logo.
+  bankRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  shrink: { flexShrink: 1 },
   link: { margin: 0, borderRadius: INNER_RADIUS, minWidth: 0 },
   linkLabel: { marginVertical: 2, marginHorizontal: 4, textDecorationLine: 'underline' },
   // Web: bg-[#eef2ff] strip across the card's bottom edge.

@@ -36,6 +36,8 @@ export function PaginationBar({
       mode="outlined"
       size={16}
       disabled={disabled}
+      // Full-contrast icon when enabled, so it reads clearly apart from the 38% disabled state.
+      iconColor={disabled ? undefined : theme.colors.onSurface}
       onPress={() => onPageChange(target)}
       accessibilityLabel={label}
       style={[styles.navButton, { borderColor: theme.colors.outlineVariant }]}
