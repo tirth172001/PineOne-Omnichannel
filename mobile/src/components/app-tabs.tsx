@@ -40,7 +40,12 @@ function Shell() {
   const business = useBusiness();
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const screenTabs = useShellTabsConfig();
-  const active = TAB_ITEMS.find((item) => item.href === pathname) ?? TAB_ITEMS[0];
+  // A tab owns its nested routes too (e.g. /payments/transactions/123 → Payments).
+  const active =
+    TAB_ITEMS.find((item) => item.href !== '/' && (pathname === item.href || pathname.startsWith(`${item.href}/`))) ??
+    TAB_ITEMS[0];
+  // Detail screens (anything below a tab's root) draw their own back-button header instead of the org header.
+  const isDetailRoute = pathname !== active.href && pathname !== '/';
   // /theme-preview is a dev-only design-system reference, not part of the 5-tab
   // flow — no shell chrome on it.
   const isDevRoute = pathname === '/theme-preview';
@@ -49,16 +54,18 @@ function Shell() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <ShellTopBar>
-        <AppHeader
-          organisationName={business.organisation.name}
-          shopName={business.scopeLabel}
-          organisationLogo={business.organisation.logo}
-          avatar={CURRENT_USER.avatar}
-          onPressSwitcher={() => setSwitcherOpen(true)}
-        />
-        {screenTabs ? <ScreenTabs {...screenTabs} /> : null}
-      </ShellTopBar>
+      {isDetailRoute ? null : (
+        <ShellTopBar>
+          <AppHeader
+            organisationName={business.organisation.name}
+            shopName={business.scopeLabel}
+            organisationLogo={business.organisation.logo}
+            avatar={CURRENT_USER.avatar}
+            onPressSwitcher={() => setSwitcherOpen(true)}
+          />
+          {screenTabs ? <ScreenTabs {...screenTabs} /> : null}
+        </ShellTopBar>
+      )}
       <View style={{ flex: 1 }}>
         <Slot />
       </View>

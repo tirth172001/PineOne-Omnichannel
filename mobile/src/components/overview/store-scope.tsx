@@ -6,7 +6,7 @@ import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { useBusiness } from '@/hooks/use-business';
 
-import { ChecklistSheet } from './checklist-sheet';
+import { ChecklistSheet } from '@/components/shared/checklist-sheet';
 
 /**
  * "Showing data across all stores · Change store" under a section title (web:

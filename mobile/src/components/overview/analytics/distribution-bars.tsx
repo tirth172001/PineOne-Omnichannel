@@ -5,9 +5,9 @@ import { Divider, Icon, Text, TouchableRipple, useTheme } from 'react-native-pap
 import { concentric, Shape } from '@/constants/shape';
 import { CHART_ACCENT_COLOR, type DistributionRow, formatCount, formatInr, type MetricMode } from '@/data/overview';
 
-import { DimmedDecimalAmount } from '../overview-card';
+import { DimmedDecimalAmount } from '@/components/shared/amount';
 
-import { HatchedFill } from './hatch';
+import { HatchedFill } from '@/components/shared/hatch';
 
 const BAR_HEIGHT = 16;
 

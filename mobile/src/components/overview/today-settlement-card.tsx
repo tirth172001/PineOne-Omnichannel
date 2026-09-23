@@ -6,9 +6,10 @@ import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { formatInr, SETTLEMENT_SOURCES, SETTLEMENT_TODAY, type SettlementSource } from '@/data/overview';
 
+import { DimmedDecimalAmount } from '@/components/shared/amount';
+import { CompactSegmentedButtons } from '@/components/shared/controls';
+
 import {
-  CompactSegmentedButtons,
-  DimmedDecimalAmount,
   OVERVIEW_CARD_PADDING,
   OverviewCard,
   OverviewCardDivider,

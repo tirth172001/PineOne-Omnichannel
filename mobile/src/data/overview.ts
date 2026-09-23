@@ -1,5 +1,6 @@
 import type { ImageSourcePropType } from 'react-native';
 
+
 /**
  * Mock data for the Overview screen, mirroring the web app's Overview
  * (components/home/home-content.tsx, overview-detail-cards.tsx,
@@ -12,8 +13,10 @@ import type { ImageSourcePropType } from 'react-native';
  * web does (it has no per-channel data either).
  */
 
-export type PaymentMode = 'upi' | 'card' | 'netbanking';
-export type StatusTone = 'processing' | 'success' | 'initiated' | 'failed';
+import { formatCount, type MetricMode, type PaymentMode, type StatusTone } from './common';
+
+export { buildAxisTicks, formatAxisValue, formatCount, formatInr, formatMetric } from './common';
+export type { MetricMode, PaymentMode, StatusTone } from './common';
 
 /* ------------------------------------------------------------------ */
 /* Greeting                                                            */
@@ -117,7 +120,6 @@ export const DEFAULT_ANALYTICS_RANGE: DayRange = 'yesterday';
 export const RANGE_MULTIPLIER: Record<DayRange, number> = { today: 1, yesterday: 0.91, 'last-7-days': 1 };
 const HOURLY_RANGES: DayRange[] = ['today', 'yesterday'];
 
-export type MetricMode = 'count' | 'amount';
 export type TrendKind = 'volume' | 'failed' | 'dispute' | 'refund';
 
 export type AnalyticsWidgetId =
@@ -283,49 +285,3 @@ export const PRODUCT_BANNERS: { id: string; alt: string; image: ImageSourcePropT
   { id: 'myemi', alt: 'myEMI — no-cost EMIs on purchases as low as ₹3,000', image: require('../../assets/images/overview-products/myemi.png') },
   { id: 'contactless', alt: 'Contactless payments made quicker', image: require('../../assets/images/overview-products/contactless.png') },
 ];
-
-/* ------------------------------------------------------------------ */
-/* Formatting                                                          */
-/* ------------------------------------------------------------------ */
-
-/** Indian digit grouping without decimals: 1942250 → "19,42,250". */
-export function formatCount(value: number) {
-  const digits = String(Math.round(Math.abs(value)));
-  const lastThree = digits.slice(-3);
-  const rest = digits.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',');
-  return `${value < 0 ? '-' : ''}${rest ? `${rest},` : ''}${lastThree}`;
-}
-
-/** "₹19,42,250.00": Indian digit grouping, two decimals (the web's formatInrAmount). */
-export function formatInr(value: number) {
-  const [rupees, paise] = Math.abs(value).toFixed(2).split('.');
-  return `${value < 0 ? '-' : ''}₹${formatCount(Number(rupees))}.${paise}`;
-}
-
-/** Web: formatTotal(): "₹…" with decimals by amount, grouped integer by count. */
-export function formatMetric(value: number, mode: MetricMode) {
-  return mode === 'amount' ? formatInr(value) : formatCount(value);
-}
-
-/** Web: formatAxisValue(): compact axis ticks (10.5K / ₹1.2L). */
-export function formatAxisValue(value: number, mode: MetricMode) {
-  if (mode === 'amount') {
-    if (value >= 100000) return `₹${(value / 100000).toFixed(1)}L`;
-    if (value >= 1000) return `₹${(value / 1000).toFixed(1)}K`;
-    return `₹${value}`;
-  }
-  if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
-  return `${value}`;
-}
-
-/** Web: buildAxisTicks(): a "nice" 0..max tick set, de-duplicated for tiny ranges. */
-export function buildAxisTicks(maxValue: number, tickCount = 4) {
-  if (maxValue <= 0) return [0];
-  const rawStep = maxValue / tickCount;
-  const magnitude = 10 ** Math.floor(Math.log10(rawStep || 1));
-  const normalized = rawStep / magnitude;
-  const niceStep = Math.max(1, (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * magnitude);
-  const ticks: number[] = [];
-  for (let tick = 0; tick <= maxValue + niceStep; tick += niceStep) ticks.push(Math.round(tick));
-  return Array.from(new Set(ticks));
-}

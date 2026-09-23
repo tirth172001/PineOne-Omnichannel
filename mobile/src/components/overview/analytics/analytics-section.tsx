@@ -21,8 +21,10 @@ import {
   WIDGET_CATALOG,
 } from '@/data/overview';
 
-import { ChecklistSheet } from '../checklist-sheet';
-import { FilterMenuButton, OverviewCard, OverviewCardDivider, OverviewCardHeader, SectionActionButton } from '../overview-card';
+import { ChecklistSheet } from '@/components/shared/checklist-sheet';
+import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
+
+import { OverviewCard, OverviewCardDivider, OverviewCardHeader } from '../overview-card';
 import { StoreScopeNote } from '../store-scope';
 
 import { AnalyticsCard } from './analytics-card';
@@ -118,7 +120,7 @@ export function AnalyticsSection({ storeScale, channelScale }: AnalyticsSectionP
         <StoreScopeNote />
         <View style={styles.controls}>
           <FilterMenuButton value={range} onValueChange={setRange} options={DAY_RANGE_OPTIONS} accessibilityLabel="Date" />
-          <SectionActionButton label="Customize" icon="sliders" onPress={() => setCustomizeOpen(true)} />
+          <OutlinedActionButton label="Customize" icon="sliders" onPress={() => setCustomizeOpen(true)} />
         </View>
       </View>
 

@@ -1,13 +1,16 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
 
-import { PlaceholderScreen } from '@/components/placeholder-screen';
+import { RefundsView } from '@/components/payments/refunds-view';
+import { SettlementsView } from '@/components/payments/settlements-view';
+import { TransactionsView } from '@/components/payments/transactions-view';
 import { useShellTabs } from '@/components/shell-tabs';
 
 const PAYMENT_TABS = [
-  { key: 'transactions', label: 'Transactions', description: 'Every payment across channels, filterable by status and mode.' },
-  { key: 'settlements', label: 'Settlements', description: 'Payouts to your bank account and their deductions.' },
-  { key: 'refunds', label: 'Refunds', description: 'Refunds raised against transactions and their status.' },
+  { key: 'transactions', label: 'Transactions' },
+  { key: 'settlements', label: 'Settlements' },
+  { key: 'refunds', label: 'Refunds' },
 ];
 
 export default function PaymentsScreen() {
@@ -21,9 +24,17 @@ export default function PaymentsScreen() {
     setLastRequestedKey(requestedKey);
     if (requestedKey) setActiveKey(requestedKey);
   }
-  const active = PAYMENT_TABS.find((tab) => tab.key === activeKey) ?? PAYMENT_TABS[0];
   // Sub-tabs render inside the shell's top bar, under the header.
   useShellTabs({ tabs: PAYMENT_TABS, activeKey, onChange: setActiveKey });
 
-  return <PlaceholderScreen title={active.label} description={active.description} />;
+  return (
+    // Keyed by tab so each sub-tab starts at the top with its own state.
+    <ScrollView key={activeKey} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      {activeKey === 'settlements' ? <SettlementsView /> : activeKey === 'refunds' ? <RefundsView /> : <TransactionsView />}
+    </ScrollView>
+  );
 }
+
+const styles = StyleSheet.create({
+  content: { padding: 16, paddingBottom: 32 },
+});

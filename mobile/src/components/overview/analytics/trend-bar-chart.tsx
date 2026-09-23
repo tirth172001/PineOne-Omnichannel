@@ -6,7 +6,7 @@ import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { buildAxisTicks, CHART_ACCENT_COLOR, formatAxisValue, type MetricMode } from '@/data/overview';
 
-import { HatchedFill } from './hatch';
+import { HatchedFill } from '@/components/shared/hatch';
 
 const PLOT_HEIGHT = 220;
 /** Headroom above the tallest bar for its value label (web: topPadding). */

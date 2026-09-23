@@ -6,7 +6,7 @@ import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { PRODUCT_BANNERS } from '@/data/overview';
 
-import { SectionActionButton } from './overview-card';
+import { OutlinedActionButton } from '@/components/shared/controls';
 
 const BANNER_WIDTH = 306;
 const BANNER_HEIGHT = 136;
@@ -23,7 +23,7 @@ export function ExploreProducts({ onPressViewAll, onPressBanner }: { onPressView
         <Text style={styles.title} accessibilityRole="header">
           Explore products
         </Text>
-        <SectionActionButton label="View all" icon="caret-right" trailingIcon onPress={onPressViewAll} />
+        <OutlinedActionButton label="View all" icon="caret-right" trailingIcon onPress={onPressViewAll} />
       </View>
       {/* Bleeds to the screen edges so the next banner peeks in, as the web's fade hints. */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scroller} contentContainerStyle={styles.row}>

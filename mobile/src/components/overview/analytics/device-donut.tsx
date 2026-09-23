@@ -6,7 +6,7 @@ import Svg, { Circle, Defs } from 'react-native-svg';
 import { Fonts } from '@/constants/theme';
 import { CHART_ACCENT_COLOR, DEVICE_SECONDARY_COLOR, type DistributionRow, type MetricMode } from '@/data/overview';
 
-import { HatchPattern, useSvgId } from './hatch';
+import { HatchPattern, useSvgId } from '@/components/shared/hatch';
 
 const SIZE = 152;
 const STROKE = 16;

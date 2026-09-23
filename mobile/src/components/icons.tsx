@@ -89,6 +89,18 @@ import { DesktopIcon } from 'phosphor-react-native/src/icons/Desktop';
 import { SlidersIcon } from 'phosphor-react-native/src/icons/Sliders';
 import { ArrowsCounterClockwiseIcon } from 'phosphor-react-native/src/icons/ArrowsCounterClockwise';
 import { ArrowDownIcon } from 'phosphor-react-native/src/icons/ArrowDown';
+import { SpinnerIcon } from 'phosphor-react-native/src/icons/Spinner';
+import { ChecksIcon } from 'phosphor-react-native/src/icons/Checks';
+import { LightningIcon } from 'phosphor-react-native/src/icons/Lightning';
+import { FastForwardIcon } from 'phosphor-react-native/src/icons/FastForward';
+import { HourglassIcon } from 'phosphor-react-native/src/icons/Hourglass';
+import { HeadphonesIcon } from 'phosphor-react-native/src/icons/Headphones';
+import { CircleDashedIcon } from 'phosphor-react-native/src/icons/CircleDashed';
+import { CircleIcon } from 'phosphor-react-native/src/icons/Circle';
+import { SlidersHorizontalIcon } from 'phosphor-react-native/src/icons/SlidersHorizontal';
+import { ArrowClockwiseIcon } from 'phosphor-react-native/src/icons/ArrowClockwise';
+import { GridFourIcon } from 'phosphor-react-native/src/icons/GridFour';
+import { MinusIcon } from 'phosphor-react-native/src/icons/Minus';
 import { XIcon } from 'phosphor-react-native/src/icons/X';
 import { XCircleIcon } from 'phosphor-react-native/src/icons/XCircle';
 
@@ -186,6 +198,18 @@ const ICONS = {
   sliders: SlidersIcon,
   'arrows-counter-clockwise': ArrowsCounterClockwiseIcon,
   'arrow-down': ArrowDownIcon,
+  spinner: SpinnerIcon,
+  checks: ChecksIcon,
+  lightning: LightningIcon,
+  'fast-forward': FastForwardIcon,
+  hourglass: HourglassIcon,
+  headphones: HeadphonesIcon,
+  'circle-dashed': CircleDashedIcon,
+  circle: CircleIcon,
+  'sliders-horizontal': SlidersHorizontalIcon,
+  'arrow-clockwise': ArrowClockwiseIcon,
+  'grid-four': GridFourIcon,
+  minus: MinusIcon,
 } satisfies Record<string, Icon>;
 
 export type BaseIconName = keyof typeof ICONS;

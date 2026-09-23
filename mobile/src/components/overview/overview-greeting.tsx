@@ -4,7 +4,8 @@ import { Text } from 'react-native-paper';
 import { Fonts } from '@/constants/theme';
 import { CHANNEL_OPTIONS, type ChannelFilter, getTimeOfDayGreeting } from '@/data/overview';
 
-import { FilterMenuButton, OutlineTag } from './overview-card';
+import { FilterMenuButton } from '@/components/shared/controls';
+import { OutlineTag } from '@/components/shared/status';
 import { StoreScopeNote } from './store-scope';
 
 type OverviewGreetingProps = {

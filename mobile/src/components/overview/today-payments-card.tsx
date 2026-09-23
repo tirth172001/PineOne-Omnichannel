@@ -6,15 +6,16 @@ import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { formatInr, type PaymentMode, type RecentPayment } from '@/data/overview';
 
+import { DimmedDecimalAmount } from '@/components/shared/amount';
+import { StatusPill } from '@/components/shared/status';
+
 import {
-  DimmedDecimalAmount,
   OVERVIEW_CARD_PADDING,
   OverviewCard,
   OverviewCardDivider,
   OverviewCardFooter,
   OverviewCardHeader,
   OverviewCardRangeLabel,
-  StatusPill,
 } from './overview-card';
 
 const PAY_MODE_ICON: Record<PaymentMode, string> = {

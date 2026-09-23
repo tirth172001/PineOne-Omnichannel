@@ -6,7 +6,7 @@ import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { CHART_ACCENT_COLOR, formatCount, type FunnelStage } from '@/data/overview';
 
-import { HatchedFill } from './hatch';
+import { HatchedFill } from '@/components/shared/hatch';
 
 const BAR_HEIGHT = 16;
 
