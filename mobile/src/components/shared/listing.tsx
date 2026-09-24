@@ -45,12 +45,15 @@ export function ListCard({ children, empty }: { children: ReactNode[]; empty?: s
           {empty ?? 'No results found.'}
         </Text>
       ) : (
-        rows.map((row, index) => (
-          <Fragment key={index}>
-            {index > 0 ? <Divider /> : null}
-            {row}
-          </Fragment>
-        ))
+        // Wrapped: Paper's Card passes an `index` prop to each direct child, which Fragments reject.
+        <View>
+          {rows.map((row, index) => (
+            <Fragment key={index}>
+              {index > 0 ? <Divider /> : null}
+              {row}
+            </Fragment>
+          ))}
+        </View>
       )}
     </Card>
   );

@@ -20,7 +20,15 @@ export function InnerPageStack() {
         headerShown: false,
         animation: 'slide_from_right',
         gestureEnabled: true,
-        cardStyle: { backgroundColor: theme.colors.background, paddingBottom: route.name === 'index' ? 0 : insets.bottom },
+        cardStyle: {
+          // On web the stack otherwise lets a full-page card grow with its content and scroll the
+          // document, which pushed the navigation bar below the content and stopped screens'
+          // own ScrollViews from scrolling. Fill the screen exactly instead, as on native.
+          flex: 1,
+          overflow: 'hidden',
+          backgroundColor: theme.colors.background,
+          paddingBottom: route.name === 'index' ? 0 : insets.bottom,
+        },
       })}
     />
   );
