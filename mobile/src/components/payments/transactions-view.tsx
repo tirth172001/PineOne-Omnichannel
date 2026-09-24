@@ -230,10 +230,13 @@ export function TransactionsView() {
   };
 
   // Page actions live in the tab header (merged into one menu when there are several).
-  useHeaderActions([
-    ...(mode === 'online' ? [{ label: 'Verify IMEI No', icon: 'device-mobile' }] : []),
-    { label: 'View analytics', icon: 'chart-bar', onPress: () => router.push('/payments/transactions/analytics') },
-  ]);
+  useHeaderActions(
+    [
+      ...(mode === 'online' ? [{ label: 'Verify IMEI No', icon: 'device-mobile' }] : []),
+      { label: 'View analytics', shortLabel: 'Analytics', icon: 'chart-bar', onPress: () => router.push('/payments/transactions/analytics') },
+    ],
+    { label: 'Tools', icon: 'squares-four' }
+  );
 
   return (
     <View style={styles.container}>

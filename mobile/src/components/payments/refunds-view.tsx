@@ -50,10 +50,13 @@ export function RefundsView() {
   const muted = { color: theme.colors.onSurfaceVariant };
 
   // Page actions live in the tab header, merged into one menu.
-  useHeaderActions([
-    { label: 'Bulk refunds', icon: 'upload-simple' },
-    { label: 'Bulk upload history', icon: 'clock-counter-clockwise' },
-  ]);
+  useHeaderActions(
+    [
+      { label: 'Bulk refunds', icon: 'upload-simple' },
+      { label: 'Bulk upload history', icon: 'clock-counter-clockwise' },
+    ],
+    { label: 'Bulk', icon: 'upload-simple' }
+  );
 
   return (
     <View style={styles.container}>

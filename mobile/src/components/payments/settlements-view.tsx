@@ -112,7 +112,7 @@ export function SettlementsView() {
   // Settlement cycle, account and the preferences link live behind the header's preferences
   // button (user decision) instead of info lines at the top of the page.
   const [preferencesOpen, setPreferencesOpen] = useState(false);
-  useHeaderActions([{ label: 'Settlement preferences', icon: 'sliders', onPress: () => setPreferencesOpen(true) }]);
+  useHeaderActions([{ label: 'Settlement preferences', shortLabel: 'Preferences', icon: 'sliders', onPress: () => setPreferencesOpen(true) }]);
 
   return (
     <View style={styles.container}>
