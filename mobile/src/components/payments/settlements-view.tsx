@@ -66,11 +66,11 @@ const CARD_PADDING = 16;
 const INNER_RADIUS = concentric(Shape.max, CARD_PADDING);
 
 /**
- * Payments → Settlements (web: V3SettlementsContent list mode): In-store /
- * Online, settlement cycle and account, the Settled / Remaining summary with a
- * deductions breakdown, the On-Demand banner (in-store), then the searchable,
- * filterable batch list. The web's two summary columns and 7–8 column table
- * stack on a phone.
+ * Settlements tab (web: V3SettlementsContent list mode) for the header's
+ * channel: the Settled / Remaining summary (swipeable) with a deductions
+ * breakdown and, in-store, On-Demand settlement inside the Remaining card;
+ * then the searchable, filterable batch list. Settlement cycle, account and
+ * preferences sit behind the header's Preferences button.
  */
 export function SettlementsView() {
   const theme = useTheme();
@@ -116,7 +116,6 @@ export function SettlementsView() {
 
   return (
     <View style={styles.container}>
-
       {/* Settled and Remaining amount as a swipeable row (user decision). */}
       <CardCarousel>
         <Card key="settled" mode="outlined" style={[styles.summary, styles.fill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
@@ -173,21 +172,23 @@ export function SettlementsView() {
               </Button>
             </View>
           </View>
+          {/* In-store: On-Demand settlement, the way to get some of the remaining amount today (merged in, user decision). */}
+          {channel === 'in-store' ? (
+            <>
+              <Divider />
+              <View style={styles.odsStrip}>
+                <Icon source="lightning" size={20} color="#4f46e5" />
+                <Text variant="bodyMedium" style={[styles.medium, styles.flex]}>
+                  Get some of it in your account today via On-Demand settlement
+                </Text>
+                <Button mode="outlined" compact style={[styles.settleNow, { backgroundColor: theme.colors.surface }]} textColor={theme.colors.onSurface}>
+                  Settle now
+                </Button>
+              </View>
+            </>
+          ) : null}
         </Card>
       </CardCarousel>
-      {channel === 'in-store' ? (
-        <Card mode="outlined" style={[styles.summary, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
-          <View style={styles.odsBanner}>
-            <Icon source="lightning" size={20} color="#4f46e5" />
-            <Text variant="bodyMedium" style={[styles.medium, styles.flex]}>
-              Get some settlement in your account today via On-Demand settlement
-            </Text>
-            <Button mode="outlined" compact style={[styles.settleNow, { backgroundColor: theme.colors.surface }]} textColor={theme.colors.onSurface}>
-              Settle now
-            </Button>
-          </View>
-        </Card>
-      ) : null}
 
       <ListingToolbar
         search={search}
@@ -317,6 +318,7 @@ const styles = StyleSheet.create({
   link: { margin: 0, borderRadius: INNER_RADIUS, minWidth: 0 },
   linkLabel: { marginVertical: 2, marginHorizontal: 4, textDecorationLine: 'underline' },
   // Web: bg-[#eef2ff] strip across the card's bottom edge.
-  odsBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, backgroundColor: '#eef2ff' },
+  // Tinted footer strip of the Remaining amount card; pushed to the bottom when the card is stretched to the row's height.
+  odsStrip: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: CARD_PADDING, marginTop: 'auto', backgroundColor: '#eef2ff' },
   settleNow: { borderRadius: INNER_RADIUS },
 });
