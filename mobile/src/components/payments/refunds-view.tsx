@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Text, useTheme } from 'react-native-paper';
+import { Button, Icon, Text, useTheme } from 'react-native-paper';
 
 import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
 import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
@@ -61,7 +61,7 @@ export function RefundsView() {
         </Button>
       </View>
 
-      <SummaryCards cards={REFUND_SUMMARY} />
+      <SummaryCards cards={REFUND_SUMMARY} carousel />
 
       <ListingToolbar
         search={search}
@@ -91,30 +91,23 @@ export function RefundsView() {
         empty="No refunds found."
         renderRow={(row) => (
             <ListRow key={row.id} accessibilityLabel={`Refund ${row.refundId}, ${row.amount}, ${row.status}`}>
-              <ListRowLine
-                left={<Text variant="bodyMedium" style={styles.medium}>{row.transactionId}</Text>}
-                right={<Text variant="bodyMedium" style={styles.medium}>{row.amount}</Text>}
-              />
+              {/* Amount with the refund ID below on the left, status on the right (user decision). */}
               <ListRowLine
                 left={
-                  <Text variant="bodySmall" style={muted}>
-                    Refund ID {row.refundId} · {row.dateSecondary}
-                  </Text>
-                }
-                right={<Text variant="bodySmall" style={muted}>{row.amountSub}</Text>}
-              />
-              <ListRowLine
-                left={
-                  <View>
-                    <Text variant="bodySmall" style={styles.medium}>
-                      {row.storeName}
+                  <>
+                    <Text variant="titleMedium" style={styles.amount}>
+                      {row.amount}
                     </Text>
-                    <Text variant="bodySmall" style={muted} numberOfLines={1}>
-                      {row.storeAddress}
-                    </Text>
-                  </View>
+                    <View style={styles.idRow}>
+                      <Icon source="arrow-u-up-left" size={16} color={theme.colors.onSurfaceVariant} />
+                      <Text variant="bodySmall" numberOfLines={1} style={muted}>
+                        Refund ID {row.refundId}
+                      </Text>
+                    </View>
+                  </>
                 }
                 right={<DotStatusBadge label={row.status} tone={refundStatusTone(row.status)} radius={LIST_ROW_INNER_RADIUS} />}
+                centered
               />
             </ListRow>
         )}
@@ -137,5 +130,6 @@ const styles = StyleSheet.create({
   container: { gap: 16 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   primary: { borderRadius: Shape.small },
-  medium: { fontFamily: Fonts.medium },
+  amount: { fontFamily: Fonts.semiBold, fontVariant: ['tabular-nums'] },
+  idRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });

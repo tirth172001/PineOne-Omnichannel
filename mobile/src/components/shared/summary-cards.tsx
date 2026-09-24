@@ -6,22 +6,22 @@ import { Fonts } from '@/constants/theme';
 import { formatInr } from '@/data/common';
 
 import { DimmedDecimalAmount } from './amount';
+import { CardCarousel } from './card-carousel';
 
 export type SummaryCardItem = { icon: string; label: string; value: number; subtext: string };
 
 /**
  * Row of summary figures above a listing (web: SummaryCardGroup): icon and
- * label, the amount with faded paise, and a subtext. Stacks on a phone.
+ * label, the amount with faded paise, and a subtext. Stacks on a phone, or
+ * with `carousel` becomes a swipeable row (Refunds).
  */
-export function SummaryCards({ cards }: { cards: SummaryCardItem[] }) {
+export function SummaryCards({ cards, carousel = false }: { cards: SummaryCardItem[]; carousel?: boolean }) {
   const theme = useTheme();
-  return (
-    <View style={styles.group}>
-      {cards.map((card) => (
+  const items = cards.map((card) => (
         <Card
           key={card.label}
           mode="outlined"
-          style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+          style={[styles.card, carousel && styles.fill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
           <View style={styles.content}>
             <View style={styles.header}>
               <Icon source={card.icon} size={16} color={theme.colors.onSurfaceVariant} />
@@ -35,14 +35,14 @@ export function SummaryCards({ cards }: { cards: SummaryCardItem[] }) {
             </Text>
           </View>
         </Card>
-      ))}
-    </View>
-  );
+  ));
+  return carousel && items.length > 1 ? <CardCarousel>{items}</CardCarousel> : <View style={styles.group}>{items}</View>;
 }
 
 const styles = StyleSheet.create({
   group: { gap: 12 },
   card: { borderRadius: Shape.max },
+  fill: { flex: 1 },
   content: { padding: 16, gap: 4 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   label: { fontFamily: Fonts.medium },
