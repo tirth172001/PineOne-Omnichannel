@@ -23,7 +23,7 @@ import { useBusiness } from '@/hooks/use-business';
 
 import { PaymentRow } from './payment-row';
 import { formatInr } from '@/data/common';
-import { parseDisplayDate, type TransactionRecord, transactionRows } from '@/data/transactions';
+import { parseDisplayDate, transactionRows } from '@/data/transactions';
 
 type ListingMode = 'in-store' | 'online';
 type OnlineView = 'order' | 'payments';
@@ -83,58 +83,50 @@ function toStatusFilterKey(label: string): StatusFilter {
   return 'failed';
 }
 
-/** Web: the in-store "More filters" categories. */
-function moreFilterCategories(rows: TransactionRecord[]): MoreFilterCategory[] {
-  const stores = new Map<string, string>();
-  rows.forEach((row) => {
-    if (!stores.has(row.storeName)) stores.set(row.storeName, row.storeAddress);
-  });
-  return [
-    {
-      id: 'stores',
-      label: 'Stores',
-      options: Array.from(stores.entries()).map(([label, description], index) => ({ id: `store-${index}`, label, description })),
-    },
-    {
-      id: 'payment-modes',
-      label: 'Payment modes',
-      options: [
-        { id: 'upi', label: 'UPI' },
-        { id: 'card', label: 'Card' },
-        { id: 'netbanking', label: 'Net banking' },
-      ],
-    },
-    { id: 'hardware-id', label: 'Hardware ID', options: ['HW-1001', 'HW-1002', 'HW-1003'].map((id) => ({ id: id.toLowerCase(), label: id })) },
-    {
-      id: 'terminal-id',
-      label: 'Terminal ID (TID)',
-      options: ['97893918238', '97902118241', '98010429157', '98155281722'].map((label, index) => ({ id: `terminal-${index}`, label })),
-    },
-    {
-      id: 'pos-id',
-      label: 'POS ID',
-      options: ['495745794579', '495745794580', '495745794581'].map((label, index) => ({ id: `pos-${101 + index}`, label })),
-    },
-    {
-      id: 'transaction-modes',
-      label: 'Transaction modes',
-      options: [
-        { id: 'payment', label: 'Payment' },
-        { id: 'order', label: 'Order' },
-      ],
-    },
-    {
-      id: 'zones',
-      label: 'Zones',
-      options: ['North', 'South', 'West', 'East'].map((label) => ({ id: label.toLowerCase(), label })),
-    },
-    {
-      id: 'batch-status',
-      label: 'Batch status',
-      options: ['Open', 'Closed', 'Settled'].map((label) => ({ id: label.toLowerCase(), label })),
-    },
-  ];
-}
+/**
+ * Web: the in-store "More filters" categories, minus Stores — stores are
+ * chosen only in the header's scope switcher on mobile (user decision).
+ */
+const MORE_FILTER_CATEGORIES: MoreFilterCategory[] = [
+  {
+    id: 'payment-modes',
+    label: 'Payment modes',
+    options: [
+      { id: 'upi', label: 'UPI' },
+      { id: 'card', label: 'Card' },
+      { id: 'netbanking', label: 'Net banking' },
+    ],
+  },
+  { id: 'hardware-id', label: 'Hardware ID', options: ['HW-1001', 'HW-1002', 'HW-1003'].map((id) => ({ id: id.toLowerCase(), label: id })) },
+  {
+    id: 'terminal-id',
+    label: 'Terminal ID (TID)',
+    options: ['97893918238', '97902118241', '98010429157', '98155281722'].map((label, index) => ({ id: `terminal-${index}`, label })),
+  },
+  {
+    id: 'pos-id',
+    label: 'POS ID',
+    options: ['495745794579', '495745794580', '495745794581'].map((label, index) => ({ id: `pos-${101 + index}`, label })),
+  },
+  {
+    id: 'transaction-modes',
+    label: 'Transaction modes',
+    options: [
+      { id: 'payment', label: 'Payment' },
+      { id: 'order', label: 'Order' },
+    ],
+  },
+  {
+    id: 'zones',
+    label: 'Zones',
+    options: ['North', 'South', 'West', 'East'].map((label) => ({ id: label.toLowerCase(), label })),
+  },
+  {
+    id: 'batch-status',
+    label: 'Batch status',
+    options: ['Open', 'Closed', 'Settled'].map((label) => ({ id: label.toLowerCase(), label })),
+  },
+];
 
 /**
  * Payments → Transactions (web: TransactionsContent): the header channel picks
@@ -183,13 +175,9 @@ export function TransactionsView() {
   const appliedRange =
     dateRange.presetId === 'custom' ? dateRange.range : presets.find((preset) => preset.id === dateRange.presetId)?.getRange?.();
 
-  const categories = useMemo(() => moreFilterCategories(modeRows), [modeRows]);
 
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const storeNames = categories[0].options
-      .filter((option) => moreFilters.stores?.includes(option.id))
-      .map((option) => option.label);
     const paymentModes = moreFilters['payment-modes'] ?? [];
     const transactionModes = moreFilters['transaction-modes'] ?? [];
     const start = appliedRange?.from ? new Date(appliedRange.from) : null;
@@ -200,7 +188,6 @@ export function TransactionsView() {
     return modeRows.filter((row) => {
       if (statusFilter !== 'all' && toStatusFilterKey(row.status.label) !== statusFilter) return false;
       if (mode === 'in-store') {
-        if (storeNames.length && !storeNames.includes(row.storeName)) return false;
         if (paymentModes.length && !paymentModes.includes(row.paymentMode)) return false;
         if (transactionModes.length && !transactionModes.includes(row.transactionType.toLowerCase())) return false;
         if (paymentModeFilter !== 'all' && row.paymentMode !== paymentModeFilter) return false;
@@ -231,7 +218,7 @@ export function TransactionsView() {
         .toLowerCase()
         .includes(query);
     });
-  }, [appliedRange, categories, mode, modeRows, moreFilters, paymentModeFilter, providerFilter, search, statusFilter, transactionTypeFilter]);
+  }, [appliedRange, mode, modeRows, moreFilters, paymentModeFilter, providerFilter, search, statusFilter, transactionTypeFilter]);
   // Newest first so each day forms one group (the web lists in source order).
   const sortedRows = useMemo(() => sortNewestFirst(filteredRows, (row) => displayTimestamp(row.date, row.time)), [filteredRows]);
   const visibleRows = sortedRows.slice(0, lazy.count);
@@ -290,7 +277,7 @@ export function TransactionsView() {
                   accessibilityLabel="Payment mode"
                 />
                 <FilterMenuButton value={providerFilter} onValueChange={resetList(setProviderFilter)} options={PROVIDER_OPTIONS} accessibilityLabel="Provider" />
-                <MoreFilters categories={categories} applied={moreFilters} onApply={resetList(setMoreFilters)} />
+                <MoreFilters categories={MORE_FILTER_CATEGORIES} applied={moreFilters} onApply={resetList(setMoreFilters)} />
               </>
             )}
           </>

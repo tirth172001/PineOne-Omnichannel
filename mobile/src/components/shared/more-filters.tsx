@@ -158,7 +158,7 @@ export function MoreFilters({
           </View>
         }>
         <View style={styles.body}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroller} contentContainerStyle={styles.categories}>
             {categories.map((item) => {
               const itemCount = draft[item.id]?.length ?? 0;
               return (
@@ -242,7 +242,10 @@ const CHIP_RADIUS = PANEL_INNER_RADIUS;
 
 const styles = StyleSheet.create({
   body: { flex: 1, padding: PANEL_PADDING, gap: 12 },
-  categories: { gap: 8 },
+  // Keeps the chip row at its own height: in the sheet's flex column a horizontal ScrollView
+  // otherwise grows (on web) and stretches the chips to fill half the sheet.
+  categoryScroller: { flexGrow: 0, flexShrink: 0, marginHorizontal: -PANEL_PADDING },
+  categories: { gap: 8, alignItems: 'center', paddingHorizontal: PANEL_PADDING },
   categoryChip: { borderRadius: CHIP_RADIUS },
   categoryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   categoryTitle: { fontFamily: Fonts.semiBold },

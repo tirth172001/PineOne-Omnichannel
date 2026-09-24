@@ -26,7 +26,6 @@ import {
   SETTLEMENT_BANKS,
   SETTLEMENT_PAYMENT_METHODS,
   SETTLEMENT_STATUSES,
-  SETTLEMENT_STORES,
   SETTLEMENT_TIDS,
   SETTLEMENT_TYPES,
   type SettlementStatus,
@@ -50,7 +49,6 @@ const MORE_FILTER_CATEGORIES: MoreFilterCategory[] = [
   { id: 'payment', label: 'Payment method', display: 'list', selectionMode: 'single', searchable: false, options: SETTLEMENT_PAYMENT_METHODS.map((method) => ({ id: method, label: paymentMethodLabel(method) })) },
   { id: 'bank', label: 'Acquiring bank', display: 'list', selectionMode: 'single', searchable: false, options: SETTLEMENT_BANKS.map((bank) => ({ id: bank.toLowerCase(), label: bank })) },
   { id: 'tid', label: 'TID', display: 'list', selectionMode: 'single', options: SETTLEMENT_TIDS.map((tid) => ({ id: tid, label: tid })) },
-  { id: 'store', label: 'Store', display: 'list', selectionMode: 'single', options: SETTLEMENT_STORES.map((store) => ({ id: store, label: store })) },
 ];
 
 export function settlementStatusTone(status: SettlementStatus): DotTone {
@@ -98,7 +96,6 @@ export function SettlementsView() {
       if (pick('bank') && row.acquiringBank.toLowerCase() !== pick('bank')) return false;
       if (pick('type') && row.settlementType !== pick('type')) return false;
       if (pick('payment') && row.paymentMethod !== pick('payment')) return false;
-      if (pick('store') && row.store !== pick('store')) return false;
       if (pick('tid') && row.tid !== pick('tid')) return false;
       if (!query) return true;
       return `${row.batchId} ${row.utr} ${row.bankName} ${row.acquiringBank} ${row.tid} ${row.store}`.toLowerCase().includes(query);
