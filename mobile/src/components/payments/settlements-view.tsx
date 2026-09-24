@@ -6,6 +6,7 @@ import { Button, Card, Divider, Icon, Text, useTheme } from 'react-native-paper'
 import { DimmedDecimalAmount } from '@/components/shared/amount';
 import { BankLogo } from '@/components/shared/bank-logo';
 import { CompactSegmentedButtons, FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
+import { CardCarousel } from '@/components/shared/card-carousel';
 import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DetailRow } from '@/components/shared/detail-rows';
@@ -136,60 +137,66 @@ export function SettlementsView() {
         </View>
       </View>
 
-      <Card mode="outlined" style={[styles.summary, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
-        <View style={styles.summaryHeader}>
-          <View style={styles.summaryTitle}>
-            <Icon source="check-circle" size={20} color={theme.colors.onSurface} />
-            <Text variant="titleMedium">Settled amount</Text>
+      {/* Settled and Remaining amount as a swipeable row (user decision). */}
+      <CardCarousel>
+        <Card key="settled" mode="outlined" style={[styles.summary, styles.fill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+          <View style={styles.summaryHeader}>
+            <View style={styles.summaryTitle}>
+              <Icon source="check-circle" size={20} color={theme.colors.onSurface} />
+              <Text variant="titleMedium">Settled amount</Text>
+            </View>
+            <CompactSegmentedButtons value={period} onValueChange={setPeriod} options={PERIOD_OPTIONS} radius={INNER_RADIUS} grow />
           </View>
-          <CompactSegmentedButtons value={period} onValueChange={setPeriod} options={PERIOD_OPTIONS} radius={INNER_RADIUS} grow />
-        </View>
-        <Divider />
-        <View style={styles.summaryBody}>
-          <DimmedDecimalAmount value={formatInr(summary.settledAmount)} size="medium" />
-          <Text variant="bodyMedium" style={[styles.medium, muted]}>
-            {formatCount(summary.settledCount)} payments settled in {summary.batchCount} batches
-          </Text>
-          <View style={styles.inlineRow}>
-            <Text variant="bodyMedium" style={styles.medium}>
-              <Text style={{ color: theme.colors.error }}>{rupees(summary.deductionsAmount)}</Text>
-              <Text style={muted}> deductions</Text>
+          <Divider />
+          <View style={styles.summaryBody}>
+            <DimmedDecimalAmount value={formatInr(summary.settledAmount)} size="medium" />
+            <Text variant="bodyMedium" style={[styles.medium, muted]}>
+              {formatCount(summary.settledCount)} payments settled in {summary.batchCount} batches
             </Text>
-            <Button mode="text" compact onPress={() => setDeductionsOpen(true)} style={styles.link} labelStyle={styles.linkLabel}>
-              View breakdown
-            </Button>
+            <View style={styles.inlineRow}>
+              <Text variant="bodyMedium" style={styles.medium}>
+                <Text style={{ color: theme.colors.error }}>{rupees(summary.deductionsAmount)}</Text>
+                <Text style={muted}> deductions</Text>
+              </Text>
+              <Button mode="text" compact onPress={() => setDeductionsOpen(true)} style={styles.link} labelStyle={styles.linkLabel}>
+                View breakdown
+              </Button>
+            </View>
           </View>
-        </View>
-        <Divider />
-        <View style={styles.summaryHeaderStatic}>
-          <Icon source="hourglass" size={20} color={theme.colors.onSurface} />
-          <Text variant="titleMedium">Remaining amount</Text>
-        </View>
-        <Divider />
-        <View style={styles.summaryBody}>
-          <DimmedDecimalAmount value={formatInr(summary.unsettledAmount)} size="medium" />
-          <Text variant="bodyMedium" style={[styles.medium, muted]}>
-            {formatCount(summary.remainingCount)} payments remaining · Next settlement by{' '}
-            <Text style={{ color: theme.colors.onSurface }}>{summary.nextSettlementAt}</Text>
-          </Text>
-          <View style={styles.inlineRow}>
-            <Text variant="bodyMedium" style={styles.medium}>
-              <Text style={{ color: theme.colors.error }}>{summary.failedCount}</Text>
-              <Text style={muted}> settlement failed</Text>
-            </Text>
-            <Button mode="text" compact style={styles.link} labelStyle={styles.linkLabel}>
-              View
-            </Button>
-            <Text variant="bodyMedium" style={styles.medium}>
-              <Text style={{ color: theme.colors.error }}>{formatCount(summary.onHoldCount)}</Text>
-              <Text style={muted}> payments on hold</Text>
-            </Text>
-            <Button mode="text" compact style={styles.link} labelStyle={styles.linkLabel}>
-              View
-            </Button>
+        </Card>
+        <Card key="remaining" mode="outlined" style={[styles.summary, styles.fill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+          <View style={styles.summaryHeaderStatic}>
+            <Icon source="hourglass" size={20} color={theme.colors.onSurface} />
+            <Text variant="titleMedium">Remaining amount</Text>
           </View>
-        </View>
-        {channel !== 'online' ? (
+          <Divider />
+          <View style={styles.summaryBody}>
+            <DimmedDecimalAmount value={formatInr(summary.unsettledAmount)} size="medium" />
+            <Text variant="bodyMedium" style={[styles.medium, muted]}>
+              {formatCount(summary.remainingCount)} payments remaining · Next settlement by{' '}
+              <Text style={{ color: theme.colors.onSurface }}>{summary.nextSettlementAt}</Text>
+            </Text>
+            <View style={styles.inlineRow}>
+              <Text variant="bodyMedium" style={styles.medium}>
+                <Text style={{ color: theme.colors.error }}>{summary.failedCount}</Text>
+                <Text style={muted}> settlement failed</Text>
+              </Text>
+              <Button mode="text" compact style={styles.link} labelStyle={styles.linkLabel}>
+                View
+              </Button>
+              <Text variant="bodyMedium" style={styles.medium}>
+                <Text style={{ color: theme.colors.error }}>{formatCount(summary.onHoldCount)}</Text>
+                <Text style={muted}> payments on hold</Text>
+              </Text>
+              <Button mode="text" compact style={styles.link} labelStyle={styles.linkLabel}>
+                View
+              </Button>
+            </View>
+          </View>
+        </Card>
+      </CardCarousel>
+      {channel !== 'online' ? (
+        <Card mode="outlined" style={[styles.summary, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
           <View style={styles.odsBanner}>
             <Icon source="lightning" size={20} color="#4f46e5" />
             <Text variant="bodyMedium" style={[styles.medium, styles.flex]}>
@@ -199,8 +206,8 @@ export function SettlementsView() {
               Settle now
             </Button>
           </View>
-        ) : null}
-      </Card>
+        </Card>
+      ) : null}
 
       <ListingToolbar
         search={search}
@@ -289,6 +296,7 @@ export function SettlementsView() {
 }
 
 const styles = StyleSheet.create({
+  fill: { flex: 1 },
   container: { gap: 16 },
   header: { gap: 12 },
   infoLine: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },

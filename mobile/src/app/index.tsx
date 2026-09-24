@@ -5,10 +5,10 @@ import { useTheme } from 'react-native-paper';
 import { ExploreProducts } from '@/components/overview/explore-products';
 import { OverviewGreeting } from '@/components/overview/overview-greeting';
 import { QuickActions } from '@/components/overview/quick-actions';
-import { TodayCardsCarousel } from '@/components/overview/today-cards-carousel';
 import { TodayPaymentsCard } from '@/components/overview/today-payments-card';
 import { TodaySettlementCard } from '@/components/overview/today-settlement-card';
 import { CURRENT_USER } from '@/data/businesses';
+import { CardCarousel } from '@/components/shared/card-carousel';
 import { TODAY_PAYMENTS } from '@/data/overview';
 import { useBusiness } from '@/hooks/use-business';
 
@@ -30,7 +30,7 @@ export default function OverviewScreen() {
         <OverviewGreeting userName={CURRENT_USER.name} roleLabel={CURRENT_USER.roleLabel} />
 
         <View style={styles.cards}>
-          <TodayCardsCarousel>
+          <CardCarousel>
             <TodayPaymentsCard
               style={styles.fill}
               totalAmount={Math.round(TODAY_PAYMENTS.totalAmount * scale)}
@@ -41,7 +41,7 @@ export default function OverviewScreen() {
               onPressHistory={() => router.navigate('/payments?tab=transactions')}
             />
             <TodaySettlementCard style={styles.fill} scale={scale} onPressHistory={() => router.navigate('/payments?tab=settlements')} />
-          </TodayCardsCarousel>
+          </CardCarousel>
         </View>
 
         <QuickActions />

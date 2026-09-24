@@ -8,12 +8,12 @@ const GAP = 12;
 const PEEK = 28;
 
 /**
- * Horizontally scrolling, snapping row of Overview cards (Today's payments and
- * Today's settlement) with page dots. Each card is a screen width minus a
- * peek of the next; cards stretch to the tallest one's height. Children must
- * accept a `style` prop.
+ * Horizontally scrolling, snapping row of summary cards with page dots
+ * (Overview's Today's payments / settlement, Settlements' Settled / Remaining
+ * amount). Each card is a screen width minus a peek of the next; cards
+ * stretch to the tallest one's height when given `flex: 1`.
  */
-export function TodayCardsCarousel({ children }: { children: ReactElement<{ style?: object }>[] }) {
+export function CardCarousel({ children }: { children: ReactElement<{ style?: object }>[] }) {
   const theme = useTheme();
   const { width: windowWidth } = useWindowDimensions();
   const [page, setPage] = useState(0);
