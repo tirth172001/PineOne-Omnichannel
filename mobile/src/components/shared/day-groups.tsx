@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { Divider, Text, useTheme } from 'react-native-paper';
 
 import { Fonts } from '@/constants/theme';
 import { parseDisplayDate } from '@/data/transactions';
@@ -49,12 +49,51 @@ export function DayGroupedList<T>({
   groups,
   renderRow,
   empty,
+  flat = false,
 }: {
   groups: DayGroup<T>[];
   renderRow: (row: T) => ReactNode;
   empty: string;
+  /**
+   * Inside a card that already frames the list (e.g. Settlement details →
+   * Transactions included): no card per day, just the day heading and rows
+   * separated by full-width dividers.
+   */
+  flat?: boolean;
 }) {
   const theme = useTheme();
+  if (flat) {
+    if (groups.length === 0) {
+      return (
+        <Text variant="bodyMedium" style={[styles.flatEmpty, { color: theme.colors.onSurfaceVariant }]}>
+          {empty}
+        </Text>
+      );
+    }
+    return (
+      <View>
+        {groups.map((group, groupIndex) => (
+          <View key={group.day}>
+            {groupIndex > 0 ? <Divider /> : null}
+            <View style={[styles.heading, styles.flatHeading, { backgroundColor: theme.colors.surfaceVariant }]}>
+              <Text variant="labelLarge" style={styles.day} accessibilityRole="header">
+                {group.label}
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                {group.rows.length} {group.rows.length === 1 ? 'record' : 'records'}
+              </Text>
+            </View>
+            {group.rows.map((row, index) => (
+              <View key={index}>
+                <Divider />
+                {renderRow(row)}
+              </View>
+            ))}
+          </View>
+        ))}
+      </View>
+    );
+  }
   if (groups.length === 0) return <ListCard empty={empty}>{[]}</ListCard>;
   return (
     <View style={styles.groups}>
@@ -80,4 +119,6 @@ const styles = StyleSheet.create({
   group: { gap: 8 },
   heading: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, paddingHorizontal: 4 },
   day: { fontFamily: Fonts.semiBold },
+  flatHeading: { paddingHorizontal: 16, paddingVertical: 8 },
+  flatEmpty: { padding: 16 },
 });

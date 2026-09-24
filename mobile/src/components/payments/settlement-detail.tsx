@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Divider, Icon, Text, useTheme } from 'react-native-paper';
+import { Button, Divider, Text, useTheme } from 'react-native-paper';
 
 import { SearchField } from '@/components/search-field';
 import { DimmedDecimalAmount } from '@/components/shared/amount';
@@ -11,16 +11,17 @@ import { CopyableValue } from '@/components/shared/copyable-value';
 import { DetailRow, SECTION_CARD_INNER_RADIUS, SectionCard } from '@/components/shared/detail-rows';
 import { HelpCard } from '@/components/shared/help-card';
 import { CollapsingDetailScreen, type StatusGradientTone } from '@/components/shared/detail-screen';
-import { ListRow, ListRowLine } from '@/components/shared/listing';
+import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
+import { LIST_ROW_INNER_RADIUS } from '@/components/shared/listing';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { DotStatusBadge } from '@/components/shared/status';
 import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { type SettlementRow, type SettlementStatus, settlementDetailRows } from '@/data/settlements';
 
+import { PaymentRow } from './payment-row';
 import { rupees, settlementStatusTone } from './settlements-view';
 
-const METHOD_ICON = { upi: 'qr-code', card: 'credit-card', netbanking: 'device-mobile' } as const;
 
 function gradientFor(status: SettlementStatus): StatusGradientTone {
   if (status === 'Settled') return 'success';
@@ -34,7 +35,7 @@ function gradientFor(status: SettlementStatus): StatusGradientTone {
  * like Transaction details: a collapsing header over a centred hero (bank,
  * net amount, status, settled / initiated, UTR), then cards — Amount
  * breakdown (View all adds GST), the transactions included (searchable,
- * paginated) and Help.
+ * paginated, grouped by day, same rows as Payments) and Help.
  */
 export function SettlementDetail({ settlement }: { settlement: SettlementRow }) {
   const theme = useTheme();
@@ -64,7 +65,11 @@ export function SettlementDetail({ settlement }: { settlement: SettlementRow }) 
   }, [search]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const currentPage = Math.min(page, totalPages);
-  const paged = filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  // Newest first so each day forms one group.
+  const paged = sortNewestFirst(filtered, (row) => displayTimestamp(row.paymentDate, row.paymentTime)).slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
 
   const last4 = settlement.accountLabel.slice(-4);
 
@@ -140,41 +145,23 @@ export function SettlementDetail({ settlement }: { settlement: SettlementRow }) 
           <View style={styles.row}>
             <OutlinedActionButton label="Download" icon="download-simple" radius={SECTION_CARD_INNER_RADIUS} />
           </View>
-          <View style={[styles.rows, { borderColor: theme.colors.outlineVariant }]}>
-            {paged.length === 0 ? (
-              <Text variant="bodyMedium" style={[styles.empty, muted]}>
-                No transactions match your search.
-              </Text>
-            ) : (
-              paged.map((row, index) => (
-                <View key={`${row.id}-${index}`}>
-                  {index > 0 ? <Divider /> : null}
-                  <ListRow
-                    onPress={() => router.push(`/payments/transactions/${row.id}`)}
-                    accessibilityLabel={`Transaction ${row.id}, payout ${rupees(row.payoutAmount)}`}>
-                    <ListRowLine
-                      left={<Text variant="bodyMedium" style={styles.medium}>{row.id}</Text>}
-                      right={<Text variant="bodyMedium" style={styles.medium}>{rupees(row.payoutAmount)}</Text>}
-                    />
-                    <ListRowLine
-                      left={
-                        <View style={styles.inline}>
-                          <Icon source={METHOD_ICON[row.paymentMethod]} size={16} color={theme.colors.onSurfaceVariant} />
-                          <Text variant="bodySmall">
-                            {row.paymentMethodLabel} <Text style={muted}>· {row.paymentMethodSubLabel}</Text>
-                          </Text>
-                        </View>
-                      }
-                      right={
-                        <Text variant="bodySmall" style={muted}>
-                          {row.paymentDate}, {row.paymentTime}
-                        </Text>
-                      }
-                    />
-                  </ListRow>
-                </View>
-              ))
-            )}
+          {/* Same rows as Payments → Transactions, grouped by day; no inner box — the section card frames them. */}
+          <View style={styles.bleed}>
+            <DayGroupedList
+              flat
+              groups={groupByDay(paged, (row) => row.paymentDate)}
+              empty="No transactions match your search."
+              renderRow={(row) => (
+                <PaymentRow
+                  amount={rupees(row.transactionAmount)}
+                  paymentMode={row.paymentMethod}
+                  paymentLabel={row.paymentMethodLabel}
+                  status={<DotStatusBadge label={row.payoutStatus} tone={settlementStatusTone(row.payoutStatus)} radius={LIST_ROW_INNER_RADIUS} />}
+                  onPress={() => router.push(`/payments/transactions/${row.id}`)}
+                  accessibilityLabel={`${rupees(row.transactionAmount)}, ${row.paymentMethodLabel}, ${row.payoutStatus}`}
+                />
+              )}
+            />
           </View>
           <PaginationBar
             page={currentPage}
@@ -204,8 +191,6 @@ const styles = StyleSheet.create({
   viewAll: { alignSelf: 'center', borderRadius: SECTION_CARD_INNER_RADIUS },
   trailingIcon: { flexDirection: 'row-reverse' },
   row: { flexDirection: 'row', gap: 8 },
-  inline: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  // Bordered list inside the card; clips the rows to its corners.
-  rows: { borderWidth: 1, borderRadius: SECTION_CARD_INNER_RADIUS, overflow: 'hidden' },
-  empty: { padding: 16 },
+  // Rows span the card edge to edge (cancels the card body's 16dp padding).
+  bleed: { marginHorizontal: -16 },
 });

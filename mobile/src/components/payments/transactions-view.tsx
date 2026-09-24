@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Icon, Text, useTheme } from 'react-native-paper';
+import { Button, useTheme } from 'react-native-paper';
 
 import { Tabs } from '@/components/material3/tabs';
 import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
@@ -13,14 +13,15 @@ import {
   makeDateRangeValue,
 } from '@/components/shared/date-range-filter';
 import { EmailReportSheet } from '@/components/shared/email-report-sheet';
-import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
+import { LIST_ROW_INNER_RADIUS, ListingToolbar } from '@/components/shared/listing';
 import { type MoreFilterCategory, type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { StatusPill } from '@/components/shared/status';
 import { SummaryCards } from '@/components/shared/summary-cards';
 import { Shape } from '@/constants/shape';
-import { Fonts } from '@/constants/theme';
 import { useBusiness } from '@/hooks/use-business';
+
+import { PaymentRow } from './payment-row';
 import { formatInr } from '@/data/common';
 import { parseDisplayDate, type TransactionRecord, transactionRows } from '@/data/transactions';
 
@@ -48,9 +49,6 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { label: 'Session expired', value: 'session-expired' },
   { label: 'User cancelled', value: 'user-cancelled' },
 ];
-
-/** Pay-mode glyphs, as on the transaction detail's mode tile. */
-const PAY_MODE_ICON: Record<TransactionRecord['paymentMode'], string> = { upi: 'qr-code', card: 'credit-card', netbanking: 'bank' };
 
 const PAYMENT_MODE_OPTIONS = [
   { label: 'All modes', value: 'all' },
@@ -315,29 +313,15 @@ export function TransactionsView() {
         groups={groupByDay(visibleRows, (row) => row.date)}
         empty="No transactions found."
         renderRow={(row) => (
-            <ListRow
-              key={row.transactionId}
-              onPress={() => router.push(`/payments/transactions/${row.transactionId}?channel=${mode}`)}
-              accessibilityLabel={`${formatInr(row.amount)}, ${row.paymentLabel}, ${row.status.label}`}>
-              {/* Amount and pay mode on the left, status on the right — nothing else (user decision); details are one tap away. */}
-              <ListRowLine
-                left={
-                  <>
-                    <Text variant="titleMedium" style={styles.amount}>
-                      {formatInr(row.amount)}
-                    </Text>
-                    <View style={styles.payMode}>
-                      <Icon source={PAY_MODE_ICON[row.paymentMode]} size={16} color={theme.colors.onSurfaceVariant} />
-                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                        {row.paymentLabel}
-                      </Text>
-                    </View>
-                  </>
-                }
-                right={<StatusPill label={row.status.label} tone={row.status.tone} radius={LIST_ROW_INNER_RADIUS} />}
-                centered
-              />
-            </ListRow>
+          <PaymentRow
+            key={row.transactionId}
+            amount={formatInr(row.amount)}
+            paymentMode={row.paymentMode}
+            paymentLabel={row.paymentLabel}
+            status={<StatusPill label={row.status.label} tone={row.status.tone} radius={LIST_ROW_INNER_RADIUS} />}
+            onPress={() => router.push(`/payments/transactions/${row.transactionId}?channel=${mode}`)}
+            accessibilityLabel={`${formatInr(row.amount)}, ${row.paymentLabel}, ${row.status.label}`}
+          />
         )}
       />
 
@@ -360,6 +344,4 @@ const styles = StyleSheet.create({
   header: { gap: 12 },
   primaryAction: { borderRadius: Shape.small, alignSelf: 'flex-start' },
   onlineTabs: { backgroundColor: 'transparent' },
-  amount: { fontFamily: Fonts.semiBold, fontVariant: ['tabular-nums'] },
-  payMode: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });
