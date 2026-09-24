@@ -228,72 +228,20 @@ export function SettlementsView() {
             <ListRow
               key={row.id}
               onPress={() => router.push(`/payments/settlements/${row.batchId}`)}
-              accessibilityLabel={`UTR ${row.utr}, net ${rupees(row.netAmount)}, ${row.status}`}>
+              accessibilityLabel={`${row.bankName} bank, settled ${rupees(row.netAmount)}, ${row.status}`}>
+              {/* Bank and settled amount on the left, status on the right — nothing else (user decision); the rest is in the detail. */}
               <ListRowLine
                 left={
-                  <View style={styles.inlineRow}>
-                    <Text variant="bodyMedium" style={styles.medium}>
-                      {row.utr}
+                  <View style={styles.bankRow}>
+                    <BankLogo bank={row.bankName} size={32} />
+                    <Text variant="titleMedium" style={styles.amount}>
+                      {rupees(row.netAmount)}
                     </Text>
-                    {row.settlementType === 'ODS' ? (
-                      <View style={styles.inlineRow}>
-                        <Icon source="lightning" size={14} color="#4f46e5" />
-                        <Text variant="labelMedium" style={{ color: '#4f46e5' }}>
-                          On-Demand
-                        </Text>
-                      </View>
-                    ) : row.settlementType === 'SDS' ? (
-                      <View style={styles.inlineRow}>
-                        <Icon source="fast-forward" size={14} color="#059669" />
-                        <Text variant="labelMedium" style={{ color: '#059669' }}>
-                          Same-Day
-                        </Text>
-                      </View>
-                    ) : null}
                   </View>
                 }
-                right={<Text variant="bodyMedium" style={styles.medium}>{rupees(row.netAmount)}</Text>}
-              />
-              <ListRowLine
-                left={
-                  <Text variant="bodySmall" style={muted}>
-                    Gross {rupees(row.grossAmount)} · Deductions {rupees(row.deductionsTotal)}
-                    {row.channel === 'online' ? ' (MDR + GST)' : ''}
-                  </Text>
-                }
                 right={<DotStatusBadge label={row.status} tone={settlementStatusTone(row.status)} radius={LIST_ROW_INNER_RADIUS} />}
+                centered
               />
-              {row.channel === 'online' ? (
-                <ListRowLine
-                  left={
-                    <Text variant="bodySmall" style={muted}>
-                      Refunds + chargebacks {rupees(row.refundAmount + row.chargebackAmount)} · {row.settlementCycle}{' '}
-                      {row.odsEnabled ? `ODS till ${row.odsCutoff}` : row.weekendSettlementEnabled ? 'Weekend enabled' : 'Standard'}
-                    </Text>
-                  }
-                  right={
-                    <Text variant="bodySmall" style={muted}>
-                      {row.settlementDateSecondary}
-                    </Text>
-                  }
-                />
-              ) : (
-                <ListRowLine
-                  left={
-                    <View style={styles.bankRow}>
-                      <BankLogo bank={row.acquiringBank} />
-                      <Text variant="bodySmall" style={[muted, styles.shrink]} numberOfLines={1}>
-                        {row.acquiringBank} bank · {row.accountLabel} · {row.transactionCount} payments
-                      </Text>
-                    </View>
-                  }
-                  right={
-                    <Text variant="bodySmall" style={muted}>
-                      {row.settlementDateSecondary}
-                    </Text>
-                  }
-                />
-              )}
             </ListRow>
         )}
       />
@@ -351,8 +299,8 @@ const styles = StyleSheet.create({
   summaryBody: { padding: CARD_PADDING, gap: 8 },
   inlineRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
   // Logo and text stay on one line; the text truncates rather than wrapping under the logo.
-  bankRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  shrink: { flexShrink: 1 },
+  bankRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  amount: { fontFamily: Fonts.semiBold, fontVariant: ['tabular-nums'] },
   link: { margin: 0, borderRadius: INNER_RADIUS, minWidth: 0 },
   linkLabel: { marginVertical: 2, marginHorizontal: 4, textDecorationLine: 'underline' },
   // Web: bg-[#eef2ff] strip across the card's bottom edge.

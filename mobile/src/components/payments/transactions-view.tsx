@@ -336,6 +336,7 @@ export function TransactionsView() {
                   </>
                 }
                 right={<StatusPill label={row.status.label} tone={row.status.tone} radius={LIST_ROW_INNER_RADIUS} />}
+                centered
               />
             </ListRow>
         )}

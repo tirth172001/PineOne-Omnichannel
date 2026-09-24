@@ -93,9 +93,9 @@ export function ListRow({
 }
 
 /** Two-column line inside a ListRow: left content grows, right content hugs the end. */
-export function ListRowLine({ left, right }: { left: ReactNode; right?: ReactNode }) {
+export function ListRowLine({ left, right, centered = false }: { left: ReactNode; right?: ReactNode; /** Vertically centre both sides (single-line rows). */ centered?: boolean }) {
   return (
-    <View style={styles.line}>
+    <View style={[styles.line, centered && styles.lineCentered]}>
       <View style={styles.lineLeft}>{left}</View>
       {right ? <View style={styles.lineRight}>{right}</View> : null}
     </View>
@@ -113,6 +113,7 @@ const styles = StyleSheet.create({
   rowContent: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: LIST_ROW_PADDING, paddingVertical: 12 },
   rowBody: { flex: 1, gap: 4 },
   line: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 },
+  lineCentered: { alignItems: 'center' },
   lineLeft: { flex: 1, gap: 2 },
   lineRight: { alignItems: 'flex-end', gap: 2 },
 });

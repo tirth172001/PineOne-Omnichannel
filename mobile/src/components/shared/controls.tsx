@@ -177,7 +177,8 @@ const styles = StyleSheet.create({
   option: { borderRadius: PANEL_INNER_RADIUS },
   optionContent: { flexDirection: 'row', alignItems: 'center', minHeight: 48, paddingLeft: 12 },
   optionLabel: { flex: 1 },
-  segmentsGrow: { flexGrow: 1, flexBasis: 240 },
+  // Full width of its container. (A flex-basis would become a height inside a column.)
+  segmentsGrow: { width: '100%' },
   segmentLabel: { fontSize: 12 },
   // Standalone page-level controls (not nested in a container).
   button: { borderRadius: Shape.small, margin: 0 },
