@@ -23,9 +23,17 @@ const MORE_SECTIONS: { label: string; items: MoreItem[] }[] = [
   {
     label: 'Products',
     items: [
-      { label: 'Terminal devices', icon: 'storefront', href: '/more/terminal-devices' },
+      { label: 'Terminal devices', icon: 'cash-register', href: '/more/terminal-devices' },
       { label: 'Payment links', icon: 'link-simple', href: '/more/payment-links' },
       { label: 'Checkout', icon: 'palette', href: '/more/checkout' },
+    ],
+  },
+  {
+    label: 'Other',
+    items: [
+      { label: 'Manage store', icon: 'storefront', href: '/more/stores' },
+      { label: 'Manage users and roles', icon: 'users', href: '/more/users' },
+      { label: 'Account settings', icon: 'gear', href: '/more/account-settings' },
     ],
   },
 ];

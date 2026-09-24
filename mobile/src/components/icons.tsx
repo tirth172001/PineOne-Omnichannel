@@ -21,6 +21,18 @@ import { CellSignalFullIcon } from 'phosphor-react-native/src/icons/CellSignalFu
 import { TranslateIcon } from 'phosphor-react-native/src/icons/Translate';
 import { RadioButtonIcon } from 'phosphor-react-native/src/icons/RadioButton';
 import { ShieldIcon } from 'phosphor-react-native/src/icons/Shield';
+import { UserPlusIcon } from 'phosphor-react-native/src/icons/UserPlus';
+import { PhoneIcon } from 'phosphor-react-native/src/icons/Phone';
+import { KeyIcon } from 'phosphor-react-native/src/icons/Key';
+import { HardDrivesIcon } from 'phosphor-react-native/src/icons/HardDrives';
+import { CircleHalfIcon } from 'phosphor-react-native/src/icons/CircleHalf';
+import { UserCircleGearIcon } from 'phosphor-react-native/src/icons/UserCircleGear';
+import { RepeatIcon } from 'phosphor-react-native/src/icons/Repeat';
+import { LifebuoyIcon } from 'phosphor-react-native/src/icons/Lifebuoy';
+import { MegaphoneIcon } from 'phosphor-react-native/src/icons/Megaphone';
+import { PlugIcon } from 'phosphor-react-native/src/icons/Plug';
+import { PathIcon } from 'phosphor-react-native/src/icons/Path';
+import { HandshakeIcon } from 'phosphor-react-native/src/icons/Handshake';
 import { ArrowsLeftRightIcon } from 'phosphor-react-native/src/icons/ArrowsLeftRight';
 import { ArrowUpIcon } from 'phosphor-react-native/src/icons/ArrowUp';
 import { ArrowUpRightIcon } from 'phosphor-react-native/src/icons/ArrowUpRight';
@@ -127,6 +139,18 @@ import { XCircleIcon } from 'phosphor-react-native/src/icons/XCircle';
  */
 const ICONS = {
   'arrows-left-right': ArrowsLeftRightIcon,
+  'user-plus': UserPlusIcon,
+  'phone': PhoneIcon,
+  'key': KeyIcon,
+  'hard-drives': HardDrivesIcon,
+  'circle-half': CircleHalfIcon,
+  'user-circle-gear': UserCircleGearIcon,
+  'repeat': RepeatIcon,
+  'lifebuoy': LifebuoyIcon,
+  'megaphone': MegaphoneIcon,
+  'plug': PlugIcon,
+  'path': PathIcon,
+  'handshake': HandshakeIcon,
   'moon': MoonIcon,
   'palette': PaletteIcon,
   'image-square': ImageSquareIcon,
