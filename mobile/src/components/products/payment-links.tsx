@@ -172,7 +172,7 @@ const SEARCH_FIELD_OPTIONS = PAYMENT_LINK_SEARCH_FIELDS.map((field) => ({ value:
  * created and expiry dates, status) with Copy / Duplicate. New payment link
  * is the pinned footer action.
  */
-export function PaymentLinks() {
+export function PaymentLinks({ startCreating = false }: { startCreating?: boolean }) {
   const theme = useTheme();
   const toast = useToast();
   const presets = useMemo(() => getDefaultDateRangePresets(), []);
@@ -181,7 +181,7 @@ export function PaymentLinks() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | PaymentLinkStatus>('all');
   const [dateRange, setDateRange] = useState(() => makeDateRangeValue(presets, 'today'));
-  const [createOpen, setCreateOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(startCreating);
   const [createSeed, setCreateSeed] = useState<Partial<CreatePaymentLinkValues>>();
   const muted = { color: theme.colors.onSurfaceVariant };
   const activeField = PAYMENT_LINK_SEARCH_FIELDS.find((field) => field.id === searchField) ?? PAYMENT_LINK_SEARCH_FIELDS[0];

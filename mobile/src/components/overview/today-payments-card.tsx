@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { concentric, Shape } from '@/constants/shape';
@@ -31,6 +31,7 @@ type TodayPaymentsCardProps = {
   recent: RecentPayment[];
   onPressPayment?: (transactionId: string) => void;
   onPressHistory?: () => void;
+  style?: StyleProp<ViewStyle>;
 };
 
 /**
@@ -46,11 +47,12 @@ export function TodayPaymentsCard({
   recent,
   onPressPayment,
   onPressHistory,
+  style,
 }: TodayPaymentsCardProps) {
   const theme = useTheme();
 
   return (
-    <OverviewCard>
+    <OverviewCard style={style}>
       <OverviewCardHeader title="Today's payments" icon="money-wavy" right={<OverviewCardRangeLabel label="Today" />} />
       <OverviewCardDivider />
 

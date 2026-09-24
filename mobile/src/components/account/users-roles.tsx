@@ -446,12 +446,12 @@ type ConfirmTarget = { type: 'role'; role: ManagedRole } | { type: 'removeUser';
  * actions) and Roles (default and custom roles; tap to view permissions).
  * Add new roles and Invite new users are the pinned footer actions.
  */
-export function UsersRoles() {
+export function UsersRoles({ openInvite = false }: { openInvite?: boolean }) {
   const theme = useTheme();
   const toast = useToast();
   const { roleCatalog } = useUserManagement();
   const [tab, setTab] = useState('users');
-  const [formTarget, setFormTarget] = useState<{ entry: RosterEntry | null } | null>(null);
+  const [formTarget, setFormTarget] = useState<{ entry: RosterEntry | null } | null>(openInvite ? { entry: null } : null);
   const [viewRole, setViewRole] = useState<ManagedRole | null>(null);
   const [confirm, setConfirm] = useState<ConfirmTarget | null>(null);
   const [reassign, setReassign] = useState<{ role: ManagedRole; assignedCount: number; replacement: string } | null>(null);

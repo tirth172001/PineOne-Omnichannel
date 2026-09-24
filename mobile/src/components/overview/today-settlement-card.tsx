@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
 import { concentric, Shape } from '@/constants/shape';
@@ -21,6 +21,7 @@ type TodaySettlementCardProps = {
   /** Store × channel share in scope (web: combinedScale); 1 = all stores, all channels. */
   scale?: number;
   onPressHistory?: () => void;
+  style?: StyleProp<ViewStyle>;
 };
 
 // The toggle sits 16dp inside the card (header padding).
@@ -32,14 +33,14 @@ const TOGGLE_RADIUS = concentric(Shape.max, OVERVIEW_CARD_PADDING);
  * (Pine Labs or Partner Bank), what's still to settle, and when the next run
  * is. The web's two columns stack here to fit a phone width.
  */
-export function TodaySettlementCard({ scale = 1, onPressHistory }: TodaySettlementCardProps) {
+export function TodaySettlementCard({ scale = 1, onPressHistory, style }: TodaySettlementCardProps) {
   const theme = useTheme();
   const [source, setSource] = useState<SettlementSource>('pinelabs');
   const base = SETTLEMENT_TODAY[source];
   const payments = Math.max(1, Math.round(base.transactionsConsidered * scale));
 
   return (
-    <OverviewCard>
+    <OverviewCard style={style}>
       <OverviewCardHeader
         title="Today's settlement"
         icon="bank"

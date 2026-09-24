@@ -25,7 +25,7 @@ const REPORT_TABS = [
  */
 export default function ReportsScreen() {
   const theme = useTheme();
-  const { tab } = useLocalSearchParams<{ tab?: string }>();
+  const { tab, generate: generateRequest } = useLocalSearchParams<{ tab?: string; generate?: string }>();
   const requestedKey = REPORT_TABS.some((t) => t.key === tab) ? tab : undefined;
   const [activeKey, setActiveKey] = useState(requestedKey ?? REPORT_TABS[0].key);
   // Follow a newly requested tab (adjusting state during render, not in an effect).
@@ -37,14 +37,21 @@ export default function ReportsScreen() {
   useShellTabs({ tabs: REPORT_TABS, activeKey, onChange: setActiveKey });
 
   // The panel keeps its last report while closing, so its content doesn't blank mid-animation.
-  const [generate, setGenerate] = useState<{ kind: ReportKind; title: string; open: boolean }>({
+  const [generate, setGenerate] = useState<{ kind: ReportKind; title: string; open: boolean }>(() => ({
     kind: 'transaction',
-    title: '',
-    open: false,
-  });
+    title: generateRequest ? 'All transaction reports' : '',
+    open: Boolean(generateRequest),
+  }));
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const toast = useToast();
   const openGenerate = (kind: ReportKind, title: string) => setGenerate({ kind, title, open: true });
+  // `?generate=<token>` (Overview's Download report quick action) opens the Generate panel;
+  // each tap sends a new token so it reopens even while this tab stays mounted.
+  const [lastGenerateRequest, setLastGenerateRequest] = useState(generateRequest);
+  if (generateRequest && generateRequest !== lastGenerateRequest) {
+    setLastGenerateRequest(generateRequest);
+    setGenerate({ kind: 'transaction', title: 'All transaction reports', open: true });
+  }
 
   return (
     <View style={styles.screen}>

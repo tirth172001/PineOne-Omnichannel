@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Button, Card, Divider, Icon, Text, useTheme } from 'react-native-paper';
 
 import { concentric, Shape } from '@/constants/shape';
@@ -13,12 +13,12 @@ import { concentric, Shape } from '@/constants/shape';
 const CARD_PADDING = 16;
 const FOOTER_PADDING_Y = 12;
 
-export function OverviewCard({ children }: { children: ReactNode }) {
+export function OverviewCard({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   const theme = useTheme();
   return (
     <Card
       mode="outlined"
-      style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+      style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }, style]}>
       {children}
     </Card>
   );
