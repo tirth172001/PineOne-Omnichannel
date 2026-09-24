@@ -144,6 +144,10 @@ type CollapsingDetailScreenProps = {
   /** …and the pay mode under it. */
   compactSubtitle?: string;
   footer?: ReactNode;
+  /** Floats just above the footer (e.g. a search button); the caller animates it. */
+  floating?: ReactNode;
+  /** Scroll offset and visible height, e.g. to show `floating` only over a section. */
+  onScroll?: (offsetY: number, viewportHeight: number) => void;
   children: ReactNode;
 };
 
@@ -161,6 +165,8 @@ export function CollapsingDetailScreen({
   compactTitle,
   compactSubtitle,
   footer,
+  floating,
+  onScroll,
   children,
 }: CollapsingDetailScreenProps) {
   const theme = useTheme();
@@ -168,6 +174,8 @@ export function CollapsingDetailScreen({
   const [scrollY] = useState(() => new Animated.Value(0));
   const [headerHeight, setHeaderHeight] = useState(64);
   const [heroHeight, setHeroHeight] = useState(180);
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [footerHeight, setFooterHeight] = useState(0);
   // Scroll distance over which the hero hands off to the header.
   const collapse = Math.max(heroHeight - 24, 1);
   const range = (input: number[], output: number[]) => scrollY.interpolate({ inputRange: input, outputRange: output, extrapolate: 'clamp' });
@@ -183,7 +191,13 @@ export function CollapsingDetailScreen({
   return (
     <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
       <Animated.ScrollView
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: true,
+          listener: onScroll
+            ? (event: { nativeEvent: { contentOffset: { y: number } } }) => onScroll(event.nativeEvent.contentOffset.y, viewportHeight)
+            : undefined,
+        })}
+        onLayout={(event) => setViewportHeight(event.nativeEvent.layout.height)}
         scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}>
@@ -218,7 +232,17 @@ export function CollapsingDetailScreen({
         </Appbar.Header>
       </View>
 
-      {footer ? <View style={[styles.footer, { backgroundColor: theme.colors.surface }]}>{footer}</View> : null}
+      {floating ? (
+        <View pointerEvents="box-none" style={[styles.floating, { bottom: footerHeight + 16 }]}>
+          {floating}
+        </View>
+      ) : null}
+
+      {footer ? (
+        <View onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)} style={[styles.footer, { backgroundColor: theme.colors.surface }]}>
+          {footer}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -236,6 +260,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 32, gap: 24 },
   gradient: { position: 'absolute', top: 0, left: 0, right: 0 },
   floatingHeader: { position: 'absolute', top: 0, left: 0, right: 0 },
+  floating: { position: 'absolute', left: 16, right: 16 },
   // Same shape as the shell's top bar: attached to the top edge, bottom corners rounded.
   headerSurface: {
     position: 'absolute',
