@@ -1,10 +1,12 @@
 import { router, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Appbar, useTheme } from 'react-native-paper';
+import { Appbar, Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
+import { useOpenScopeSwitcher } from '@/components/scope-switcher';
 import { ShellTopBar } from '@/components/shell-top-bar';
+import { useBusiness } from '@/hooks/use-business';
 import { concentric, Shape } from '@/constants/shape';
 
 import { useSvgId } from './hatch';
@@ -54,6 +56,12 @@ type DetailScreenProps = {
    * side by side with `flex: 1`, primary last.
    */
   footer?: ReactNode;
+  /**
+   * The page's data follows the global store / channel scope: the title row
+   * shows it as "<stores> · <channel> ▾" underneath, like the home header,
+   * and tapping it opens the switcher.
+   */
+  scoped?: boolean;
   children: ReactNode;
 };
 
@@ -70,7 +78,7 @@ const HEADER_BUTTON_RADIUS = concentric(Shape.max, ROW_PADDING, 40);
  * status gradient, and an optional pinned footer holding the main call to
  * action. Replaces the org header (and the nav bar) while a detail is open.
  */
-export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = true, footer, children }: DetailScreenProps) {
+export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = true, footer, scoped = false, children }: DetailScreenProps) {
   const theme = useTheme();
   const goBack = () => (router.canGoBack() ? router.back() : router.navigate(fallbackHref));
 
@@ -79,7 +87,7 @@ export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = 
       <ShellTopBar>
         <Appbar.Header mode="small" elevated={false} style={styles.appbar}>
           <Appbar.Action icon="arrow-left" onPress={goBack} accessibilityLabel="Back" style={styles.headerButton} />
-          <Appbar.Content title={title} titleStyle={styles.title} />
+          {scoped ? <ScopedTitle title={title} /> : <Appbar.Content title={title} titleStyle={styles.title} />}
           {actions}
         </Appbar.Header>
       </ShellTopBar>
@@ -96,6 +104,33 @@ export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = 
   );
 }
 
+/** Page title with the current scope and an arrow under it (the home header's subtext). */
+function ScopedTitle({ title }: { title: string }) {
+  const theme = useTheme();
+  const { scopeLabel, channelLabel } = useBusiness();
+  const openScopeSwitcher = useOpenScopeSwitcher();
+  return (
+    <TouchableRipple
+      onPress={openScopeSwitcher}
+      borderless
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${scopeLabel}, ${channelLabel}. Switch store or channel`}
+      style={styles.scopedTitle}>
+      <View>
+        <Text variant="titleMedium" numberOfLines={1}>
+          {title}
+        </Text>
+        <View style={styles.scope}>
+          <Text variant="bodySmall" numberOfLines={1} style={[styles.scopeText, { color: theme.colors.onSurfaceVariant }]}>
+            {scopeLabel} · {channelLabel}
+          </Text>
+          <Icon source="caret-down" size={14} color={theme.colors.onSurfaceVariant} />
+        </View>
+      </View>
+    </TouchableRipple>
+  );
+}
+
 export const DETAIL_HEADER_BUTTON_STYLE = { borderRadius: HEADER_BUTTON_RADIUS };
 
 const styles = StyleSheet.create({
@@ -103,6 +138,9 @@ const styles = StyleSheet.create({
   appbar: { backgroundColor: 'transparent', paddingHorizontal: 4 },
   headerButton: { borderRadius: HEADER_BUTTON_RADIUS },
   title: { fontSize: 16, lineHeight: 24 },
+  scopedTitle: { flex: 1, borderRadius: HEADER_BUTTON_RADIUS, paddingHorizontal: 8, paddingVertical: 2, marginRight: 4 },
+  scope: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  scopeText: { flexShrink: 1 },
   content: { padding: 16, paddingBottom: 32, gap: 24 },
   gradient: { position: 'absolute', top: 0, left: 0, right: 0 },
   // Attached to the bottom edge, so only the content-facing (top) corners are rounded.

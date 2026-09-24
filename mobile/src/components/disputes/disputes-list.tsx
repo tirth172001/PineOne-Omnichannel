@@ -51,7 +51,7 @@ export function DisputesList() {
   const won = forChannel.filter((row) => row.status === 'Closed' && row.outcome === 'Won');
 
   return (
-    <DetailScreen title="Disputes" fallbackHref="/more">
+    <DetailScreen title="Disputes" fallbackHref="/more" scoped>
       <SummaryCards
         cards={[
           {

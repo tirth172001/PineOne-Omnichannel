@@ -8,8 +8,7 @@ import { DetailScreen } from '@/components/shared/detail-screen';
 import { OutlineTag } from '@/components/shared/status';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
-import { channelLabel, SETTLEMENT_ACCOUNTS } from '@/data/settlements';
-import { useBusiness } from '@/hooks/use-business';
+import { SETTLEMENT_ACCOUNTS } from '@/data/settlements';
 
 type Marker = 'pending' | 'done' | 'skipped';
 const MARKER: Record<Marker, { icon: string; color: string }> = {
@@ -40,25 +39,20 @@ const CARD_PADDING = 16;
 const INNER_RADIUS = concentric(Shape.max, CARD_PADDING);
 
 /**
- * Settlement preferences (web: V3SettlementPreferencesContent): the channel
- * badge (the header's channel), Settlement cycle and Settlement account tabs, the
+ * Settlement preferences (web: V3SettlementPreferencesContent): the scope
+ * (stores · channel, switchable) under the title, Settlement cycle and Settlement account tabs, the
  * weekend-settlement switch and T+1 default cycle, the worked timeline
  * examples, and the settlement accounts. The web's horizontal example
  * timelines run vertically on a phone.
  */
 export function SettlementPreferences() {
   const theme = useTheme();
-  // Read-only: the channel comes from the header switcher.
-  const { channel } = useBusiness();
   const [weekend, setWeekend] = useState(false);
   const [tab, setTab] = useState<'settlement-cycle' | 'settlement-account'>('settlement-cycle');
   const muted = { color: theme.colors.onSurfaceVariant };
 
   return (
-    <DetailScreen title="Settlement preferences" fallbackHref="/payments?tab=settlements">
-      <View style={styles.channel}>
-        <OutlineTag label={channel === 'all' ? 'All channels' : `${channelLabel(channel)} payments`} muted />
-      </View>
+    <DetailScreen title="Settlement preferences" fallbackHref="/payments?tab=settlements" scoped>
 
       <Tabs
         variant="secondary"
@@ -155,7 +149,6 @@ export function SettlementPreferences() {
 }
 
 const styles = StyleSheet.create({
-  channel: { alignSelf: 'flex-start', borderRadius: Shape.max },
   tabs: { backgroundColor: 'transparent', marginHorizontal: -16 },
   block: { gap: 16 },
   card: { borderRadius: Shape.max, overflow: 'hidden' },

@@ -1,16 +1,14 @@
 import { router, Slot, usePathname } from 'expo-router';
-import { useState } from 'react';
 import { View } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
-import { BusinessSwitcher } from '@/components/business-switcher';
+import { ScopeSwitcherProvider, useOpenScopeSwitcher } from '@/components/scope-switcher';
 import { ScreenTabs } from '@/components/screen-tabs';
 import { ShellTabsProvider, useShellTabsConfig } from '@/components/shell-tabs';
 import { ShellTopBar } from '@/components/shell-top-bar';
 import { NavigationBar, type NavigationBarDestination } from '@/components/material3/navigation-bar';
-import { ORGANISATIONS } from '@/data/businesses';
 import { useBusiness } from '@/hooks/use-business';
 import { ToastProvider } from '@/hooks/use-toast';
 
@@ -31,7 +29,9 @@ const TAB_ITEMS = [
 export default function AppTabs() {
   return (
     <ShellTabsProvider>
-      <Shell />
+      <ScopeSwitcherProvider>
+        <Shell />
+      </ScopeSwitcherProvider>
     </ShellTabsProvider>
   );
 }
@@ -41,7 +41,7 @@ function Shell() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const business = useBusiness();
-  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const openScopeSwitcher = useOpenScopeSwitcher();
   const screenTabs = useShellTabsConfig();
   // A tab owns its nested routes too (e.g. /payments/transactions/123 → Payments).
   const active =
@@ -64,7 +64,7 @@ function Shell() {
             organisationName={business.organisation.name}
             shopName={`${business.scopeLabel} · ${business.channelLabel}`}
             organisationLogo={business.organisation.logo}
-            onPressSwitcher={() => setSwitcherOpen(true)}
+            onPressSwitcher={openScopeSwitcher}
           />
           {screenTabs ? <ScreenTabs {...screenTabs} /> : null}
         </ShellTopBar>
@@ -82,13 +82,6 @@ function Shell() {
           onChange={(key) => router.navigate(TAB_ITEMS.find((item) => item.key === key)?.href ?? '/')}
         />
       )}
-      <BusinessSwitcher
-        visible={switcherOpen}
-        onDismiss={() => setSwitcherOpen(false)}
-        organisations={ORGANISATIONS}
-        scope={{ organisationId: business.organisation.id, shopIds: business.shopIds, channel: business.channel }}
-        onApply={business.applyScope}
-      />
     </View>
   );
 }
