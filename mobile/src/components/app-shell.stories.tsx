@@ -34,11 +34,7 @@ function AppShellDemo() {
   return (
     <View style={{ height: 640, backgroundColor: theme.colors.background, margin: -16 }}>
       <ShellTopBar>
-        <AppHeader
-          organisationName={org.name}
-          shopName={org.shops[0].name}
-          organisationLogo={org.logo}
-        />
+        <AppHeader title="Payments" scope={`${org.shops[0].name} · In-store`} />
         {destination === 'payments' ? <ScreenTabs tabs={PAYMENT_TABS} activeKey={tab} onChange={setTab} /> : null}
       </ShellTopBar>
       <View style={{ flex: 1 }} />

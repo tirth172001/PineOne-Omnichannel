@@ -9,6 +9,7 @@ import { ScreenTabs } from '@/components/screen-tabs';
 import { ShellTabsProvider, useShellTabsConfig } from '@/components/shell-tabs';
 import { ShellTopBar } from '@/components/shell-top-bar';
 import { NavigationBar, type NavigationBarDestination } from '@/components/material3/navigation-bar';
+import { CURRENT_USER } from '@/data/businesses';
 import { useBusiness } from '@/hooks/use-business';
 import { ToastProvider } from '@/hooks/use-toast';
 
@@ -79,12 +80,11 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ShellTopBar>
+        {/* Overview is titled with the signed-in user and their role; the other tabs with their page name. */}
         <AppHeader
-          organisationName={business.organisation.name}
-          // Overview is titled with the business; the other tabs with their page name.
-          title={tab === 'index' ? undefined : item.label}
-          shopName={business.scopeText(tab === 'index')}
-          organisationLogo={business.organisation.logo}
+          title={tab === 'index' ? CURRENT_USER.name : item.label}
+          badge={tab === 'index' ? CURRENT_USER.roleLabel : undefined}
+          scope={business.scopeText(tab === 'index')}
           onPressSwitcher={openScopeSwitcher}
         />
         {screenTabs ? <ScreenTabs {...screenTabs} /> : null}

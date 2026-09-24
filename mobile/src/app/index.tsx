@@ -26,7 +26,7 @@ export default function OverviewScreen() {
   return (
     <TabChrome tab="index">
       <ScrollView contentContainerStyle={styles.content}>
-        <OverviewGreeting userName={CURRENT_USER.name} roleLabel={CURRENT_USER.roleLabel} />
+        <OverviewGreeting userName={CURRENT_USER.name} />
 
         <View style={styles.cards}>
           <CardCarousel>

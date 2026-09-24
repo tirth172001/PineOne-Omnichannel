@@ -300,11 +300,7 @@ export default function ThemePreviewScreen() {
 
       <ThemePreviewSection title="Our components">
         <ShellTopBar>
-          <AppHeader
-            organisationName={ORGANISATIONS[0].name}
-            shopName={ORGANISATIONS[0].shops[0].name}
-            organisationLogo={ORGANISATIONS[0].logo}
-          />
+          <AppHeader title="Tirth Trivedi" badge="Admin" scope={`${ORGANISATIONS[0].shops[0].name} · All channels`} />
         </ShellTopBar>
         <SearchBar />
         <AttentionBanner

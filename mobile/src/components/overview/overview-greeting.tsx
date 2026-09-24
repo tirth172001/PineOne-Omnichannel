@@ -1,22 +1,21 @@
 import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 
-import { OutlineTag } from '@/components/shared/status';
 import { Fonts } from '@/constants/theme';
 import { getTimeOfDayGreeting } from '@/data/overview';
 
 /**
  * Top of the Overview (web: the greeting row in home-content.tsx): "Good
- * morning, <name>" with the role badge. The web's store note and channel
- * filter live in the header switcher on mobile (global switching only).
+ * morning, <name>". The role badge sits with the name in the header on
+ * mobile, and the web's store note and channel filter live in the header
+ * switcher (global switching only).
  */
-export function OverviewGreeting({ userName, roleLabel }: { userName: string; roleLabel: string }) {
+export function OverviewGreeting({ userName }: { userName: string }) {
   return (
     <View style={styles.titleRow}>
       <Text style={styles.greeting} accessibilityRole="header">
         {getTimeOfDayGreeting()}, {userName}
       </Text>
-      <OutlineTag label={roleLabel} />
     </View>
   );
 }

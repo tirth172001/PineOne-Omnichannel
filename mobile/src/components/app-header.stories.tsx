@@ -20,14 +20,14 @@ const meta = {
     docs: {
       description: {
         component:
-          'App shell header (Figma 47:2350). The left side opens the org/shop switcher, and the right side holds notifications and the account.',
+          'App shell header (Figma 47:2350): the title (the user and their role on Overview, the page name elsewhere) over the store / channel scope, opening the switcher; notifications on the right.',
       },
     },
   },
   args: {
-    organisationName: ORGANISATIONS[0].name,
-    shopName: ORGANISATIONS[0].shops[0].name,
-    organisationLogo: ORGANISATIONS[0].logo,
+    title: 'Tirth Trivedi',
+    badge: 'Admin',
+    scope: `${ORGANISATIONS[0].shops[0].name} · All channels`,
   },
 } satisfies Meta<typeof AppHeader>;
 
@@ -37,10 +37,10 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const WithoutLogo: Story = {
+export const PageTitle: Story = {
   args: {
-    organisationName: ORGANISATIONS[1].name,
-    shopName: ORGANISATIONS[1].shops[0].name,
-    organisationLogo: undefined,
+    title: 'Settlements',
+    badge: undefined,
+    scope: `${ORGANISATIONS[0].shops[0].name} · In-store`,
   },
 };
