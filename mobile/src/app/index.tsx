@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { TabChrome } from '@/components/app-tabs';
+import { TabChrome, useTabNavBar } from '@/components/app-tabs';
 import { ExploreProducts } from '@/components/overview/explore-products';
 import { OverviewGreeting } from '@/components/overview/overview-greeting';
 import { QuickActions } from '@/components/overview/quick-actions';
@@ -20,41 +20,52 @@ import { useBusiness } from '@/hooks/use-business';
  * switcher; the page has no scope filters of its own.
  */
 export default function OverviewScreen() {
-  const { storeScale, channelScale } = useBusiness();
-  const scale = storeScale * channelScale;
-
   return (
     <TabChrome tab="index">
-      <ScrollView contentContainerStyle={styles.content}>
-        <OverviewGreeting userName={CURRENT_USER.name} />
-
-        <View style={styles.cards}>
-          <CardCarousel>
-            <TodayPaymentsCard
-              style={styles.fill}
-              totalAmount={Math.round(TODAY_PAYMENTS.totalAmount * scale)}
-              count={Math.max(0, Math.round(TODAY_PAYMENTS.count * scale))}
-              failedCount={Math.max(0, Math.round(TODAY_PAYMENTS.failedCount * scale))}
-              recent={TODAY_PAYMENTS.recent}
-              onPressPayment={() => router.navigate('/payments')}
-              onPressHistory={() => router.navigate('/payments')}
-            />
-            <TodaySettlementCard style={styles.fill} scale={scale} onPressHistory={() => router.navigate('/settlements')} />
-          </CardCarousel>
-        </View>
-
-        <QuickActions />
-
-        {/* Products live under More on mobile (the web links to /products). */}
-        <ExploreProducts onPressViewAll={() => router.navigate('/more')} onPressBanner={() => router.navigate('/more')} />
-      </ScrollView>
+      <OverviewContent />
     </TabChrome>
+  );
+}
+
+/** Inside TabChrome, so scrolling down can slide the navigation bar away. */
+function OverviewContent() {
+  const { storeScale, channelScale } = useBusiness();
+  const scale = storeScale * channelScale;
+  const navBar = useTabNavBar();
+
+  return (
+    <ScrollView
+      onScroll={(event) => navBar.onScroll(event.nativeEvent.contentOffset.y)}
+      scrollEventThrottle={16}
+      contentContainerStyle={[styles.content, { paddingBottom: 32 + navBar.height }]}>
+      <OverviewGreeting userName={CURRENT_USER.name} />
+
+      <View style={styles.cards}>
+        <CardCarousel>
+          <TodayPaymentsCard
+            style={styles.fill}
+            totalAmount={Math.round(TODAY_PAYMENTS.totalAmount * scale)}
+            count={Math.max(0, Math.round(TODAY_PAYMENTS.count * scale))}
+            failedCount={Math.max(0, Math.round(TODAY_PAYMENTS.failedCount * scale))}
+            recent={TODAY_PAYMENTS.recent}
+            onPressPayment={() => router.navigate('/payments')}
+            onPressHistory={() => router.navigate('/payments')}
+          />
+          <TodaySettlementCard style={styles.fill} scale={scale} onPressHistory={() => router.navigate('/settlements')} />
+        </CardCarousel>
+      </View>
+
+      <QuickActions />
+
+      {/* Products live under More on mobile (the web links to /products). */}
+      <ExploreProducts onPressViewAll={() => router.navigate('/more')} onPressBanner={() => router.navigate('/more')} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   // Web spacing: 24px from the greeting to the cards, 64px between sections; halved-ish for a phone.
-  content: { gap: 40, paddingHorizontal: 16, paddingTop: 20, paddingBottom: 32 },
+  content: { gap: 40, paddingHorizontal: 16, paddingTop: 20 },
   cards: { marginTop: -16 },
   fill: { flex: 1 },
 });

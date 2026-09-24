@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useContext, useEffect, useState, useSyncExternalStore } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
 
 type FloatingStore = {
   get: () => ReactNode;
@@ -40,20 +40,27 @@ export function FloatingLayerProvider({ store, children }: { store: FloatingStor
  * screen's content area — so just above the navigation bar on a tab, or the
  * pinned footer on an inner page — over the scrolling content.
  */
-export function FloatingLayerHost({ store }: { store: FloatingStore }) {
+export function FloatingLayerHost({
+  store,
+  offsetY,
+}: {
+  store: FloatingStore;
+  /** Vertical shift, e.g. to ride above a navigation bar that slides away. */
+  offsetY?: Animated.AnimatedInterpolation<number>;
+}) {
   const node = useSyncExternalStore(store.subscribe, store.get);
   if (!node) return null;
   return (
-    <View pointerEvents="box-none" style={styles.host}>
+    <Animated.View pointerEvents="box-none" style={[styles.host, offsetY ? { transform: [{ translateY: offsetY }] } : null]}>
       {node}
-    </View>
+    </Animated.View>
   );
 }
 
 /** Space at the end of the scrolling content so the last rows can scroll clear of the floating content. */
 export function FloatingLayerSpacer({ store }: { store: FloatingStore }) {
   const node = useSyncExternalStore(store.subscribe, store.get);
-  return node ? <View style={styles.spacer} /> : null;
+  return node ? <Animated.View style={styles.spacer} /> : null;
 }
 
 /**
