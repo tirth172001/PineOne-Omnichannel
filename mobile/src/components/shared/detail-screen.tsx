@@ -107,14 +107,16 @@ export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = 
 /** Page title with the current scope and an arrow under it (the home header's subtext). */
 function ScopedTitle({ title }: { title: string }) {
   const theme = useTheme();
-  const { scopeLabel, channelLabel } = useBusiness();
+  const { scopeText } = useBusiness();
+  // Scoped inner pages are channel-split, so never "All channels".
+  const scope = scopeText(false);
   const openScopeSwitcher = useOpenScopeSwitcher();
   return (
     <TouchableRipple
       onPress={openScopeSwitcher}
       borderless
       accessibilityRole="button"
-      accessibilityLabel={`${title}. ${scopeLabel}, ${channelLabel}. Switch store or channel`}
+      accessibilityLabel={`${title}. ${scope}. Switch store or channel`}
       style={styles.scopedTitle}>
       <View>
         <Text variant="titleMedium" numberOfLines={1}>
@@ -122,7 +124,7 @@ function ScopedTitle({ title }: { title: string }) {
         </Text>
         <View style={styles.scope}>
           <Text variant="bodySmall" numberOfLines={1} style={[styles.scopeText, { color: theme.colors.onSurfaceVariant }]}>
-            {scopeLabel} · {channelLabel}
+            {scope}
           </Text>
           <Icon source="caret-down" size={14} color={theme.colors.onSurfaceVariant} />
         </View>

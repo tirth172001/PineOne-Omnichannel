@@ -75,8 +75,8 @@ const INNER_RADIUS = concentric(Shape.max, CARD_PADDING);
  */
 export function SettlementsView() {
   const theme = useTheme();
-  // Follows the header's channel; All channels lists both.
-  const { channel } = useBusiness();
+  // Follows the header's channel (In-store or Online; this page has no All channels).
+  const { specificChannel: channel } = useBusiness();
   const [period, setPeriod] = useState<(typeof PERIOD_OPTIONS)[number]['value']>('today');
   const [deductionsOpen, setDeductionsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -93,7 +93,7 @@ export function SettlementsView() {
     const query = search.trim().toLowerCase();
     const pick = (id: string) => moreFilters[id]?.[0];
     return settlementRows.filter((row) => {
-      if (channel !== 'all' && row.channel !== channel) return false;
+      if (row.channel !== channel) return false;
       if (status !== 'all' && row.status !== status) return false;
       if (pick('bank') && row.acquiringBank.toLowerCase() !== pick('bank')) return false;
       if (pick('type') && row.settlementType !== pick('type')) return false;
@@ -122,7 +122,7 @@ export function SettlementsView() {
         <View style={styles.infoLine}>
           <Icon source="arrow-clockwise" size={16} color={theme.colors.onSurfaceVariant} />
           <Text variant="bodyMedium" style={[styles.regular, muted]}>
-            Settlement cycle: <Text style={styles.strong}>{channel === 'in-store' ? 'T+1 days' : 'T+1 / T+2 days'}</Text>
+            Settlement cycle: <Text style={styles.strong}>{channel === 'online' ? 'T+1 / T+2 days' : 'T+1 days'}</Text>
           </Text>
         </View>
         <View style={styles.infoLine}>
@@ -195,7 +195,7 @@ export function SettlementsView() {
           </View>
         </Card>
       </CardCarousel>
-      {channel !== 'online' ? (
+      {channel === 'in-store' ? (
         <Card mode="outlined" style={[styles.summary, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
           <View style={styles.odsBanner}>
             <Icon source="lightning" size={20} color="#4f46e5" />

@@ -19,6 +19,8 @@ type BusinessSwitcherProps = {
   /** The scope currently applied; the sheet edits a draft of it until Apply. */
   scope: BusinessScope;
   onApply: (scope: BusinessScope) => void;
+  /** Only Overview offers "All channels"; channel-split pages pick In-store or Online. */
+  allowAllChannels?: boolean;
 };
 
 // Rows sit 16dp inside the sheet; the 40dp logo tile 4dp inside a row.
@@ -32,12 +34,12 @@ const CHANNEL_DESCRIPTIONS: Record<ChannelFilter, string> = {
 };
 
 /**
- * The app's only scope control, opened from the header: organisation, which
- * stores (any combination, or all), and which channel (all, in-store or
- * online). Pages don't filter by store or channel themselves; everything
- * follows what's applied here.
+ * The app's only scope control, opened from the header: organisation, channel
+ * (All channels on Overview only; otherwise In-store or Online), and — unless
+ * the channel is Online, which has no stores — which stores (any combination,
+ * or all). Pages don't filter by store or channel themselves.
  */
-export function BusinessSwitcher({ visible, onDismiss, organisations, scope, onApply }: BusinessSwitcherProps) {
+export function BusinessSwitcher({ visible, onDismiss, organisations, scope, onApply, allowAllChannels = true }: BusinessSwitcherProps) {
   const theme = useTheme();
   const [draft, setDraft] = useState<BusinessScope>(scope);
   // Start from the applied scope each time the sheet opens (adjusting state during render).
@@ -114,52 +116,11 @@ export function BusinessSwitcher({ visible, onDismiss, organisations, scope, onA
         )}
       </PanelSection>
 
-      <PanelSection>
-        <Text variant="titleSmall" style={styles.heading}>
-          Stores
-        </Text>
-        {row(
-          'all-stores',
-          <>
-            <Icon source="buildings" size={24} color={theme.colors.onSurfaceVariant} />
-            <View style={styles.flex}>
-              <Text variant="bodyLarge">All stores</Text>
-              <Text variant="bodySmall" style={muted}>
-                {organisation.shops.length} stores
-              </Text>
-            </View>
-            <SelectionMark type="checkbox" checked={allStores} />
-          </>,
-          () => setDraft((current) => ({ ...current, shopIds: [] })),
-          allStores,
-          'checkbox'
-        )}
-        {organisation.shops.map((shop) => {
-          const checked = allStores || draft.shopIds.includes(shop.id);
-          return row(
-            shop.id,
-            <>
-              <Icon source="storefront" size={24} color={theme.colors.onSurfaceVariant} />
-              <View style={styles.flex}>
-                <Text variant="bodyLarge">{shop.name}</Text>
-                <Text variant="bodySmall" numberOfLines={1} style={muted}>
-                  {shop.address}
-                </Text>
-              </View>
-              <SelectionMark type="checkbox" checked={checked} />
-            </>,
-            () => toggleShop(shop.id),
-            !allStores && checked,
-            'checkbox'
-          );
-        })}
-      </PanelSection>
-
-      <PanelSection last>
+      <PanelSection last={draft.channel === 'online'}>
         <Text variant="titleSmall" style={styles.heading}>
           Channel
         </Text>
-        {CHANNEL_OPTIONS.map((option) =>
+        {CHANNEL_OPTIONS.filter((option) => allowAllChannels || option.value !== 'all').map((option) =>
           row(
             option.value,
             <>
@@ -178,6 +139,49 @@ export function BusinessSwitcher({ visible, onDismiss, organisations, scope, onA
           )
         )}
       </PanelSection>
+      {/* Stores only apply in-store; Online has none. */}
+      {draft.channel !== 'online' ? (
+        <PanelSection last>
+          <Text variant="titleSmall" style={styles.heading}>
+            Stores
+          </Text>
+          {row(
+            'all-stores',
+            <>
+              <Icon source="buildings" size={24} color={theme.colors.onSurfaceVariant} />
+              <View style={styles.flex}>
+                <Text variant="bodyLarge">All stores</Text>
+                <Text variant="bodySmall" style={muted}>
+                  {organisation.shops.length} stores
+                </Text>
+              </View>
+              <SelectionMark type="checkbox" checked={allStores} />
+            </>,
+            () => setDraft((current) => ({ ...current, shopIds: [] })),
+            allStores,
+            'checkbox'
+          )}
+          {organisation.shops.map((shop) => {
+            const checked = allStores || draft.shopIds.includes(shop.id);
+            return row(
+              shop.id,
+              <>
+                <Icon source="storefront" size={24} color={theme.colors.onSurfaceVariant} />
+                <View style={styles.flex}>
+                  <Text variant="bodyLarge">{shop.name}</Text>
+                  <Text variant="bodySmall" numberOfLines={1} style={muted}>
+                    {shop.address}
+                  </Text>
+                </View>
+                <SelectionMark type="checkbox" checked={checked} />
+              </>,
+              () => toggleShop(shop.id),
+              !allStores && checked,
+              'checkbox'
+            );
+          })}
+        </PanelSection>
+      ) : null}
     </PanelSheet>
   );
 }

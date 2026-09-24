@@ -1,3 +1,4 @@
+import { usePathname } from 'expo-router';
 import { createContext, type ReactNode, useContext, useState } from 'react';
 
 import { BusinessSwitcher } from '@/components/business-switcher';
@@ -15,6 +16,8 @@ const ScopeSwitcherContext = createContext<(() => void) | null>(null);
 export function ScopeSwitcherProvider({ children }: { children: ReactNode }) {
   const business = useBusiness();
   const [open, setOpen] = useState(false);
+  // "All channels" is an Overview-only view; everywhere else picks In-store or Online.
+  const allowAllChannels = usePathname() === '/';
   return (
     <ScopeSwitcherContext.Provider value={() => setOpen(true)}>
       {children}
@@ -22,8 +25,13 @@ export function ScopeSwitcherProvider({ children }: { children: ReactNode }) {
         visible={open}
         onDismiss={() => setOpen(false)}
         organisations={ORGANISATIONS}
-        scope={{ organisationId: business.organisation.id, shopIds: business.shopIds, channel: business.channel }}
+        scope={{
+          organisationId: business.organisation.id,
+          shopIds: business.shopIds,
+          channel: allowAllChannels ? business.channel : business.specificChannel,
+        }}
         onApply={business.applyScope}
+        allowAllChannels={allowAllChannels}
       />
     </ScopeSwitcherContext.Provider>
   );

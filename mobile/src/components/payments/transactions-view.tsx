@@ -147,9 +147,8 @@ function moreFilterCategories(rows: TransactionRecord[]): MoreFilterCategory[] {
  */
 export function TransactionsView() {
   const theme = useTheme();
-  // The listing follows the header's channel: Online shows orders / online payments; In-store and
-  // All channels show the payments list (every payment row, in-store and online alike).
-  const { channel } = useBusiness();
+  // The listing follows the header's channel (In-store or Online; this page has no All channels).
+  const { specificChannel: channel } = useBusiness();
   const mode: ListingMode = channel === 'online' ? 'online' : 'in-store';
   const [onlineView, setOnlineView] = useState<OnlineView>('order');
   const [search, setSearch] = useState('');

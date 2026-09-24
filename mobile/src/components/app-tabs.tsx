@@ -62,7 +62,7 @@ function Shell() {
         <ShellTopBar>
           <AppHeader
             organisationName={business.organisation.name}
-            shopName={`${business.scopeLabel} · ${business.channelLabel}`}
+            shopName={business.scopeText(pathname === '/')}
             organisationLogo={business.organisation.logo}
             onPressSwitcher={openScopeSwitcher}
           />

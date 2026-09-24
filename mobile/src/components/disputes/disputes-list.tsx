@@ -35,14 +35,14 @@ const plural = (count: number) => `among ${count} payment${count === 1 ? '' : 's
 export function DisputesList() {
   const theme = useTheme();
   const presets = useMemo(() => getDefaultDateRangePresets(), []);
-  // Follows the header's channel; All channels lists both.
-  const { channel } = useBusiness();
+  // Follows the header's channel (In-store or Online; this page has no All channels).
+  const { specificChannel: channel } = useBusiness();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | DisputeStatus>('all');
   const [dateRange, setDateRange] = useState(() => makeDateRangeValue(presets, 'today'));
   const muted = { color: theme.colors.onSurfaceVariant };
 
-  const forChannel = channel === 'all' ? disputeRecords : disputeRecords.filter((row) => row.channel === channel);
+  const forChannel = disputeRecords.filter((row) => row.channel === channel);
   const query = search.trim().toLowerCase();
   const rows = forChannel.filter((row) => {
     if (status !== 'all' && row.status !== status) return false;
