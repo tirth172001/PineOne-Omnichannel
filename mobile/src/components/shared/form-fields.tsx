@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { type KeyboardTypeOptions, StyleSheet, TextInput, View } from 'react-native';
 import { Checkbox, Icon, Menu, RadioButton, Text, TouchableRipple, useTheme } from 'react-native-paper';
-import { DatePickerModal } from 'react-native-paper-dates';
+import { DatePickerModal, TimePickerModal } from 'react-native-paper-dates';
 
 import { Fonts } from '@/constants/theme';
 
@@ -51,6 +51,7 @@ export function FormTextInput({
   secureTextEntry,
   keyboardType,
   multiline = false,
+  prefix,
   radius = PANEL_INNER_RADIUS,
 }: {
   value: string;
@@ -61,10 +62,12 @@ export function FormTextInput({
   keyboardType?: KeyboardTypeOptions;
   /** Multi-line text area (web: Textarea). */
   multiline?: boolean;
+  /** Muted leading text inside the field, e.g. "₹" or "+91". */
+  prefix?: string;
   radius?: number;
 }) {
   const theme = useTheme();
-  return (
+  const input = (
     <TextInput
       multiline={multiline}
       value={value}
@@ -75,8 +78,22 @@ export function FormTextInput({
       keyboardType={keyboardType}
       autoCapitalize={keyboardType === 'email-address' ? 'none' : undefined}
       accessibilityLabel={accessibilityLabel}
-      style={[styles.input, multiline && styles.textArea, { borderRadius: radius, borderColor: theme.colors.outlineVariant, color: theme.colors.onSurface }]}
+      style={[
+        styles.input,
+        multiline && styles.textArea,
+        prefix ? styles.prefixedInput : { borderRadius: radius, borderColor: theme.colors.outlineVariant },
+        { color: theme.colors.onSurface },
+      ]}
     />
+  );
+  if (!prefix) return input;
+  return (
+    <View style={[styles.prefixed, { borderRadius: radius, borderColor: theme.colors.outlineVariant }]}>
+      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+        {prefix}
+      </Text>
+      {input}
+    </View>
   );
 }
 
@@ -222,6 +239,78 @@ export function DateRangeField({
   );
 }
 
+function formatTime(hours: number, minutes: number) {
+  const suffix = hours >= 12 ? 'PM' : 'AM';
+  const hour = hours % 12 === 0 ? 12 : hours % 12;
+  return `${hour}:${String(minutes).padStart(2, '0')} ${suffix}`;
+}
+
+function parseTime(time: string) {
+  const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(time);
+  if (!match) return { hours: 10, minutes: 30 };
+  const hour = Number(match[1]) % 12;
+  return { hours: match[3].toUpperCase() === 'PM' ? hour + 12 : hour, minutes: Number(match[2]) };
+}
+
+export type DateTimeValue = { date?: Date; time: string };
+
+/**
+ * Date and time side by side (web: DateTimePicker), each opening Material's
+ * picker. `validRange.startDate` blocks earlier dates (e.g. a link expiry).
+ */
+export function DateTimeField({
+  value,
+  onChange,
+  minDate,
+  radius = PANEL_INNER_RADIUS,
+}: {
+  value: DateTimeValue;
+  onChange: (value: DateTimeValue) => void;
+  minDate?: Date;
+  radius?: number;
+}) {
+  const [picker, setPicker] = useState<'date' | 'time' | null>(null);
+  return (
+    <View style={styles.dateTime}>
+      <View style={styles.dateTimeDate}>
+        <FieldButton
+          label={value.date ? formatDate(value.date) : 'Select date'}
+          placeholder={!value.date}
+          icon="calendar-blank"
+          onPress={() => setPicker('date')}
+          accessibilityLabel={`Date: ${value.date ? formatDate(value.date) : 'not set'}`}
+          radius={radius}
+        />
+      </View>
+      <View style={styles.dateTimeTime}>
+        <FieldButton label={value.time} icon="clock" onPress={() => setPicker('time')} accessibilityLabel={`Time: ${value.time}`} radius={radius} />
+      </View>
+      <DatePickerModal
+        locale="en"
+        mode="single"
+        visible={picker === 'date'}
+        date={value.date}
+        validRange={minDate ? { startDate: minDate } : undefined}
+        onDismiss={() => setPicker(null)}
+        onConfirm={({ date }) => {
+          setPicker(null);
+          if (date) onChange({ ...value, date });
+        }}
+      />
+      <TimePickerModal
+        locale="en"
+        visible={picker === 'time'}
+        {...parseTime(value.time)}
+        onDismiss={() => setPicker(null)}
+        onConfirm={({ hours, minutes }) => {
+          setPicker(null);
+          onChange({ ...value, time: formatTime(hours, minutes) });
+        }}
+      />
+    </View>
+  );
+}
+
 /** Inline radio or checkbox with its label (web: RadioGroupItem / Checkbox inside a label). */
 export function ChoiceControl({
   label,
@@ -296,6 +385,11 @@ const styles = StyleSheet.create({
   label: { fontFamily: Fonts.medium },
   semiBold: { fontFamily: Fonts.semiBold },
   input: { height: FIELD_HEIGHT, paddingHorizontal: 12, borderWidth: 1, fontFamily: Fonts.regular, fontSize: 14 },
+  prefixed: { height: FIELD_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 12, borderWidth: 1 },
+  prefixedInput: { flex: 1, height: '100%', borderWidth: 0, paddingLeft: 0 },
+  dateTime: { flexDirection: 'row', gap: 8 },
+  dateTimeDate: { flex: 1.3 },
+  dateTimeTime: { flex: 1 },
   textArea: { height: undefined, minHeight: 80, paddingVertical: 10, textAlignVertical: 'top' },
   fieldButton: { height: FIELD_HEIGHT, borderWidth: 1, justifyContent: 'center' },
   fieldButtonContent: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12 },

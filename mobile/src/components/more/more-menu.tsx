@@ -20,6 +20,14 @@ type MoreItem = { label: string; icon: string; href: Href };
  */
 const MORE_SECTIONS: { label: string; items: MoreItem[] }[] = [
   { label: 'Payments', items: [{ label: 'Disputes', icon: 'gavel', href: '/more/disputes' }] },
+  {
+    label: 'Products',
+    items: [
+      { label: 'Terminal devices', icon: 'storefront', href: '/more/terminal-devices' },
+      { label: 'Payment links', icon: 'link-simple', href: '/more/payment-links' },
+      { label: 'Checkout', icon: 'palette', href: '/more/checkout' },
+    ],
+  },
 ];
 
 const CARD_PADDING = 16;

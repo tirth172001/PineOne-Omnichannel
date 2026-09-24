@@ -13,6 +13,14 @@ import { WifiHighIcon } from 'phosphor-react-native/src/icons/WifiHigh';
 import { ThumbsUpIcon } from 'phosphor-react-native/src/icons/ThumbsUp';
 import { ThumbsDownIcon } from 'phosphor-react-native/src/icons/ThumbsDown';
 import { UploadSimpleIcon } from 'phosphor-react-native/src/icons/UploadSimple';
+import { LinkBreakIcon } from 'phosphor-react-native/src/icons/LinkBreak';
+import { MoonIcon } from 'phosphor-react-native/src/icons/Moon';
+import { PaletteIcon } from 'phosphor-react-native/src/icons/Palette';
+import { ImageSquareIcon } from 'phosphor-react-native/src/icons/ImageSquare';
+import { CellSignalFullIcon } from 'phosphor-react-native/src/icons/CellSignalFull';
+import { TranslateIcon } from 'phosphor-react-native/src/icons/Translate';
+import { RadioButtonIcon } from 'phosphor-react-native/src/icons/RadioButton';
+import { ShieldIcon } from 'phosphor-react-native/src/icons/Shield';
 import { ArrowsLeftRightIcon } from 'phosphor-react-native/src/icons/ArrowsLeftRight';
 import { ArrowUpIcon } from 'phosphor-react-native/src/icons/ArrowUp';
 import { ArrowUpRightIcon } from 'phosphor-react-native/src/icons/ArrowUpRight';
@@ -119,6 +127,14 @@ import { XCircleIcon } from 'phosphor-react-native/src/icons/XCircle';
  */
 const ICONS = {
   'arrows-left-right': ArrowsLeftRightIcon,
+  'moon': MoonIcon,
+  'palette': PaletteIcon,
+  'image-square': ImageSquareIcon,
+  'cell-signal-full': CellSignalFullIcon,
+  'translate': TranslateIcon,
+  'radio-button': RadioButtonIcon,
+  'shield': ShieldIcon,
+  'link-break': LinkBreakIcon,
   'upload-simple': UploadSimpleIcon,
   'monitor': MonitorIcon,
   'graduation-cap': GraduationCapIcon,
