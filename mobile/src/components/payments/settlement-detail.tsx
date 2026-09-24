@@ -1,27 +1,26 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Card, Divider, Icon, Text, useTheme } from 'react-native-paper';
+import { Button, Divider, Icon, Text, useTheme } from 'react-native-paper';
 
 import { SearchField } from '@/components/search-field';
 import { DimmedDecimalAmount } from '@/components/shared/amount';
 import { BankLogo } from '@/components/shared/bank-logo';
 import { OutlinedActionButton } from '@/components/shared/controls';
 import { CopyableValue } from '@/components/shared/copyable-value';
-import { DetailRow } from '@/components/shared/detail-rows';
+import { DetailRow, SECTION_CARD_INNER_RADIUS, SectionCard } from '@/components/shared/detail-rows';
 import { HelpCard } from '@/components/shared/help-card';
-import { DetailScreen, type StatusGradientTone } from '@/components/shared/detail-screen';
-import { ListCard, ListRow, ListRowLine } from '@/components/shared/listing';
+import { CollapsingDetailScreen, type StatusGradientTone } from '@/components/shared/detail-screen';
+import { ListRow, ListRowLine } from '@/components/shared/listing';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { DotStatusBadge } from '@/components/shared/status';
-import { concentric, Shape } from '@/constants/shape';
+import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { type SettlementRow, type SettlementStatus, settlementDetailRows } from '@/data/settlements';
 
 import { rupees, settlementStatusTone } from './settlements-view';
 
 const METHOD_ICON = { upi: 'qr-code', card: 'credit-card', netbanking: 'device-mobile' } as const;
-const CARD_PADDING = 16;
 
 function gradientFor(status: SettlementStatus): StatusGradientTone {
   if (status === 'Settled') return 'success';
@@ -31,12 +30,11 @@ function gradientFor(status: SettlementStatus): StatusGradientTone {
 }
 
 /**
- * Settlement batch detail (web: V3SettlementsContent detail mode): bank, net
- * amount and status, when it was settled and initiated, UTR, the deductions
+ * Settlement batch detail (web: V3SettlementsContent detail mode), laid out
+ * like Transaction details: a collapsing header over a centred hero (bank,
+ * net amount, status, settled / initiated, UTR), then cards — Amount
  * breakdown (View all adds GST), the transactions included (searchable,
- * paginated), and the support prompt. The web's side-by-side header and
- * breakdown stack on a phone, and the included-transactions table becomes
- * stacked records.
+ * paginated) and Help.
  */
 export function SettlementDetail({ settlement }: { settlement: SettlementRow }) {
   const theme = useTheme();
@@ -68,25 +66,38 @@ export function SettlementDetail({ settlement }: { settlement: SettlementRow }) 
   const currentPage = Math.min(page, totalPages);
   const paged = filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
-  return (
-    <DetailScreen title="Settlement details" fallbackHref="/payments?tab=settlements" gradient={gradientFor(settlement.status)}>
-      <View style={styles.hero}>
-        <BankLogo bank={settlement.bankName} size={48} />
-        <View style={styles.amountRow}>
-          <DimmedDecimalAmount value={rupees(settlement.netAmount)} size="hero" />
-          <DotStatusBadge label={settlement.status} tone={settlementStatusTone(settlement.status)} radius={Shape.max} />
-        </View>
-        <Text variant="bodyMedium" style={[styles.regular, muted]}>
-          Settled to: {settlement.bankName} bank, {settlement.accountLabel} on {settlement.settlementDatePrimary}, {settlement.settlementDateSecondary}
-        </Text>
-        <Text variant="bodyMedium" style={[styles.regular, muted]}>
-          Initiated on: {settlement.initiationDatePrimary}, {settlement.initiationDateSecondary}
-        </Text>
+  const last4 = settlement.accountLabel.slice(-4);
+
+  // Centred summary; it collapses into the header (settled amount + bank) on scroll.
+  const hero = (
+    <View style={styles.hero}>
+      <BankLogo bank={settlement.bankName} size={48} />
+      <DimmedDecimalAmount value={rupees(settlement.netAmount)} size="hero" />
+      {/* Wrapped so the badge (which aligns itself to the start) centres in the hero. */}
+      <View>
+        <DotStatusBadge label={settlement.status} tone={settlementStatusTone(settlement.status)} radius={Shape.max} />
+      </View>
+      <Text variant="bodyMedium" style={[styles.meta, muted]}>
+        Settled to: {settlement.bankName} bank, {settlement.accountLabel} on {settlement.settlementDatePrimary}, {settlement.settlementDateSecondary}
+        {'\n'}
+        Initiated on: {settlement.initiationDatePrimary}, {settlement.initiationDateSecondary}
+      </Text>
+      <View>
         <CopyableValue variant="pill" value={settlement.utr} label={`UTR: ${settlement.utr}`} />
       </View>
+    </View>
+  );
 
-      <Card mode="outlined" style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
-        <View style={styles.cardBody}>
+  return (
+    <CollapsingDetailScreen
+      fallbackHref="/payments?tab=settlements"
+      gradient={gradientFor(settlement.status)}
+      hero={hero}
+      compactTitle={rupees(settlement.netAmount)}
+      compactSubtitle={`${settlement.bankName} Bank •••• ${last4}`}>
+      {/* One card per segment, evenly spaced (same layout as Transaction details). */}
+      <View style={styles.cards}>
+        <SectionCard title="Amount breakdown" icon="wallet">
           <DetailRow label="Gross amount">
             <Text variant="bodyMedium" style={styles.medium}>
               {rupees(settlement.grossAmount)}
@@ -108,109 +119,93 @@ export function SettlementDetail({ settlement }: { settlement: SettlementRow }) 
             style={styles.viewAll}>
             {showAll ? 'View less' : 'View all'}
           </Button>
-        </View>
-        <Divider />
-        <View style={styles.cardBody}>
+          <Divider />
           <DetailRow label="Net settled amount">
             <Text variant="bodyMedium" style={styles.semiBold}>
               {rupees(settlement.netAmount)}
             </Text>
           </DetailRow>
-        </View>
-      </Card>
+        </SectionCard>
 
-      <Divider />
+        <SectionCard title={`${settlement.transactionCount} Transactions included`} icon="arrows-left-right">
+          <SearchField
+            value={search}
+            onChangeText={(value) => {
+              setSearch(value);
+              setPage(1);
+            }}
+            placeholder="Search by Trxn ID"
+            radius={SECTION_CARD_INNER_RADIUS}
+          />
+          <View style={styles.row}>
+            <OutlinedActionButton label="Download" icon="download-simple" radius={SECTION_CARD_INNER_RADIUS} />
+          </View>
+          <View style={[styles.rows, { borderColor: theme.colors.outlineVariant }]}>
+            {paged.length === 0 ? (
+              <Text variant="bodyMedium" style={[styles.empty, muted]}>
+                No transactions match your search.
+              </Text>
+            ) : (
+              paged.map((row, index) => (
+                <View key={`${row.id}-${index}`}>
+                  {index > 0 ? <Divider /> : null}
+                  <ListRow
+                    onPress={() => router.push(`/payments/transactions/${row.id}`)}
+                    accessibilityLabel={`Transaction ${row.id}, payout ${rupees(row.payoutAmount)}`}>
+                    <ListRowLine
+                      left={<Text variant="bodyMedium" style={styles.medium}>{row.id}</Text>}
+                      right={<Text variant="bodyMedium" style={styles.medium}>{rupees(row.payoutAmount)}</Text>}
+                    />
+                    <ListRowLine
+                      left={
+                        <View style={styles.inline}>
+                          <Icon source={METHOD_ICON[row.paymentMethod]} size={16} color={theme.colors.onSurfaceVariant} />
+                          <Text variant="bodySmall">
+                            {row.paymentMethodLabel} <Text style={muted}>· {row.paymentMethodSubLabel}</Text>
+                          </Text>
+                        </View>
+                      }
+                      right={
+                        <Text variant="bodySmall" style={muted}>
+                          {row.paymentDate}, {row.paymentTime}
+                        </Text>
+                      }
+                    />
+                  </ListRow>
+                </View>
+              ))
+            )}
+          </View>
+          <PaginationBar
+            page={currentPage}
+            totalPages={totalPages}
+            rowsPerPage={rowsPerPage}
+            totalRows={filtered.length}
+            onPageChange={setPage}
+            onRowsPerPageChange={(value) => {
+              setRowsPerPage(value);
+              setPage(1);
+            }}
+          />
+        </SectionCard>
 
-      <View style={styles.block}>
-        <Text style={styles.sectionTitle}>{settlement.transactionCount} Transactions included</Text>
-        <SearchField
-          value={search}
-          onChangeText={(value) => {
-            setSearch(value);
-            setPage(1);
-          }}
-          placeholder="Search by Trxn ID"
-          radius={Shape.small}
-        />
-        <View style={styles.row}>
-          <OutlinedActionButton label="Download" icon="download-simple" />
-        </View>
-        <ListCard empty="No transactions match your search.">
-          {paged.map((row, index) => (
-            <ListRow
-              key={`${row.id}-${index}`}
-              onPress={() => router.push(`/payments/transactions/${row.id}`)}
-              accessibilityLabel={`Transaction ${row.id}, payout ${rupees(row.payoutAmount)}`}>
-              <ListRowLine
-                left={<Text variant="bodyMedium" style={styles.medium}>{row.id}</Text>}
-                right={<Text variant="bodyMedium" style={styles.medium}>{rupees(row.payoutAmount)}</Text>}
-              />
-              <ListRowLine
-                left={
-                  <View style={styles.inline}>
-                    <Icon source={METHOD_ICON[row.paymentMethod]} size={16} color={theme.colors.onSurfaceVariant} />
-                    <Text variant="bodySmall">
-                      {row.paymentMethodLabel} <Text style={muted}>· {row.paymentMethodSubLabel}</Text>
-                    </Text>
-                  </View>
-                }
-                right={
-                  <Text variant="bodySmall" style={muted}>
-                    {rupees(row.transactionAmount)} − {rupees(row.totalDeduction)}
-                  </Text>
-                }
-              />
-              <ListRowLine
-                left={
-                  <Text variant="bodySmall" style={muted} numberOfLines={1}>
-                    {row.storeName} · {row.storeAddress}
-                  </Text>
-                }
-                right={
-                  <Text variant="bodySmall" style={muted}>
-                    {row.paymentDate}, {row.paymentTime}
-                  </Text>
-                }
-              />
-            </ListRow>
-          ))}
-        </ListCard>
-        <PaginationBar
-          page={currentPage}
-          totalPages={totalPages}
-          rowsPerPage={rowsPerPage}
-          totalRows={filtered.length}
-          onPageChange={setPage}
-          onRowsPerPageChange={(value) => {
-            setRowsPerPage(value);
-            setPage(1);
-          }}
-        />
+        <HelpCard subject="settlement" carded />
       </View>
-
-      <Divider />
-
-      <HelpCard subject="settlement" />
-    </DetailScreen>
+    </CollapsingDetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: { gap: 10 },
-  amountRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 8 },
-  regular: { fontFamily: Fonts.regular },
+  hero: { gap: 10, alignItems: 'center', paddingBottom: 8 },
+  meta: { fontFamily: Fonts.regular, lineHeight: 22, textAlign: 'center' },
+  cards: { gap: 12 },
   medium: { fontFamily: Fonts.medium },
   semiBold: { fontFamily: Fonts.semiBold },
-  card: { borderRadius: Shape.max, overflow: 'hidden' },
-  cardBody: { padding: CARD_PADDING, gap: 12 },
-  viewAll: { alignSelf: 'center', borderRadius: concentric(Shape.max, CARD_PADDING) },
+  viewAll: { alignSelf: 'center', borderRadius: SECTION_CARD_INNER_RADIUS },
   trailingIcon: { flexDirection: 'row-reverse' },
-  block: { gap: 12 },
-  // Web: text-xl font-semibold.
-  sectionTitle: { fontFamily: Fonts.semiBold, fontSize: 20, lineHeight: 28 },
   row: { flexDirection: 'row', gap: 8 },
   inline: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  help: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  helpIcon: { width: 32, height: 32, borderRadius: Shape.small, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  flex: { flex: 1 },
+  // Bordered list inside the card; clips the rows to its corners.
+  rows: { borderWidth: 1, borderRadius: SECTION_CARD_INNER_RADIUS, overflow: 'hidden' },
+  empty: { padding: 16 },
 });

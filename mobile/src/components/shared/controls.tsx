@@ -139,6 +139,7 @@ export function OutlinedActionButton({
   count,
   active = false,
   accessibilityLabel,
+  radius = Shape.small,
 }: {
   label: string;
   icon?: string;
@@ -148,6 +149,8 @@ export function OutlinedActionButton({
   /** Highlights the button (web: filter button with applied values). */
   active?: boolean;
   accessibilityLabel?: string;
+  /** Defaults to a page-level control's radius; pass the concentric radius inside a container. */
+  radius?: number;
 }) {
   const theme = useTheme();
   return (
@@ -163,6 +166,7 @@ export function OutlinedActionButton({
       style={[
         styles.button,
         {
+          borderRadius: radius,
           borderColor: active ? theme.colors.onSurface : theme.colors.outlineVariant,
           backgroundColor: theme.colors.surface,
         },

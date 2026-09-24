@@ -6,14 +6,32 @@ import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 
 import { OutlinedActionButton } from './controls';
+import { SECTION_CARD_INNER_RADIUS, SectionCard } from './detail-rows';
 
 /**
  * "Need help with this …?" footer on detail pages (web: the support row at the
  * end of the settlement and dispute details): headset icon, copy, and Contact
  * us, which opens Support.
  */
-export function HelpCard({ subject }: { subject: string }) {
+export function HelpCard({ subject, carded = false }: { subject: string; /** As a SectionCard (card-based detail pages). */ carded?: boolean }) {
   const theme = useTheme();
+  if (carded) {
+    return (
+      <SectionCard title="Help" icon="headphones">
+        <View>
+          <Text variant="bodyMedium" style={styles.medium}>
+            Need help with this {subject}?
+          </Text>
+          <Text variant="bodyMedium" style={[styles.regular, { color: theme.colors.onSurfaceVariant }]}>
+            Our support team is available 24x7 to assist you with any questions
+          </Text>
+        </View>
+        <View style={styles.row}>
+          <OutlinedActionButton label="Contact us" onPress={() => router.navigate('/support')} radius={SECTION_CARD_INNER_RADIUS} />
+        </View>
+      </SectionCard>
+    );
+  }
   return (
     <View style={styles.block}>
       <View style={styles.help}>
