@@ -4,7 +4,7 @@ import { Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { DimmedDecimalAmount } from '@/components/shared/amount';
 import { CopyableValue } from '@/components/shared/copyable-value';
-import { DetailRow } from '@/components/shared/detail-rows';
+import { DetailRow, SectionCard } from '@/components/shared/detail-rows';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { StatusPill } from '@/components/shared/status';
 import { Shape } from '@/constants/shape';
@@ -26,47 +26,62 @@ export type TimelineEvent = ActivityEvent & { icon?: { icon: string; color: stri
  * transaction and dispute detail pages): a vertical timeline whose events
  * open the activity side panel. Shared by Transaction and Dispute details.
  */
-export function ActivityTimeline({ events }: { events: TimelineEvent[] }) {
+export function ActivityTimeline({
+  events,
+  carded = false,
+}: {
+  events: TimelineEvent[];
+  /** In its own titled card (Transaction details). */ carded?: boolean;
+}) {
   const theme = useTheme();
   const [activityEvent, setActivityEvent] = useState<ActivityEvent | null>(null);
+  // The line-break masks behind each icon match whatever the timeline sits on.
+  const maskColor = carded ? theme.colors.surface : theme.colors.background;
+  const timeline = (
+    <View style={styles.timeline}>
+      <View style={[styles.timelineLine, { backgroundColor: theme.colors.outlineVariant }]} />
+      {events.map((event) => (
+        <View key={event.id} style={styles.event}>
+          <View style={[styles.eventIcon, { backgroundColor: maskColor }]}>
+            <Icon source={(event.icon ?? TONE_ICON[event.tone]).icon} size={16} color={(event.icon ?? TONE_ICON[event.tone]).color} />
+          </View>
+          <View style={styles.eventBody}>
+            <View style={styles.eventTitleRow}>
+              <Text variant="bodyMedium" style={styles.regular}>
+                {event.title}
+              </Text>
+              {event.badge ? (
+                <View style={[styles.badge, { borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }]}>
+                  <Text style={styles.badgeText}>{event.badge}</Text>
+                </View>
+              ) : null}
+            </View>
+            <Text variant="bodyMedium" style={[styles.regular, { color: theme.colors.onSurfaceVariant }]}>
+              {event.timestamp}
+            </Text>
+            <TouchableRipple onPress={() => setActivityEvent(event)} accessibilityRole="button" borderless style={styles.eventLink}>
+              <View style={styles.inlineLink}>
+                <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
+                  View details
+                </Text>
+                <Icon source="caret-right" size={14} color={theme.colors.primary} />
+              </View>
+            </TouchableRipple>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
   return (
     <>
-    <View style={styles.block}>
-      <Text style={styles.sectionTitle}>Activity</Text>
-      <View style={styles.timeline}>
-        <View style={[styles.timelineLine, { backgroundColor: theme.colors.outlineVariant }]} />
-        {events.map((event) => (
-          <View key={event.id} style={styles.event}>
-            <View style={[styles.eventIcon, { backgroundColor: theme.colors.background }]}>
-              <Icon source={(event.icon ?? TONE_ICON[event.tone]).icon} size={16} color={(event.icon ?? TONE_ICON[event.tone]).color} />
-            </View>
-            <View style={styles.eventBody}>
-              <View style={styles.eventTitleRow}>
-                <Text variant="bodyMedium" style={styles.regular}>
-                  {event.title}
-                </Text>
-                {event.badge ? (
-                  <View style={[styles.badge, { borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }]}>
-                    <Text style={styles.badgeText}>{event.badge}</Text>
-                  </View>
-                ) : null}
-              </View>
-              <Text variant="bodyMedium" style={[styles.regular, { color: theme.colors.onSurfaceVariant }]}>
-                {event.timestamp}
-              </Text>
-              <TouchableRipple onPress={() => setActivityEvent(event)} accessibilityRole="button" borderless style={styles.eventLink}>
-                <View style={styles.inlineLink}>
-                  <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
-                    View details
-                  </Text>
-                  <Icon source="caret-right" size={14} color={theme.colors.primary} />
-                </View>
-              </TouchableRipple>
-            </View>
-          </View>
-        ))}
-      </View>
-    </View>
+      {carded ? (
+        <SectionCard title="Activity">{timeline}</SectionCard>
+      ) : (
+        <View style={styles.block}>
+          <Text style={styles.sectionTitle}>Activity</Text>
+          {timeline}
+        </View>
+      )}
       <ActivityPanel event={activityEvent} onDismiss={() => setActivityEvent(null)} />
     </>
   );
@@ -91,7 +106,11 @@ export function ActivityPanel({ event, onDismiss }: { event: ActivityEvent | nul
         <View style={styles.panelRows}>
           {ACTIVITY_PANEL.fields.map((field, index) => (
             <DetailRow key={`${field.label}-${index}`} label={field.label}>
-              {'copyable' in field && field.copyable ? <CopyableValue value={field.value} /> : <Text variant="bodyMedium">{field.value}</Text>}
+              {'copyable' in field && field.copyable ? (
+                <CopyableValue value={field.value} />
+              ) : (
+                <Text variant="bodyMedium">{field.value}</Text>
+              )}
             </DetailRow>
           ))}
         </View>

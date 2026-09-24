@@ -1,10 +1,30 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Divider, Text, useTheme } from 'react-native-paper';
+import { Card, Divider, Text, useTheme } from 'react-native-paper';
 
+import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 
 import { CopyableValue } from './copyable-value';
+
+const SECTION_CARD_PADDING = 16;
+/** Radius for containers inside a SectionCard (16dp from its edge). */
+export const SECTION_CARD_INNER_RADIUS = concentric(Shape.max, SECTION_CARD_PADDING);
+
+/** A titled card holding one segment of a detail page (details, activity, products…). */
+export function SectionCard({ title, children }: { title: string; children: ReactNode }) {
+  const theme = useTheme();
+  return (
+    <Card mode="outlined" style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+      <View style={styles.cardBody}>
+        <Text variant="titleMedium" style={styles.cardTitle} accessibilityRole="header">
+          {title}
+        </Text>
+        {children}
+      </View>
+    </Card>
+  );
+}
 
 export type DetailRowData = { label: string; value: string; copyable?: boolean };
 
@@ -38,25 +58,42 @@ export function DetailSection({ title, rows }: { title: string; rows: DetailRowD
       <Text style={styles.title} accessibilityRole="header">
         {title}
       </Text>
-      <View style={styles.rows}>
-        {rows.map((row, index) => (
-          <DetailRow key={`${row.label}-${index}`} label={row.label}>
-            {row.copyable ? (
-              <CopyableValue value={row.value} />
-            ) : (
-              <Text variant="bodyMedium" style={styles.valueText}>
-                {row.value}
-              </Text>
-            )}
-          </DetailRow>
-        ))}
-      </View>
+      <DetailRowList rows={rows} />
     </View>
   );
 }
 
-/** Sections separated by dividers, as the web separates them with h-px rules. */
-export function DetailSections({ sections }: { sections: { title: string; rows: DetailRowData[] }[] }) {
+function DetailRowList({ rows }: { rows: DetailRowData[] }) {
+  return (
+    <View style={styles.rows}>
+      {rows.map((row, index) => (
+        <DetailRow key={`${row.label}-${index}`} label={row.label}>
+          {row.copyable ? (
+            <CopyableValue value={row.value} />
+          ) : (
+            <Text variant="bodyMedium" style={styles.valueText}>
+              {row.value}
+            </Text>
+          )}
+        </DetailRow>
+      ))}
+    </View>
+  );
+}
+
+/** Sections separated by dividers, as the web separates them with h-px rules — or, with `carded`, each in its own card. */
+export function DetailSections({ sections, carded = false }: { sections: { title: string; rows: DetailRowData[] }[]; carded?: boolean }) {
+  if (carded) {
+    return (
+      <View style={styles.cards}>
+        {sections.map((section) => (
+          <SectionCard key={section.title} title={section.title}>
+            <DetailRowList rows={section.rows} />
+          </SectionCard>
+        ))}
+      </View>
+    );
+  }
   return (
     <View style={styles.sections}>
       {sections.map((section, index) => (
@@ -71,6 +108,10 @@ export function DetailSections({ sections }: { sections: { title: string; rows: 
 
 const styles = StyleSheet.create({
   sections: { gap: 20 },
+  cards: { gap: 12 },
+  card: { borderRadius: Shape.max },
+  cardBody: { padding: SECTION_CARD_PADDING, gap: 12 },
+  cardTitle: { fontFamily: Fonts.semiBold },
   section: { gap: 12 },
   // Web: text-xl font-medium.
   title: { fontFamily: Fonts.medium, fontSize: 20, lineHeight: 24 },

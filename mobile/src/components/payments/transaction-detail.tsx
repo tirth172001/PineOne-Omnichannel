@@ -2,12 +2,12 @@ import { Asset } from 'expo-asset';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
-import { Button, Divider, Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { Button, Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { DimmedDecimalAmount } from '@/components/shared/amount';
 import { CompactSegmentedButtons } from '@/components/shared/controls';
 import { CopyableValue } from '@/components/shared/copyable-value';
-import { DetailRow, DetailSections } from '@/components/shared/detail-rows';
+import { DetailRow, DetailSections, SECTION_CARD_INNER_RADIUS, SectionCard } from '@/components/shared/detail-rows';
 import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen, type StatusGradientTone } from '@/components/shared/detail-screen';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { StatusPill } from '@/components/shared/status';
@@ -37,11 +37,11 @@ const GRADIENT: Record<TransactionRecord['status']['tone'], StatusGradientTone> 
 const amount = (value: number) => formatInr(value).replace(/\.00$/, '');
 
 /**
- * Transaction detail (web: TransactionDetailContent): payment-mode tile,
- * amount and status, the meta line (and ID pills online), Refund and
- * Charge-slip actions, the detail sections, product rows (online), and the
- * activity timeline. The web's side-by-side details + activity columns stack
- * on a phone; every side panel opens as a sheet.
+ * Transaction detail (web: TransactionDetailContent): a centred hero
+ * (payment-mode tile, amount, status, meta line and ID pills online), then a
+ * card per segment — Activity first, then each detail section and the product
+ * rows (online). Refund and Charge-slip are the pinned footer; every side
+ * panel opens as a sheet.
  */
 export function TransactionDetail({ transaction, channel }: { transaction: TransactionRecord; channel: DetailChannel }) {
   const theme = useTheme();
@@ -74,12 +74,14 @@ export function TransactionDetail({ transaction, channel }: { transaction: Trans
         </>
       }>
 
+      {/* Centred hero, then one card per segment; Activity comes first (user decision). */}
       <View style={styles.hero}>
         <View style={[styles.modeTile, { backgroundColor: theme.colors.primary }]}>
           <Icon source={transaction.paymentMode === 'card' ? 'credit-card' : 'qr-code'} size={32} color={theme.colors.onPrimary} />
         </View>
-        <View style={styles.amountRow}>
-          <DimmedDecimalAmount value={amount(transaction.amount)} size="hero" />
+        <DimmedDecimalAmount value={amount(transaction.amount)} size="hero" />
+        {/* Wrapped so the pill (which aligns itself to the start) centres in the hero. */}
+        <View>
           <StatusPill label={transaction.status.label} tone={transaction.status.tone} radius={Shape.max} />
         </View>
         <Text variant="bodyMedium" style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>
@@ -96,16 +98,15 @@ export function TransactionDetail({ transaction, channel }: { transaction: Trans
         ) : null}
       </View>
 
-      <Divider />
+      <ActivityTimeline events={events} carded />
 
       <DetailSections
+        carded
         sections={(online ? ONLINE_SECTIONS : getInStoreSections(transaction)).map((section) => ({ title: section.title, rows: section.fields }))}
       />
 
       {online ? (
-        <View style={styles.block}>
-          <Divider />
-          <Text style={styles.sectionTitle}>Product details</Text>
+        <SectionCard title="Product details">
           {ONLINE_PRODUCTS.map((product, index) => (
             <TouchableRipple
               key={index}
@@ -127,12 +128,8 @@ export function TransactionDetail({ transaction, channel }: { transaction: Trans
               </View>
             </TouchableRipple>
           ))}
-        </View>
+        </SectionCard>
       ) : null}
-
-      <Divider />
-
-      <ActivityTimeline events={events} />
 
       <ProductPanel visible={productOpen} onDismiss={() => setProductOpen(false)} />
       <RefundPanel transaction={transaction} visible={refundOpen} onDismiss={() => setRefundOpen(false)} />
@@ -296,15 +293,11 @@ function ChargeSlipPanel({ transaction, visible, onDismiss }: { transaction: Tra
 const styles = StyleSheet.create({
   footerButton: { flex: 1, borderRadius: DETAIL_FOOTER_BUTTON_RADIUS },
   footerLabel: { marginHorizontal: 8 },
-  hero: { gap: 12 },
+  hero: { gap: 10, alignItems: 'center', paddingVertical: 8 },
   modeTile: { width: 48, height: 48, borderRadius: Shape.small, alignItems: 'center', justifyContent: 'center' },
-  amountRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
-  meta: { fontFamily: Fonts.regular, lineHeight: 22 },
-  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  block: { gap: 12 },
-  // Web: text-xl font-medium.
-  sectionTitle: { fontFamily: Fonts.medium, fontSize: 20, lineHeight: 24 },
-  productRow: { borderWidth: 1, borderRadius: Shape.small },
+  meta: { fontFamily: Fonts.regular, lineHeight: 22, textAlign: 'center' },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
+  productRow: { borderWidth: 1, borderRadius: SECTION_CARD_INNER_RADIUS },
   productRowContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   inlineLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   regular: { fontFamily: Fonts.regular },
