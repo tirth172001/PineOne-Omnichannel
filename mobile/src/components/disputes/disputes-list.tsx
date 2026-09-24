@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Icon, Text, useTheme } from 'react-native-paper';
 
-import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
+import { FilterMenuButton } from '@/components/shared/controls';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { DetailScreen } from '@/components/shared/detail-screen';
@@ -91,7 +91,7 @@ export function DisputesList() {
               options={STATUS_OPTIONS} accessibilityLabel="Status" />
           </>
         }
-        actions={<OutlinedActionButton label="Download filtered" icon="download-simple" />}
+        floatingActions={[{ label: 'Download filtered', icon: 'download-simple' }]}
       />
       <DayGroupedList
         groups={groupByDay(

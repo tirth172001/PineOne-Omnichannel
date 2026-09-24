@@ -5,7 +5,7 @@ import { Button, Text } from 'react-native-paper';
 
 import { BankLogo } from './bank-logo';
 import { BarChart, PieChart, XYChart } from './charts';
-import { FilterMenuButton, OutlinedActionButton } from './controls';
+import { FilterMenuButton } from './controls';
 import { CopyableValue } from './copyable-value';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from './date-range-filter';
 import { DetailSections } from './detail-rows';
@@ -54,7 +54,7 @@ function ListingDemo() {
             />
           </>
         }
-        actions={<OutlinedActionButton label="Download filtered" icon="download-simple" />}
+        floatingActions={[{ label: 'Download filtered', icon: 'download-simple' }]}
       />
       <SummaryCards cards={[{ icon: 'wallet', label: 'Total volume', value: 4472500, subtext: '110 payments' }]} />
       <ListCard>

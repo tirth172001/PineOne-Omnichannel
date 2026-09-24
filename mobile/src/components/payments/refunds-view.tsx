@@ -75,12 +75,7 @@ export function RefundsView() {
             />
           </>
         }
-        actions={
-          <>
-            <OutlinedActionButton label="Email filtered" icon="envelope-simple" />
-            <OutlinedActionButton label="Download filtered" icon="download-simple" />
-          </>
-        }
+        floatingActions={[{ label: 'Email filtered', icon: 'envelope-simple' }, { label: 'Download filtered', icon: 'download-simple' }]}
       />
 
       <DayGroupedList

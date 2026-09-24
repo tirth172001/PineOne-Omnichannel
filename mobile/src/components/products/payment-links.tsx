@@ -3,13 +3,12 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Icon, Text, useTheme } from 'react-native-paper';
 
-import { SearchField } from '@/components/search-field';
-import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
+import { FilterMenuButton } from '@/components/shared/controls';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen } from '@/components/shared/detail-screen';
 import { DateTimeField, type DateTimeValue, FormField, FormTextInput } from '@/components/shared/form-fields';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
-import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine } from '@/components/shared/listing';
+import { LIST_ROW_INNER_RADIUS, ListCard, ListingToolbar, ListRow, ListRowLine } from '@/components/shared/listing';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { RowActionsMenu } from '@/components/shared/row-actions';
 import { StatusPill } from '@/components/shared/status';
@@ -232,35 +231,39 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
           New payment link
         </Button>
       }>
-      <View style={styles.toolbar}>
-        <View style={styles.searchRow}>
-          <FilterMenuButton value={searchField} onValueChange={(value) => {
-              setSearchField(value);
-              lazy.reset();
-            }}
-            options={SEARCH_FIELD_OPTIONS} accessibilityLabel="Search by" />
-          <View style={styles.flex}>
-            <SearchField
-              value={search}
-              onChangeText={(value) => {
-                setSearch(value);
+      {/* Search floats above the footer; "Search by" picks the field it matches. */}
+      <ListingToolbar
+        search={search}
+        onSearchChange={(value) => {
+          setSearch(value);
+          lazy.reset();
+        }}
+        searchPlaceholder={`Enter ${activeField.label.toLowerCase()}`}
+        filters={
+          <>
+            <FilterMenuButton
+              value={searchField}
+              onValueChange={(value) => {
+                setSearchField(value);
                 lazy.reset();
               }}
-              placeholder={`Enter ${activeField.label.toLowerCase()}`} radius={Shape.small} />
-          </View>
-        </View>
-        <View style={styles.filters}>
-          <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="today" />
-          <FilterMenuButton
-            value={status}
-            onValueChange={(value) => {
-              setStatus(value);
-              lazy.reset();
-            }}
-            options={STATUS_OPTIONS} accessibilityLabel="Status" />
-          <OutlinedActionButton label="Download filtered" icon="download-simple" />
-        </View>
-      </View>
+              options={SEARCH_FIELD_OPTIONS}
+              accessibilityLabel="Search by"
+            />
+            <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="today" />
+            <FilterMenuButton
+              value={status}
+              onValueChange={(value) => {
+                setStatus(value);
+                lazy.reset();
+              }}
+              options={STATUS_OPTIONS}
+              accessibilityLabel="Status"
+            />
+          </>
+        }
+        floatingActions={[{ label: 'Download filtered', icon: 'download-simple' }]}
+      />
 
       {showEmptyState ? (
         <View style={[styles.empty, { borderColor: theme.colors.outlineVariant }]}>
@@ -334,9 +337,6 @@ const styles = StyleSheet.create({
   medium: { fontFamily: Fonts.medium },
   semiBold: { fontFamily: Fonts.semiBold },
   center: { textAlign: 'center' },
-  toolbar: { gap: 12 },
-  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   empty: { alignItems: 'center', gap: 8, padding: 32, borderWidth: 1, borderRadius: Shape.max },
   emptyIcon: { width: 36, height: 36, borderRadius: Shape.small, alignItems: 'center', justifyContent: 'center' },
   footerButton: { flex: 1, borderRadius: DETAIL_FOOTER_BUTTON_RADIUS },

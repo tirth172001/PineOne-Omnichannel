@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
 
-import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
+import { FilterMenuButton } from '@/components/shared/controls';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen } from '@/components/shared/detail-screen';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
@@ -143,7 +143,7 @@ export function TerminalDevices() {
             <MoreFilters categories={MODEL_FILTER} applied={moreFilters} onApply={setMoreFilters} />
           </>
         }
-        actions={<OutlinedActionButton label="Download filtered" icon="download-simple" />}
+        floatingActions={[{ label: 'Download filtered', icon: 'download-simple' }]}
       />
       <ListCard empty="No devices found for current filters.">
         {loaded.map((row) => (
@@ -222,7 +222,7 @@ export function DeviceAuditLog() {
             <FilterMenuButton value={store} onValueChange={setStore} options={storeOptions} accessibilityLabel="Store" />
           </>
         }
-        actions={<OutlinedActionButton label="Download" icon="download-simple" />}
+        floatingActions={[{ label: 'Download', icon: 'download-simple' }]}
       />
       <ListCard empty="No mode changes recorded yet.">
         {filtered.map((row) => (

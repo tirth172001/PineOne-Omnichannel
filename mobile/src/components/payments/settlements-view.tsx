@@ -216,12 +216,7 @@ export function SettlementsView() {
             <MoreFilters categories={MORE_FILTER_CATEGORIES} applied={moreFilters} onApply={resetList(setMoreFilters)} />
           </>
         }
-        actions={
-          <>
-            <OutlinedActionButton label="Email filtered" icon="envelope-simple" />
-            <OutlinedActionButton label="Download filtered" icon="download-simple" />
-          </>
-        }
+        floatingActions={[{ label: 'Email filtered', icon: 'envelope-simple' }, { label: 'Download filtered', icon: 'download-simple' }]}
       />
 
       <DayGroupedList

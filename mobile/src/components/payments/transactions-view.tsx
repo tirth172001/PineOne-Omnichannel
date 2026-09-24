@@ -292,15 +292,11 @@ export function TransactionsView() {
             )}
           </>
         }
-        actions={
-          <>
-            {mode === 'in-store' ? (
-              <OutlinedActionButton label="Email filtered" icon="envelope-simple" onPress={() => setEmailOpen(true)} />
-            ) : null}
-            <OutlinedActionButton label="Download filtered" icon="download-simple" />
-            <OutlinedActionButton label="View analytics" icon="chart-bar" onPress={() => router.push('/payments/transactions/analytics')} />
-          </>
-        }
+        floatingActions={[
+          ...(mode === 'in-store' ? [{ label: 'Email filtered', icon: 'envelope-simple', onPress: () => setEmailOpen(true) }] : []),
+          { label: 'Download filtered', icon: 'download-simple' },
+        ]}
+        actions={<OutlinedActionButton label="View analytics" icon="chart-bar" onPress={() => router.push('/payments/transactions/analytics')} />}
       />
 
       <SummaryCards cards={[{ icon: 'wallet', label: 'Total volume', value: totalVolume, subtext: `${filteredRows.length} payments` }]} />

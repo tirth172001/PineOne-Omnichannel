@@ -13,6 +13,7 @@ import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 
 import { useSvgId } from './hatch';
+import { FloatingLayerHost, FloatingLayerProvider, FloatingLayerSpacer, useFloatingLayer } from './floating-layer';
 import { EndReachedProvider, useEndReached } from './lazy-list';
 
 /** Web status gradients (from-success/25 via-success/10 to-background, etc.). */
@@ -88,6 +89,7 @@ export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = 
   const theme = useTheme();
   const goBack = () => (router.canGoBack() ? router.back() : router.navigate(fallbackHref));
   const endReached = useEndReached();
+  const floating = useFloatingLayer();
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
@@ -100,11 +102,18 @@ export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = 
         {tabs ? <ScreenTabs {...tabs} /> : null}
       </ShellTopBar>
       {scroll ? (
-        <ScrollView {...endReached.scrollProps} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          {gradient ? <StatusGradient tone={gradient} /> : null}
-          {/* Lazy lists on the page load their next rows as the end comes into view. */}
-          <EndReachedProvider value={endReached.value}>{children}</EndReachedProvider>
-        </ScrollView>
+        <View style={styles.screen}>
+          <ScrollView {...endReached.scrollProps} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+            {gradient ? <StatusGradient tone={gradient} /> : null}
+            {/* Lazy lists on the page load their next rows as the end comes into view; floating
+                content (e.g. a listing's search and exports) sits just above the footer. */}
+            <FloatingLayerProvider store={floating}>
+              <EndReachedProvider value={endReached.value}>{children}</EndReachedProvider>
+            </FloatingLayerProvider>
+            <FloatingLayerSpacer store={floating} />
+          </ScrollView>
+          <FloatingLayerHost store={floating} />
+        </View>
       ) : (
         <View style={styles.screen}>{children}</View>
       )}

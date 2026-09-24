@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
-import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
+import { FilterMenuButton } from '@/components/shared/controls';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
@@ -57,7 +57,7 @@ export function ReportListing({ tab }: { tab: 'history' | 'schedule' }) {
             <MoreFilters categories={REPORT_MORE_FILTERS} applied={moreFilters} onApply={setMoreFilters} />
           </>
         }
-        actions={<OutlinedActionButton label="Download filtered" icon="download-simple" />}
+        floatingActions={[{ label: 'Download filtered', icon: 'download-simple' }]}
       />
 
       {tab === 'history' ? (
