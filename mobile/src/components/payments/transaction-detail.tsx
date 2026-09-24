@@ -15,9 +15,6 @@ import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { formatInr } from '@/data/common';
 import {
-  ACTIVITY_PANEL,
-  type ActivityEvent,
-  type ActivityTone,
   CHARGE_SLIPS,
   type DetailChannel,
   getActivityEvents,
@@ -28,12 +25,7 @@ import {
 } from '@/data/transaction-detail';
 import type { TransactionRecord } from '@/data/transactions';
 
-const TONE_ICON: Record<ActivityTone, { icon: string; color: string }> = {
-  success: { icon: 'check-circle', color: '#10b981' },
-  failed: { icon: 'x-circle', color: '#ef4444' },
-  processing: { icon: 'arrow-counter-clockwise', color: '#f59e0b' },
-  initiated: { icon: 'circle', color: '#8b5cf6' },
-};
+import { ActivityTimeline } from './activity-timeline';
 
 const GRADIENT: Record<TransactionRecord['status']['tone'], StatusGradientTone> = {
   success: 'success',
@@ -55,7 +47,6 @@ export function TransactionDetail({ transaction, channel }: { transaction: Trans
   const theme = useTheme();
   const online = channel === 'online';
   const events = getActivityEvents(transaction, channel);
-  const [activityEvent, setActivityEvent] = useState<ActivityEvent | null>(null);
   const [refundOpen, setRefundOpen] = useState(false);
   const [chargeSlipOpen, setChargeSlipOpen] = useState(false);
   const [productOpen, setProductOpen] = useState(false);
@@ -141,92 +132,12 @@ export function TransactionDetail({ transaction, channel }: { transaction: Trans
 
       <Divider />
 
-      <View style={styles.block}>
-        <Text style={styles.sectionTitle}>Activity</Text>
-        <View style={styles.timeline}>
-          <View style={[styles.timelineLine, { backgroundColor: theme.colors.outlineVariant }]} />
-          {events.map((event) => (
-            <View key={event.id} style={styles.event}>
-              <View style={[styles.eventIcon, { backgroundColor: theme.colors.background }]}>
-                <Icon source={TONE_ICON[event.tone].icon} size={16} color={TONE_ICON[event.tone].color} />
-              </View>
-              <View style={styles.eventBody}>
-                <View style={styles.eventTitleRow}>
-                  <Text variant="bodyMedium" style={styles.regular}>
-                    {event.title}
-                  </Text>
-                  {event.badge ? (
-                    <View style={[styles.badge, { borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }]}>
-                      <Text style={styles.badgeText}>{event.badge}</Text>
-                    </View>
-                  ) : null}
-                </View>
-                <Text variant="bodyMedium" style={[styles.regular, { color: theme.colors.onSurfaceVariant }]}>
-                  {event.timestamp}
-                </Text>
-                <TouchableRipple onPress={() => setActivityEvent(event)} accessibilityRole="button" borderless style={styles.eventLink}>
-                  <View style={styles.inlineLink}>
-                    <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
-                      View details
-                    </Text>
-                    <Icon source="caret-right" size={14} color={theme.colors.primary} />
-                  </View>
-                </TouchableRipple>
-              </View>
-            </View>
-          ))}
-        </View>
-      </View>
+      <ActivityTimeline events={events} />
 
-      <ActivityPanel event={activityEvent} onDismiss={() => setActivityEvent(null)} />
       <ProductPanel visible={productOpen} onDismiss={() => setProductOpen(false)} />
       <RefundPanel transaction={transaction} visible={refundOpen} onDismiss={() => setRefundOpen(false)} />
       <ChargeSlipPanel transaction={transaction} visible={chargeSlipOpen} onDismiss={() => setChargeSlipOpen(false)} />
     </DetailScreen>
-  );
-}
-
-/** Web: ActivityTimelineSidepanel (fixed demo content for every event, as on web). */
-function ActivityPanel({ event, onDismiss }: { event: ActivityEvent | null; onDismiss: () => void }) {
-  const theme = useTheme();
-  return (
-    <PanelSheet visible={event !== null} onDismiss={onDismiss} title="Transaction details">
-      <PanelSection>
-        <View style={[styles.panelTile, { backgroundColor: theme.colors.primary }]}>
-          <Icon source="credit-card" size={24} color={theme.colors.onPrimary} />
-        </View>
-        <View style={styles.amountRow}>
-          <DimmedDecimalAmount value={ACTIVITY_PANEL.amount} size="large" />
-          <StatusPill label={ACTIVITY_PANEL.statusLabel} tone="failed" radius={PANEL_INNER_RADIUS} />
-        </View>
-        <Text variant="bodyMedium" style={[styles.regular, { color: theme.colors.onSurfaceVariant }]}>
-          {ACTIVITY_PANEL.meta.join('  |  ')}
-        </Text>
-        <View style={styles.panelRows}>
-          {ACTIVITY_PANEL.fields.map((field, index) => (
-            <DetailRow key={`${field.label}-${index}`} label={field.label}>
-              {'copyable' in field && field.copyable ? <CopyableValue value={field.value} /> : <Text variant="bodyMedium">{field.value}</Text>}
-            </DetailRow>
-          ))}
-        </View>
-      </PanelSection>
-      <PanelSection>
-        <Text variant="titleMedium" style={styles.semiBold}>
-          Error details
-        </Text>
-        {ACTIVITY_PANEL.errorFields.map((field) => (
-          <DetailRow key={field.label} label={field.label} value={field.value} />
-        ))}
-      </PanelSection>
-      <PanelSection last>
-        <Text variant="titleMedium" style={styles.semiBold}>
-          Custom fields
-        </Text>
-        {ACTIVITY_PANEL.customFields.map((field) => (
-          <DetailRow key={field.label} label={field.label} value={field.value} />
-        ))}
-      </PanelSection>
-    </PanelSheet>
   );
 }
 
@@ -382,14 +293,11 @@ function ChargeSlipPanel({ transaction, visible, onDismiss }: { transaction: Tra
   );
 }
 
-const TIMELINE_ICON = 16;
-
 const styles = StyleSheet.create({
   footerButton: { flex: 1, borderRadius: DETAIL_FOOTER_BUTTON_RADIUS },
   footerLabel: { marginHorizontal: 8 },
   hero: { gap: 12 },
   modeTile: { width: 48, height: 48, borderRadius: Shape.small, alignItems: 'center', justifyContent: 'center' },
-  panelTile: { width: 36, height: 36, borderRadius: Shape.small, alignItems: 'center', justifyContent: 'center' },
   amountRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   meta: { fontFamily: Fonts.regular, lineHeight: 22 },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -399,20 +307,10 @@ const styles = StyleSheet.create({
   productRow: { borderWidth: 1, borderRadius: Shape.small },
   productRowContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   inlineLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  timeline: { gap: 20 },
-  timelineLine: { position: 'absolute', left: TIMELINE_ICON / 2 - 0.5, top: 8, bottom: 8, width: 1 },
-  event: { flexDirection: 'row', gap: 16 },
-  eventIcon: { paddingTop: 2 },
-  eventBody: { flex: 1, gap: 2 },
-  eventTitleRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
-  badge: { borderWidth: StyleSheet.hairlineWidth, borderRadius: Shape.small, paddingHorizontal: 8, paddingVertical: 2 },
-  badgeText: { fontSize: 11, lineHeight: 14, fontFamily: Fonts.regular },
-  eventLink: { alignSelf: 'flex-start', borderRadius: Shape.extraSmall, marginTop: 2 },
   regular: { fontFamily: Fonts.regular },
   medium: { fontFamily: Fonts.medium },
   semiBold: { fontFamily: Fonts.semiBold },
   center: { textAlign: 'center' },
-  panelRows: { gap: 12, marginTop: 8 },
   input: { height: 44, borderWidth: 1, borderRadius: PANEL_INNER_RADIUS, paddingHorizontal: 12, fontFamily: Fonts.regular, fontSize: 14 },
   note: { borderWidth: 1, borderRadius: PANEL_INNER_RADIUS, paddingHorizontal: 12, paddingVertical: 8 },
   panelButton: { borderRadius: PANEL_INNER_RADIUS },

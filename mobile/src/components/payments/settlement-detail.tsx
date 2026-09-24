@@ -9,6 +9,7 @@ import { BankLogo } from '@/components/shared/bank-logo';
 import { OutlinedActionButton } from '@/components/shared/controls';
 import { CopyableValue } from '@/components/shared/copyable-value';
 import { DetailRow } from '@/components/shared/detail-rows';
+import { HelpCard } from '@/components/shared/help-card';
 import { DetailScreen, type StatusGradientTone } from '@/components/shared/detail-screen';
 import { ListCard, ListRow, ListRowLine } from '@/components/shared/listing';
 import { PaginationBar } from '@/components/shared/pagination-bar';
@@ -189,20 +190,7 @@ export function SettlementDetail({ settlement }: { settlement: SettlementRow }) 
 
       <Divider />
 
-      <View style={styles.help}>
-        <View style={[styles.helpIcon, { borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceVariant }]}>
-          <Icon source="headphones" size={16} color={theme.colors.onSurface} />
-        </View>
-        <View style={styles.flex}>
-          <Text variant="bodyMedium" style={styles.medium}>
-            Need help with this settlement?
-          </Text>
-          <Text variant="bodyMedium" style={[styles.regular, muted]}>
-            Our support team is available 24x7 to assist you with any questions
-          </Text>
-        </View>
-      </View>
-      <OutlinedActionButton label="Contact us" onPress={() => router.navigate('/support')} />
+      <HelpCard subject="settlement" />
     </DetailScreen>
   );
 }

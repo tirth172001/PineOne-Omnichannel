@@ -12,6 +12,7 @@ import { BatteryFullIcon } from 'phosphor-react-native/src/icons/BatteryFull';
 import { WifiHighIcon } from 'phosphor-react-native/src/icons/WifiHigh';
 import { ThumbsUpIcon } from 'phosphor-react-native/src/icons/ThumbsUp';
 import { ThumbsDownIcon } from 'phosphor-react-native/src/icons/ThumbsDown';
+import { UploadSimpleIcon } from 'phosphor-react-native/src/icons/UploadSimple';
 import { ArrowsLeftRightIcon } from 'phosphor-react-native/src/icons/ArrowsLeftRight';
 import { ArrowUpIcon } from 'phosphor-react-native/src/icons/ArrowUp';
 import { ArrowUpRightIcon } from 'phosphor-react-native/src/icons/ArrowUpRight';
@@ -118,6 +119,7 @@ import { XCircleIcon } from 'phosphor-react-native/src/icons/XCircle';
  */
 const ICONS = {
   'arrows-left-right': ArrowsLeftRightIcon,
+  'upload-simple': UploadSimpleIcon,
   'monitor': MonitorIcon,
   'graduation-cap': GraduationCapIcon,
   'play-circle': PlayCircleIcon,

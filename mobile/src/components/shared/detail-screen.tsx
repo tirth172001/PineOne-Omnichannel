@@ -15,6 +15,7 @@ export const STATUS_GRADIENT = {
   failed: '#ef4444',
   processing: '#f59e0b',
   neutral: '#8b5cf6',
+  info: '#0ea5e9',
 } as const;
 export type StatusGradientTone = keyof typeof STATUS_GRADIENT;
 
