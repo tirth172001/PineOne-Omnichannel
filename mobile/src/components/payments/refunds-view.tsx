@@ -3,8 +3,9 @@ import { StyleSheet, View } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
 
 import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
+import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
-import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
+import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
 import { type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { DotStatusBadge } from '@/components/shared/status';
@@ -44,7 +45,7 @@ export function RefundsView() {
   }, [search, status]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const currentPage = Math.min(page, totalPages);
-  const paged = filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const paged = sortNewestFirst(filtered, (row) => displayTimestamp(row.datePrimary, row.dateSecondary)).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
   const resetPage = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
     setPage(1);
@@ -85,37 +86,39 @@ export function RefundsView() {
         }
       />
 
-      <ListCard empty="No refunds found.">
-        {paged.map((row) => (
-          <ListRow key={row.id} accessibilityLabel={`Refund ${row.refundId}, ${row.amount}, ${row.status}`}>
-            <ListRowLine
-              left={<Text variant="bodyMedium" style={styles.medium}>{row.transactionId}</Text>}
-              right={<Text variant="bodyMedium" style={styles.medium}>{row.amount}</Text>}
-            />
-            <ListRowLine
-              left={
-                <Text variant="bodySmall" style={muted}>
-                  Refund ID {row.refundId} · {row.datePrimary}, {row.dateSecondary}
-                </Text>
-              }
-              right={<Text variant="bodySmall" style={muted}>{row.amountSub}</Text>}
-            />
-            <ListRowLine
-              left={
-                <View>
-                  <Text variant="bodySmall" style={styles.medium}>
-                    {row.storeName}
+      <DayGroupedList
+        groups={groupByDay(paged, (row) => row.datePrimary)}
+        empty="No refunds found."
+        renderRow={(row) => (
+            <ListRow key={row.id} accessibilityLabel={`Refund ${row.refundId}, ${row.amount}, ${row.status}`}>
+              <ListRowLine
+                left={<Text variant="bodyMedium" style={styles.medium}>{row.transactionId}</Text>}
+                right={<Text variant="bodyMedium" style={styles.medium}>{row.amount}</Text>}
+              />
+              <ListRowLine
+                left={
+                  <Text variant="bodySmall" style={muted}>
+                    Refund ID {row.refundId} · {row.dateSecondary}
                   </Text>
-                  <Text variant="bodySmall" style={muted} numberOfLines={1}>
-                    {row.storeAddress}
-                  </Text>
-                </View>
-              }
-              right={<DotStatusBadge label={row.status} tone={refundStatusTone(row.status)} radius={LIST_ROW_INNER_RADIUS} />}
-            />
-          </ListRow>
-        ))}
-      </ListCard>
+                }
+                right={<Text variant="bodySmall" style={muted}>{row.amountSub}</Text>}
+              />
+              <ListRowLine
+                left={
+                  <View>
+                    <Text variant="bodySmall" style={styles.medium}>
+                      {row.storeName}
+                    </Text>
+                    <Text variant="bodySmall" style={muted} numberOfLines={1}>
+                      {row.storeAddress}
+                    </Text>
+                  </View>
+                }
+                right={<DotStatusBadge label={row.status} tone={refundStatusTone(row.status)} radius={LIST_ROW_INNER_RADIUS} />}
+              />
+            </ListRow>
+        )}
+      />
 
       <PaginationBar
         page={currentPage}

@@ -6,9 +6,10 @@ import { Button, Card, Divider, Icon, Text, useTheme } from 'react-native-paper'
 import { DimmedDecimalAmount } from '@/components/shared/amount';
 import { BankLogo } from '@/components/shared/bank-logo';
 import { CompactSegmentedButtons, FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
+import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DetailRow } from '@/components/shared/detail-rows';
-import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
+import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
 import { type MoreFilterCategory, type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
@@ -105,7 +106,8 @@ export function SettlementsView() {
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
   const currentPage = Math.min(page, totalPages);
-  const pagedRows = filteredRows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  // Newest first so each day forms one group (the web lists in source order).
+  const pagedRows = sortNewestFirst(filteredRows, (row) => displayTimestamp(row.settlementDatePrimary, row.settlementDateSecondary)).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
   const resetPage = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
     setPage(1);
@@ -219,80 +221,82 @@ export function SettlementsView() {
         }
       />
 
-      <ListCard empty="No settlements found.">
-        {pagedRows.map((row) => (
-          <ListRow
-            key={row.id}
-            onPress={() => router.push(`/payments/settlements/${row.batchId}`)}
-            accessibilityLabel={`UTR ${row.utr}, net ${rupees(row.netAmount)}, ${row.status}`}>
-            <ListRowLine
-              left={
-                <View style={styles.inlineRow}>
-                  <Text variant="bodyMedium" style={styles.medium}>
-                    {row.utr}
-                  </Text>
-                  {row.settlementType === 'ODS' ? (
-                    <View style={styles.inlineRow}>
-                      <Icon source="lightning" size={14} color="#4f46e5" />
-                      <Text variant="labelMedium" style={{ color: '#4f46e5' }}>
-                        On-Demand
-                      </Text>
-                    </View>
-                  ) : row.settlementType === 'SDS' ? (
-                    <View style={styles.inlineRow}>
-                      <Icon source="fast-forward" size={14} color="#059669" />
-                      <Text variant="labelMedium" style={{ color: '#059669' }}>
-                        Same-Day
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-              }
-              right={<Text variant="bodyMedium" style={styles.medium}>{rupees(row.netAmount)}</Text>}
-            />
-            <ListRowLine
-              left={
-                <Text variant="bodySmall" style={muted}>
-                  Gross {rupees(row.grossAmount)} · Deductions {rupees(row.deductionsTotal)}
-                  {row.channel === 'online' ? ' (MDR + GST)' : ''}
-                </Text>
-              }
-              right={<DotStatusBadge label={row.status} tone={settlementStatusTone(row.status)} radius={LIST_ROW_INNER_RADIUS} />}
-            />
-            {row.channel === 'online' ? (
+      <DayGroupedList
+        groups={groupByDay(pagedRows, (row) => row.settlementDatePrimary)}
+        empty="No settlements found."
+        renderRow={(row) => (
+            <ListRow
+              key={row.id}
+              onPress={() => router.push(`/payments/settlements/${row.batchId}`)}
+              accessibilityLabel={`UTR ${row.utr}, net ${rupees(row.netAmount)}, ${row.status}`}>
               <ListRowLine
                 left={
-                  <Text variant="bodySmall" style={muted}>
-                    Refunds + chargebacks {rupees(row.refundAmount + row.chargebackAmount)} · {row.settlementCycle}{' '}
-                    {row.odsEnabled ? `ODS till ${row.odsCutoff}` : row.weekendSettlementEnabled ? 'Weekend enabled' : 'Standard'}
-                  </Text>
-                }
-                right={
-                  <Text variant="bodySmall" style={muted}>
-                    {row.settlementDatePrimary}, {row.settlementDateSecondary}
-                  </Text>
-                }
-              />
-            ) : (
-              <ListRowLine
-                left={
-                  <View style={styles.bankRow}>
-                    <BankLogo bank={row.acquiringBank} />
-                    <Text variant="bodySmall" style={[muted, styles.shrink]} numberOfLines={1}>
-                      {row.acquiringBank} bank · {row.accountLabel} · {row.transactionCount} payments
+                  <View style={styles.inlineRow}>
+                    <Text variant="bodyMedium" style={styles.medium}>
+                      {row.utr}
                     </Text>
+                    {row.settlementType === 'ODS' ? (
+                      <View style={styles.inlineRow}>
+                        <Icon source="lightning" size={14} color="#4f46e5" />
+                        <Text variant="labelMedium" style={{ color: '#4f46e5' }}>
+                          On-Demand
+                        </Text>
+                      </View>
+                    ) : row.settlementType === 'SDS' ? (
+                      <View style={styles.inlineRow}>
+                        <Icon source="fast-forward" size={14} color="#059669" />
+                        <Text variant="labelMedium" style={{ color: '#059669' }}>
+                          Same-Day
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
                 }
-                right={
+                right={<Text variant="bodyMedium" style={styles.medium}>{rupees(row.netAmount)}</Text>}
+              />
+              <ListRowLine
+                left={
                   <Text variant="bodySmall" style={muted}>
-                    {row.settlementDatePrimary}, {row.settlementDateSecondary}
+                    Gross {rupees(row.grossAmount)} · Deductions {rupees(row.deductionsTotal)}
+                    {row.channel === 'online' ? ' (MDR + GST)' : ''}
                   </Text>
                 }
+                right={<DotStatusBadge label={row.status} tone={settlementStatusTone(row.status)} radius={LIST_ROW_INNER_RADIUS} />}
               />
-            )}
-          </ListRow>
-        ))}
-      </ListCard>
+              {row.channel === 'online' ? (
+                <ListRowLine
+                  left={
+                    <Text variant="bodySmall" style={muted}>
+                      Refunds + chargebacks {rupees(row.refundAmount + row.chargebackAmount)} · {row.settlementCycle}{' '}
+                      {row.odsEnabled ? `ODS till ${row.odsCutoff}` : row.weekendSettlementEnabled ? 'Weekend enabled' : 'Standard'}
+                    </Text>
+                  }
+                  right={
+                    <Text variant="bodySmall" style={muted}>
+                      {row.settlementDateSecondary}
+                    </Text>
+                  }
+                />
+              ) : (
+                <ListRowLine
+                  left={
+                    <View style={styles.bankRow}>
+                      <BankLogo bank={row.acquiringBank} />
+                      <Text variant="bodySmall" style={[muted, styles.shrink]} numberOfLines={1}>
+                        {row.acquiringBank} bank · {row.accountLabel} · {row.transactionCount} payments
+                      </Text>
+                    </View>
+                  }
+                  right={
+                    <Text variant="bodySmall" style={muted}>
+                      {row.settlementDateSecondary}
+                    </Text>
+                  }
+                />
+              )}
+            </ListRow>
+        )}
+      />
 
       <PaginationBar
         page={currentPage}

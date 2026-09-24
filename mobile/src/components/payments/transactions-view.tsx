@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Text, useTheme } from 'react-native-paper';
+import { Button, Icon, Text, useTheme } from 'react-native-paper';
 
 import { Tabs } from '@/components/material3/tabs';
+import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
 import {
   type DateRangeValue,
@@ -12,7 +13,7 @@ import {
   makeDateRangeValue,
 } from '@/components/shared/date-range-filter';
 import { EmailReportSheet } from '@/components/shared/email-report-sheet';
-import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
+import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
 import { type MoreFilterCategory, type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { StatusPill } from '@/components/shared/status';
@@ -47,6 +48,9 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { label: 'Session expired', value: 'session-expired' },
   { label: 'User cancelled', value: 'user-cancelled' },
 ];
+
+/** Pay-mode glyphs, as on the transaction detail's mode tile. */
+const PAY_MODE_ICON: Record<TransactionRecord['paymentMode'], string> = { upi: 'qr-code', card: 'credit-card', netbanking: 'bank' };
 
 const PAYMENT_MODE_OPTIONS = [
   { label: 'All modes', value: 'all' },
@@ -235,9 +239,10 @@ export function TransactionsView() {
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
   const currentPage = Math.min(page, totalPages);
-  const visibleRows = filteredRows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  // Newest first so each day forms one group (the web lists in source order).
+  const sortedRows = useMemo(() => sortNewestFirst(filteredRows, (row) => displayTimestamp(row.date, row.time)), [filteredRows]);
+  const visibleRows = sortedRows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
   const totalVolume = filteredRows.reduce((sum, row) => sum + row.amount, 0);
-  const byPayments = mode === 'online' && onlineView === 'payments';
   // Any filter change goes back to page 1, as on web.
   const resetPage = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
@@ -307,40 +312,34 @@ export function TransactionsView() {
 
       <SummaryCards cards={[{ icon: 'wallet', label: 'Total volume', value: totalVolume, subtext: `${filteredRows.length} payments` }]} />
 
-      <ListCard empty="No transactions found.">
-        {visibleRows.map((row) => (
-          <ListRow
-            key={row.transactionId}
-            onPress={() => router.push(`/payments/transactions/${row.transactionId}?channel=${mode}`)}
-            accessibilityLabel={`Order ${row.orderId}, ${formatInr(row.amount)}, ${row.status.label}`}>
-            <ListRowLine
-              left={<Text variant="bodyMedium" style={styles.primary}>{row.orderId}</Text>}
-              right={<Text variant="bodyMedium" style={styles.amount}>{formatInr(row.amount)}</Text>}
-            />
-            <ListRowLine
-              left={
-                <Text variant="bodyMedium" style={styles.regular}>
-                  {row.paymentLabel} <Text style={{ color: theme.colors.onSurfaceVariant }}>· {row.provider}</Text>
-                </Text>
-              }
-              right={<StatusPill label={row.status.label} tone={row.status.tone} radius={LIST_ROW_INNER_RADIUS} />}
-            />
-            <ListRowLine
-              left={
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  {row.transactionType} · {row.merchantId}
-                  {byPayments ? ` · Txn ${row.transactionId}` : ''}
-                </Text>
-              }
-              right={
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  {row.date}, {row.time}
-                </Text>
-              }
-            />
-          </ListRow>
-        ))}
-      </ListCard>
+      <DayGroupedList
+        groups={groupByDay(visibleRows, (row) => row.date)}
+        empty="No transactions found."
+        renderRow={(row) => (
+            <ListRow
+              key={row.transactionId}
+              onPress={() => router.push(`/payments/transactions/${row.transactionId}?channel=${mode}`)}
+              accessibilityLabel={`${formatInr(row.amount)}, ${row.paymentLabel}, ${row.status.label}`}>
+              {/* Amount and pay mode on the left, status on the right — nothing else (user decision); details are one tap away. */}
+              <ListRowLine
+                left={
+                  <>
+                    <Text variant="titleMedium" style={styles.amount}>
+                      {formatInr(row.amount)}
+                    </Text>
+                    <View style={styles.payMode}>
+                      <Icon source={PAY_MODE_ICON[row.paymentMode]} size={16} color={theme.colors.onSurfaceVariant} />
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        {row.paymentLabel}
+                      </Text>
+                    </View>
+                  </>
+                }
+                right={<StatusPill label={row.status.label} tone={row.status.tone} radius={LIST_ROW_INNER_RADIUS} />}
+              />
+            </ListRow>
+        )}
+      />
 
       <PaginationBar
         page={currentPage}
@@ -361,7 +360,6 @@ const styles = StyleSheet.create({
   header: { gap: 12 },
   primaryAction: { borderRadius: Shape.small, alignSelf: 'flex-start' },
   onlineTabs: { backgroundColor: 'transparent' },
-  primary: { fontFamily: Fonts.medium },
-  amount: { fontFamily: Fonts.medium, fontVariant: ['tabular-nums'] },
-  regular: { fontFamily: Fonts.regular },
+  amount: { fontFamily: Fonts.semiBold, fontVariant: ['tabular-nums'] },
+  payMode: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });
