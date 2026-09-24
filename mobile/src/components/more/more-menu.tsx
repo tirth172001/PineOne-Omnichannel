@@ -15,11 +15,17 @@ type MoreItem = { label: string; icon: string; href: Href };
 
 /**
  * The web sidebar's destinations that don't have their own tab (Payments,
- * Settlement, Refunds, Reports and Support do), in the sidebar's groups:
- * web: navGroups + the "Other" group in TransactionsPlatformShell.
+ * Settlements and Refunds do), in the sidebar's groups: web: navGroups + the
+ * "Other" group in TransactionsPlatformShell.
  */
 const MORE_SECTIONS: { label: string; items: MoreItem[] }[] = [
-  { label: 'Payments', items: [{ label: 'Disputes', icon: 'gavel', href: '/more/disputes' }] },
+  {
+    label: 'Payments',
+    items: [
+      { label: 'Disputes', icon: 'gavel', href: '/more/disputes' },
+      { label: 'Reports', icon: 'file', href: '/more/reports' },
+    ],
+  },
   {
     label: 'Products',
     items: [
@@ -34,6 +40,7 @@ const MORE_SECTIONS: { label: string; items: MoreItem[] }[] = [
       { label: 'Manage store', icon: 'storefront', href: '/more/stores' },
       { label: 'Manage users and roles', icon: 'users', href: '/more/users' },
       { label: 'Account settings', icon: 'gear', href: '/more/account-settings' },
+      { label: 'Support', icon: 'chat-centered-text', href: '/more/support' },
     ],
   },
 ];

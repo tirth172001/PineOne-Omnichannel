@@ -27,7 +27,7 @@ export function HelpCard({ subject, carded = false }: { subject: string; /** As 
           </Text>
         </View>
         <View style={styles.row}>
-          <OutlinedActionButton label="Contact us" onPress={() => router.navigate('/support')} radius={SECTION_CARD_INNER_RADIUS} />
+          <OutlinedActionButton label="Contact us" onPress={() => router.navigate('/more/support')} radius={SECTION_CARD_INNER_RADIUS} />
         </View>
       </SectionCard>
     );
@@ -48,7 +48,7 @@ export function HelpCard({ subject, carded = false }: { subject: string; /** As 
         </View>
       </View>
       <View style={styles.row}>
-        <OutlinedActionButton label="Contact us" onPress={() => router.navigate('/support')} />
+        <OutlinedActionButton label="Contact us" onPress={() => router.navigate('/more/support')} />
       </View>
     </View>
   );

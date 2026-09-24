@@ -1,15 +1,13 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Button, useTheme } from 'react-native-paper';
 
 import { GenerateReportSheet } from '@/components/reports/generate-report-sheet';
 import { ReportCatalog } from '@/components/reports/report-catalog';
 import { ReportListing } from '@/components/reports/report-listing';
 import { ScheduleReportSheet } from '@/components/reports/schedule-report-sheet';
-import { EndReachedProvider, useEndReached } from '@/components/shared/lazy-list';
-import { useShellTabs } from '@/components/shell-tabs';
-import { Shape } from '@/constants/shape';
+import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen } from '@/components/shared/detail-screen';
 import type { ReportKind } from '@/data/reports';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,9 +18,10 @@ const REPORT_TABS = [
 ];
 
 /**
- * Reports (web: ReportsContent): Schedule report and Generate report actions,
- * then the Reports / History / Schedule sub-tabs in the shell's top bar. The
- * web's success toasts use the shell's toast (Snackbar).
+ * Reports (web: ReportsContent), opened from More: the Reports / History /
+ * Schedule sub-tabs under the title, with Schedule report and Generate report
+ * pinned in the footer. The web's success toasts use the shell's toast
+ * (Snackbar).
  */
 export default function ReportsScreen() {
   const theme = useTheme();
@@ -35,8 +34,6 @@ export default function ReportsScreen() {
     setLastRequestedKey(requestedKey);
     if (requestedKey) setActiveKey(requestedKey);
   }
-  useShellTabs({ tabs: REPORT_TABS, activeKey, onChange: setActiveKey });
-  const endReached = useEndReached();
 
   // The panel keeps its last report while closing, so its content doesn't blank mid-animation.
   const [generate, setGenerate] = useState<{ kind: ReportKind; title: string; open: boolean }>(() => ({
@@ -55,25 +52,30 @@ export default function ReportsScreen() {
     setGenerate({ kind: 'transaction', title: 'All transaction reports', open: true });
   }
 
+  const outlined = { textColor: theme.colors.onSurface, style: [styles.footerButton, { borderColor: theme.colors.outlineVariant }] };
+
   return (
-    <View style={styles.screen}>
-      <ScrollView key={activeKey} {...endReached.scrollProps} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <View style={styles.actions}>
-          <Button
-            mode="outlined"
-            onPress={() => setScheduleOpen(true)}
-            textColor={theme.colors.onSurface}
-            style={[styles.action, { borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }]}>
+    <DetailScreen
+      title="Reports"
+      fallbackHref="/more"
+      scoped
+      tabs={{ tabs: REPORT_TABS, activeKey, onChange: setActiveKey }}
+      footer={
+        <>
+          <Button mode="outlined" onPress={() => setScheduleOpen(true)} {...outlined}>
             Schedule report
           </Button>
-          <Button mode="contained" onPress={() => openGenerate('transaction', 'All transaction reports')} style={styles.action}>
+          <Button mode="contained" onPress={() => openGenerate('transaction', 'All transaction reports')} style={styles.footerButton}>
             Generate report
           </Button>
-        </View>
-        <EndReachedProvider value={endReached.value}>
-          {activeKey === 'reports' ? <ReportCatalog onGenerate={openGenerate} /> : <ReportListing tab={activeKey === 'history' ? 'history' : 'schedule'} />}
-        </EndReachedProvider>
-      </ScrollView>
+        </>
+      }>
+      {/* Keyed by tab so each sub-tab starts with its own search and filters. */}
+      {activeKey === 'reports' ? (
+        <ReportCatalog onGenerate={openGenerate} />
+      ) : (
+        <ReportListing key={activeKey} tab={activeKey === 'history' ? 'history' : 'schedule'} />
+      )}
 
       <GenerateReportSheet
         visible={generate.open}
@@ -83,14 +85,10 @@ export default function ReportsScreen() {
         onGenerated={(name) => toast(`${name} is being generated — you'll find it under History shortly.`)}
       />
       <ScheduleReportSheet visible={scheduleOpen} onDismiss={() => setScheduleOpen(false)} onCreated={toast} />
-    </View>
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  content: { padding: 16, paddingBottom: 32, gap: 16 },
-  actions: { flexDirection: 'row', gap: 8 },
-  // Standalone page-level buttons.
-  action: { flex: 1, borderRadius: Shape.small },
+  footerButton: { flex: 1, borderRadius: DETAIL_FOOTER_BUTTON_RADIUS },
 });

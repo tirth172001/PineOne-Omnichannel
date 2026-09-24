@@ -348,7 +348,7 @@ export function SupportChat({ topic, prompt }: { topic?: string; prompt?: string
   return (
     <DetailScreen
       title={chat.title}
-      fallbackHref="/support"
+      fallbackHref="/more/support"
       scroll={false}
       actions={
         <>

@@ -79,7 +79,7 @@ export function TransactionDetail({ transaction, channel }: { transaction: Trans
 
   return (
     <CollapsingDetailScreen
-      fallbackHref="/payments?tab=transactions"
+      fallbackHref="/payments"
       gradient={GRADIENT[transaction.status.tone]}
       compactTitle={amount(transaction.amount)}
       compactSubtitle={`${transaction.paymentLabel} · ${transaction.provider}`}

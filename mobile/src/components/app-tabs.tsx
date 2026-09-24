@@ -15,8 +15,8 @@ import { ToastProvider } from '@/hooks/use-toast';
 const TAB_ITEMS = [
   { key: 'index', href: '/', label: 'Overview', icon: 'house', focusedIcon: 'house-fill' },
   { key: 'payments', href: '/payments', label: 'Payments', icon: 'wallet', focusedIcon: 'wallet-fill' },
-  { key: 'reports', href: '/reports', label: 'Reports', icon: 'file', focusedIcon: 'file-fill' },
-  { key: 'support', href: '/support', label: 'Support', icon: 'chat-centered-text', focusedIcon: 'chat-centered-text-fill' },
+  { key: 'settlements', href: '/settlements', label: 'Settlements', icon: 'bank', focusedIcon: 'bank-fill' },
+  { key: 'refunds', href: '/refunds', label: 'Refunds', icon: 'arrow-u-up-left', focusedIcon: 'arrow-u-up-left-fill' },
   { key: 'more', href: '/more', label: 'More', icon: 'list', focusedIcon: 'list' },
 ] as const satisfies readonly (NavigationBarDestination & { href: string })[];
 

@@ -24,7 +24,7 @@ export function SupportVideos() {
   const muted = { color: theme.colors.onSurfaceVariant };
 
   return (
-    <DetailScreen title="All videos" fallbackHref="/support">
+    <DetailScreen title="All videos" fallbackHref="/more/support">
       <SearchField value={search} onChangeText={setSearch} placeholder="Search videos" radius={Shape.small} />
       {videos.length === 0 ? (
         <Text variant="bodyMedium" style={muted}>

@@ -114,7 +114,7 @@ export function SettlementsView() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <OutlinedActionButton label="Change settlement preferences" icon="sliders" onPress={() => router.push('/payments/settlements/preferences')} />
+        <OutlinedActionButton label="Change settlement preferences" icon="sliders" onPress={() => router.push('/settlements/preferences')} />
         <View style={styles.infoLine}>
           <Icon source="arrow-clockwise" size={16} color={theme.colors.onSurfaceVariant} />
           <Text variant="bodyMedium" style={[styles.regular, muted]}>
@@ -230,7 +230,7 @@ export function SettlementsView() {
         renderRow={(row) => (
             <ListRow
               key={row.id}
-              onPress={() => router.push(`/payments/settlements/${row.batchId}`)}
+              onPress={() => router.push(`/settlements/${row.batchId}`)}
               accessibilityLabel={`Settled ${rupees(row.netAmount)} to ${row.bankName} bank ending ${row.accountLabel.slice(-4)}, ${row.status}`}>
               {/* Settled amount with the bank and account below on the left, status on the right (user decision); the rest is in the detail. */}
               <ListRowLine

@@ -27,7 +27,7 @@ export function SupportFaqs({ initialTopic }: { initialTopic?: string }) {
   const faqs = (TOPIC_FAQS[topic] ?? []).filter((faq) => !query || faq.question.toLowerCase().includes(query));
 
   return (
-    <DetailScreen title="All FAQs" fallbackHref="/support">
+    <DetailScreen title="All FAQs" fallbackHref="/more/support">
       <SearchField value={search} onChangeText={setSearch} placeholder="Search FAQs" radius={Shape.small} />
       <View style={styles.tabs}>
         <Tabs

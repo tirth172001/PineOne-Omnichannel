@@ -13,8 +13,8 @@ import { ShellTopBar } from './shell-top-bar';
 const DESTINATIONS: NavigationBarDestination[] = [
   { key: 'overview', label: 'Overview', icon: 'house', focusedIcon: 'house-fill' },
   { key: 'payments', label: 'Payments', icon: 'wallet', focusedIcon: 'wallet-fill' },
-  { key: 'reports', label: 'Reports', icon: 'file', focusedIcon: 'file-fill' },
-  { key: 'support', label: 'Support', icon: 'chat-centered-text', focusedIcon: 'chat-centered-text-fill' },
+  { key: 'settlements', label: 'Settlements', icon: 'bank', focusedIcon: 'bank-fill' },
+  { key: 'refunds', label: 'Refunds', icon: 'arrow-u-up-left', focusedIcon: 'arrow-u-up-left-fill' },
   { key: 'more', label: 'More', icon: 'list', focusedIcon: 'list' },
 ];
 

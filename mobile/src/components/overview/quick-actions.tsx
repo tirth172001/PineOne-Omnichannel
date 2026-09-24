@@ -29,14 +29,14 @@ export function QuickActions() {
 
   const actions: QuickAction[] = [
     // Timestamps make each tap a new request, so the flow opens even if the screen is already mounted.
-    { key: 'report', label: 'Download report', icon: 'download-simple', href: () => ({ pathname: '/reports', params: { generate: String(Date.now()) } }) },
+    { key: 'report', label: 'Download report', icon: 'download-simple', href: () => ({ pathname: '/more/reports', params: { generate: String(Date.now()) } }) },
     { key: 'payment-link', label: 'Create payment link', icon: 'link-simple', href: () => ({ pathname: '/more/payment-links', params: { create: '1' } }) },
-    { key: 'refund', label: 'Refund a payment', icon: 'arrow-u-up-left', href: () => '/payments?tab=transactions' },
-    { key: 'settlements', label: 'Track settlements', icon: 'bank', href: () => '/payments?tab=settlements' },
+    { key: 'refund', label: 'Refund a payment', icon: 'arrow-u-up-left', href: () => '/payments' },
+    { key: 'settlements', label: 'Track settlements', icon: 'bank', href: () => '/settlements' },
     { key: 'disputes', label: 'Respond to disputes', icon: 'gavel', href: () => '/more/disputes', badge: pendingDisputes },
     { key: 'device', label: 'Manage devices', icon: 'cash-register', href: () => '/more/terminal-devices' },
     { key: 'invite', label: 'Invite user', icon: 'user-plus', href: () => ({ pathname: '/more/users', params: { invite: '1' } }) },
-    { key: 'help', label: 'Get help', icon: 'chat-circle', href: () => '/support/chat' },
+    { key: 'help', label: 'Get help', icon: 'chat-circle', href: () => '/more/support/chat' },
   ];
 
   return (

@@ -47,7 +47,7 @@ export function SupportTickets() {
   const loaded = rows.slice(0, lazy.count);
 
   return (
-    <DetailScreen title="Support tickets" fallbackHref="/support">
+    <DetailScreen title="Support tickets" fallbackHref="/more/support">
       <Text variant="bodyMedium" style={[muted, styles.subtitle]}>
         {rows.length} of {tickets.length} tickets
       </Text>

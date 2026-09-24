@@ -9,7 +9,7 @@ export default function TransactionDetailScreen() {
   const { transactionId, channel } = useLocalSearchParams<{ transactionId: string; channel?: string }>();
   const transaction = findTransaction(transactionId);
   if (!transaction) {
-    return <NotFound title="Transaction details" message={`No transaction with ID ${transactionId}.`} fallbackHref="/payments?tab=transactions" />;
+    return <NotFound title="Transaction details" message={`No transaction with ID ${transactionId}.`} fallbackHref="/payments" />;
   }
   return <TransactionDetail transaction={transaction} channel={channel === 'online' ? 'online' : 'in-store'} />;
 }

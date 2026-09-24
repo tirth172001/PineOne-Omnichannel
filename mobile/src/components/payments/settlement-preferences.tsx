@@ -52,7 +52,7 @@ export function SettlementPreferences() {
   const muted = { color: theme.colors.onSurfaceVariant };
 
   return (
-    <DetailScreen title="Settlement preferences" fallbackHref="/payments?tab=settlements" scoped>
+    <DetailScreen title="Settlement preferences" fallbackHref="/settlements" scoped>
 
       <Tabs
         variant="secondary"

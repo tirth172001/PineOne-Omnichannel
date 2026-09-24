@@ -59,7 +59,7 @@ export function TransactionAnalytics() {
   return (
     <DetailScreen
       title="Transaction Analytics"
-      fallbackHref="/payments?tab=transactions"
+      fallbackHref="/payments"
       actions={<Appbar.Action icon="sliders" onPress={() => setCustomizeOpen(true)} accessibilityLabel="Customize" style={DETAIL_HEADER_BUTTON_STYLE} />}>
       <Text variant="bodyMedium" style={[styles.regular, { color: theme.colors.onSurfaceVariant }]}>
         Deep performance analysis for transaction flows

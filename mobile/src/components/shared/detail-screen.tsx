@@ -5,6 +5,8 @@ import { Appbar, Icon, Text, TouchableRipple, useTheme } from 'react-native-pape
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { useOpenScopeSwitcher } from '@/components/scope-switcher';
+import { ScreenTabs } from '@/components/screen-tabs';
+import type { ShellTabsConfig } from '@/components/shell-tabs';
 import { ShellTopBar } from '@/components/shell-top-bar';
 import { useBusiness } from '@/hooks/use-business';
 import { concentric, Shape } from '@/constants/shape';
@@ -64,6 +66,8 @@ type DetailScreenProps = {
    * and tapping it opens the switcher.
    */
   scoped?: boolean;
+  /** Sub-tabs shown under the title in the top bar (e.g. Reports / History / Schedule). */
+  tabs?: ShellTabsConfig;
   children: ReactNode;
 };
 
@@ -80,7 +84,7 @@ const HEADER_BUTTON_RADIUS = concentric(Shape.max, ROW_PADDING, 40);
  * status gradient, and an optional pinned footer holding the main call to
  * action. Replaces the org header (and the nav bar) while a detail is open.
  */
-export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = true, footer, scoped = false, children }: DetailScreenProps) {
+export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = true, footer, scoped = false, tabs, children }: DetailScreenProps) {
   const theme = useTheme();
   const goBack = () => (router.canGoBack() ? router.back() : router.navigate(fallbackHref));
   const endReached = useEndReached();
@@ -93,6 +97,7 @@ export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = 
           {scoped ? <ScopedTitle title={title} /> : <Appbar.Content title={title} titleStyle={styles.title} />}
           {actions}
         </Appbar.Header>
+        {tabs ? <ScreenTabs {...tabs} /> : null}
       </ShellTopBar>
       {scroll ? (
         <ScrollView {...endReached.scrollProps} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">

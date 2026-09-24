@@ -37,10 +37,10 @@ export default function OverviewScreen() {
               count={Math.max(0, Math.round(TODAY_PAYMENTS.count * scale))}
               failedCount={Math.max(0, Math.round(TODAY_PAYMENTS.failedCount * scale))}
               recent={TODAY_PAYMENTS.recent}
-              onPressPayment={() => router.navigate('/payments?tab=transactions')}
-              onPressHistory={() => router.navigate('/payments?tab=transactions')}
+              onPressPayment={() => router.navigate('/payments')}
+              onPressHistory={() => router.navigate('/payments')}
             />
-            <TodaySettlementCard style={styles.fill} scale={scale} onPressHistory={() => router.navigate('/payments?tab=settlements')} />
+            <TodaySettlementCard style={styles.fill} scale={scale} onPressHistory={() => router.navigate('/settlements')} />
           </CardCarousel>
         </View>
 

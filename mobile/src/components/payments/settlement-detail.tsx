@@ -122,7 +122,7 @@ export function SettlementDetail({ settlement }: { settlement: SettlementRow }) 
 
   return (
     <CollapsingDetailScreen
-      fallbackHref="/payments?tab=settlements"
+      fallbackHref="/settlements"
       gradient={gradientFor(settlement.status)}
       hero={hero}
       compactTitle={rupees(settlement.netAmount)}

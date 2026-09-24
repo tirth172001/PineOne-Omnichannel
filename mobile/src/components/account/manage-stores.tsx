@@ -167,7 +167,7 @@ function StoreQrSheet({ visible, onDismiss, store }: { visible: boolean; onDismi
         <TouchableRipple
           onPress={() => {
             onDismiss();
-            router.navigate('/payments?tab=transactions');
+            router.navigate('/payments');
           }}
           accessibilityRole="link"
           borderless
