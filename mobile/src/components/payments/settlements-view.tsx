@@ -228,16 +228,21 @@ export function SettlementsView() {
             <ListRow
               key={row.id}
               onPress={() => router.push(`/payments/settlements/${row.batchId}`)}
-              accessibilityLabel={`${row.bankName} bank, settled ${rupees(row.netAmount)}, ${row.status}`}>
-              {/* Bank and settled amount on the left, status on the right — nothing else (user decision); the rest is in the detail. */}
+              accessibilityLabel={`Settled ${rupees(row.netAmount)} to ${row.bankName} bank ending ${row.accountLabel.slice(-4)}, ${row.status}`}>
+              {/* Settled amount with the bank and account below on the left, status on the right (user decision); the rest is in the detail. */}
               <ListRowLine
                 left={
-                  <View style={styles.bankRow}>
-                    <BankLogo bank={row.bankName} size={32} />
+                  <>
                     <Text variant="titleMedium" style={styles.amount}>
                       {rupees(row.netAmount)}
                     </Text>
-                  </View>
+                    <View style={styles.bankRow}>
+                      <BankLogo bank={row.bankName} size={16} />
+                      <Text variant="bodySmall" numberOfLines={1} style={muted}>
+                        {row.bankName} Bank •••• {row.accountLabel.slice(-4)}
+                      </Text>
+                    </View>
+                  </>
                 }
                 right={<DotStatusBadge label={row.status} tone={settlementStatusTone(row.status)} radius={LIST_ROW_INNER_RADIUS} />}
                 centered
@@ -299,7 +304,7 @@ const styles = StyleSheet.create({
   summaryBody: { padding: CARD_PADDING, gap: 8 },
   inlineRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
   // Logo and text stay on one line; the text truncates rather than wrapping under the logo.
-  bankRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  bankRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   amount: { fontFamily: Fonts.semiBold, fontVariant: ['tabular-nums'] },
   link: { margin: 0, borderRadius: INNER_RADIUS, minWidth: 0 },
   linkLabel: { marginVertical: 2, marginHorizontal: 4, textDecorationLine: 'underline' },
