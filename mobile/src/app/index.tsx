@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { useTheme } from 'react-native-paper';
 
+import { TabChrome } from '@/components/app-tabs';
 import { ExploreProducts } from '@/components/overview/explore-products';
 import { OverviewGreeting } from '@/components/overview/overview-greeting';
 import { QuickActions } from '@/components/overview/quick-actions';
@@ -20,12 +20,11 @@ import { useBusiness } from '@/hooks/use-business';
  * switcher; the page has no scope filters of its own.
  */
 export default function OverviewScreen() {
-  const theme = useTheme();
   const { storeScale, channelScale } = useBusiness();
   const scale = storeScale * channelScale;
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <TabChrome tab="index">
       <ScrollView contentContainerStyle={styles.content}>
         <OverviewGreeting userName={CURRENT_USER.name} roleLabel={CURRENT_USER.roleLabel} />
 
@@ -49,12 +48,11 @@ export default function OverviewScreen() {
         {/* Products live under More on mobile (the web links to /products). */}
         <ExploreProducts onPressViewAll={() => router.navigate('/more')} onPressBanner={() => router.navigate('/more')} />
       </ScrollView>
-    </View>
+    </TabChrome>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   // Web spacing: 24px from the greeting to the cards, 64px between sections; halved-ish for a phone.
   content: { gap: 40, paddingHorizontal: 16, paddingTop: 20, paddingBottom: 32 },
   cards: { marginTop: -16 },

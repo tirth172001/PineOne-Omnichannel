@@ -1,10 +1,10 @@
-import { Stack } from 'expo-router';
+import { InnerPageStack } from '@/components/inner-page-stack';
 
 /**
  * Settlements is a stack: the listing at /settlements, with the settlement
- * detail and preferences pushed on top. The shell draws the chrome, so the
- * stack's own header is off.
+ * detail and preferences pushed on top, sliding in from the right (see
+ * InnerPageStack).
  */
 export default function SettlementsLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return <InnerPageStack />;
 }

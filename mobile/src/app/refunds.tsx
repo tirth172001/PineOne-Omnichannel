@@ -4,7 +4,7 @@ import { TabScreen } from '@/components/tab-screen';
 /** Refunds tab (web: /refunds). */
 export default function RefundsScreen() {
   return (
-    <TabScreen>
+    <TabScreen tab="refunds">
       <RefundsView />
     </TabScreen>
   );

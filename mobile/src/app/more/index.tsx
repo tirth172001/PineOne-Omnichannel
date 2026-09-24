@@ -1,15 +1,10 @@
-import { ScrollView, StyleSheet } from 'react-native';
-
 import { MoreMenu } from '@/components/more/more-menu';
+import { TabScreen } from '@/components/tab-screen';
 
 export default function MoreScreen() {
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <TabScreen tab="more">
       <MoreMenu />
-    </ScrollView>
+    </TabScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  content: { padding: 16, paddingBottom: 32 },
-});

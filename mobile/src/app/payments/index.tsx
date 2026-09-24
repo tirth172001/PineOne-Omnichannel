@@ -4,7 +4,7 @@ import { TabScreen } from '@/components/tab-screen';
 /** Payments tab: the transactions listing (web: /transactions). */
 export default function PaymentsScreen() {
   return (
-    <TabScreen>
+    <TabScreen tab="payments">
       <TransactionsView />
     </TabScreen>
   );

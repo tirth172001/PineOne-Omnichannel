@@ -10,9 +10,10 @@ const ToastContext = createContext<ShowToast | null>(null);
 
 /**
  * App-wide confirmation messages (web: sonner's toast / toast.success). Wraps
- * the shell's content area, so the Snackbar sits just above the navigation bar.
+ * the shell's content; `bottomOffset` lifts the Snackbar above the navigation
+ * bar on tab pages.
  */
-export function ToastProvider({ children }: { children: ReactNode }) {
+export function ToastProvider({ bottomOffset = 0, children }: { bottomOffset?: number; children: ReactNode }) {
   const [toast, setToast] = useState<{ message: string; key: number } | null>(null);
   const show = useCallback<ShowToast>((message) => setToast({ message, key: Date.now() }), []);
 
@@ -24,6 +25,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         visible={toast !== null}
         onDismiss={() => setToast(null)}
         duration={4000}
+        wrapperStyle={{ bottom: bottomOffset }}
         style={styles.snackbar}>
         {toast?.message ?? ''}
       </Snackbar>

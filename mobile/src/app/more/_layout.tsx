@@ -1,10 +1,10 @@
-import { Stack } from 'expo-router';
+import { InnerPageStack } from '@/components/inner-page-stack';
 
 /**
- * More is a stack: the menu at /more, with every module (disputes, products,
- * stores, users, account settings) pushed on top. The shell draws the
- * chrome, so the stack's own header is off.
+ * More is a stack: the menu at /more, with every module (disputes, reports,
+ * products, stores, users, account settings, support) pushed on top, sliding
+ * in from the right (see InnerPageStack).
  */
 export default function MoreLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return <InnerPageStack />;
 }

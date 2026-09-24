@@ -1,11 +1,10 @@
-import { Stack } from 'expo-router';
+import { InnerPageStack } from '@/components/inner-page-stack';
 
 /**
  * Payments is a stack: the transactions listing at /payments, with the
- * transaction detail and analytics pushed on top so back navigation and
- * gestures work natively. The shell draws the chrome, so the stack's own
- * header is off.
+ * transaction detail and analytics pushed on top, sliding in from the right
+ * (see InnerPageStack).
  */
 export default function PaymentsLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return <InnerPageStack />;
 }
