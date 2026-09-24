@@ -1,18 +1,18 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { StyleSheet } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { StyleSheet, View } from 'react-native';
+import { Icon, Text, useTheme } from 'react-native-paper';
 
 import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
+import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { DetailScreen } from '@/components/shared/detail-screen';
-import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
+import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
 import { StatusPill } from '@/components/shared/status';
 import { SummaryCards } from '@/components/shared/summary-cards';
 import { Fonts } from '@/constants/theme';
 import {
   DISPUTE_STATUSES,
-  disputeActionLabel,
   disputeRecords,
   type DisputeStatus,
   disputeStatusLabel,
@@ -26,10 +26,11 @@ const STATUS_OPTIONS = [{ value: 'all', label: 'All statuses' }, ...DISPUTE_STAT
 const plural = (count: number) => `among ${count} payment${count === 1 ? '' : 's'}`;
 
 /**
- * Disputes (web: DisputesContent): the header channel's disputes, the
- * Disputed and Won amount summary, search, date and status filters, and the channel's disputes
- * as stacked records (dispute and transaction IDs, amount, created and due
- * dates, status and next action). Rows open the dispute detail.
+ * Disputes (web: DisputesContent): the header channel's disputes — the
+ * Disputed / Won amount cards (swipeable), search, date and status filters,
+ * and the disputes grouped by the day each was raised: amount with the
+ * dispute ID below and the status. Rows open the dispute detail
+ * (transaction, due date, next action).
  */
 export function DisputesList() {
   const theme = useTheme();
@@ -67,6 +68,7 @@ export function DisputesList() {
             subtext: plural(won.length),
           },
         ]}
+        carousel
       />
       <ListingToolbar
         search={search}
@@ -80,38 +82,43 @@ export function DisputesList() {
         }
         actions={<OutlinedActionButton label="Download filtered" icon="download-simple" />}
       />
-      <ListCard empty="No disputes found.">
-        {rows.map((row) => (
+      <DayGroupedList
+        groups={groupByDay(
+          sortNewestFirst(rows, (row) => displayTimestamp(row.createdOn, row.time)),
+          (row) => row.createdOn
+        )}
+        empty="No disputes found."
+        renderRow={(row) => (
           <ListRow
             key={row.id}
             onPress={() => router.push({ pathname: '/more/disputes/[disputeId]', params: { disputeId: row.id } })}
-            accessibilityLabel={`Dispute ${row.id}, ${row.amount}, ${disputeStatusLabel(row)}`}>
-            <ListRowLine
-              left={<Text variant="bodyMedium" style={styles.medium}>{row.id}</Text>}
-              right={<Text variant="bodyMedium" style={styles.medium}>{row.amount}</Text>}
-            />
+            accessibilityLabel={`${row.amount}, dispute ${row.id}, ${disputeStatusLabel(row)}`}>
+            {/* Amount with the dispute ID below on the left, status on the right (user decision); the rest is in the detail. */}
             <ListRowLine
               left={
-                <Text variant="bodySmall" style={muted}>
-                  Txn {row.transactionId} · Created {row.createdOn}
-                </Text>
-              }
-            />
-            <ListRowLine
-              left={
-                <Text variant="bodySmall" style={muted}>
-                  Due {row.dueDate} · <Text variant="bodySmall" style={[styles.medium, { color: theme.colors.onSurface }]}>{disputeActionLabel(row)}</Text>
-                </Text>
+                <>
+                  <Text variant="titleMedium" style={styles.amount}>
+                    {row.amount}
+                  </Text>
+                  <View style={styles.idRow}>
+                    <Icon source="gavel" size={16} color={theme.colors.onSurfaceVariant} />
+                    <Text variant="bodySmall" numberOfLines={1} style={muted}>
+                      Dispute ID {row.id}
+                    </Text>
+                  </View>
+                </>
               }
               right={<StatusPill label={disputeStatusLabel(row)} tone={disputeStatusTone(row)} radius={LIST_ROW_INNER_RADIUS} />}
+              centered
             />
           </ListRow>
-        ))}
-      </ListCard>
+        )}
+      />
     </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  medium: { fontFamily: Fonts.medium },
+  amount: { fontFamily: Fonts.semiBold, fontVariant: ['tabular-nums'] },
+  idRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });
