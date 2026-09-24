@@ -14,7 +14,7 @@ import { DetailRow } from '@/components/shared/detail-rows';
 import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
 import { type MoreFilterCategory, type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
-import { PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
+import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { DotStatusBadge, type DotTone } from '@/components/shared/status';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
@@ -109,29 +109,13 @@ export function SettlementsView() {
   };
   const muted = { color: theme.colors.onSurfaceVariant };
 
-  // The page's action lives in the tab header.
-  useHeaderActions([{ label: 'Change settlement preferences', icon: 'sliders', onPress: () => router.push('/settlements/preferences') }]);
+  // Settlement cycle, account and the preferences link live behind the header's preferences
+  // button (user decision) instead of info lines at the top of the page.
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  useHeaderActions([{ label: 'Settlement preferences', icon: 'sliders', onPress: () => setPreferencesOpen(true) }]);
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.infoLine}>
-          <Icon source="arrow-clockwise" size={16} color={theme.colors.onSurfaceVariant} />
-          <Text variant="bodyMedium" style={[styles.regular, muted]}>
-            Settlement cycle: <Text style={styles.strong}>{channel === 'online' ? 'T+1 / T+2 days' : 'T+1 days'}</Text>
-          </Text>
-        </View>
-        <View style={styles.infoLine}>
-          <Icon source="buildings" size={16} color={theme.colors.onSurfaceVariant} />
-          <Text variant="bodyMedium" style={[styles.regular, muted]}>
-            Settlement account:
-          </Text>
-          <BankLogo bank="HDFC" size={14} />
-          <Text variant="bodyMedium" style={styles.strong}>
-            HDFC bank, xx8787
-          </Text>
-        </View>
-      </View>
 
       {/* Settled and Remaining amount as a swipeable row (user decision). */}
       <CardCarousel>
@@ -251,6 +235,40 @@ export function SettlementsView() {
 
       <LazyListFooter lazy={lazy} total={filteredRows.length} noun="settlements" />
 
+      <PanelSheet
+        visible={preferencesOpen}
+        onDismiss={() => setPreferencesOpen(false)}
+        title="Settlement preferences"
+        height={270}
+        footer={
+          <Button
+            mode="contained"
+            icon="sliders"
+            onPress={() => {
+              setPreferencesOpen(false);
+              router.push('/settlements/preferences');
+            }}
+            style={styles.sheetButton}>
+            Change settlement preferences
+          </Button>
+        }>
+        <PanelSection last>
+          <DetailRow label="Settlement cycle">
+            <Text variant="bodyMedium" style={styles.semiBold}>
+              {channel === 'online' ? 'T+1 / T+2 days' : 'T+1 days'}
+            </Text>
+          </DetailRow>
+          <DetailRow label="Settlement account">
+            <View style={styles.account}>
+              <BankLogo bank="HDFC" size={16} />
+              <Text variant="bodyMedium" style={styles.semiBold}>
+                HDFC bank, xx8787
+              </Text>
+            </View>
+          </DetailRow>
+        </PanelSection>
+      </PanelSheet>
+
       <PanelSheet visible={deductionsOpen} onDismiss={() => setDeductionsOpen(false)} title="Deductions" height={420}>
         <PanelSection>
           <DetailRow label="Gross amount">
@@ -282,12 +300,10 @@ export function SettlementsView() {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   container: { gap: 16 },
-  header: { gap: 12 },
-  infoLine: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
-  regular: { fontFamily: Fonts.regular },
+  account: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  sheetButton: { flex: 1, borderRadius: PANEL_INNER_RADIUS },
   medium: { fontFamily: Fonts.medium },
   semiBold: { fontFamily: Fonts.semiBold },
-  strong: { fontFamily: Fonts.medium },
   flex: { flex: 1 },
   summary: { borderRadius: Shape.max, overflow: 'hidden' },
   summaryHeader: { padding: CARD_PADDING, gap: 12 },
