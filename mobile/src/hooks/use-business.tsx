@@ -1,7 +1,7 @@
 import { createContext, type ReactNode, useContext, useMemo, useState } from 'react';
 
 import { ORGANISATIONS, type Organisation, type Shop } from '@/data/businesses';
-import { MIN_STORE_SCALE } from '@/data/overview';
+import { CHANNEL_MULTIPLIER, CHANNEL_OPTIONS, type ChannelFilter, MIN_STORE_SCALE } from '@/data/overview';
 
 type BusinessContextValue = {
   organisation: Organisation;
@@ -13,6 +13,14 @@ type BusinessContextValue = {
   scopeLabel: string;
   /** Share of the organisation's business in scope (1 for all shops); scales Overview numbers. */
   storeScale: number;
+  /** Payment channel the whole app shows: all, in-store or online. */
+  channel: ChannelFilter;
+  /** "All channels", "In-store" or "Online". */
+  channelLabel: string;
+  /** Share of the business on the chosen channel (1 for all); scales Overview numbers. */
+  channelScale: number;
+  /** Applies a whole scope at once (the header switcher's Apply). */
+  applyScope: (scope: { organisationId: string; shopIds: string[]; channel: ChannelFilter }) => void;
   /** Switching organisation selects its first shop. */
   selectOrganisation: (organisationId: string) => void;
   /** Single shop (header switcher). */
@@ -24,14 +32,15 @@ type BusinessContextValue = {
 const BusinessContext = createContext<BusinessContextValue | null>(null);
 
 /**
- * The org and shop(s) the whole app is scoped to. The header switcher and the
- * Overview's "Change store" picker both write here, so they never disagree.
- * In memory only for now.
+ * The org, shop(s) and channel the whole app is scoped to. Only the header
+ * switcher changes them: pages have no store or channel filters of their own
+ * (global switching only). In memory only for now.
  */
 export function BusinessProvider({ children }: { children: ReactNode }) {
   const [organisationId, setOrganisationId] = useState(ORGANISATIONS[0].id);
   // Starts on a single shop, matching the Figma app shell (Health & Glow · Koramangala).
   const [shopIds, setShopIds] = useState<string[]>([ORGANISATIONS[0].shops[0].id]);
+  const [channel, setChannel] = useState<ChannelFilter>('all');
 
   const value = useMemo(() => {
     const organisation = ORGANISATIONS.find((org) => org.id === organisationId) ?? ORGANISATIONS[0];
@@ -52,6 +61,15 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       shops,
       scopeLabel,
       storeScale,
+      channel,
+      channelLabel: CHANNEL_OPTIONS.find((option) => option.value === channel)?.label ?? 'All channels',
+      channelScale: CHANNEL_MULTIPLIER[channel],
+      applyScope: (scope: { organisationId: string; shopIds: string[]; channel: ChannelFilter }) => {
+        const next = ORGANISATIONS.find((org) => org.id === scope.organisationId) ?? organisation;
+        setOrganisationId(next.id);
+        setShopIds(scope.shopIds.length === next.shops.length ? [] : scope.shopIds);
+        setChannel(scope.channel);
+      },
       selectOrganisation: (id: string) => {
         const next = ORGANISATIONS.find((org) => org.id === id);
         if (!next) return;
@@ -61,7 +79,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       selectShop: (id: string) => setShopIds([id]),
       setShopIds: (ids: string[]) => setShopIds(ids.length === organisation.shops.length ? [] : ids),
     };
-  }, [organisationId, shopIds]);
+  }, [organisationId, shopIds, channel]);
 
   return <BusinessContext.Provider value={value}>{children}</BusinessContext.Provider>;
 }

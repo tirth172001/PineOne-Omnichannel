@@ -4,38 +4,25 @@ import { View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 
 import { ORGANISATIONS } from '@/data/businesses';
+import { CHANNEL_OPTIONS } from '@/data/overview';
 
-import { BusinessSwitcher } from './business-switcher';
+import { type BusinessScope, BusinessSwitcher } from './business-switcher';
 
 function BusinessSwitcherDemo() {
   const [visible, setVisible] = useState(true);
-  const [organisationId, setOrganisationId] = useState(ORGANISATIONS[0].id);
-  const organisation = ORGANISATIONS.find((org) => org.id === organisationId) ?? ORGANISATIONS[0];
-  const [shopId, setShopId] = useState(organisation.shops[0].id);
-  const shop = organisation.shops.find((s) => s.id === shopId) ?? organisation.shops[0];
+  const [scope, setScope] = useState<BusinessScope>({ organisationId: ORGANISATIONS[0].id, shopIds: [], channel: 'all' });
+  const organisation = ORGANISATIONS.find((org) => org.id === scope.organisationId) ?? ORGANISATIONS[0];
+  const stores = scope.shopIds.length === 0 ? 'All stores' : `${scope.shopIds.length} store(s)`;
 
   return (
     <View style={{ gap: 12, alignItems: 'flex-start' }}>
       <Text variant="bodyMedium">
-        {organisation.name} · {shop.name}
+        {organisation.name} · {stores} · {CHANNEL_OPTIONS.find((option) => option.value === scope.channel)?.label}
       </Text>
       <Button mode="outlined" onPress={() => setVisible(true)}>
         Open switcher
       </Button>
-      <BusinessSwitcher
-        visible={visible}
-        onDismiss={() => setVisible(false)}
-        organisations={ORGANISATIONS}
-        organisation={organisation}
-        shopIds={[shop.id]}
-        onSelectOrganisation={(id) => {
-          const next = ORGANISATIONS.find((org) => org.id === id) ?? ORGANISATIONS[0];
-          setOrganisationId(next.id);
-          setShopId(next.shops[0].id);
-        }}
-        onSelectShop={setShopId}
-        onSelectAllShops={() => setShopId(organisation.shops[0].id)}
-      />
+      <BusinessSwitcher visible={visible} onDismiss={() => setVisible(false)} organisations={ORGANISATIONS} scope={scope} onApply={setScope} />
     </View>
   );
 }
@@ -47,7 +34,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Org/shop switcher, opened from the app header. Choosing an organisation keeps the sheet open to pick a shop, and choosing a shop applies it and closes the sheet.',
+          'The app-wide scope switcher, opened from the header: organisation, any combination of stores (or all), and channel (all, in-store, online), applied together. Pages have no store or channel filters of their own.',
       },
     },
   },

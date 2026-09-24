@@ -194,8 +194,9 @@ export function channelLabel(channel: SettlementChannel) {
 }
 
 /** Web: the summary useMemo over one channel's batches. */
-export function getSettlementSummary(channel: SettlementChannel) {
-  const channelRows = settlementRows.filter((row) => row.channel === channel);
+/** `all` sums both channels (the header's All channels). */
+export function getSettlementSummary(channel: SettlementChannel | 'all') {
+  const channelRows = channel === 'all' ? settlementRows : settlementRows.filter((row) => row.channel === channel);
   const settledRows = channelRows.filter((row) => row.status === 'Settled');
   const openRows = channelRows.filter((row) => row.status !== 'Settled');
   const sum = (list: SettlementRow[], pick: (row: SettlementRow) => number) => list.reduce((total, row) => total + pick(row), 0);

@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
 
 import { Tabs } from '@/components/material3/tabs';
-import { CompactSegmentedButtons, FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
+import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
 import {
   type DateRangeValue,
   DateRangeFilter,
@@ -19,6 +19,7 @@ import { StatusPill } from '@/components/shared/status';
 import { SummaryCards } from '@/components/shared/summary-cards';
 import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
+import { useBusiness } from '@/hooks/use-business';
 import { formatInr } from '@/data/common';
 import { parseDisplayDate, type TransactionRecord, transactionRows } from '@/data/transactions';
 
@@ -34,11 +35,6 @@ type StatusFilter =
   | 'cancelled'
   | 'session-expired'
   | 'user-cancelled';
-
-const MODE_OPTIONS = [
-  { value: 'in-store', label: 'In-store payments' },
-  { value: 'online', label: 'Online payment' },
-] as const;
 
 const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { label: 'Status', value: 'all' },
@@ -139,15 +135,18 @@ function moreFilterCategories(rows: TransactionRecord[]): MoreFilterCategory[] {
 }
 
 /**
- * Payments → Transactions (web: TransactionsContent): In-store / Online, the
- * online By Order / By payments views, search, date / status / mode /
+ * Payments → Transactions (web: TransactionsContent): the header channel picks
+ * the in-store or online listing (with its By Order / By payments views), search, date / status / mode /
  * provider filters, More filters, Total volume, and the paginated records.
  * Each web table row becomes a stacked record on a phone; tapping one opens
  * its detail.
  */
 export function TransactionsView() {
   const theme = useTheme();
-  const [mode, setMode] = useState<ListingMode>('in-store');
+  // The listing follows the header's channel: Online shows orders / online payments; In-store and
+  // All channels show the payments list (every payment row, in-store and online alike).
+  const { channel } = useBusiness();
+  const mode: ListingMode = channel === 'online' ? 'online' : 'in-store';
   const [onlineView, setOnlineView] = useState<OnlineView>('order');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -158,6 +157,16 @@ export function TransactionsView() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(1);
   const [emailOpen, setEmailOpen] = useState(false);
+  // Switching channel resets the channel-specific filters and the page, as the web's mode toggle did.
+  const [lastMode, setLastMode] = useState(mode);
+  if (mode !== lastMode) {
+    setLastMode(mode);
+    setOnlineView('order');
+    setTransactionTypeFilter('all');
+    setPaymentModeFilter('all');
+    setProviderFilter('all');
+    setPage(1);
+  }
 
   const modeRows = useMemo(() => {
     const type = mode === 'in-store' ? 'Payment' : onlineView === 'order' ? 'Order' : 'Payment';
@@ -237,40 +246,24 @@ export function TransactionsView() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <CompactSegmentedButtons
-          value={mode}
-          onValueChange={(next) => {
-            setMode(next);
-            setOnlineView('order');
-            setTransactionTypeFilter('all');
-            setPaymentModeFilter('all');
-            setProviderFilter('all');
-            setPage(1);
-          }}
-          options={MODE_OPTIONS}
-          radius={Shape.small}
-          grow
-        />
-        {mode === 'online' ? (
-          <>
-            <Button mode="contained" style={styles.primaryAction}>
-              Verify IMEI No
-            </Button>
-            <Tabs
-              variant="secondary"
-              tabs={[
-                { key: 'order', label: 'By Order' },
-                { key: 'payments', label: 'By payments' },
-              ]}
-              activeKey={onlineView}
-              onChange={(key) => resetPage(setOnlineView)(key as OnlineView)}
-              indicatorColor={theme.colors.onSurface}
-              style={styles.onlineTabs}
-            />
-          </>
-        ) : null}
-      </View>
+      {mode === 'online' ? (
+        <View style={styles.header}>
+          <Button mode="contained" style={styles.primaryAction}>
+            Verify IMEI No
+          </Button>
+          <Tabs
+            variant="secondary"
+            tabs={[
+              { key: 'order', label: 'By Order' },
+              { key: 'payments', label: 'By payments' },
+            ]}
+            activeKey={onlineView}
+            onChange={(key) => resetPage(setOnlineView)(key as OnlineView)}
+            indicatorColor={theme.colors.onSurface}
+            style={styles.onlineTabs}
+          />
+        </View>
+      ) : null}
 
       <ListingToolbar
         search={search}

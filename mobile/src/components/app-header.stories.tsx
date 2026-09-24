@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-native';
 
-import { CURRENT_USER, ORGANISATIONS } from '@/data/businesses';
+import { ORGANISATIONS } from '@/data/businesses';
 
 import { AppHeader } from './app-header';
 import { ShellTopBar } from './shell-top-bar';
@@ -28,7 +28,6 @@ const meta = {
     organisationName: ORGANISATIONS[0].name,
     shopName: ORGANISATIONS[0].shops[0].name,
     organisationLogo: ORGANISATIONS[0].logo,
-    avatar: CURRENT_USER.avatar,
   },
 } satisfies Meta<typeof AppHeader>;
 

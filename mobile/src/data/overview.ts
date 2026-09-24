@@ -36,8 +36,8 @@ export function getTimeOfDayGreeting(date = new Date()) {
 
 export const CHANNEL_OPTIONS = [
   { value: 'all', label: 'All channels' },
-  { value: 'online', label: 'Online' },
   { value: 'in-store', label: 'In-store' },
+  { value: 'online', label: 'Online' },
 ] as const;
 export type ChannelFilter = (typeof CHANNEL_OPTIONS)[number]['value'];
 

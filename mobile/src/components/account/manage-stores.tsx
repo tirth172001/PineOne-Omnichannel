@@ -107,12 +107,10 @@ export function ManageStores() {
               }
               right={<ActiveBadge active={store.status === 'Active'} />}
             />
-            <View style={styles.inline}>
-              <Text variant="bodySmall" style={muted}>
-                Store ID
-              </Text>
-              <CopyableValue value={store.storeId} />
-            </View>
+            {/* Plain text: the row is itself a button, so no nested copy button (copy from the store's detail). */}
+            <Text variant="bodySmall" style={muted}>
+              Store ID {store.storeId}
+            </Text>
             <Text variant="bodySmall" style={muted}>
               {terminalsLinkedCount(store.storeId)} terminals · {usersInvitedForStore(store.storeId, roster)} users · Created {store.createdOnDate}, {store.createdOnTime}
             </Text>
@@ -517,7 +515,6 @@ const styles = StyleSheet.create({
   // Web: text-2xl font-semibold.
   storeName: { fontFamily: Fonts.semiBold, fontSize: 22, lineHeight: 28 },
   hero: { gap: 6 },
-  inline: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   ids: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   tabs: { marginHorizontal: -16, marginVertical: -8 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },

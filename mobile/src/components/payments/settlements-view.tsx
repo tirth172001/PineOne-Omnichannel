@@ -15,6 +15,7 @@ import { PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { DotStatusBadge, type DotTone } from '@/components/shared/status';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
+import { useBusiness } from '@/hooks/use-business';
 import { formatCount, formatInr } from '@/data/common';
 import {
   getSettlementSummary,
@@ -25,15 +26,9 @@ import {
   SETTLEMENT_STORES,
   SETTLEMENT_TIDS,
   SETTLEMENT_TYPES,
-  type SettlementChannel,
   type SettlementStatus,
   settlementRows,
 } from '@/data/settlements';
-
-const CHANNEL_OPTIONS = [
-  { value: 'in-store', label: 'In-store payments' },
-  { value: 'online', label: 'Online payment' },
-] as const;
 
 const PERIOD_OPTIONS = [
   { value: 'today', label: 'Today' },
@@ -78,7 +73,8 @@ const INNER_RADIUS = concentric(Shape.max, CARD_PADDING);
  */
 export function SettlementsView() {
   const theme = useTheme();
-  const [channel, setChannel] = useState<SettlementChannel>('in-store');
+  // Follows the header's channel; All channels lists both.
+  const { channel } = useBusiness();
   const [period, setPeriod] = useState<(typeof PERIOD_OPTIONS)[number]['value']>('today');
   const [deductionsOpen, setDeductionsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -95,7 +91,7 @@ export function SettlementsView() {
     const query = search.trim().toLowerCase();
     const pick = (id: string) => moreFilters[id]?.[0];
     return settlementRows.filter((row) => {
-      if (row.channel !== channel) return false;
+      if (channel !== 'all' && row.channel !== channel) return false;
       if (status !== 'all' && row.status !== status) return false;
       if (pick('bank') && row.acquiringBank.toLowerCase() !== pick('bank')) return false;
       if (pick('type') && row.settlementType !== pick('type')) return false;
@@ -119,12 +115,11 @@ export function SettlementsView() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <CompactSegmentedButtons value={channel} onValueChange={resetPage(setChannel)} options={CHANNEL_OPTIONS} radius={Shape.small} grow />
         <OutlinedActionButton label="Change settlement preferences" icon="sliders" onPress={() => router.push('/payments/settlements/preferences')} />
         <View style={styles.infoLine}>
           <Icon source="arrow-clockwise" size={16} color={theme.colors.onSurfaceVariant} />
           <Text variant="bodyMedium" style={[styles.regular, muted]}>
-            Settlement cycle: <Text style={styles.strong}>{channel === 'online' ? 'T+1 / T+2 days' : 'T+1 days'}</Text>
+            Settlement cycle: <Text style={styles.strong}>{channel === 'in-store' ? 'T+1 days' : 'T+1 / T+2 days'}</Text>
           </Text>
         </View>
         <View style={styles.infoLine}>
@@ -192,7 +187,7 @@ export function SettlementsView() {
             </Button>
           </View>
         </View>
-        {channel === 'in-store' ? (
+        {channel !== 'online' ? (
           <View style={styles.odsBanner}>
             <Icon source="lightning" size={20} color="#4f46e5" />
             <Text variant="bodyMedium" style={[styles.medium, styles.flex]}>
@@ -259,12 +254,12 @@ export function SettlementsView() {
               left={
                 <Text variant="bodySmall" style={muted}>
                   Gross {rupees(row.grossAmount)} · Deductions {rupees(row.deductionsTotal)}
-                  {channel === 'online' ? ' (MDR + GST)' : ''}
+                  {row.channel === 'online' ? ' (MDR + GST)' : ''}
                 </Text>
               }
               right={<DotStatusBadge label={row.status} tone={settlementStatusTone(row.status)} radius={LIST_ROW_INNER_RADIUS} />}
             />
-            {channel === 'online' ? (
+            {row.channel === 'online' ? (
               <ListRowLine
                 left={
                   <Text variant="bodySmall" style={muted}>

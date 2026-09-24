@@ -25,7 +25,7 @@ import { SearchBar } from '@/components/search-bar';
 import { ShellTopBar } from '@/components/shell-top-bar';
 import { StatCard } from '@/components/stat-card';
 import { ThemePreviewSection } from '@/components/theme-preview-section';
-import { CURRENT_USER, ORGANISATIONS } from '@/data/businesses';
+import { ORGANISATIONS } from '@/data/businesses';
 
 // Every paired MD3 color role — a container role always shown with its "on" foreground.
 const COLOR_PAIRS = [
@@ -304,7 +304,6 @@ export default function ThemePreviewScreen() {
             organisationName={ORGANISATIONS[0].name}
             shopName={ORGANISATIONS[0].shops[0].name}
             organisationLogo={ORGANISATIONS[0].logo}
-            avatar={CURRENT_USER.avatar}
           />
         </ShellTopBar>
         <SearchBar />

@@ -1,133 +1,192 @@
 import { Image } from 'expo-image';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { List, Portal, Text, useTheme } from 'react-native-paper';
+import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { Button, Checkbox, Icon, RadioButton, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
-import { BottomSheet } from '@/components/material3/bottom-sheet';
-import { concentric, Shape } from '@/constants/shape';
+import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
+import { concentric } from '@/constants/shape';
+import { Fonts } from '@/constants/theme';
 import type { Organisation } from '@/data/businesses';
+import { CHANNEL_OPTIONS, type ChannelFilter } from '@/data/overview';
+
+export type BusinessScope = { organisationId: string; shopIds: string[]; channel: ChannelFilter };
 
 type BusinessSwitcherProps = {
   visible: boolean;
   onDismiss: () => void;
   organisations: Organisation[];
-  organisation: Organisation;
-  /** Selected shop ids; empty = all shops. */
-  shopIds: string[];
-  onSelectOrganisation: (organisationId: string) => void;
-  onSelectShop: (shopId: string) => void;
-  onSelectAllShops: () => void;
+  /** The scope currently applied; the sheet edits a draft of it until Apply. */
+  scope: BusinessScope;
+  onApply: (scope: BusinessScope) => void;
 };
 
-const SHEET_HEIGHT = 520;
-// Nested shapes: sheet (Shape.max) → rows inset 8dp → 40dp logo tiles inset
-// 8dp (List.Item's vertical padding).
-const SHEET_RADIUS = Shape.max;
-const SHEET_GUTTER = 8;
-const ROW_RADIUS = concentric(SHEET_RADIUS, SHEET_GUTTER);
-const LOGO_RADIUS = concentric(ROW_RADIUS, 8, 40);
+// Rows sit 16dp inside the sheet; the 40dp logo tile 4dp inside a row.
+const ROW_RADIUS = PANEL_INNER_RADIUS;
+const LOGO_RADIUS = concentric(ROW_RADIUS, 4, 40);
+
+const CHANNEL_DESCRIPTIONS: Record<ChannelFilter, string> = {
+  all: 'In-store and online payments together',
+  'in-store': 'POS terminals and store QR payments',
+  online: 'Payment gateway, payment links and checkout',
+};
 
 /**
- * Org/shop switcher opened from the app header. Picking an organisation keeps
- * the sheet open so a store can be chosen; picking a store (or All stores)
- * applies and closes it. Picking several stores happens in Overview's store picker.
+ * The app's only scope control, opened from the header: organisation, which
+ * stores (any combination, or all), and which channel (all, in-store or
+ * online). Pages don't filter by store or channel themselves; everything
+ * follows what's applied here.
  */
-export function BusinessSwitcher({
-  visible,
-  onDismiss,
-  organisations,
-  organisation,
-  shopIds,
-  onSelectOrganisation,
-  onSelectShop,
-  onSelectAllShops,
-}: BusinessSwitcherProps) {
+export function BusinessSwitcher({ visible, onDismiss, organisations, scope, onApply }: BusinessSwitcherProps) {
   const theme = useTheme();
-  const check = (selected: boolean) =>
-    selected ? (props: { color: string }) => <List.Icon {...props} icon="check" color={theme.colors.onSurface} /> : undefined;
+  const [draft, setDraft] = useState<BusinessScope>(scope);
+  // Start from the applied scope each time the sheet opens (adjusting state during render).
+  const [wasVisible, setWasVisible] = useState(false);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible) setDraft(scope);
+  }
+  const organisation = organisations.find((org) => org.id === draft.organisationId) ?? organisations[0];
+  const allStores = draft.shopIds.length === 0;
+  const muted = { color: theme.colors.onSurfaceVariant };
+
+  const toggleShop = (id: string) =>
+    setDraft((current) => {
+      const selected = current.shopIds.length === 0 ? organisation.shops.map((shop) => shop.id) : current.shopIds;
+      const next = selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id];
+      // Every store ticked means "All stores"; unticking the last store falls back to all too.
+      return { ...current, shopIds: next.length === organisation.shops.length || next.length === 0 ? [] : next };
+    });
+
+  const row = (key: string, content: React.ReactNode, onPress: () => void, selected: boolean, role: 'radio' | 'checkbox') => (
+    <TouchableRipple
+      key={key}
+      onPress={onPress}
+      borderless
+      accessibilityRole={role}
+      aria-checked={selected}
+      accessibilityState={{ checked: selected }}
+      style={[styles.row, selected && { backgroundColor: theme.colors.secondaryContainer }]}>
+      <View style={styles.rowContent}>{content}</View>
+    </TouchableRipple>
+  );
 
   return (
-    <Portal>
-      <BottomSheet variant="modal" height={SHEET_HEIGHT} radius={SHEET_RADIUS} visible={visible} onDismiss={onDismiss}>
-        <Text variant="titleLarge" style={styles.title}>
-          Switch business
+    <PanelSheet
+      visible={visible}
+      onDismiss={onDismiss}
+      title="Switch business"
+      footer={
+        <Button
+          mode="contained"
+          onPress={() => {
+            onApply(draft);
+            onDismiss();
+          }}
+          style={styles.apply}>
+          Apply
+        </Button>
+      }>
+      <PanelSection>
+        <Text variant="titleSmall" style={styles.heading}>
+          Organisation
         </Text>
-        <ScrollView contentContainerStyle={styles.content}>
-          <List.Section>
-            <List.Subheader style={styles.subheader}>Organisation</List.Subheader>
-            {organisations.map((org) => (
-              <List.Item
-                key={org.id}
-                title={org.name}
-                description={`${org.shops.length} stores`}
-                onPress={() => onSelectOrganisation(org.id)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: org.id === organisation.id }}
-                left={() => (
-                  <View style={[styles.logo, { borderColor: theme.colors.surfaceVariant, backgroundColor: theme.colors.surface }]}>
-                    {org.logo ? (
-                      <Image source={org.logo} style={styles.logoImage} contentFit="cover" />
-                    ) : (
-                      <Text variant="titleMedium">{org.name.charAt(0)}</Text>
-                    )}
-                  </View>
-                )}
-                right={check(org.id === organisation.id)}
-                style={styles.item}
-              />
-            ))}
-          </List.Section>
-          <List.Section>
-            <List.Subheader style={styles.subheader}>Store</List.Subheader>
-            <List.Item
-              title="All stores"
-              description={`${organisation.shops.length} stores`}
-              onPress={() => {
-                onSelectAllShops();
-                onDismiss();
-              }}
-              accessibilityRole="button"
-              accessibilityState={{ selected: shopIds.length === 0 }}
-              left={(props) => <List.Icon {...props} icon="buildings" />}
-              right={check(shopIds.length === 0)}
-              style={styles.item}
-            />
-            {organisation.shops.map((s) => (
-              <List.Item
-                key={s.id}
-                title={s.name}
-                description={s.address}
-                descriptionNumberOfLines={1}
-                onPress={() => {
-                  onSelectShop(s.id);
-                  onDismiss();
-                }}
-                accessibilityRole="button"
-                accessibilityState={{ selected: shopIds.length === 1 && shopIds[0] === s.id }}
-                left={(props) => <List.Icon {...props} icon="storefront" />}
-                right={check(shopIds.length === 1 && shopIds[0] === s.id)}
-                style={styles.item}
-              />
-            ))}
-          </List.Section>
-        </ScrollView>
-      </BottomSheet>
-    </Portal>
+        {organisations.map((org) =>
+          row(
+            org.id,
+            <>
+              <View style={[styles.logo, { borderColor: theme.colors.surfaceVariant, backgroundColor: theme.colors.surface }]}>
+                {org.logo ? <Image source={org.logo} style={styles.logoImage} contentFit="cover" /> : <Text variant="titleMedium">{org.name.charAt(0)}</Text>}
+              </View>
+              <View style={styles.flex}>
+                <Text variant="bodyLarge">{org.name}</Text>
+                <Text variant="bodySmall" style={muted}>
+                  {org.shops.length} stores
+                </Text>
+              </View>
+              <RadioButton.Android value={org.id} status={org.id === draft.organisationId ? 'checked' : 'unchecked'} />
+            </>,
+            // A different organisation starts on all of its stores.
+            () => setDraft((current) => (current.organisationId === org.id ? current : { ...current, organisationId: org.id, shopIds: [] })),
+            org.id === draft.organisationId,
+            'radio'
+          )
+        )}
+      </PanelSection>
+
+      <PanelSection>
+        <Text variant="titleSmall" style={styles.heading}>
+          Stores
+        </Text>
+        {row(
+          'all-stores',
+          <>
+            <Icon source="buildings" size={24} color={theme.colors.onSurfaceVariant} />
+            <View style={styles.flex}>
+              <Text variant="bodyLarge">All stores</Text>
+              <Text variant="bodySmall" style={muted}>
+                {organisation.shops.length} stores
+              </Text>
+            </View>
+            <Checkbox status={allStores ? 'checked' : 'unchecked'} />
+          </>,
+          () => setDraft((current) => ({ ...current, shopIds: [] })),
+          allStores,
+          'checkbox'
+        )}
+        {organisation.shops.map((shop) => {
+          const checked = allStores || draft.shopIds.includes(shop.id);
+          return row(
+            shop.id,
+            <>
+              <Icon source="storefront" size={24} color={theme.colors.onSurfaceVariant} />
+              <View style={styles.flex}>
+                <Text variant="bodyLarge">{shop.name}</Text>
+                <Text variant="bodySmall" numberOfLines={1} style={muted}>
+                  {shop.address}
+                </Text>
+              </View>
+              <Checkbox status={checked ? 'checked' : 'unchecked'} />
+            </>,
+            () => toggleShop(shop.id),
+            !allStores && checked,
+            'checkbox'
+          );
+        })}
+      </PanelSection>
+
+      <PanelSection last>
+        <Text variant="titleSmall" style={styles.heading}>
+          Channel
+        </Text>
+        {CHANNEL_OPTIONS.map((option) =>
+          row(
+            option.value,
+            <>
+              <Icon source={option.value === 'online' ? 'globe' : option.value === 'in-store' ? 'storefront' : 'squares-four'} size={24} color={theme.colors.onSurfaceVariant} />
+              <View style={styles.flex}>
+                <Text variant="bodyLarge">{option.label}</Text>
+                <Text variant="bodySmall" style={muted}>
+                  {CHANNEL_DESCRIPTIONS[option.value]}
+                </Text>
+              </View>
+              <RadioButton.Android value={option.value} status={draft.channel === option.value ? 'checked' : 'unchecked'} />
+            </>,
+            () => setDraft((current) => ({ ...current, channel: option.value })),
+            draft.channel === option.value,
+            'radio'
+          )
+        )}
+      </PanelSection>
+    </PanelSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { paddingHorizontal: 24, paddingBottom: 4 },
-  subheader: { paddingHorizontal: 16 },
-  content: { paddingHorizontal: SHEET_GUTTER, paddingBottom: 24 },
-  item: { paddingLeft: 16, borderRadius: ROW_RADIUS },
-  logo: {
-    width: 40,
-    height: 40,
-    borderRadius: LOGO_RADIUS,
-    borderWidth: 1,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  flex: { flex: 1 },
+  heading: { fontFamily: Fonts.semiBold },
+  row: { borderRadius: ROW_RADIUS },
+  rowContent: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6, paddingLeft: 8, paddingRight: 4 },
+  logo: { width: 40, height: 40, borderRadius: LOGO_RADIUS, borderWidth: 1, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   logoImage: { width: '100%', height: '100%' },
+  apply: { borderRadius: PANEL_INNER_RADIUS },
 });

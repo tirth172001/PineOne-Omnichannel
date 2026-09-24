@@ -10,7 +10,7 @@ import { ScreenTabs } from '@/components/screen-tabs';
 import { ShellTabsProvider, useShellTabsConfig } from '@/components/shell-tabs';
 import { ShellTopBar } from '@/components/shell-top-bar';
 import { NavigationBar, type NavigationBarDestination } from '@/components/material3/navigation-bar';
-import { CURRENT_USER, ORGANISATIONS } from '@/data/businesses';
+import { ORGANISATIONS } from '@/data/businesses';
 import { useBusiness } from '@/hooks/use-business';
 import { ToastProvider } from '@/hooks/use-toast';
 
@@ -62,9 +62,8 @@ function Shell() {
         <ShellTopBar>
           <AppHeader
             organisationName={business.organisation.name}
-            shopName={business.scopeLabel}
+            shopName={`${business.scopeLabel} · ${business.channelLabel}`}
             organisationLogo={business.organisation.logo}
-            avatar={CURRENT_USER.avatar}
             onPressSwitcher={() => setSwitcherOpen(true)}
           />
           {screenTabs ? <ScreenTabs {...screenTabs} /> : null}
@@ -87,11 +86,8 @@ function Shell() {
         visible={switcherOpen}
         onDismiss={() => setSwitcherOpen(false)}
         organisations={ORGANISATIONS}
-        organisation={business.organisation}
-        shopIds={business.shopIds}
-        onSelectOrganisation={business.selectOrganisation}
-        onSelectShop={business.selectShop}
-        onSelectAllShops={() => business.setShopIds([])}
+        scope={{ organisationId: business.organisation.id, shopIds: business.shopIds, channel: business.channel }}
+        onApply={business.applyScope}
       />
     </View>
   );

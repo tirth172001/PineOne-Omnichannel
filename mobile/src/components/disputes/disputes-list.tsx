@@ -3,13 +3,12 @@ import { useMemo, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
-import { CompactSegmentedButtons, FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
+import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DetailScreen } from '@/components/shared/detail-screen';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
 import { StatusPill } from '@/components/shared/status';
 import { SummaryCards } from '@/components/shared/summary-cards';
-import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import {
   DISPUTE_STATUSES,
@@ -20,32 +19,29 @@ import {
   disputeStatusTone,
   parseInr,
 } from '@/data/disputes';
-
-const CHANNEL_OPTIONS = [
-  { value: 'in-store', label: 'In-store payments' },
-  { value: 'online', label: 'Online payment' },
-] as const;
+import { useBusiness } from '@/hooks/use-business';
 
 const STATUS_OPTIONS = [{ value: 'all', label: 'All statuses' }, ...DISPUTE_STATUSES.map((status) => ({ value: status, label: status }))] as const;
 
 const plural = (count: number) => `among ${count} payment${count === 1 ? '' : 's'}`;
 
 /**
- * Disputes (web: DisputesContent): In-store / Online, the Disputed and Won
- * amount summary, search, date and status filters, and the channel's disputes
+ * Disputes (web: DisputesContent): the header channel's disputes, the
+ * Disputed and Won amount summary, search, date and status filters, and the channel's disputes
  * as stacked records (dispute and transaction IDs, amount, created and due
  * dates, status and next action). Rows open the dispute detail.
  */
 export function DisputesList() {
   const theme = useTheme();
   const presets = useMemo(() => getDefaultDateRangePresets(), []);
-  const [channel, setChannel] = useState<'in-store' | 'online'>('in-store');
+  // Follows the header's channel; All channels lists both.
+  const { channel } = useBusiness();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | DisputeStatus>('all');
   const [dateRange, setDateRange] = useState(() => makeDateRangeValue(presets, 'today'));
   const muted = { color: theme.colors.onSurfaceVariant };
 
-  const forChannel = disputeRecords.filter((row) => row.channel === channel);
+  const forChannel = channel === 'all' ? disputeRecords : disputeRecords.filter((row) => row.channel === channel);
   const query = search.trim().toLowerCase();
   const rows = forChannel.filter((row) => {
     if (status !== 'all' && row.status !== status) return false;
@@ -56,7 +52,6 @@ export function DisputesList() {
 
   return (
     <DetailScreen title="Disputes" fallbackHref="/more">
-      <CompactSegmentedButtons value={channel} onValueChange={setChannel} options={CHANNEL_OPTIONS} radius={Shape.small} grow />
       <SummaryCards
         cards={[
           {

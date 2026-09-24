@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { useTheme } from 'react-native-paper';
 
-import { CURRENT_USER, ORGANISATIONS } from '@/data/businesses';
+import { ORGANISATIONS } from '@/data/businesses';
 
 import { AppHeader } from './app-header';
 import { NavigationBar, type NavigationBarDestination } from './material3/navigation-bar';
@@ -38,7 +38,6 @@ function AppShellDemo() {
           organisationName={org.name}
           shopName={org.shops[0].name}
           organisationLogo={org.logo}
-          avatar={CURRENT_USER.avatar}
         />
         {destination === 'payments' ? <ScreenTabs tabs={PAYMENT_TABS} activeKey={tab} onChange={setTab} /> : null}
       </ShellTopBar>

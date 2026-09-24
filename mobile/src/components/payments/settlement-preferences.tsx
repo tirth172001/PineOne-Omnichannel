@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Card, Divider, Icon, Switch, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { Button, Card, Divider, Icon, Switch, Text, useTheme } from 'react-native-paper';
 
 import { Tabs } from '@/components/material3/tabs';
 import { BankLogo } from '@/components/shared/bank-logo';
@@ -8,7 +8,8 @@ import { DetailScreen } from '@/components/shared/detail-screen';
 import { OutlineTag } from '@/components/shared/status';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
-import { channelLabel, SETTLEMENT_ACCOUNTS, type SettlementChannel } from '@/data/settlements';
+import { channelLabel, SETTLEMENT_ACCOUNTS } from '@/data/settlements';
+import { useBusiness } from '@/hooks/use-business';
 
 type Marker = 'pending' | 'done' | 'skipped';
 const MARKER: Record<Marker, { icon: string; color: string }> = {
@@ -40,28 +41,24 @@ const INNER_RADIUS = concentric(Shape.max, CARD_PADDING);
 
 /**
  * Settlement preferences (web: V3SettlementPreferencesContent): the channel
- * badge (tap to switch), Settlement cycle and Settlement account tabs, the
+ * badge (the header's channel), Settlement cycle and Settlement account tabs, the
  * weekend-settlement switch and T+1 default cycle, the worked timeline
  * examples, and the settlement accounts. The web's horizontal example
  * timelines run vertically on a phone.
  */
 export function SettlementPreferences() {
   const theme = useTheme();
-  const [channel, setChannel] = useState<SettlementChannel>('online');
+  // Read-only: the channel comes from the header switcher.
+  const { channel } = useBusiness();
   const [weekend, setWeekend] = useState(false);
   const [tab, setTab] = useState<'settlement-cycle' | 'settlement-account'>('settlement-cycle');
   const muted = { color: theme.colors.onSurfaceVariant };
 
   return (
     <DetailScreen title="Settlement preferences" fallbackHref="/payments?tab=settlements">
-      <TouchableRipple
-        onPress={() => setChannel((current) => (current === 'online' ? 'in-store' : 'online'))}
-        accessibilityRole="button"
-        accessibilityLabel={`${channelLabel(channel)} payments. Tap to switch channel`}
-        borderless
-        style={styles.channel}>
-        <OutlineTag label={`${channelLabel(channel)} payments`} muted />
-      </TouchableRipple>
+      <View style={styles.channel}>
+        <OutlineTag label={channel === 'all' ? 'All channels' : `${channelLabel(channel)} payments`} muted />
+      </View>
 
       <Tabs
         variant="secondary"

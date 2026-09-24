@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
 
-import { CompactSegmentedButtons, FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
+import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
 import { type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
@@ -13,25 +13,19 @@ import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { REFUND_AMOUNT_TYPES, REFUND_STATUSES, REFUND_SUMMARY, type RefundStatus, refundRows, refundStatusTone } from '@/data/refunds';
 
-const CHANNEL_OPTIONS = [
-  { value: 'in-store', label: 'In-store payments' },
-  { value: 'online', label: 'Online payment' },
-] as const;
-
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All statuses' },
   ...REFUND_STATUSES.map((status) => ({ value: status, label: status })),
 ] as const;
 
 /**
- * Payments → Refunds (web: RefundsContent): In-store / Online, Bulk refunds and
+ * Payments → Refunds (web: RefundsContent): Bulk refunds and
  * upload history, the Refunds pending / Refunded amount summary, search, date
  * and status filters, the Amount type filter, and the paginated refunds. As on
  * web, the channel toggle doesn't change the (shared) list.
  */
 export function RefundsView() {
   const theme = useTheme();
-  const [channel, setChannel] = useState<'in-store' | 'online'>('in-store');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | RefundStatus>('all');
   const [moreFilters, setMoreFilters] = useState<MoreFilterSelection>({});
@@ -59,7 +53,6 @@ export function RefundsView() {
 
   return (
     <View style={styles.container}>
-      <CompactSegmentedButtons value={channel} onValueChange={resetPage(setChannel)} options={CHANNEL_OPTIONS} radius={Shape.small} grow />
       <View style={styles.actions}>
         <OutlinedActionButton label="Bulk upload history" />
         <Button mode="contained" compact style={styles.primary}>

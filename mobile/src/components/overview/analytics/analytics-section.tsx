@@ -25,7 +25,6 @@ import { ChecklistSheet } from '@/components/shared/checklist-sheet';
 import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
 
 import { OverviewCard, OverviewCardDivider, OverviewCardHeader } from '../overview-card';
-import { StoreScopeNote } from '../store-scope';
 
 import { AnalyticsCard } from './analytics-card';
 import { CheckoutFunnel } from './checkout-funnel';
@@ -117,7 +116,6 @@ export function AnalyticsSection({ storeScale, channelScale }: AnalyticsSectionP
         <Text style={styles.title} accessibilityRole="header">
           Analytics
         </Text>
-        <StoreScopeNote />
         <View style={styles.controls}>
           <FilterMenuButton value={range} onValueChange={setRange} options={DAY_RANGE_OPTIONS} accessibilityLabel="Date" />
           <OutlinedActionButton label="Customize" icon="sliders" onPress={() => setCustomizeOpen(true)} />

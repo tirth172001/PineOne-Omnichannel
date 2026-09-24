@@ -9,16 +9,15 @@ type AppHeaderProps = {
   organisationName: string;
   shopName: string;
   organisationLogo?: ImageSourcePropType;
-  avatar?: ImageSourcePropType;
-  /** Opens the org/shop switcher. */
+  /** Opens the org / store / channel switcher. */
   onPressSwitcher?: () => void;
   onPressNotifications?: () => void;
-  onPressAvatar?: () => void;
 };
 
 /**
- * App shell header (Figma node 47:2350): org/shop switcher on the left,
- * notifications + account on the right. Built on Paper's Appbar.Header (which
+ * App shell header (Figma node 47:2350): org / store / channel switcher on
+ * the left, notifications on the right. The Figma's account avatar is left
+ * out (user decision); account lives in the More tab. Built on Paper's Appbar.Header (which
  * handles the status-bar inset and 64dp height), laid out to the Figma spec.
  * Transparent: it sits inside the shell's rounded top bar, which paints the surface.
  */
@@ -26,10 +25,8 @@ export function AppHeader({
   organisationName,
   shopName,
   organisationLogo,
-  avatar,
   onPressSwitcher,
   onPressNotifications,
-  onPressAvatar,
 }: AppHeaderProps) {
   const theme = useTheme();
   const tileStyle = [styles.tile, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceVariant }];
@@ -41,7 +38,7 @@ export function AppHeader({
           onPress={onPressSwitcher}
           borderless
           accessibilityRole="button"
-          accessibilityLabel={`${organisationName}, ${shopName}. Switch organisation or store`}
+          accessibilityLabel={`${organisationName}, ${shopName}. Switch organisation, store or channel`}
           style={styles.switcher}>
           <View style={styles.switcherContent}>
             <View style={styles.slot}>
@@ -76,16 +73,6 @@ export function AppHeader({
             accessibilityLabel="Notifications"
             style={styles.iconButton}
           />
-          <TouchableRipple
-            onPress={onPressAvatar}
-            borderless
-            accessibilityRole="button"
-            accessibilityLabel="Account"
-            style={styles.slot}>
-            <View style={tileStyle}>
-              {avatar ? <Image source={avatar} style={styles.tileImage} contentFit="cover" /> : null}
-            </View>
-          </TouchableRipple>
         </View>
       </View>
     </Appbar.Header>
