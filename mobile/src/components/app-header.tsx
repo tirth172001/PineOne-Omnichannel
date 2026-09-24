@@ -7,6 +7,8 @@ import { concentric, Shape } from '@/constants/shape';
 
 type AppHeaderProps = {
   organisationName: string;
+  /** Shown in place of the organisation name, e.g. the tab's page name ("Payments"). */
+  title?: string;
   shopName: string;
   organisationLogo?: ImageSourcePropType;
   /** Opens the org / store / channel switcher. */
@@ -23,6 +25,7 @@ type AppHeaderProps = {
  */
 export function AppHeader({
   organisationName,
+  title = organisationName,
   shopName,
   organisationLogo,
   onPressSwitcher,
@@ -38,7 +41,7 @@ export function AppHeader({
           onPress={onPressSwitcher}
           borderless
           accessibilityRole="button"
-          accessibilityLabel={`${organisationName}, ${shopName}. Switch organisation, store or channel`}
+          accessibilityLabel={`${title}, ${shopName}. Switch organisation, store or channel`}
           style={styles.switcher}>
           <View style={styles.switcherContent}>
             <View style={styles.slot}>
@@ -54,7 +57,7 @@ export function AppHeader({
             </View>
             <View>
               <Text variant="titleMedium" numberOfLines={1}>
-                {organisationName}
+                {title}
               </Text>
               <Text variant="bodySmall" numberOfLines={1} style={{ color: theme.colors.onSurfaceVariant }}>
                 {shopName}

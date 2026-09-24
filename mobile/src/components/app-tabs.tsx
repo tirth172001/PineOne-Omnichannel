@@ -62,6 +62,8 @@ function Shell() {
         <ShellTopBar>
           <AppHeader
             organisationName={business.organisation.name}
+            // Overview is titled with the business; the other tabs with their page name.
+            title={active.key === 'index' ? undefined : active.label}
             shopName={business.scopeText(pathname === '/')}
             organisationLogo={business.organisation.logo}
             onPressSwitcher={openScopeSwitcher}
