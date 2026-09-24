@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Card, Divider, Text, useTheme } from 'react-native-paper';
+import { Card, Divider, Icon, Text, useTheme } from 'react-native-paper';
 
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
@@ -11,17 +11,34 @@ const SECTION_CARD_PADDING = 16;
 /** Radius for containers inside a SectionCard (16dp from its edge). */
 export const SECTION_CARD_INNER_RADIUS = concentric(Shape.max, SECTION_CARD_PADDING);
 
-/** A titled card holding one segment of a detail page (details, activity, products…). */
-export function SectionCard({ title, children }: { title: string; children: ReactNode }) {
+/** Icons for detail sections by title (card headers); anything else gets `info`. */
+const SECTION_ICONS: Record<string, string> = {
+  Activity: 'clock-counter-clockwise',
+  'Transaction details': 'receipt',
+  'Merchant details': 'storefront',
+  'Customer details': 'user-circle',
+  'EMI details': 'calendar-blank',
+  'Product details': 'shopping-cart',
+  'Dispute details': 'gavel',
+};
+
+/**
+ * A card holding one segment of a detail page (details, activity, products…),
+ * headed like the Overview summary cards: icon and uppercase muted title,
+ * then a full-width divider above the content.
+ */
+export function SectionCard({ title, icon, children }: { title: string; icon?: string; children: ReactNode }) {
   const theme = useTheme();
   return (
     <Card mode="outlined" style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
-      <View style={styles.cardBody}>
-        <Text variant="titleMedium" style={styles.cardTitle} accessibilityRole="header">
-          {title}
+      <View style={styles.cardHeader}>
+        <Icon source={icon ?? SECTION_ICONS[title] ?? 'info'} size={16} color={theme.colors.onSurfaceVariant} />
+        <Text variant="labelLarge" style={[styles.cardTitle, { color: theme.colors.onSurfaceVariant }]} accessibilityRole="header">
+          {title.toUpperCase()}
         </Text>
-        {children}
       </View>
+      <Divider />
+      <View style={styles.cardBody}>{children}</View>
     </Card>
   );
 }
@@ -83,15 +100,16 @@ function DetailRowList({ rows }: { rows: DetailRowData[] }) {
 
 /** Sections separated by dividers, as the web separates them with h-px rules — or, with `carded`, each in its own card. */
 export function DetailSections({ sections, carded = false }: { sections: { title: string; rows: DetailRowData[] }[]; carded?: boolean }) {
+  // Cards are returned bare so they share the parent's gap with sibling cards.
   if (carded) {
     return (
-      <View style={styles.cards}>
+      <>
         {sections.map((section) => (
           <SectionCard key={section.title} title={section.title}>
             <DetailRowList rows={section.rows} />
           </SectionCard>
         ))}
-      </View>
+      </>
     );
   }
   return (
@@ -108,10 +126,11 @@ export function DetailSections({ sections, carded = false }: { sections: { title
 
 const styles = StyleSheet.create({
   sections: { gap: 20 },
-  cards: { gap: 12 },
   card: { borderRadius: Shape.max },
+  // Same header as the Overview summary cards (OverviewCardHeader).
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: SECTION_CARD_PADDING },
+  cardTitle: { letterSpacing: 0.6 },
   cardBody: { padding: SECTION_CARD_PADDING, gap: 12 },
-  cardTitle: { fontFamily: Fonts.semiBold },
   section: { gap: 12 },
   // Web: text-xl font-medium.
   title: { fontFamily: Fonts.medium, fontSize: 20, lineHeight: 24 },

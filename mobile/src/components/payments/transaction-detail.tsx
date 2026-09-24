@@ -8,7 +8,7 @@ import { DimmedDecimalAmount } from '@/components/shared/amount';
 import { CompactSegmentedButtons } from '@/components/shared/controls';
 import { CopyableValue } from '@/components/shared/copyable-value';
 import { DetailRow, DetailSections, SECTION_CARD_INNER_RADIUS, SectionCard } from '@/components/shared/detail-rows';
-import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen, type StatusGradientTone } from '@/components/shared/detail-screen';
+import { CollapsingDetailScreen, DETAIL_FOOTER_BUTTON_RADIUS, type StatusGradientTone } from '@/components/shared/detail-screen';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { StatusPill } from '@/components/shared/status';
 import { Shape } from '@/constants/shape';
@@ -51,11 +51,39 @@ export function TransactionDetail({ transaction, channel }: { transaction: Trans
   const [chargeSlipOpen, setChargeSlipOpen] = useState(false);
   const [productOpen, setProductOpen] = useState(false);
 
+  // Centred summary; it collapses into the header (amount + pay mode) on scroll.
+  const hero = (
+    <View style={styles.hero}>
+      <View style={[styles.modeTile, { backgroundColor: theme.colors.primary }]}>
+        <Icon source={transaction.paymentMode === 'card' ? 'credit-card' : 'qr-code'} size={32} color={theme.colors.onPrimary} />
+      </View>
+      <DimmedDecimalAmount value={amount(transaction.amount)} size="hero" />
+      {/* Wrapped so the pill (which aligns itself to the start) centres in the hero. */}
+      <View>
+        <StatusPill label={transaction.status.label} tone={transaction.status.tone} radius={Shape.max} />
+      </View>
+      <Text variant="bodyMedium" style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>
+        Payment mode: {transaction.provider}
+        {'\n'}
+        {online ? 'Last updated on' : 'Transaction on'}: {transaction.date}, {transaction.time}
+      </Text>
+      {online ? (
+        <View style={styles.pills}>
+          <CopyableValue variant="pill" value={transaction.transactionId} label={`Transaction ID: ${transaction.transactionId}`} />
+          <CopyableValue variant="pill" value={transaction.orderId} label={`Order ID: ${transaction.orderId}`} />
+          <CopyableValue variant="pill" value={transaction.merchantId} label={`Merchant ID: ${transaction.merchantId}`} />
+        </View>
+      ) : null}
+    </View>
+  );
+
   return (
-    <DetailScreen
-      title="Transaction details"
+    <CollapsingDetailScreen
       fallbackHref="/payments?tab=transactions"
       gradient={GRADIENT[transaction.status.tone]}
+      compactTitle={amount(transaction.amount)}
+      compactSubtitle={`${transaction.paymentLabel} · ${transaction.provider}`}
+      hero={hero}
       footer={
         <>
           {!online ? (
@@ -65,7 +93,7 @@ export function TransactionDetail({ transaction, channel }: { transaction: Trans
               textColor={theme.colors.onSurface}
               style={[styles.footerButton, { borderColor: theme.colors.outlineVariant }]}
               labelStyle={styles.footerLabel}>
-              View chargeslip / receipt
+              Chargeslip / receipt
             </Button>
           ) : null}
           <Button mode="contained" onPress={() => setRefundOpen(true)} style={styles.footerButton} labelStyle={styles.footerLabel}>
@@ -74,67 +102,44 @@ export function TransactionDetail({ transaction, channel }: { transaction: Trans
         </>
       }>
 
-      {/* Centred hero, then one card per segment; Activity comes first (user decision). */}
-      <View style={styles.hero}>
-        <View style={[styles.modeTile, { backgroundColor: theme.colors.primary }]}>
-          <Icon source={transaction.paymentMode === 'card' ? 'credit-card' : 'qr-code'} size={32} color={theme.colors.onPrimary} />
-        </View>
-        <DimmedDecimalAmount value={amount(transaction.amount)} size="hero" />
-        {/* Wrapped so the pill (which aligns itself to the start) centres in the hero. */}
-        <View>
-          <StatusPill label={transaction.status.label} tone={transaction.status.tone} radius={Shape.max} />
-        </View>
-        <Text variant="bodyMedium" style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>
-          Payment mode: {transaction.provider}
-          {'\n'}
-          {online ? 'Last updated on' : 'Transaction on'}: {transaction.date}, {transaction.time}
-        </Text>
+      {/* One card per segment, evenly spaced; Activity comes first (user decision). */}
+      <View style={styles.cards}>
+        <ActivityTimeline events={events} carded />
+        <DetailSections
+          carded
+          sections={(online ? ONLINE_SECTIONS : getInStoreSections(transaction)).map((section) => ({ title: section.title, rows: section.fields }))}
+        />
         {online ? (
-          <View style={styles.pills}>
-            <CopyableValue variant="pill" value={transaction.transactionId} label={`Transaction ID: ${transaction.transactionId}`} />
-            <CopyableValue variant="pill" value={transaction.orderId} label={`Order ID: ${transaction.orderId}`} />
-            <CopyableValue variant="pill" value={transaction.merchantId} label={`Merchant ID: ${transaction.merchantId}`} />
-          </View>
+          <SectionCard title="Product details">
+            {ONLINE_PRODUCTS.map((product, index) => (
+              <TouchableRipple
+                key={index}
+                onPress={() => setProductOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`Product ${product}, view details`}
+                borderless
+                style={[styles.productRow, { borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }]}>
+                <View style={styles.productRowContent}>
+                  <Text variant="bodyMedium" style={styles.regular}>
+                    Product: {product}
+                  </Text>
+                  <View style={styles.inlineLink}>
+                    <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
+                      View details
+                    </Text>
+                    <Icon source="caret-right" size={14} color={theme.colors.primary} />
+                  </View>
+                </View>
+              </TouchableRipple>
+            ))}
+          </SectionCard>
         ) : null}
       </View>
-
-      <ActivityTimeline events={events} carded />
-
-      <DetailSections
-        carded
-        sections={(online ? ONLINE_SECTIONS : getInStoreSections(transaction)).map((section) => ({ title: section.title, rows: section.fields }))}
-      />
-
-      {online ? (
-        <SectionCard title="Product details">
-          {ONLINE_PRODUCTS.map((product, index) => (
-            <TouchableRipple
-              key={index}
-              onPress={() => setProductOpen(true)}
-              accessibilityRole="button"
-              accessibilityLabel={`Product ${product}, view details`}
-              borderless
-              style={[styles.productRow, { borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }]}>
-              <View style={styles.productRowContent}>
-                <Text variant="bodyMedium" style={styles.regular}>
-                  Product: {product}
-                </Text>
-                <View style={styles.inlineLink}>
-                  <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
-                    View details
-                  </Text>
-                  <Icon source="caret-right" size={14} color={theme.colors.primary} />
-                </View>
-              </View>
-            </TouchableRipple>
-          ))}
-        </SectionCard>
-      ) : null}
 
       <ProductPanel visible={productOpen} onDismiss={() => setProductOpen(false)} />
       <RefundPanel transaction={transaction} visible={refundOpen} onDismiss={() => setRefundOpen(false)} />
       <ChargeSlipPanel transaction={transaction} visible={chargeSlipOpen} onDismiss={() => setChargeSlipOpen(false)} />
-    </DetailScreen>
+    </CollapsingDetailScreen>
   );
 }
 
@@ -293,7 +298,8 @@ function ChargeSlipPanel({ transaction, visible, onDismiss }: { transaction: Tra
 const styles = StyleSheet.create({
   footerButton: { flex: 1, borderRadius: DETAIL_FOOTER_BUTTON_RADIUS },
   footerLabel: { marginHorizontal: 8 },
-  hero: { gap: 10, alignItems: 'center', paddingVertical: 8 },
+  hero: { gap: 10, alignItems: 'center', paddingBottom: 8 },
+  cards: { gap: 12 },
   modeTile: { width: 48, height: 48, borderRadius: Shape.small, alignItems: 'center', justifyContent: 'center' },
   meta: { fontFamily: Fonts.regular, lineHeight: 22, textAlign: 'center' },
   pills: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },

@@ -1,6 +1,6 @@
 import { router, type Href } from 'expo-router';
-import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { type ReactNode, useState } from 'react';
+import { Animated, ScrollView, StyleSheet, View } from 'react-native';
 import { Appbar, Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
@@ -8,6 +8,7 @@ import { useOpenScopeSwitcher } from '@/components/scope-switcher';
 import { ShellTopBar } from '@/components/shell-top-bar';
 import { useBusiness } from '@/hooks/use-business';
 import { concentric, Shape } from '@/constants/shape';
+import { Fonts } from '@/constants/theme';
 
 import { useSvgId } from './hatch';
 
@@ -133,6 +134,95 @@ function ScopedTitle({ title }: { title: string }) {
   );
 }
 
+type CollapsingDetailScreenProps = {
+  fallbackHref: Href;
+  gradient?: StatusGradientTone;
+  /** Large summary at the top of the page (e.g. mode tile, amount, status, meta). */
+  hero: ReactNode;
+  /** What the hero collapses into in the header, e.g. the amount… */
+  compactTitle: string;
+  /** …and the pay mode under it. */
+  compactSubtitle?: string;
+  footer?: ReactNode;
+  children: ReactNode;
+};
+
+/**
+ * Detail screen whose header starts as just a back button over the status
+ * gradient. As the page scrolls, the hero shrinks and fades while a compact
+ * version of it (compactTitle / compactSubtitle) slides into the header and
+ * the header's surface fades in behind it — all driven continuously by the
+ * scroll position, so the hand-off is seamless.
+ */
+export function CollapsingDetailScreen({
+  fallbackHref,
+  gradient,
+  hero,
+  compactTitle,
+  compactSubtitle,
+  footer,
+  children,
+}: CollapsingDetailScreenProps) {
+  const theme = useTheme();
+  const goBack = () => (router.canGoBack() ? router.back() : router.navigate(fallbackHref));
+  const [scrollY] = useState(() => new Animated.Value(0));
+  const [headerHeight, setHeaderHeight] = useState(64);
+  const [heroHeight, setHeroHeight] = useState(180);
+  // Scroll distance over which the hero hands off to the header.
+  const collapse = Math.max(heroHeight - 24, 1);
+  const range = (input: number[], output: number[]) => scrollY.interpolate({ inputRange: input, outputRange: output, extrapolate: 'clamp' });
+
+  const surfaceOpacity = range([collapse * 0.5, collapse], [0, 1]);
+  const heroOpacity = range([0, collapse * 0.75], [1, 0]);
+  const heroScale = range([0, collapse], [1, 0.8]);
+  // Drifts down a little as it scrolls up, so it appears to sink into the header.
+  const heroShift = range([0, collapse], [0, collapse * 0.3]);
+  const compactOpacity = range([collapse * 0.6, collapse], [0, 1]);
+  const compactShift = range([collapse * 0.6, collapse], [10, 0]);
+
+  return (
+    <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
+      <Animated.ScrollView
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        scrollEventThrottle={16}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}>
+        {gradient ? <StatusGradient tone={gradient} /> : null}
+        <Animated.View
+          onLayout={(event) => setHeroHeight(event.nativeEvent.layout.height)}
+          style={{ opacity: heroOpacity, transform: [{ translateY: heroShift }, { scale: heroScale }] }}>
+          {hero}
+        </Animated.View>
+        {children}
+      </Animated.ScrollView>
+
+      {/* Floats over the content so the gradient runs up behind it until the surface fades in. */}
+      <View style={styles.floatingHeader} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <Animated.View pointerEvents="none" style={[styles.headerSurface, { backgroundColor: theme.colors.surface, opacity: surfaceOpacity }]} />
+        <Appbar.Header mode="small" elevated={false} style={styles.appbar}>
+          <Appbar.Action icon="arrow-left" onPress={goBack} accessibilityLabel="Back" style={styles.headerButton} />
+          <Animated.View
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={[styles.compact, { opacity: compactOpacity, transform: [{ translateY: compactShift }] }]}>
+            <Text variant="titleMedium" numberOfLines={1} style={styles.compactTitle}>
+              {compactTitle}
+            </Text>
+            {compactSubtitle ? (
+              <Text variant="bodySmall" numberOfLines={1} style={{ color: theme.colors.onSurfaceVariant }}>
+                {compactSubtitle}
+              </Text>
+            ) : null}
+          </Animated.View>
+        </Appbar.Header>
+      </View>
+
+      {footer ? <View style={[styles.footer, { backgroundColor: theme.colors.surface }]}>{footer}</View> : null}
+    </View>
+  );
+}
+
 export const DETAIL_HEADER_BUTTON_STYLE = { borderRadius: HEADER_BUTTON_RADIUS };
 
 const styles = StyleSheet.create({
@@ -145,6 +235,19 @@ const styles = StyleSheet.create({
   scopeText: { flexShrink: 1 },
   content: { padding: 16, paddingBottom: 32, gap: 24 },
   gradient: { position: 'absolute', top: 0, left: 0, right: 0 },
+  floatingHeader: { position: 'absolute', top: 0, left: 0, right: 0 },
+  // Same shape as the shell's top bar: attached to the top edge, bottom corners rounded.
+  headerSurface: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderBottomLeftRadius: Shape.max,
+    borderBottomRightRadius: Shape.max,
+  },
+  compact: { flex: 1, paddingHorizontal: 8 },
+  compactTitle: { fontFamily: Fonts.semiBold },
   // Attached to the bottom edge, so only the content-facing (top) corners are rounded.
   footer: {
     flexDirection: 'row',
