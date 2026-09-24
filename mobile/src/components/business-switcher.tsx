@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Checkbox, Icon, RadioButton, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { Button, Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
+import { SelectionMark } from '@/components/shared/selection-mark';
 import { concentric } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import type { Organisation } from '@/data/businesses';
@@ -103,7 +104,7 @@ export function BusinessSwitcher({ visible, onDismiss, organisations, scope, onA
                   {org.shops.length} stores
                 </Text>
               </View>
-              <RadioButton.Android value={org.id} status={org.id === draft.organisationId ? 'checked' : 'unchecked'} />
+              <SelectionMark type="radio" checked={org.id === draft.organisationId} />
             </>,
             // A different organisation starts on all of its stores.
             () => setDraft((current) => (current.organisationId === org.id ? current : { ...current, organisationId: org.id, shopIds: [] })),
@@ -127,7 +128,7 @@ export function BusinessSwitcher({ visible, onDismiss, organisations, scope, onA
                 {organisation.shops.length} stores
               </Text>
             </View>
-            <Checkbox status={allStores ? 'checked' : 'unchecked'} />
+            <SelectionMark type="checkbox" checked={allStores} />
           </>,
           () => setDraft((current) => ({ ...current, shopIds: [] })),
           allStores,
@@ -145,7 +146,7 @@ export function BusinessSwitcher({ visible, onDismiss, organisations, scope, onA
                   {shop.address}
                 </Text>
               </View>
-              <Checkbox status={checked ? 'checked' : 'unchecked'} />
+              <SelectionMark type="checkbox" checked={checked} />
             </>,
             () => toggleShop(shop.id),
             !allStores && checked,
@@ -169,7 +170,7 @@ export function BusinessSwitcher({ visible, onDismiss, organisations, scope, onA
                   {CHANNEL_DESCRIPTIONS[option.value]}
                 </Text>
               </View>
-              <RadioButton.Android value={option.value} status={draft.channel === option.value ? 'checked' : 'unchecked'} />
+              <SelectionMark type="radio" checked={draft.channel === option.value} />
             </>,
             () => setDraft((current) => ({ ...current, channel: option.value })),
             draft.channel === option.value,

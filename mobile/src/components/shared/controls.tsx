@@ -1,8 +1,15 @@
 import { useState } from 'react';
-import { StyleSheet } from 'react-native';
-import { Button, Menu, SegmentedButtons, useTheme } from 'react-native-paper';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Button, SegmentedButtons, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { Shape } from '@/constants/shape';
+
+import { PANEL_INNER_RADIUS, PanelSheet } from './panel-sheet';
+import { SelectionMark } from './selection-mark';
+
+/** Sheet handle, title row and padding around the option list. */
+const SHEET_CHROME = 120;
+const OPTION_HEIGHT = 52;
 
 /**
  * Compact M3 segmented buttons for in-page toggles (In-store / Online,
@@ -50,8 +57,10 @@ export function CompactSegmentedButtons<T extends string>({
 }
 
 /**
- * Outlined filter button that opens a menu of options, showing the current
- * choice with a caret (web: FilterControl, a select-style dropdown).
+ * Outlined filter button showing the current choice with a caret (web:
+ * FilterControl, a select-style dropdown). On a phone it opens a bottom sheet
+ * of options (user decision) rather than a dropdown menu; picking one applies
+ * it and closes the sheet.
  */
 export function FilterMenuButton<T extends string>({
   value,
@@ -59,44 +68,61 @@ export function FilterMenuButton<T extends string>({
   options,
   icon,
   accessibilityLabel,
+  title,
 }: {
   value: T;
   onValueChange: (value: T) => void;
   options: readonly { value: T; label: string }[];
   icon?: string;
   accessibilityLabel: string;
+  /** Sheet title; defaults to the accessibility label (e.g. "Status"). */
+  title?: string;
 }) {
   const [open, setOpen] = useState(false);
   const theme = useTheme();
+  const { height: windowHeight } = useWindowDimensions();
   const selected = options.find((option) => option.value === value);
+  // Fit the options, up to the panel's usual 86% of the screen (then the list scrolls).
+  const sheetHeight = Math.min(SHEET_CHROME + options.length * OPTION_HEIGHT, Math.round(windowHeight * 0.86));
 
   return (
-    <Menu
-      visible={open}
-      onDismiss={() => setOpen(false)}
-      anchorPosition="bottom"
-      contentStyle={{ borderRadius: Shape.small, backgroundColor: theme.colors.surface }}
-      anchor={
-        <OutlinedActionButton
-          label={selected?.label ?? ''}
-          icon={icon ?? 'caret-down'}
-          trailingIcon={!icon}
-          onPress={() => setOpen(true)}
-          accessibilityLabel={`${accessibilityLabel}: ${selected?.label ?? ''}`}
-        />
-      }>
-      {options.map((option) => (
-        <Menu.Item
-          key={option.value}
-          title={option.label}
-          trailingIcon={option.value === value ? 'check' : undefined}
-          onPress={() => {
-            setOpen(false);
-            onValueChange(option.value);
-          }}
-        />
-      ))}
-    </Menu>
+    <>
+      <OutlinedActionButton
+        label={selected?.label ?? ''}
+        icon={icon ?? 'caret-down'}
+        trailingIcon={!icon}
+        onPress={() => setOpen(true)}
+        accessibilityLabel={`${accessibilityLabel}: ${selected?.label ?? ''}`}
+      />
+      <PanelSheet visible={open} onDismiss={() => setOpen(false)} title={title ?? accessibilityLabel} height={sheetHeight}>
+        <View style={styles.options}>
+          {options.map((option) => {
+            const checked = option.value === value;
+            return (
+              <TouchableRipple
+                key={option.value}
+                onPress={() => {
+                  setOpen(false);
+                  onValueChange(option.value);
+                }}
+                borderless
+                accessibilityRole="radio"
+                aria-checked={checked}
+                accessibilityState={{ checked }}
+                accessibilityLabel={option.label}
+                style={[styles.option, checked && { backgroundColor: theme.colors.secondaryContainer }]}>
+                <View style={styles.optionContent}>
+                  <Text variant="bodyLarge" style={styles.optionLabel}>
+                    {option.label}
+                  </Text>
+                  <SelectionMark type="radio" checked={checked} />
+                </View>
+              </TouchableRipple>
+            );
+          })}
+        </View>
+      </PanelSheet>
+    </>
   );
 }
 
@@ -147,6 +173,10 @@ export function OutlinedActionButton({
 }
 
 const styles = StyleSheet.create({
+  options: { padding: 16, paddingTop: 8, gap: 4 },
+  option: { borderRadius: PANEL_INNER_RADIUS },
+  optionContent: { flexDirection: 'row', alignItems: 'center', minHeight: 48, paddingLeft: 12 },
+  optionLabel: { flex: 1 },
   segmentsGrow: { flexGrow: 1, flexBasis: 240 },
   segmentLabel: { fontSize: 12 },
   // Standalone page-level controls (not nested in a container).

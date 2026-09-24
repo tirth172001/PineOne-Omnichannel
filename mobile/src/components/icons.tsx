@@ -33,6 +33,8 @@ import { MegaphoneIcon } from 'phosphor-react-native/src/icons/Megaphone';
 import { PlugIcon } from 'phosphor-react-native/src/icons/Plug';
 import { PathIcon } from 'phosphor-react-native/src/icons/Path';
 import { HandshakeIcon } from 'phosphor-react-native/src/icons/Handshake';
+import { CheckSquareIcon } from 'phosphor-react-native/src/icons/CheckSquare';
+import { SquareIcon } from 'phosphor-react-native/src/icons/Square';
 import { ArrowsLeftRightIcon } from 'phosphor-react-native/src/icons/ArrowsLeftRight';
 import { ArrowUpIcon } from 'phosphor-react-native/src/icons/ArrowUp';
 import { ArrowUpRightIcon } from 'phosphor-react-native/src/icons/ArrowUpRight';
@@ -139,6 +141,8 @@ import { XCircleIcon } from 'phosphor-react-native/src/icons/XCircle';
  */
 const ICONS = {
   'arrows-left-right': ArrowsLeftRightIcon,
+  'check-square': CheckSquareIcon,
+  square: SquareIcon,
   'user-plus': UserPlusIcon,
   'phone': PhoneIcon,
   'key': KeyIcon,
