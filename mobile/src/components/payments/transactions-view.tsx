@@ -15,7 +15,7 @@ import {
 import { EmailReportSheet } from '@/components/shared/email-report-sheet';
 import { LIST_ROW_INNER_RADIUS, ListingToolbar } from '@/components/shared/listing';
 import { type MoreFilterCategory, type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
-import { PaginationBar } from '@/components/shared/pagination-bar';
+import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { StatusPill } from '@/components/shared/status';
 import { SummaryCards } from '@/components/shared/summary-cards';
 import { Shape } from '@/constants/shape';
@@ -155,8 +155,7 @@ export function TransactionsView() {
   const [providerFilter, setProviderFilter] = useState('all');
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<'all' | 'order' | 'payment'>('all');
   const [moreFilters, setMoreFilters] = useState<MoreFilterSelection>({});
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [page, setPage] = useState(1);
+  const lazy = useLazyList();
   const [emailOpen, setEmailOpen] = useState(false);
   // Switching channel resets the channel-specific filters and the page, as the web's mode toggle did.
   const [lastMode, setLastMode] = useState(mode);
@@ -166,7 +165,7 @@ export function TransactionsView() {
     setTransactionTypeFilter('all');
     setPaymentModeFilter('all');
     setProviderFilter('all');
-    setPage(1);
+    lazy.reset();
   }
 
   const modeRows = useMemo(() => {
@@ -233,17 +232,14 @@ export function TransactionsView() {
         .includes(query);
     });
   }, [appliedRange, categories, mode, modeRows, moreFilters, paymentModeFilter, providerFilter, search, statusFilter, transactionTypeFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
-  const currentPage = Math.min(page, totalPages);
   // Newest first so each day forms one group (the web lists in source order).
   const sortedRows = useMemo(() => sortNewestFirst(filteredRows, (row) => displayTimestamp(row.date, row.time)), [filteredRows]);
-  const visibleRows = sortedRows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const visibleRows = sortedRows.slice(0, lazy.count);
   const totalVolume = filteredRows.reduce((sum, row) => sum + row.amount, 0);
-  // Any filter change goes back to page 1, as on web.
-  const resetPage = <T,>(setter: (value: T) => void) => (value: T) => {
+  // Any filter change starts the list again from the first rows.
+  const resetList = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
-    setPage(1);
+    lazy.reset();
   };
 
   return (
@@ -260,7 +256,7 @@ export function TransactionsView() {
               { key: 'payments', label: 'By payments' },
             ]}
             activeKey={onlineView}
-            onChange={(key) => resetPage(setOnlineView)(key as OnlineView)}
+            onChange={(key) => resetList(setOnlineView)(key as OnlineView)}
             indicatorColor={theme.colors.onSurface}
             style={styles.onlineTabs}
           />
@@ -269,16 +265,16 @@ export function TransactionsView() {
 
       <ListingToolbar
         search={search}
-        onSearchChange={resetPage(setSearch)}
+        onSearchChange={resetList(setSearch)}
         searchPlaceholder={mode === 'in-store' ? 'Search by any ID' : 'Search by any value'}
         filters={
           <>
-            <DateRangeFilter presets={presets} value={dateRange} onApply={resetPage(setDateRange)} initialPresetId="30d" />
-            <FilterMenuButton value={statusFilter} onValueChange={resetPage(setStatusFilter)} options={STATUS_OPTIONS} accessibilityLabel="Status" />
+            <DateRangeFilter presets={presets} value={dateRange} onApply={resetList(setDateRange)} initialPresetId="30d" />
+            <FilterMenuButton value={statusFilter} onValueChange={resetList(setStatusFilter)} options={STATUS_OPTIONS} accessibilityLabel="Status" />
             {mode === 'online' ? (
               <FilterMenuButton
                 value={transactionTypeFilter}
-                onValueChange={resetPage(setTransactionTypeFilter)}
+                onValueChange={resetList(setTransactionTypeFilter)}
                 options={TRANSACTION_TYPE_OPTIONS}
                 accessibilityLabel="Transaction type"
               />
@@ -286,12 +282,12 @@ export function TransactionsView() {
               <>
                 <FilterMenuButton
                   value={paymentModeFilter}
-                  onValueChange={resetPage(setPaymentModeFilter)}
+                  onValueChange={resetList(setPaymentModeFilter)}
                   options={PAYMENT_MODE_OPTIONS}
                   accessibilityLabel="Payment mode"
                 />
-                <FilterMenuButton value={providerFilter} onValueChange={resetPage(setProviderFilter)} options={PROVIDER_OPTIONS} accessibilityLabel="Provider" />
-                <MoreFilters categories={categories} applied={moreFilters} onApply={resetPage(setMoreFilters)} />
+                <FilterMenuButton value={providerFilter} onValueChange={resetList(setProviderFilter)} options={PROVIDER_OPTIONS} accessibilityLabel="Provider" />
+                <MoreFilters categories={categories} applied={moreFilters} onApply={resetList(setMoreFilters)} />
               </>
             )}
           </>
@@ -325,14 +321,7 @@ export function TransactionsView() {
         )}
       />
 
-      <PaginationBar
-        page={currentPage}
-        totalPages={totalPages}
-        rowsPerPage={rowsPerPage}
-        totalRows={filteredRows.length}
-        onPageChange={setPage}
-        onRowsPerPageChange={resetPage(setRowsPerPage)}
-      />
+      <LazyListFooter lazy={lazy} total={filteredRows.length} noun="transactions" />
 
       <EmailReportSheet visible={emailOpen} onDismiss={() => setEmailOpen(false)} />
     </View>

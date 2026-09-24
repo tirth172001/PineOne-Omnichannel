@@ -8,6 +8,7 @@ import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/cont
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen } from '@/components/shared/detail-screen';
 import { DateTimeField, type DateTimeValue, FormField, FormTextInput } from '@/components/shared/form-fields';
+import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine } from '@/components/shared/listing';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { RowActionsMenu } from '@/components/shared/row-actions';
@@ -183,6 +184,7 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
   const [dateRange, setDateRange] = useState(() => makeDateRangeValue(presets, 'today'));
   const [createOpen, setCreateOpen] = useState(startCreating);
   const [createSeed, setCreateSeed] = useState<Partial<CreatePaymentLinkValues>>();
+  const lazy = useLazyList();
   const muted = { color: theme.colors.onSurfaceVariant };
   const activeField = PAYMENT_LINK_SEARCH_FIELDS.find((field) => field.id === searchField) ?? PAYMENT_LINK_SEARCH_FIELDS[0];
 
@@ -232,14 +234,30 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
       }>
       <View style={styles.toolbar}>
         <View style={styles.searchRow}>
-          <FilterMenuButton value={searchField} onValueChange={setSearchField} options={SEARCH_FIELD_OPTIONS} accessibilityLabel="Search by" />
+          <FilterMenuButton value={searchField} onValueChange={(value) => {
+              setSearchField(value);
+              lazy.reset();
+            }}
+            options={SEARCH_FIELD_OPTIONS} accessibilityLabel="Search by" />
           <View style={styles.flex}>
-            <SearchField value={search} onChangeText={setSearch} placeholder={`Enter ${activeField.label.toLowerCase()}`} radius={Shape.small} />
+            <SearchField
+              value={search}
+              onChangeText={(value) => {
+                setSearch(value);
+                lazy.reset();
+              }}
+              placeholder={`Enter ${activeField.label.toLowerCase()}`} radius={Shape.small} />
           </View>
         </View>
         <View style={styles.filters}>
           <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="today" />
-          <FilterMenuButton value={status} onValueChange={setStatus} options={STATUS_OPTIONS} accessibilityLabel="Status" />
+          <FilterMenuButton
+            value={status}
+            onValueChange={(value) => {
+              setStatus(value);
+              lazy.reset();
+            }}
+            options={STATUS_OPTIONS} accessibilityLabel="Status" />
           <OutlinedActionButton label="Download filtered" icon="download-simple" />
         </View>
       </View>
@@ -258,7 +276,7 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
         </View>
       ) : (
         <ListCard empty="No payment links found for current filters.">
-          {filtered.map((row) => (
+          {filtered.slice(0, lazy.count).map((row) => (
             <ListRow key={row.id} accessibilityLabel={`Payment link ${row.paymentLink}, ${row.amount}, ${row.status}`}>
               <ListRowLine
                 left={
@@ -304,9 +322,7 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
           ))}
         </ListCard>
       )}
-      <Text variant="bodySmall" style={muted}>
-        Total {filtered.length} row(s)
-      </Text>
+      {showEmptyState ? null : <LazyListFooter lazy={lazy} total={filtered.length} noun="payment links" />}
 
       <CreatePaymentLinkSheet visible={createOpen} onDismiss={() => setCreateOpen(false)} onCreate={create} initialValues={createSeed} />
     </DetailScreen>

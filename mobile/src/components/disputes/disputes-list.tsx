@@ -7,6 +7,7 @@ import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/cont
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { DetailScreen } from '@/components/shared/detail-screen';
+import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
 import { StatusPill } from '@/components/shared/status';
 import { SummaryCards } from '@/components/shared/summary-cards';
@@ -40,6 +41,7 @@ export function DisputesList() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | DisputeStatus>('all');
   const [dateRange, setDateRange] = useState(() => makeDateRangeValue(presets, 'today'));
+  const lazy = useLazyList();
   const muted = { color: theme.colors.onSurfaceVariant };
 
   const forChannel = disputeRecords.filter((row) => row.channel === channel);
@@ -72,19 +74,28 @@ export function DisputesList() {
       />
       <ListingToolbar
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={(value) => {
+          setSearch(value);
+          lazy.reset();
+        }}
         searchPlaceholder="Search by any ID"
         filters={
           <>
             <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="today" />
-            <FilterMenuButton value={status} onValueChange={setStatus} options={STATUS_OPTIONS} accessibilityLabel="Status" />
+            <FilterMenuButton
+              value={status}
+              onValueChange={(value) => {
+                setStatus(value);
+                lazy.reset();
+              }}
+              options={STATUS_OPTIONS} accessibilityLabel="Status" />
           </>
         }
         actions={<OutlinedActionButton label="Download filtered" icon="download-simple" />}
       />
       <DayGroupedList
         groups={groupByDay(
-          sortNewestFirst(rows, (row) => displayTimestamp(row.createdOn, row.time)),
+          sortNewestFirst(rows, (row) => displayTimestamp(row.createdOn, row.time)).slice(0, lazy.count),
           (row) => row.createdOn
         )}
         empty="No disputes found."
@@ -114,6 +125,7 @@ export function DisputesList() {
           </ListRow>
         )}
       />
+      <LazyListFooter lazy={lazy} total={rows.length} noun="disputes" />
     </DetailScreen>
   );
 }

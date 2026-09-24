@@ -7,6 +7,7 @@ import { GenerateReportSheet } from '@/components/reports/generate-report-sheet'
 import { ReportCatalog } from '@/components/reports/report-catalog';
 import { ReportListing } from '@/components/reports/report-listing';
 import { ScheduleReportSheet } from '@/components/reports/schedule-report-sheet';
+import { EndReachedProvider, useEndReached } from '@/components/shared/lazy-list';
 import { useShellTabs } from '@/components/shell-tabs';
 import { Shape } from '@/constants/shape';
 import type { ReportKind } from '@/data/reports';
@@ -35,6 +36,7 @@ export default function ReportsScreen() {
     if (requestedKey) setActiveKey(requestedKey);
   }
   useShellTabs({ tabs: REPORT_TABS, activeKey, onChange: setActiveKey });
+  const endReached = useEndReached();
 
   // The panel keeps its last report while closing, so its content doesn't blank mid-animation.
   const [generate, setGenerate] = useState<{ kind: ReportKind; title: string; open: boolean }>(() => ({
@@ -55,7 +57,7 @@ export default function ReportsScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView key={activeKey} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView key={activeKey} {...endReached.scrollProps} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.actions}>
           <Button
             mode="outlined"
@@ -68,7 +70,9 @@ export default function ReportsScreen() {
             Generate report
           </Button>
         </View>
-        {activeKey === 'reports' ? <ReportCatalog onGenerate={openGenerate} /> : <ReportListing tab={activeKey === 'history' ? 'history' : 'schedule'} />}
+        <EndReachedProvider value={endReached.value}>
+          {activeKey === 'reports' ? <ReportCatalog onGenerate={openGenerate} /> : <ReportListing tab={activeKey === 'history' ? 'history' : 'schedule'} />}
+        </EndReachedProvider>
       </ScrollView>
 
       <GenerateReportSheet

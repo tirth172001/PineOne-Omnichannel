@@ -9,7 +9,7 @@ import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/cont
 import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen } from '@/components/shared/detail-screen';
 import { FormField, FormTextInput } from '@/components/shared/form-fields';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
-import { PaginationBar } from '@/components/shared/pagination-bar';
+import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { RowActionsMenu, type RowAction } from '@/components/shared/row-actions';
 import { Shape } from '@/constants/shape';
@@ -273,8 +273,7 @@ function UsersTab({ onEdit, onConfirm }: { onEdit: (entry: RosterEntry) => void;
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [role, setRole] = useState('all');
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [page, setPage] = useState(1);
+  const lazy = useLazyList();
   const muted = { color: theme.colors.onSurfaceVariant };
 
   const listed = roster.filter((entry) => entry.status !== 'Pending');
@@ -286,12 +285,10 @@ function UsersTab({ onEdit, onConfirm }: { onEdit: (entry: RosterEntry) => void;
     if (role !== 'all' && row.role !== role) return false;
     return !query || `${row.name} ${row.email}`.toLowerCase().includes(query);
   });
-  const totalPages = Math.max(1, Math.ceil(rows.length / rowsPerPage));
-  const currentPage = Math.min(page, totalPages);
-  const paged = rows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
-  const resetPage = <T,>(setter: (value: T) => void) => (value: T) => {
+  const loaded = rows.slice(0, lazy.count);
+  const resetList = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
-    setPage(1);
+    lazy.reset();
   };
 
   const actionsFor = (row: RosterEntry): RowAction[] =>
@@ -330,17 +327,17 @@ function UsersTab({ onEdit, onConfirm }: { onEdit: (entry: RosterEntry) => void;
       ) : null}
       <ListingToolbar
         search={search}
-        onSearchChange={resetPage(setSearch)}
+        onSearchChange={resetList(setSearch)}
         searchPlaceholder="Search by name or email ID"
         filters={
           <>
-            <FilterMenuButton value={status} onValueChange={resetPage(setStatus)} options={STATUS_OPTIONS} accessibilityLabel="Status" />
-            <FilterMenuButton value={role} onValueChange={resetPage(setRole)} options={roleOptions} accessibilityLabel="Role" />
+            <FilterMenuButton value={status} onValueChange={resetList(setStatus)} options={STATUS_OPTIONS} accessibilityLabel="Status" />
+            <FilterMenuButton value={role} onValueChange={resetList(setRole)} options={roleOptions} accessibilityLabel="Role" />
           </>
         }
       />
       <ListCard empty="No users match your search or filters.">
-        {paged.map((row) => {
+        {loaded.map((row) => {
           const permissionKeys = roleCatalog.find((entry) => entry.name === row.role)?.permissionKeys ?? [];
           const dim = row.status === 'Deactivated' ? styles.dim : null;
           return (
@@ -374,15 +371,7 @@ function UsersTab({ onEdit, onConfirm }: { onEdit: (entry: RosterEntry) => void;
           );
         })}
       </ListCard>
-      <PaginationBar
-        page={currentPage}
-        totalPages={totalPages}
-        rowsPerPage={rowsPerPage}
-        totalRows={rows.length}
-        onPageChange={setPage}
-        onRowsPerPageChange={resetPage(setRowsPerPage)}
-        rowsPerPageOptions={[10, 20, 50]}
-      />
+      <LazyListFooter lazy={lazy} total={rows.length} noun="users" />
     </>
   );
 }

@@ -4,6 +4,7 @@ import { Text, useTheme } from 'react-native-paper';
 
 import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
+import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
 import { type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
 import { StatusPill } from '@/components/shared/status';
@@ -29,6 +30,7 @@ export function ReportListing({ tab }: { tab: 'history' | 'schedule' }) {
   const [status, setStatus] = useState<string>('all');
   const [dateRange, setDateRange] = useState(() => makeDateRangeValue(presets, 'week'));
   const [moreFilters, setMoreFilters] = useState<MoreFilterSelection>({});
+  const lazy = useLazyList();
   const query = search.trim().toLowerCase();
   const muted = { color: theme.colors.onSurfaceVariant };
 
@@ -43,7 +45,10 @@ export function ReportListing({ tab }: { tab: 'history' | 'schedule' }) {
     <View style={styles.container}>
       <ListingToolbar
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={(value) => {
+          setSearch(value);
+          lazy.reset();
+        }}
         searchPlaceholder="Search reports"
         filters={
           <>
@@ -57,7 +62,7 @@ export function ReportListing({ tab }: { tab: 'history' | 'schedule' }) {
 
       {tab === 'history' ? (
         <ListCard empty="No reports found.">
-          {history.map((row) => (
+          {history.slice(0, lazy.count).map((row) => (
             <ListRow key={row.reportName} accessibilityLabel={`${row.reportName}, ${row.refundStatus}`}>
               <ListRowLine
                 left={<Text variant="bodyMedium" style={styles.medium}>{row.reportName}</Text>}
@@ -76,7 +81,7 @@ export function ReportListing({ tab }: { tab: 'history' | 'schedule' }) {
         </ListCard>
       ) : (
         <ListCard empty="No schedules found.">
-          {schedules.map((row) => (
+          {schedules.slice(0, lazy.count).map((row) => (
             <ListRow key={row.name} accessibilityLabel={`${row.name}, ${row.status}`}>
               <ListRowLine
                 left={<Text variant="bodyMedium" style={styles.medium}>{row.name}</Text>}
@@ -94,6 +99,7 @@ export function ReportListing({ tab }: { tab: 'history' | 'schedule' }) {
           ))}
         </ListCard>
       )}
+      <LazyListFooter lazy={lazy} total={tab === 'history' ? history.length : schedules.length} noun={tab === 'history' ? 'reports' : 'schedules'} />
     </View>
   );
 }

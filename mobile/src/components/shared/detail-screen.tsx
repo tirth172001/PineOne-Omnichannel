@@ -11,6 +11,7 @@ import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 
 import { useSvgId } from './hatch';
+import { EndReachedProvider, useEndReached } from './lazy-list';
 
 /** Web status gradients (from-success/25 via-success/10 to-background, etc.). */
 export const STATUS_GRADIENT = {
@@ -82,6 +83,7 @@ const HEADER_BUTTON_RADIUS = concentric(Shape.max, ROW_PADDING, 40);
 export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = true, footer, scoped = false, children }: DetailScreenProps) {
   const theme = useTheme();
   const goBack = () => (router.canGoBack() ? router.back() : router.navigate(fallbackHref));
+  const endReached = useEndReached();
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
@@ -93,9 +95,10 @@ export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = 
         </Appbar.Header>
       </ShellTopBar>
       {scroll ? (
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView {...endReached.scrollProps} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {gradient ? <StatusGradient tone={gradient} /> : null}
-          {children}
+          {/* Lazy lists on the page load their next rows as the end comes into view. */}
+          <EndReachedProvider value={endReached.value}>{children}</EndReachedProvider>
         </ScrollView>
       ) : (
         <View style={styles.screen}>{children}</View>

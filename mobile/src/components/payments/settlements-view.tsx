@@ -12,7 +12,7 @@ import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from 
 import { DetailRow } from '@/components/shared/detail-rows';
 import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
 import { type MoreFilterCategory, type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
-import { PaginationBar } from '@/components/shared/pagination-bar';
+import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { DotStatusBadge, type DotTone } from '@/components/shared/status';
 import { concentric, Shape } from '@/constants/shape';
@@ -85,8 +85,7 @@ export function SettlementsView() {
   const presets = useMemo(() => getDefaultDateRangePresets(), []);
   // The web shows a date filter here but doesn't apply it to the batches.
   const [dateRange, setDateRange] = useState(() => makeDateRangeValue(presets, 'today'));
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [page, setPage] = useState(1);
+  const lazy = useLazyList();
 
   const summary = useMemo(() => getSettlementSummary(channel), [channel]);
   const filteredRows = useMemo(() => {
@@ -104,14 +103,11 @@ export function SettlementsView() {
       return `${row.batchId} ${row.utr} ${row.bankName} ${row.acquiringBank} ${row.tid} ${row.store}`.toLowerCase().includes(query);
     });
   }, [channel, moreFilters, search, status]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
-  const currentPage = Math.min(page, totalPages);
   // Newest first so each day forms one group (the web lists in source order).
-  const pagedRows = sortNewestFirst(filteredRows, (row) => displayTimestamp(row.settlementDatePrimary, row.settlementDateSecondary)).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
-  const resetPage = <T,>(setter: (value: T) => void) => (value: T) => {
+  const loadedRows = sortNewestFirst(filteredRows, (row) => displayTimestamp(row.settlementDatePrimary, row.settlementDateSecondary)).slice(0, lazy.count);
+  const resetList = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
-    setPage(1);
+    lazy.reset();
   };
   const muted = { color: theme.colors.onSurfaceVariant };
 
@@ -211,13 +207,13 @@ export function SettlementsView() {
 
       <ListingToolbar
         search={search}
-        onSearchChange={resetPage(setSearch)}
+        onSearchChange={resetList(setSearch)}
         searchPlaceholder="Search by UTR or Trxn ID"
         filters={
           <>
             <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="today" />
-            <FilterMenuButton value={status} onValueChange={resetPage(setStatus)} options={STATUS_OPTIONS} accessibilityLabel="Status" />
-            <MoreFilters categories={MORE_FILTER_CATEGORIES} applied={moreFilters} onApply={resetPage(setMoreFilters)} />
+            <FilterMenuButton value={status} onValueChange={resetList(setStatus)} options={STATUS_OPTIONS} accessibilityLabel="Status" />
+            <MoreFilters categories={MORE_FILTER_CATEGORIES} applied={moreFilters} onApply={resetList(setMoreFilters)} />
           </>
         }
         actions={
@@ -229,7 +225,7 @@ export function SettlementsView() {
       />
 
       <DayGroupedList
-        groups={groupByDay(pagedRows, (row) => row.settlementDatePrimary)}
+        groups={groupByDay(loadedRows, (row) => row.settlementDatePrimary)}
         empty="No settlements found."
         renderRow={(row) => (
             <ListRow
@@ -258,14 +254,7 @@ export function SettlementsView() {
         )}
       />
 
-      <PaginationBar
-        page={currentPage}
-        totalPages={totalPages}
-        rowsPerPage={rowsPerPage}
-        totalRows={filteredRows.length}
-        onPageChange={setPage}
-        onRowsPerPageChange={resetPage(setRowsPerPage)}
-      />
+      <LazyListFooter lazy={lazy} total={filteredRows.length} noun="settlements" />
 
       <PanelSheet visible={deductionsOpen} onDismiss={() => setDeductionsOpen(false)} title="Deductions" height={420}>
         <PanelSection>

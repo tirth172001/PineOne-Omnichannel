@@ -7,7 +7,7 @@ import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
 import { type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
-import { PaginationBar } from '@/components/shared/pagination-bar';
+import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { DotStatusBadge } from '@/components/shared/status';
 import { SummaryCards } from '@/components/shared/summary-cards';
 import { Shape } from '@/constants/shape';
@@ -32,8 +32,7 @@ export function RefundsView() {
   const [moreFilters, setMoreFilters] = useState<MoreFilterSelection>({});
   const presets = useMemo(() => getDefaultDateRangePresets(), []);
   const [dateRange, setDateRange] = useState(() => makeDateRangeValue(presets, 'today'));
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [page, setPage] = useState(1);
+  const lazy = useLazyList();
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -43,12 +42,10 @@ export function RefundsView() {
       return `${row.transactionId} ${row.refundId} ${row.storeName}`.toLowerCase().includes(query);
     });
   }, [search, status]);
-  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
-  const currentPage = Math.min(page, totalPages);
-  const paged = sortNewestFirst(filtered, (row) => displayTimestamp(row.datePrimary, row.dateSecondary)).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
-  const resetPage = <T,>(setter: (value: T) => void) => (value: T) => {
+  const loaded = sortNewestFirst(filtered, (row) => displayTimestamp(row.datePrimary, row.dateSecondary)).slice(0, lazy.count);
+  const resetList = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
-    setPage(1);
+    lazy.reset();
   };
   const muted = { color: theme.colors.onSurfaceVariant };
 
@@ -65,12 +62,12 @@ export function RefundsView() {
 
       <ListingToolbar
         search={search}
-        onSearchChange={resetPage(setSearch)}
+        onSearchChange={resetList(setSearch)}
         searchPlaceholder="Search by any ID"
         filters={
           <>
             <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="today" />
-            <FilterMenuButton value={status} onValueChange={resetPage(setStatus)} options={STATUS_OPTIONS} accessibilityLabel="Status" />
+            <FilterMenuButton value={status} onValueChange={resetList(setStatus)} options={STATUS_OPTIONS} accessibilityLabel="Status" />
             <MoreFilters
               categories={[{ id: 'amount-type', label: 'Amount type', display: 'badge', searchable: false, options: REFUND_AMOUNT_TYPES }]}
               applied={moreFilters}
@@ -87,7 +84,7 @@ export function RefundsView() {
       />
 
       <DayGroupedList
-        groups={groupByDay(paged, (row) => row.datePrimary)}
+        groups={groupByDay(loaded, (row) => row.datePrimary)}
         empty="No refunds found."
         renderRow={(row) => (
             <ListRow key={row.id} accessibilityLabel={`Refund ${row.refundId}, ${row.amount}, ${row.status}`}>
@@ -113,15 +110,7 @@ export function RefundsView() {
         )}
       />
 
-      <PaginationBar
-        page={currentPage}
-        totalPages={totalPages}
-        rowsPerPage={rowsPerPage}
-        totalRows={filtered.length}
-        onPageChange={setPage}
-        onRowsPerPageChange={resetPage(setRowsPerPage)}
-        rowsPerPageOptions={[10, 20, 50]}
-      />
+      <LazyListFooter lazy={lazy} total={filtered.length} noun="refunds" />
     </View>
   );
 }

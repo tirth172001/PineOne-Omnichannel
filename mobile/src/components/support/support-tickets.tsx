@@ -6,7 +6,7 @@ import { FilterMenuButton } from '@/components/shared/controls';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DetailScreen } from '@/components/shared/detail-screen';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
-import { PaginationBar } from '@/components/shared/pagination-bar';
+import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { StatusPill } from '@/components/shared/status';
 import { Fonts } from '@/constants/theme';
 import { applyTicketDraft, SUPPORT_TICKETS, type SupportTicket, TICKET_STATUSES, type TicketStatus, ticketStatusTone } from '@/data/support';
@@ -32,8 +32,7 @@ export function SupportTickets() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | TicketStatus>('all');
   const [dateRange, setDateRange] = useState(() => makeDateRangeValue(presets, 'today'));
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [page, setPage] = useState(1);
+  const lazy = useLazyList();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -45,9 +44,7 @@ export function SupportTickets() {
     if (status !== 'all' && ticket.status !== status) return false;
     return !query || `${ticket.id} ${ticket.issue} ${ticket.category} ${ticket.product}`.toLowerCase().includes(query);
   });
-  const totalPages = Math.max(1, Math.ceil(rows.length / rowsPerPage));
-  const currentPage = Math.min(page, totalPages);
-  const paged = rows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const loaded = rows.slice(0, lazy.count);
 
   return (
     <DetailScreen title="Support tickets" fallbackHref="/support">
@@ -58,7 +55,7 @@ export function SupportTickets() {
         search={search}
         onSearchChange={(value) => {
           setSearch(value);
-          setPage(1);
+          lazy.reset();
         }}
         searchPlaceholder="Search support tickets"
         filters={
@@ -67,7 +64,7 @@ export function SupportTickets() {
               value={status}
               onValueChange={(value) => {
                 setStatus(value);
-                setPage(1);
+                lazy.reset();
               }}
               options={STATUS_OPTIONS}
               accessibilityLabel="Status"
@@ -77,7 +74,7 @@ export function SupportTickets() {
         }
       />
       <ListCard empty="No support tickets found.">
-        {paged.map((ticket) => (
+        {loaded.map((ticket) => (
           <ListRow
             key={ticket.id}
             onPress={() => {
@@ -108,18 +105,7 @@ export function SupportTickets() {
           </ListRow>
         ))}
       </ListCard>
-      <PaginationBar
-        page={currentPage}
-        totalPages={totalPages}
-        rowsPerPage={rowsPerPage}
-        totalRows={rows.length}
-        onPageChange={setPage}
-        onRowsPerPageChange={(value) => {
-          setRowsPerPage(value);
-          setPage(1);
-        }}
-        rowsPerPageOptions={[10, 20, 50]}
-      />
+      <LazyListFooter lazy={lazy} total={rows.length} noun="tickets" />
 
       <TicketDetailSheet
         visible={detailOpen}

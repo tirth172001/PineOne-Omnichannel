@@ -9,22 +9,21 @@ import { FilterMenuButton, OutlinedActionButton } from './controls';
 import { CopyableValue } from './copyable-value';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from './date-range-filter';
 import { DetailSections } from './detail-rows';
+import { LazyListFooter, useLazyList } from './lazy-list';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from './listing';
 import { type MoreFilterSelection, MoreFilters } from './more-filters';
-import { PaginationBar } from './pagination-bar';
 import { PanelSection, PanelSheet } from './panel-sheet';
 import { DotStatusBadge, StatusPill } from './status';
 import { SummaryCards } from './summary-cards';
 
-/** A complete listing: toolbar, summary, rows and pagination — the pattern every module's list uses. */
+/** A complete listing: toolbar, summary, rows and the lazy-loading footer — the pattern every module's list uses. */
 function ListingDemo() {
   const presets = useMemo(() => getDefaultDateRangePresets(), []);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [date, setDate] = useState(() => makeDateRangeValue(presets, '30d'));
   const [more, setMore] = useState<MoreFilterSelection>({});
-  const [page, setPage] = useState(1);
-  const [rows, setRows] = useState(10);
+  const lazy = useLazyList();
 
   return (
     <View style={{ gap: 16 }}>
@@ -69,7 +68,7 @@ function ListingDemo() {
           </ListRow>
         ))}
       </ListCard>
-      <PaginationBar page={page} totalPages={11} rowsPerPage={rows} totalRows={110} onPageChange={setPage} onRowsPerPageChange={setRows} />
+      <LazyListFooter lazy={lazy} total={110} noun="payments" />
     </View>
   );
 }

@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { RefundsView } from '@/components/payments/refunds-view';
 import { SettlementsView } from '@/components/payments/settlements-view';
 import { TransactionsView } from '@/components/payments/transactions-view';
+import { EndReachedProvider, useEndReached } from '@/components/shared/lazy-list';
 import { useShellTabs } from '@/components/shell-tabs';
 
 const PAYMENT_TABS = [
@@ -26,11 +27,15 @@ export default function PaymentsScreen() {
   }
   // Sub-tabs render inside the shell's top bar, under the header.
   useShellTabs({ tabs: PAYMENT_TABS, activeKey, onChange: setActiveKey });
+  const endReached = useEndReached();
 
   return (
     // Keyed by tab so each sub-tab starts at the top with its own state.
-    <ScrollView key={activeKey} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      {activeKey === 'settlements' ? <SettlementsView /> : activeKey === 'refunds' ? <RefundsView /> : <TransactionsView />}
+    <ScrollView key={activeKey} {...endReached.scrollProps} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      {/* Each list loads its next rows as the end of the page comes into view. */}
+      <EndReachedProvider value={endReached.value}>
+        {activeKey === 'settlements' ? <SettlementsView /> : activeKey === 'refunds' ? <RefundsView /> : <TransactionsView />}
+      </EndReachedProvider>
     </ScrollView>
   );
 }
