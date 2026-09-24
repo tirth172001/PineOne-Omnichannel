@@ -5,6 +5,7 @@ import type { PaperProvider } from 'react-native-paper';
 import { ArrowCounterClockwiseIcon } from 'phosphor-react-native/src/icons/ArrowCounterClockwise';
 import { ArrowLeftIcon } from 'phosphor-react-native/src/icons/ArrowLeft';
 import { ArrowsClockwiseIcon } from 'phosphor-react-native/src/icons/ArrowsClockwise';
+import { ArrowsLeftRightIcon } from 'phosphor-react-native/src/icons/ArrowsLeftRight';
 import { ArrowUpIcon } from 'phosphor-react-native/src/icons/ArrowUp';
 import { ArrowUpRightIcon } from 'phosphor-react-native/src/icons/ArrowUpRight';
 import { BankIcon } from 'phosphor-react-native/src/icons/Bank';
@@ -109,6 +110,7 @@ import { XCircleIcon } from 'phosphor-react-native/src/icons/XCircle';
  * (phosphoricons.com). Add an entry here before using a new icon.
  */
 const ICONS = {
+  'arrows-left-right': ArrowsLeftRightIcon,
   'arrow-counter-clockwise': ArrowCounterClockwiseIcon,
   'arrow-left': ArrowLeftIcon,
   'arrow-up': ArrowUpIcon,
