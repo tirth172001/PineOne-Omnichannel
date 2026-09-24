@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Snackbar, useTheme } from 'react-native-paper';
+import { Button, useTheme } from 'react-native-paper';
 
 import { GenerateReportSheet } from '@/components/reports/generate-report-sheet';
 import { ReportCatalog } from '@/components/reports/report-catalog';
@@ -10,6 +10,7 @@ import { ScheduleReportSheet } from '@/components/reports/schedule-report-sheet'
 import { useShellTabs } from '@/components/shell-tabs';
 import { Shape } from '@/constants/shape';
 import type { ReportKind } from '@/data/reports';
+import { useToast } from '@/hooks/use-toast';
 
 const REPORT_TABS = [
   { key: 'reports', label: 'Reports' },
@@ -20,7 +21,7 @@ const REPORT_TABS = [
 /**
  * Reports (web: ReportsContent): Schedule report and Generate report actions,
  * then the Reports / History / Schedule sub-tabs in the shell's top bar. The
- * web's success toasts become a Snackbar.
+ * web's success toasts use the shell's toast (Snackbar).
  */
 export default function ReportsScreen() {
   const theme = useTheme();
@@ -42,7 +43,7 @@ export default function ReportsScreen() {
     open: false,
   });
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const toast = useToast();
   const openGenerate = (kind: ReportKind, title: string) => setGenerate({ kind, title, open: true });
 
   return (
@@ -68,13 +69,9 @@ export default function ReportsScreen() {
         onDismiss={() => setGenerate((current) => ({ ...current, open: false }))}
         kind={generate.kind}
         title={generate.title}
-        onGenerated={(name) => setToast(`${name} is being generated — you'll find it under History shortly.`)}
+        onGenerated={(name) => toast(`${name} is being generated — you'll find it under History shortly.`)}
       />
-      <ScheduleReportSheet visible={scheduleOpen} onDismiss={() => setScheduleOpen(false)} onCreated={setToast} />
-
-      <Snackbar visible={toast !== null} onDismiss={() => setToast(null)} duration={4000} style={styles.snackbar}>
-        {toast ?? ''}
-      </Snackbar>
+      <ScheduleReportSheet visible={scheduleOpen} onDismiss={() => setScheduleOpen(false)} onCreated={toast} />
     </View>
   );
 }
@@ -85,5 +82,4 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 8 },
   // Standalone page-level buttons.
   action: { flex: 1, borderRadius: Shape.small },
-  snackbar: { borderRadius: Shape.small },
 });

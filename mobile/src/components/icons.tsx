@@ -5,6 +5,13 @@ import type { PaperProvider } from 'react-native-paper';
 import { ArrowCounterClockwiseIcon } from 'phosphor-react-native/src/icons/ArrowCounterClockwise';
 import { ArrowLeftIcon } from 'phosphor-react-native/src/icons/ArrowLeft';
 import { ArrowsClockwiseIcon } from 'phosphor-react-native/src/icons/ArrowsClockwise';
+import { MonitorIcon } from 'phosphor-react-native/src/icons/Monitor';
+import { GraduationCapIcon } from 'phosphor-react-native/src/icons/GraduationCap';
+import { PlayCircleIcon } from 'phosphor-react-native/src/icons/PlayCircle';
+import { BatteryFullIcon } from 'phosphor-react-native/src/icons/BatteryFull';
+import { WifiHighIcon } from 'phosphor-react-native/src/icons/WifiHigh';
+import { ThumbsUpIcon } from 'phosphor-react-native/src/icons/ThumbsUp';
+import { ThumbsDownIcon } from 'phosphor-react-native/src/icons/ThumbsDown';
 import { ArrowsLeftRightIcon } from 'phosphor-react-native/src/icons/ArrowsLeftRight';
 import { ArrowUpIcon } from 'phosphor-react-native/src/icons/ArrowUp';
 import { ArrowUpRightIcon } from 'phosphor-react-native/src/icons/ArrowUpRight';
@@ -111,6 +118,13 @@ import { XCircleIcon } from 'phosphor-react-native/src/icons/XCircle';
  */
 const ICONS = {
   'arrows-left-right': ArrowsLeftRightIcon,
+  'monitor': MonitorIcon,
+  'graduation-cap': GraduationCapIcon,
+  'play-circle': PlayCircleIcon,
+  'battery-full': BatteryFullIcon,
+  'wifi-high': WifiHighIcon,
+  'thumbs-up': ThumbsUpIcon,
+  'thumbs-down': ThumbsDownIcon,
   'arrow-counter-clockwise': ArrowCounterClockwiseIcon,
   'arrow-left': ArrowLeftIcon,
   'arrow-up': ArrowUpIcon,

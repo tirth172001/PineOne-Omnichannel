@@ -45,6 +45,8 @@ type DetailScreenProps = {
   gradient?: StatusGradientTone;
   /** Appbar actions, e.g. an overflow or download icon. */
   actions?: ReactNode;
+  /** Set false when the screen lays out its own scrolling, e.g. a chat with a pinned composer. */
+  scroll?: boolean;
   children: ReactNode;
 };
 
@@ -57,7 +59,7 @@ const HEADER_BUTTON_RADIUS = concentric(Shape.max, ROW_PADDING, 40);
  * rounded top bar with back and title, then scrolling content over the web's
  * status gradient. Replaces the org header while a detail is open.
  */
-export function DetailScreen({ title, fallbackHref, gradient, actions, children }: DetailScreenProps) {
+export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = true, children }: DetailScreenProps) {
   const theme = useTheme();
   const goBack = () => (router.canGoBack() ? router.back() : router.navigate(fallbackHref));
 
@@ -70,10 +72,14 @@ export function DetailScreen({ title, fallbackHref, gradient, actions, children 
           {actions}
         </Appbar.Header>
       </ShellTopBar>
-      <ScrollView contentContainerStyle={styles.content}>
-        {gradient ? <StatusGradient tone={gradient} /> : null}
-        {children}
-      </ScrollView>
+      {scroll ? (
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          {gradient ? <StatusGradient tone={gradient} /> : null}
+          {children}
+        </ScrollView>
+      ) : (
+        <View style={styles.screen}>{children}</View>
+      )}
     </View>
   );
 }

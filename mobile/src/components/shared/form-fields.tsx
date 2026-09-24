@@ -40,7 +40,7 @@ export function FormField({
 }
 
 /**
- * Bordered single-line input (web: Input). A plain TextInput rather than
+ * Bordered input (web: Input, or Textarea when multiline). A plain TextInput rather than
  * Paper's TextInput so the corner follows the concentric rule.
  */
 export function FormTextInput({
@@ -50,6 +50,7 @@ export function FormTextInput({
   accessibilityLabel,
   secureTextEntry,
   keyboardType,
+  multiline = false,
   radius = PANEL_INNER_RADIUS,
 }: {
   value: string;
@@ -58,11 +59,14 @@ export function FormTextInput({
   accessibilityLabel: string;
   secureTextEntry?: boolean;
   keyboardType?: KeyboardTypeOptions;
+  /** Multi-line text area (web: Textarea). */
+  multiline?: boolean;
   radius?: number;
 }) {
   const theme = useTheme();
   return (
     <TextInput
+      multiline={multiline}
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
@@ -71,7 +75,7 @@ export function FormTextInput({
       keyboardType={keyboardType}
       autoCapitalize={keyboardType === 'email-address' ? 'none' : undefined}
       accessibilityLabel={accessibilityLabel}
-      style={[styles.input, { borderRadius: radius, borderColor: theme.colors.outlineVariant, color: theme.colors.onSurface }]}
+      style={[styles.input, multiline && styles.textArea, { borderRadius: radius, borderColor: theme.colors.outlineVariant, color: theme.colors.onSurface }]}
     />
   );
 }
@@ -292,6 +296,7 @@ const styles = StyleSheet.create({
   label: { fontFamily: Fonts.medium },
   semiBold: { fontFamily: Fonts.semiBold },
   input: { height: FIELD_HEIGHT, paddingHorizontal: 12, borderWidth: 1, fontFamily: Fonts.regular, fontSize: 14 },
+  textArea: { height: undefined, minHeight: 80, paddingVertical: 10, textAlignVertical: 'top' },
   fieldButton: { height: FIELD_HEIGHT, borderWidth: 1, justifyContent: 'center' },
   fieldButtonContent: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12 },
   fieldValue: { flex: 1, fontFamily: Fonts.regular },

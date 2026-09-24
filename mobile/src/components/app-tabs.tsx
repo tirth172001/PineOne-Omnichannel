@@ -10,6 +10,7 @@ import { ShellTabsProvider, useShellTabsConfig } from '@/components/shell-tabs';
 import { ShellTopBar } from '@/components/shell-top-bar';
 import { NavigationBar, type NavigationBarDestination } from '@/components/material3/navigation-bar';
 import { CURRENT_USER, ORGANISATIONS } from '@/data/businesses';
+import { ToastProvider } from '@/hooks/use-toast';
 import { useBusiness } from '@/hooks/use-business';
 
 const TAB_ITEMS = [
@@ -67,7 +68,9 @@ function Shell() {
         </ShellTopBar>
       )}
       <View style={{ flex: 1 }}>
-        <Slot />
+        <ToastProvider>
+          <Slot />
+        </ToastProvider>
       </View>
       <NavigationBar
         destinations={[...TAB_ITEMS]}
