@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Icon, Text, useTheme } from 'react-native-paper';
+import { Icon, Text, useTheme } from 'react-native-paper';
 
-import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
+import { useHeaderActions } from '@/components/header-actions';
+import { FilterMenuButton } from '@/components/shared/controls';
 import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
@@ -10,7 +11,6 @@ import { type MoreFilterSelection, MoreFilters } from '@/components/shared/more-
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { DotStatusBadge } from '@/components/shared/status';
 import { SummaryCards } from '@/components/shared/summary-cards';
-import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { REFUND_AMOUNT_TYPES, REFUND_STATUSES, REFUND_SUMMARY, type RefundStatus, refundRows, refundStatusTone } from '@/data/refunds';
 
@@ -49,15 +49,14 @@ export function RefundsView() {
   };
   const muted = { color: theme.colors.onSurfaceVariant };
 
+  // Page actions live in the tab header, merged into one menu.
+  useHeaderActions([
+    { label: 'Bulk refunds', icon: 'upload-simple' },
+    { label: 'Bulk upload history', icon: 'clock-counter-clockwise' },
+  ]);
+
   return (
     <View style={styles.container}>
-      <View style={styles.actions}>
-        <OutlinedActionButton label="Bulk upload history" />
-        <Button mode="contained" compact style={styles.primary}>
-          Bulk refunds
-        </Button>
-      </View>
-
       <SummaryCards cards={REFUND_SUMMARY} carousel />
 
       <ListingToolbar
@@ -112,8 +111,6 @@ export function RefundsView() {
 
 const styles = StyleSheet.create({
   container: { gap: 16 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  primary: { borderRadius: Shape.small },
   amount: { fontFamily: Fonts.semiBold, fontVariant: ['tabular-nums'] },
   idRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });

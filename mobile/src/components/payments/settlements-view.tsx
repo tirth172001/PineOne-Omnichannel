@@ -3,9 +3,10 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Card, Divider, Icon, Text, useTheme } from 'react-native-paper';
 
+import { useHeaderActions } from '@/components/header-actions';
 import { DimmedDecimalAmount } from '@/components/shared/amount';
 import { BankLogo } from '@/components/shared/bank-logo';
-import { CompactSegmentedButtons, FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
+import { CompactSegmentedButtons, FilterMenuButton } from '@/components/shared/controls';
 import { CardCarousel } from '@/components/shared/card-carousel';
 import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
@@ -111,10 +112,12 @@ export function SettlementsView() {
   };
   const muted = { color: theme.colors.onSurfaceVariant };
 
+  // The page's action lives in the tab header.
+  useHeaderActions([{ label: 'Change settlement preferences', icon: 'sliders', onPress: () => router.push('/settlements/preferences') }]);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <OutlinedActionButton label="Change settlement preferences" icon="sliders" onPress={() => router.push('/settlements/preferences')} />
         <View style={styles.infoLine}>
           <Icon source="arrow-clockwise" size={16} color={theme.colors.onSurfaceVariant} />
           <Text variant="bodyMedium" style={[styles.regular, muted]}>

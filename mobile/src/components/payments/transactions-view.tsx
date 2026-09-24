@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, useTheme } from 'react-native-paper';
+import { useTheme } from 'react-native-paper';
 
+import { useHeaderActions } from '@/components/header-actions';
 import { Tabs } from '@/components/material3/tabs';
 import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
-import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
+import { FilterMenuButton } from '@/components/shared/controls';
 import {
   type DateRangeValue,
   DateRangeFilter,
@@ -18,7 +19,6 @@ import { type MoreFilterCategory, type MoreFilterSelection, MoreFilters } from '
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { StatusPill } from '@/components/shared/status';
 import { SummaryCards } from '@/components/shared/summary-cards';
-import { Shape } from '@/constants/shape';
 import { useBusiness } from '@/hooks/use-business';
 
 import { PaymentRow } from './payment-row';
@@ -242,13 +242,16 @@ export function TransactionsView() {
     lazy.reset();
   };
 
+  // Page actions live in the tab header (merged into one menu when there are several).
+  useHeaderActions([
+    ...(mode === 'online' ? [{ label: 'Verify IMEI No', icon: 'device-mobile' }] : []),
+    { label: 'View analytics', icon: 'chart-bar', onPress: () => router.push('/payments/transactions/analytics') },
+  ]);
+
   return (
     <View style={styles.container}>
       {mode === 'online' ? (
         <View style={styles.header}>
-          <Button mode="contained" style={styles.primaryAction}>
-            Verify IMEI No
-          </Button>
           <Tabs
             variant="secondary"
             tabs={[
@@ -296,7 +299,6 @@ export function TransactionsView() {
           ...(mode === 'in-store' ? [{ label: 'Email filtered', icon: 'envelope-simple', onPress: () => setEmailOpen(true) }] : []),
           { label: 'Download filtered', icon: 'download-simple' },
         ]}
-        actions={<OutlinedActionButton label="View analytics" icon="chart-bar" onPress={() => router.push('/payments/transactions/analytics')} />}
       />
 
       <SummaryCards cards={[{ icon: 'wallet', label: 'Total volume', value: totalVolume, subtext: `${filteredRows.length} payments` }]} />
@@ -327,6 +329,5 @@ export function TransactionsView() {
 const styles = StyleSheet.create({
   container: { gap: 16 },
   header: { gap: 12 },
-  primaryAction: { borderRadius: Shape.small, alignSelf: 'flex-start' },
   onlineTabs: { backgroundColor: 'transparent' },
 });

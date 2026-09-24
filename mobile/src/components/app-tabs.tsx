@@ -3,7 +3,8 @@ import { createContext, type ReactNode, useContext, useState } from 'react';
 import { View } from 'react-native';
 import { useTheme } from 'react-native-paper';
 
-import { AppHeader } from '@/components/app-header';
+import { AppHeader, NotificationsButton } from '@/components/app-header';
+import { HeaderActionsProvider, HeaderActionsSlot, useHeaderActionsStore } from '@/components/header-actions';
 import { ScopeSwitcherProvider, useOpenScopeSwitcher } from '@/components/scope-switcher';
 import { ScreenTabs } from '@/components/screen-tabs';
 import { ShellTabsProvider, useShellTabsConfig } from '@/components/shell-tabs';
@@ -66,8 +67,10 @@ function Shell() {
 
 /**
  * A tab's root screen chrome: the rounded top bar (the page name — or the
- * business on Overview — with the store / channel scope and switcher, plus any
- * sub-tabs registered via useShellTabs), the page, and the navigation bar.
+ * user and role on Overview — with the store / channel scope and switcher; on
+ * the right, notifications on Overview or the page's actions registered via
+ * useHeaderActions; plus any sub-tabs registered via useShellTabs), the page,
+ * and the navigation bar.
  */
 export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode }) {
   const theme = useTheme();
@@ -75,6 +78,7 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
   const openScopeSwitcher = useOpenScopeSwitcher();
   const screenTabs = useShellTabsConfig();
   const reportNavBarHeight = useContext(NavBarHeightContext);
+  const headerActions = useHeaderActionsStore();
   const item = TAB_ITEMS.find((entry) => entry.key === tab) ?? TAB_ITEMS[0];
 
   return (
@@ -86,10 +90,14 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
           badge={tab === 'index' ? CURRENT_USER.roleLabel : undefined}
           scope={business.scopeText(tab === 'index')}
           onPressSwitcher={openScopeSwitcher}
+          // Notifications only on Overview; other tabs show their page's own actions (user decision).
+          actions={tab === 'index' ? <NotificationsButton /> : <HeaderActionsSlot store={headerActions} />}
         />
         {screenTabs ? <ScreenTabs {...screenTabs} /> : null}
       </ShellTopBar>
-      <View style={{ flex: 1 }}>{children}</View>
+      <View style={{ flex: 1 }}>
+        <HeaderActionsProvider store={headerActions}>{children}</HeaderActionsProvider>
+      </View>
       <View onLayout={(event) => reportNavBarHeight(event.nativeEvent.layout.height)}>
         <NavigationBar
           destinations={[...TAB_ITEMS]}

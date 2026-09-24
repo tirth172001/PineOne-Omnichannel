@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 
 import { ORGANISATIONS } from '@/data/businesses';
 
-import { AppHeader } from './app-header';
+import { AppHeader, NotificationsButton } from './app-header';
 import { ShellTopBar } from './shell-top-bar';
 
 const meta = {
@@ -20,7 +20,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'App shell header (Figma 47:2350): the title (the user and their role on Overview, the page name elsewhere) over the store / channel scope, opening the switcher; notifications on the right.',
+          'App shell header (Figma 47:2350): the title (the user and their role on Overview, the page name elsewhere) over the store / channel scope, opening the switcher; notifications (Overview) or the page\'s own actions on the right.',
       },
     },
   },
@@ -28,6 +28,7 @@ const meta = {
     title: 'Tirth Trivedi',
     badge: 'Admin',
     scope: `${ORGANISATIONS[0].shops[0].name} · All channels`,
+    actions: <NotificationsButton />,
   },
 } satisfies Meta<typeof AppHeader>;
 
@@ -41,6 +42,7 @@ export const PageTitle: Story = {
   args: {
     title: 'Settlements',
     badge: undefined,
+    actions: undefined,
     scope: `${ORGANISATIONS[0].shops[0].name} · In-store`,
   },
 };

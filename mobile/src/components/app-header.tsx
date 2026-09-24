@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Appbar, Icon, IconButton, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
@@ -13,18 +14,19 @@ type AppHeaderProps = {
   badge?: string;
   /** Opens the store / channel switcher. */
   onPressSwitcher?: () => void;
-  onPressNotifications?: () => void;
+  /** Right-hand buttons: notifications on Overview, the page's own actions elsewhere. */
+  actions?: ReactNode;
 };
 
 /**
  * App shell header (Figma node 47:2350): the title (with an optional badge)
  * and the store / channel scope under it, opening the switcher, on the left;
- * notifications on the right. The Figma's org logo tile and account avatar are
+ * `actions` on the right (notifications only on Overview, user decision). The Figma's org logo tile and account avatar are
  * left out (user decisions); account lives in the More tab. Built on Paper's
  * Appbar.Header (which handles the status-bar inset and 64dp height).
  * Transparent: it sits inside the shell's rounded top bar, which paints the surface.
  */
-export function AppHeader({ title, scope, badge, onPressSwitcher, onPressNotifications }: AppHeaderProps) {
+export function AppHeader({ title, scope, badge, onPressSwitcher, actions }: AppHeaderProps) {
   const theme = useTheme();
 
   return (
@@ -52,17 +54,16 @@ export function AppHeader({ title, scope, badge, onPressSwitcher, onPressNotific
           </View>
         </TouchableRipple>
 
-        <IconButton
-          icon="bell"
-          size={24}
-          iconColor={theme.colors.onSurface}
-          onPress={onPressNotifications}
-          accessibilityLabel="Notifications"
-          style={styles.iconButton}
-        />
+        {actions ? <View style={styles.actions}>{actions}</View> : null}
       </View>
     </Appbar.Header>
   );
+}
+
+/** The notifications bell (Overview's header). */
+export function NotificationsButton({ onPress }: { onPress?: () => void }) {
+  const theme = useTheme();
+  return <IconButton icon="bell" size={24} iconColor={theme.colors.onSurface} onPress={onPress} accessibilityLabel="Notifications" style={styles.iconButton} />;
 }
 
 // Nested shapes: the shell's top bar (Shape.max) → 40dp touch targets inset 12dp (the row padding).
@@ -85,5 +86,6 @@ const styles = StyleSheet.create({
   title: { flexShrink: 1 },
   scopeRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   scope: { flexShrink: 1 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   iconButton: { margin: 0, borderRadius: TARGET_RADIUS },
 });
