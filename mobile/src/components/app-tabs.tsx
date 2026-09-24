@@ -2,6 +2,7 @@ import { router, Slot, usePathname } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
 import { BusinessSwitcher } from '@/components/business-switcher';
@@ -10,8 +11,8 @@ import { ShellTabsProvider, useShellTabsConfig } from '@/components/shell-tabs';
 import { ShellTopBar } from '@/components/shell-top-bar';
 import { NavigationBar, type NavigationBarDestination } from '@/components/material3/navigation-bar';
 import { CURRENT_USER, ORGANISATIONS } from '@/data/businesses';
-import { ToastProvider } from '@/hooks/use-toast';
 import { useBusiness } from '@/hooks/use-business';
+import { ToastProvider } from '@/hooks/use-toast';
 
 const TAB_ITEMS = [
   { key: 'index', href: '/', label: 'Overview', icon: 'house', focusedIcon: 'house-fill' },
@@ -38,6 +39,7 @@ export default function AppTabs() {
 function Shell() {
   const pathname = usePathname();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const business = useBusiness();
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const screenTabs = useShellTabsConfig();
@@ -45,7 +47,8 @@ function Shell() {
   const active =
     TAB_ITEMS.find((item) => item.href !== '/' && (pathname === item.href || pathname.startsWith(`${item.href}/`))) ??
     TAB_ITEMS[0];
-  // Detail screens (anything below a tab's root) draw their own back-button header instead of the org header.
+  // Detail screens (anything below a tab's root) draw their own back-button header instead of the
+  // org header, and hide the navigation bar (M3: top-level destinations only; Back returns to the tab).
   const isDetailRoute = pathname !== active.href && pathname !== '/';
   // /theme-preview is a dev-only design-system reference, not part of the 5-tab
   // flow — no shell chrome on it.
@@ -67,16 +70,19 @@ function Shell() {
           {screenTabs ? <ScreenTabs {...screenTabs} /> : null}
         </ShellTopBar>
       )}
-      <View style={{ flex: 1 }}>
+      {/* Without the nav bar, detail screens keep clear of the home indicator themselves. */}
+      <View style={{ flex: 1, paddingBottom: isDetailRoute ? insets.bottom : 0 }}>
         <ToastProvider>
           <Slot />
         </ToastProvider>
       </View>
-      <NavigationBar
-        destinations={[...TAB_ITEMS]}
-        activeKey={active.key}
-        onChange={(key) => router.navigate(TAB_ITEMS.find((item) => item.key === key)?.href ?? '/')}
-      />
+      {isDetailRoute ? null : (
+        <NavigationBar
+          destinations={[...TAB_ITEMS]}
+          activeKey={active.key}
+          onChange={(key) => router.navigate(TAB_ITEMS.find((item) => item.key === key)?.href ?? '/')}
+        />
+      )}
       <BusinessSwitcher
         visible={switcherOpen}
         onDismiss={() => setSwitcherOpen(false)}
