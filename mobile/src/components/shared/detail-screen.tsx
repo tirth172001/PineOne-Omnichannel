@@ -47,19 +47,29 @@ type DetailScreenProps = {
   actions?: ReactNode;
   /** Set false when the screen lays out its own scrolling, e.g. a chat with a pinned composer. */
   scroll?: boolean;
+  /**
+   * The screen's main call(s) to action, pinned to the bottom (e.g. Refund
+   * transaction). Buttons should use DETAIL_FOOTER_BUTTON_RADIUS; lay out two
+   * side by side with `flex: 1`, primary last.
+   */
+  footer?: ReactNode;
   children: ReactNode;
 };
 
 const ROW_PADDING = 12;
+const FOOTER_PADDING = 16;
+/** Radius for buttons in the pinned footer (16dp inside its rounded top corners). */
+export const DETAIL_FOOTER_BUTTON_RADIUS = concentric(Shape.max, FOOTER_PADDING);
 // Back / action buttons sit 12dp inside the rounded top bar.
 const HEADER_BUTTON_RADIUS = concentric(Shape.max, ROW_PADDING, 40);
 
 /**
  * Frame for a pushed detail screen (web: the detail pages' "← Back" row):
  * rounded top bar with back and title, then scrolling content over the web's
- * status gradient. Replaces the org header while a detail is open.
+ * status gradient, and an optional pinned footer holding the main call to
+ * action. Replaces the org header (and the nav bar) while a detail is open.
  */
-export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = true, children }: DetailScreenProps) {
+export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = true, footer, children }: DetailScreenProps) {
   const theme = useTheme();
   const goBack = () => (router.canGoBack() ? router.back() : router.navigate(fallbackHref));
 
@@ -80,6 +90,7 @@ export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = 
       ) : (
         <View style={styles.screen}>{children}</View>
       )}
+      {footer ? <View style={[styles.footer, { backgroundColor: theme.colors.surface }]}>{footer}</View> : null}
     </View>
   );
 }
@@ -93,4 +104,12 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, lineHeight: 24 },
   content: { padding: 16, paddingBottom: 32, gap: 24 },
   gradient: { position: 'absolute', top: 0, left: 0, right: 0 },
+  // Attached to the bottom edge, so only the content-facing (top) corners are rounded.
+  footer: {
+    flexDirection: 'row',
+    gap: 8,
+    padding: FOOTER_PADDING,
+    borderTopLeftRadius: Shape.max,
+    borderTopRightRadius: Shape.max,
+  },
 });

@@ -8,7 +8,7 @@ import { DimmedDecimalAmount } from '@/components/shared/amount';
 import { CompactSegmentedButtons } from '@/components/shared/controls';
 import { CopyableValue } from '@/components/shared/copyable-value';
 import { DetailRow, DetailSections } from '@/components/shared/detail-rows';
-import { DetailScreen, type StatusGradientTone } from '@/components/shared/detail-screen';
+import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen, type StatusGradientTone } from '@/components/shared/detail-screen';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { StatusPill } from '@/components/shared/status';
 import { Shape } from '@/constants/shape';
@@ -43,7 +43,6 @@ const GRADIENT: Record<TransactionRecord['status']['tone'], StatusGradientTone> 
 };
 
 const amount = (value: number) => formatInr(value).replace(/\.00$/, '');
-const HEADER_BUTTON_RADIUS = Shape.small;
 
 /**
  * Transaction detail (web: TransactionDetailContent): payment-mode tile,
@@ -62,17 +61,27 @@ export function TransactionDetail({ transaction, channel }: { transaction: Trans
   const [productOpen, setProductOpen] = useState(false);
 
   return (
-    <DetailScreen title="Transaction details" fallbackHref="/payments?tab=transactions" gradient={GRADIENT[transaction.status.tone]}>
-      <View style={styles.actions}>
-        {!online ? (
-          <Button mode="outlined" compact onPress={() => setChargeSlipOpen(true)} style={styles.headerButton} textColor={theme.colors.onSurface}>
-            View chargeslip / receipt
+    <DetailScreen
+      title="Transaction details"
+      fallbackHref="/payments?tab=transactions"
+      gradient={GRADIENT[transaction.status.tone]}
+      footer={
+        <>
+          {!online ? (
+            <Button
+              mode="outlined"
+              onPress={() => setChargeSlipOpen(true)}
+              textColor={theme.colors.onSurface}
+              style={[styles.footerButton, { borderColor: theme.colors.outlineVariant }]}
+              labelStyle={styles.footerLabel}>
+              View chargeslip / receipt
+            </Button>
+          ) : null}
+          <Button mode="contained" onPress={() => setRefundOpen(true)} style={styles.footerButton} labelStyle={styles.footerLabel}>
+            Refund transaction
           </Button>
-        ) : null}
-        <Button mode="contained" compact onPress={() => setRefundOpen(true)} style={styles.headerButton}>
-          Refund transaction
-        </Button>
-      </View>
+        </>
+      }>
 
       <View style={styles.hero}>
         <View style={[styles.modeTile, { backgroundColor: theme.colors.primary }]}>
@@ -376,8 +385,8 @@ function ChargeSlipPanel({ transaction, visible, onDismiss }: { transaction: Tra
 const TIMELINE_ICON = 16;
 
 const styles = StyleSheet.create({
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' },
-  headerButton: { borderRadius: HEADER_BUTTON_RADIUS },
+  footerButton: { flex: 1, borderRadius: DETAIL_FOOTER_BUTTON_RADIUS },
+  footerLabel: { marginHorizontal: 8 },
   hero: { gap: 12 },
   modeTile: { width: 48, height: 48, borderRadius: Shape.small, alignItems: 'center', justifyContent: 'center' },
   panelTile: { width: 36, height: 36, borderRadius: Shape.small, alignItems: 'center', justifyContent: 'center' },
