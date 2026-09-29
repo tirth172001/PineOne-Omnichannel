@@ -1,5 +1,4 @@
 import { type Href, router } from 'expo-router';
-import { useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
@@ -13,8 +12,9 @@ import type { ChannelFilter } from '@/data/overview';
 type AttentionItem = { key: string; title: string; detail: string; href: Href };
 
 const CARD_PADDING = 12;
-// As wide as the page margin, so the next card starts exactly at the screen edge: nothing peeks in.
-const GAP = 16;
+const GAP = 8;
+/** How much of the next alert shows at the screen edge. */
+const PEEK = 24;
 /** The page's side padding: the row bleeds to the screen edges and starts in line with the content. */
 const PAGE_PADDING = 16;
 
@@ -25,15 +25,14 @@ const shortDate = (date: string) => date.split(' ').slice(0, 2).join(' ');
  * What's blocking the merchant's money right now, aggregated by type
  * (docs/flows/merchant-homepage.md §1): disputes needing a response (earliest
  * due date first) and failed or held settlements, each with the amount at
- * stake, opening its list. Compact full-width cards in one row at the top of
- * the page that scrolls sideways, one at a time with an "N of M" counter, so
- * they're seen first without pushing the hero down (user decision). Renders nothing when nothing
+ * stake, opening its list. Compact cards in one row at the top of the page
+ * that scrolls sideways — the next one peeks in slightly at the edge — so
+ * they're seen first without pushing the rest down (user decisions). Renders nothing when nothing
  * is blocked — the happy view has no banner at all (design principle 2).
  */
 export function AttentionStrip({ channel }: { channel: ChannelFilter }) {
   const theme = useTheme();
   const { width } = useWindowDimensions();
-  const [page, setPage] = useState(0);
   const inChannel = (rowChannel: string) => channel === 'all' || rowChannel === channel;
 
   const disputes = disputeRecords
@@ -59,18 +58,15 @@ export function AttentionStrip({ channel }: { channel: ChannelFilter }) {
     });
   }
   if (!items.length) return null;
-  // Every card is full width, one at a time: a second card peeking in at the edge pulled the eye sideways (audit F3).
-  const cardWidth = width - 2 * PAGE_PADDING;
+  // One card fills the row; with more, each is a little narrower so the next one peeks in, which says the row scrolls (user decision).
+  const cardWidth = items.length === 1 ? width - 2 * PAGE_PADDING : width - 2 * PAGE_PADDING - PEEK;
 
   return (
-    <View>
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       snapToInterval={cardWidth + GAP}
       decelerationRate="fast"
-      onScroll={(event) => setPage(Math.round(event.nativeEvent.contentOffset.x / (cardWidth + GAP)))}
-      scrollEventThrottle={32}
       style={styles.scroller}
       contentContainerStyle={styles.row}
       accessibilityRole="summary"
@@ -98,12 +94,6 @@ export function AttentionStrip({ channel }: { channel: ChannelFilter }) {
         </TouchableRipple>
       ))}
     </ScrollView>
-    {items.length > 1 ? (
-      <Text variant="bodySmall" style={[styles.counter, { color: theme.colors.onSurfaceVariant }]} accessibilityElementsHidden>
-        {Math.min(page, items.length - 1) + 1} of {items.length} · swipe for more
-      </Text>
-    ) : null}
-    </View>
   );
 }
 
@@ -111,7 +101,6 @@ const styles = StyleSheet.create({
   scroller: { marginHorizontal: -PAGE_PADDING, flexGrow: 0 },
   row: { gap: GAP, paddingHorizontal: PAGE_PADDING },
   card: { borderRadius: Shape.max },
-  counter: { marginTop: 6, textAlign: 'right' },
   cardContent: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: CARD_PADDING },
   text: { flex: 1, gap: 2 },
   title: { fontFamily: Fonts.semiBold },
