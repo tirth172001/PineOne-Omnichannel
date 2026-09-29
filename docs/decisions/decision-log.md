@@ -800,6 +800,47 @@ Last updated: 2026-08-04
   - `app/onboarding/store-verification/_variant-a.tsx`
   - `components/onboarding/onboarding-preview.tsx`
 
+86. Area: Mobile page header (every screen)
+- Date: 2026-09-29
+- Decision:
+  - One shared header for every mobile page (`mobile/src/components/page-header.tsx`, reference Figma `6254:20`). The top bar has a leading slot (the store / channel switcher on tab pages, or the organisation on unscoped modules; Back on inner pages) and a trailing slot for the page's main call to action. Below it: a large left-aligned title, then search with every filter combined under one Filters button in the same row, then page-level actions in a sideways-scrolling row.
+  - Secondary actions (Analytics, Email/Download filtered, Bulk refunds, Settlement preferences, Audit log) moved out of header menus into the actions row. The floating search bar was removed.
+  - The scroll behaviour is unchanged: the large title collapses into the bar, and the nav bar hides on scroll down.
+- Rationale: user request for one consistent, left-aligned header across main and inner pages.
+- Touchpoints:
+  - `mobile/src/components/page-header.tsx`, `app-tabs.tsx`, `shared/detail-screen.tsx`, `shared/listing.tsx`, `shared/filters-sheet.tsx`
+
+87. Area: Mobile Overview (home), sales first
+- Date: 2026-09-29
+- Decision:
+  - Variant A from `docs/design/mobile-home-reference-analysis.md` (Mercury / Revolut references). One hero figure, "Collected today", with ⓘ and "N payments · X% successful". Under it, when the money reaches the bank ("₹X reaches your bank tomorrow, 3 PM ›"). Then four verbs: Collect, Refund, Report, More. Then an attention strip shown only when money is blocked (disputes needing a response, failed or on-hold settlements). Then Latest payments (status shown only when not successful), then Explore products.
+  - Search on the Overview header opens Payments with the search focused.
+  - Reports keeps a home touchpoint (the Report verb), overriding `docs/flows/merchant-homepage.md` §3 for mobile.
+  - Sales leads the home screen, with payout as the qualifier line, overriding "Settlements leads" in `docs/flows/merchant-homepage.md` §2.2 for mobile.
+  - Removed: the greeting as a title (it's now a small line), the role badge, the Today's payments and Today's settlement cards, the settlement-source toggle on home, and the eight quick-action tiles.
+  - Hierarchy revision (same day, user feedback "attention is getting divided"): the alerts move to the top as one compact row that scrolls sideways, and render nothing in the happy view (preview with `/?view=happy`). The hero is centred, with 40dp above and below and the amount at 44pt, following the Revolut reference. The greeting line was removed, and the lower sections are set 48dp apart.
+- Rationale: the previous home had about 45 elements and two competing hero amounts. The references show one prominent amount with plenty of breathing space. User decisions: A, keep Report, add search, keep latest payments.
+- Touchpoints:
+  - `mobile/src/app/index.tsx`
+  - `mobile/src/components/overview/sales-hero.tsx`, `quick-actions.tsx`, `attention-strip.tsx`, `latest-payments.tsx`, `explore-products.tsx`
+
+88. Area: Mobile organisation switching
+- Date: 2026-09-29
+- Decision: The header's scope switcher is now only "Channel and stores". The organisation moved to Account settings → Personal details → Organisation, which has a Switch button opening an organisation sheet. Switching starts on all of that organisation's stores and keeps the channel. Tab pages whose data doesn't follow the channel (Payment links, Checkout, Devices, Stores, Users, Settings, Support) no longer show a header switcher.
+- Rationale: user decision. The organisation is part of who you're signed in as (the profile), not a filter on the current page's data.
+- Touchpoints:
+  - `mobile/src/components/business-switcher.tsx`, `scope-switcher.tsx`, `app-tabs.tsx`
+  - `mobile/src/components/account/organisation-switcher.tsx`, `account/account-settings.tsx`
+
+89. Area: Mobile Overview hierarchy fixes and quick actions
+- Date: 2026-09-29
+- Decision: Applied `docs/design/mobile-home-hierarchy-audit.md` §6, detailed in its §8. The order is now Alerts (only when needed) → Hero → Latest payments → Quick actions → Explore products. Quick actions use option D: labelled chips, with More removed, and Refund lands on successful payments with a hint. App-wide: Paper's default font is Inter Display, and the muted text colour is `#6b6b6b` for AA contrast.
+- Rationale: the audit found the second tier of the page inverted (payout too weak; Latest payments and the promotion too strong) and the quick actions unclear. User approved the recommendations.
+- Touchpoints:
+  - `mobile/src/app/index.tsx`, `mobile/src/components/overview/*`
+  - `mobile/src/components/page-header.tsx`, `mobile/src/components/payments/transactions-view.tsx`
+  - `mobile/src/constants/paper-theme.ts`
+
 ## Open Documentation TODOs
 
 1. Add ADRs for each nav version transition milestone.

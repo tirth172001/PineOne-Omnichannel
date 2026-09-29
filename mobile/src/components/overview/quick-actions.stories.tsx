@@ -9,7 +9,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Overview's Quick actions (mobile-only, replaces the web's Analytics): small cards with an icon and label for the most common tasks. Download report, Create payment link and Invite user open their flow directly; Respond to disputes shows how many need a response.",
+          "Overview's quick actions: the everyday jobs as labelled chips (Create payment link, Refund a payment, Download a report) in the same sideways row the listing pages use.",
       },
     },
   },

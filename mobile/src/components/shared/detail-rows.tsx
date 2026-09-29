@@ -30,7 +30,7 @@ const SECTION_ICONS: Record<string, string> = {
 export function SectionCard({ title, icon, children }: { title: string; icon?: string; children: ReactNode }) {
   const theme = useTheme();
   return (
-    <Card mode="outlined" style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+    <Card mode="contained" style={[styles.card, { backgroundColor: theme.colors.surface }]}>
       <View style={styles.cardHeader}>
         <Icon source={icon ?? SECTION_ICONS[title] ?? 'info'} size={16} color={theme.colors.onSurfaceVariant} />
         <Text variant="labelLarge" style={[styles.cardTitle, { color: theme.colors.onSurfaceVariant }]} accessibilityRole="header">

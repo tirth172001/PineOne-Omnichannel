@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, RadioButton, Text, useTheme } from 'react-native-paper';
+import { Button, Text, useTheme } from 'react-native-paper';
 import { DatePickerModal, en, registerTranslation, TimePickerModal } from 'react-native-paper-dates';
 
 import { Fonts } from '@/constants/theme';
 
-import { OutlinedActionButton } from './controls';
-import { PANEL_INNER_RADIUS, PANEL_PADDING, PanelSection, PanelSheet } from './panel-sheet';
+import { PANEL_INNER_RADIUS } from './panel-sheet';
 
 registerTranslation('en', en);
 
@@ -63,39 +62,20 @@ function parseTime(time: string) {
   return { hours, minutes: Number(match[2]) };
 }
 
-type DateRangeFilterProps = {
-  presets: DateRangePreset[];
-  value: DateRangeValue;
-  onApply: (value: DateRangeValue) => void;
-  /** The web's default preset, restored by "Clear filter". */
-  initialPresetId: string;
-};
-
 /**
- * Date-range filter button and its sheet (web: useDateRangeFilter +
- * DateRangeFilterPanel): preset list, start and end date and time, Clear
- * filter and Apply. The web's inline two-month calendar becomes the Material
- * date picker, opened from each date field.
+ * Start and end date & time fields, each opening the Material date or time
+ * picker. Picking a date makes the range custom. Shown in the Filters sheet
+ * when the range is Custom.
  */
-export function DateRangeFilter({ presets, value, onApply, initialPresetId }: DateRangeFilterProps) {
+export function DateRangeFields({ value, onChange }: { value: DateRangeValue; onChange: (value: DateRangeValue) => void }) {
   const theme = useTheme();
-  const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState(value);
   const [picker, setPicker] = useState<null | 'start-date' | 'end-date' | 'start-time' | 'end-time'>(null);
-  const label = presets.find((preset) => preset.id === value.presetId)?.label ?? 'Custom';
-
-  const openSheet = () => {
-    setDraft(value);
-    setOpen(true);
-  };
   const setDate = (field: 'from' | 'to', date: Date | undefined) => {
     if (!date) return;
-    setDraft((current) => {
-      const range = current.range ?? { from: date, to: date };
-      return { ...current, presetId: 'custom', range: { ...range, [field]: date } };
-    });
+    const range = value.range ?? { from: date, to: date };
+    onChange({ ...value, presetId: 'custom', range: { ...range, [field]: date } });
   };
-  const timePicker = picker === 'start-time' ? draft.startTime : picker === 'end-time' ? draft.endTime : DEFAULT_TIME;
+  const timePicker = picker === 'start-time' ? value.startTime : picker === 'end-time' ? value.endTime : DEFAULT_TIME;
 
   const field = (title: string, dateField: 'from' | 'to', timeKey: 'startTime' | 'endTime') => (
     <View style={styles.fieldGroup}>
@@ -110,7 +90,7 @@ export function DateRangeFilter({ presets, value, onApply, initialPresetId }: Da
           textColor={theme.colors.onSurface}
           style={[styles.fieldButton, { borderColor: theme.colors.outlineVariant }]}
           contentStyle={styles.fieldContent}>
-          {formatDate(draft.range?.[dateField])}
+          {formatDate(value.range?.[dateField])}
         </Button>
         <Button
           mode="outlined"
@@ -119,7 +99,7 @@ export function DateRangeFilter({ presets, value, onApply, initialPresetId }: Da
           textColor={theme.colors.onSurface}
           style={[styles.fieldButton, styles.timeButton, { borderColor: theme.colors.outlineVariant }]}
           contentStyle={styles.fieldContent}>
-          {draft[timeKey]}
+          {value[timeKey]}
         </Button>
       </View>
     </View>
@@ -127,63 +107,13 @@ export function DateRangeFilter({ presets, value, onApply, initialPresetId }: Da
 
   return (
     <>
-      <OutlinedActionButton
-        label={label}
-        icon="calendar-blank"
-        onPress={openSheet}
-        active={open}
-        accessibilityLabel={`Date range: ${label}`}
-      />
-      <PanelSheet
-        visible={open}
-        onDismiss={() => setOpen(false)}
-        title="Date range"
-        footer={
-          <View style={styles.footer}>
-            <Button mode="text" onPress={() => setDraft(makeDateRangeValue(presets, initialPresetId))} style={styles.footerButton}>
-              Clear filter
-            </Button>
-            <Button
-              mode="contained"
-              onPress={() => {
-                onApply(draft);
-                setOpen(false);
-              }}
-              style={styles.footerButton}>
-              Apply
-            </Button>
-          </View>
-        }>
-        <PanelSection>
-          <RadioButton.Group
-            value={draft.presetId}
-            onValueChange={(presetId) => {
-              const preset = presets.find((item) => item.id === presetId);
-              setDraft((current) => ({ ...current, presetId, range: preset?.getRange?.() ?? current.range }));
-            }}>
-            {presets.map((preset) => (
-              <RadioButton.Item
-                key={preset.id}
-                label={preset.label}
-                value={preset.id}
-                position="leading"
-                labelStyle={styles.radioLabel}
-                style={styles.radio}
-              />
-            ))}
-          </RadioButton.Group>
-        </PanelSection>
-        <PanelSection last>
-          {field('Start date & time', 'from', 'startTime')}
-          {field('End date & time', 'to', 'endTime')}
-        </PanelSection>
-      </PanelSheet>
-
+      {field('Start date & time', 'from', 'startTime')}
+      {field('End date & time', 'to', 'endTime')}
       <DatePickerModal
         locale="en"
         mode="single"
         visible={picker === 'start-date' || picker === 'end-date'}
-        date={picker === 'end-date' ? draft.range?.to : draft.range?.from}
+        date={picker === 'end-date' ? value.range?.to : value.range?.from}
         onDismiss={() => setPicker(null)}
         onConfirm={({ date }) => {
           setDate(picker === 'end-date' ? 'to' : 'from', date);
@@ -196,8 +126,7 @@ export function DateRangeFilter({ presets, value, onApply, initialPresetId }: Da
         {...parseTime(timePicker)}
         onDismiss={() => setPicker(null)}
         onConfirm={({ hours, minutes }) => {
-          const key = picker === 'end-time' ? 'endTime' : 'startTime';
-          setDraft((current) => ({ ...current, [key]: formatTime(hours, minutes) }));
+          onChange({ ...value, [picker === 'end-time' ? 'endTime' : 'startTime']: formatTime(hours, minutes) });
           setPicker(null);
         }}
       />
@@ -206,14 +135,10 @@ export function DateRangeFilter({ presets, value, onApply, initialPresetId }: Da
 }
 
 const styles = StyleSheet.create({
-  radio: { paddingHorizontal: 0, paddingVertical: 4 },
-  radioLabel: { textAlign: 'left', fontFamily: Fonts.regular },
   fieldGroup: { gap: 8 },
   fieldTitle: { fontFamily: Fonts.semiBold },
   fieldRow: { flexDirection: 'row', gap: 8 },
   fieldButton: { flex: 1, borderRadius: PANEL_INNER_RADIUS },
   timeButton: { flex: 0.8 },
   fieldContent: { justifyContent: 'flex-start' },
-  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: PANEL_PADDING },
-  footerButton: { borderRadius: PANEL_INNER_RADIUS },
 });

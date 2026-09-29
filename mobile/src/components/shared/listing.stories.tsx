@@ -5,13 +5,12 @@ import { Button, Text } from 'react-native-paper';
 
 import { BankLogo } from './bank-logo';
 import { BarChart, PieChart, XYChart } from './charts';
-import { FilterMenuButton } from './controls';
 import { CopyableValue } from './copyable-value';
-import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from './date-range-filter';
+import { getDefaultDateRangePresets, makeDateRangeValue } from './date-range-filter';
 import { DetailSections } from './detail-rows';
 import { LazyListFooter, useLazyList } from './lazy-list';
-import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from './listing';
-import { type MoreFilterSelection, MoreFilters } from './more-filters';
+import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar, selectFilter } from './listing';
+import { type MoreFilterSelection } from './more-filters';
 import { PanelSection, PanelSheet } from './panel-sheet';
 import { DotStatusBadge, StatusPill } from './status';
 import { SummaryCards } from './summary-cards';
@@ -31,30 +30,29 @@ function ListingDemo() {
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search by any ID"
-        filters={
-          <>
-            <DateRangeFilter presets={presets} value={date} onApply={setDate} initialPresetId="30d" />
-            <FilterMenuButton
-              value={status}
-              onValueChange={setStatus}
-              options={[
-                { value: 'all', label: 'Status' },
-                { value: 'success', label: 'Success' },
-                { value: 'failed', label: 'Failed' },
-              ]}
-              accessibilityLabel="Status"
-            />
-            <MoreFilters
-              categories={[
-                { id: 'modes', label: 'Payment modes', options: [{ id: 'upi', label: 'UPI' }, { id: 'card', label: 'Card' }] },
-                { id: 'zones', label: 'Zones', display: 'badge', searchable: false, options: ['North', 'South'].map((z) => ({ id: z, label: z })) },
-              ]}
-              applied={more}
-              onApply={setMore}
-            />
-          </>
-        }
-        floatingActions={[{ label: 'Download filtered', icon: 'download-simple' }]}
+        filters={[
+          { type: 'date', presets, value: date, onApply: setDate, initialPresetId: '30d' },
+          selectFilter({
+            label: 'Status',
+            options: [
+              { value: 'all', label: 'Status' },
+              { value: 'success', label: 'Success' },
+              { value: 'failed', label: 'Failed' },
+            ],
+            value: status,
+            onApply: setStatus,
+          }),
+          {
+            type: 'more',
+            categories: [
+              { id: 'modes', label: 'Payment modes', options: [{ id: 'upi', label: 'UPI' }, { id: 'card', label: 'Card' }] },
+              { id: 'zones', label: 'Zones', display: 'badge', searchable: false, options: ['North', 'South'].map((z) => ({ id: z, label: z })) },
+            ],
+            applied: more,
+            onApply: setMore,
+          },
+        ]}
+        actions={[{ label: 'Download filtered', icon: 'download-simple' }]}
       />
       <SummaryCards cards={[{ icon: 'wallet', label: 'Total volume', value: 4472500, subtext: '110 payments' }]} />
       <ListCard>
@@ -99,7 +97,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'The shared listing pattern every module uses (web: ListingToolbar + SummaryCardGroup + table + PaginationControls): search, horizontally scrolling filters (date sheet, selects, More filters), actions, summary cards, stacked record rows, and pagination.',
+          'The shared listing pattern every module uses (web: ListingToolbar + SummaryCardGroup + table + PaginationControls): search with every filter (date, selects, More filters) under one Filters button, a sideways-scrolling row of page actions, summary cards, stacked record rows, and pagination.',
       },
     },
   },

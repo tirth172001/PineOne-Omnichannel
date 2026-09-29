@@ -116,7 +116,7 @@ export function DisputeDetail({ record }: { record: DisputeRecord }) {
 
   return (
     <CollapsingDetailScreen
-      fallbackHref="/more/disputes"
+      fallbackHref="/disputes"
       gradient={GRADIENT[flowState]}
       hero={hero}
       compactTitle={record.amount}

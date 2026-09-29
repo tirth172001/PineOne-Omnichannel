@@ -25,7 +25,7 @@ type BusinessContextValue = {
    * Overview is on All channels (in-store to start).
    */
   specificChannel: SpecificChannel;
-  /** Header / title subtext, e.g. "Koramangala · In-store", "Online" (no stores online), "All stores · All channels". */
+  /** Header / title subtext, channel first: e.g. "In-store · Koramangala", "Online" (no stores online), "All channels · All stores". */
   scopeText: (allowAllChannels: boolean) => string;
   /** Applies a whole scope at once (the header switcher's Apply). */
   applyScope: (scope: { organisationId: string; shopIds: string[]; channel: ChannelFilter }) => void;
@@ -83,7 +83,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       scopeText: (allowAllChannels: boolean) => {
         const shown: ChannelFilter = allowAllChannels ? channel : specificChannel;
         const label = CHANNEL_OPTIONS.find((option) => option.value === shown)?.label ?? 'All channels';
-        return shown === 'online' ? label : `${scopeLabel} · ${label}`;
+        return shown === 'online' ? label : `${label} · ${scopeLabel}`;
       },
       applyScope: (scope: { organisationId: string; shopIds: string[]; channel: ChannelFilter }) => {
         const next = ORGANISATIONS.find((org) => org.id === scope.organisationId) ?? organisation;

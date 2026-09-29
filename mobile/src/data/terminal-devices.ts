@@ -1,5 +1,5 @@
 /**
- * Terminal devices and their mode-change audit log, ported verbatim from the
+ * In-store (terminal) devices and their mode-change audit log, ported verbatim from the
  * web (lib/terminal-devices-data.ts + lib/store-identity.ts). Like the web,
  * rows live in module state so a mode change shows up in the audit log.
  */

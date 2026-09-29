@@ -47,7 +47,9 @@ colors.surface = FIGMA_TOKENS.card;
 colors.surfaceVariant = FIGMA_TOKENS.accent;
 colors.onBackground = FIGMA_TOKENS.foreground;
 colors.onSurface = FIGMA_TOKENS.foreground;
-colors.onSurfaceVariant = FIGMA_TOKENS.mutedForeground;
+// A step darker than Figma's muted-foreground (#737373, 4.35:1 on the grey page): muted text is
+// mostly on the page background, where #737373 misses WCAG AA for 14px text. #6b6b6b is 4.9:1.
+colors.onSurfaceVariant = '#6b6b6b';
 colors.outlineVariant = FIGMA_TOKENS.border;
 colors.secondaryContainer = FIGMA_TOKENS.secondary;
 colors.onSecondaryContainer = FIGMA_TOKENS.accentForeground;
@@ -115,8 +117,12 @@ const fontConfig = Object.fromEntries(
   ])
 );
 
+const typescale = configureFonts({ config: fontConfig });
+
 export const paperTheme: MD3Theme = {
   ...MD3LightTheme,
   colors: { ...MD3LightTheme.colors, ...colors, ...additionalColors },
-  fonts: configureFonts({ config: fontConfig }),
+  // `default` is what a Text without a variant gets — including text nested inside another Text,
+  // which Paper doesn't let inherit its parent's family. Left unset it's Roboto (San Francisco on iOS).
+  fonts: { ...typescale, default: { ...typescale.default, fontFamily: Fonts.regular, fontWeight: 'normal' } },
 };

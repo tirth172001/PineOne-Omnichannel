@@ -1,9 +1,8 @@
 import { createContext, type ReactNode, useContext, useEffect, useState, useSyncExternalStore } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Icon, Menu, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { Menu, useTheme } from 'react-native-paper';
 
-import { concentric, Shape } from '@/constants/shape';
-import { Fonts } from '@/constants/theme';
+import { HeaderControl } from '@/components/page-header';
+import { Shape } from '@/constants/shape';
 
 export type HeaderAction = {
   label: string;
@@ -66,47 +65,12 @@ export function useHeaderActions(actions: HeaderAction[], menu?: HeaderActionsMe
   useEffect(() => () => store?.set(EMPTY), [store]);
 }
 
-// Header buttons: 36dp tall, 12dp inside the rounded top bar.
-const BUTTON_HEIGHT = 36;
-const BUTTON_RADIUS = concentric(Shape.max, 12, BUTTON_HEIGHT);
-
-/** An outlined header button: icon plus a short label (and a caret when it opens a menu), so it says what it does. */
-function HeaderButton({
-  icon,
-  label,
-  menu = false,
-  onPress,
-  accessibilityLabel,
-}: {
-  icon: string;
-  label: string;
-  menu?: boolean;
-  onPress?: () => void;
-  accessibilityLabel: string;
-}) {
-  const theme = useTheme();
-  return (
-    <TouchableRipple
-      onPress={onPress}
-      borderless
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      style={[styles.button, { borderColor: theme.colors.outlineVariant }]}>
-      <View style={styles.buttonContent}>
-        <Icon source={icon} size={18} color={theme.colors.onSurface} />
-        <Text variant="labelLarge" style={styles.buttonLabel}>
-          {label}
-        </Text>
-        {menu ? <Icon source="caret-down" size={14} color={theme.colors.onSurfaceVariant} /> : null}
-      </View>
-    </TouchableRipple>
-  );
-}
-
 /**
- * The page's header actions: one action shows as its own labelled button;
- * several merge into one labelled button (with a caret) that opens them as a
- * menu (user decisions).
+ * The page's header actions, the top bar's trailing control: its main call to
+ * action (e.g. New link, Add device). One action shows as its own labelled
+ * button; several merge into one labelled button (with a caret) that opens
+ * them as a menu (user decisions). Secondary page actions (Analytics,
+ * downloads…) go in the toolbar's action row instead.
  */
 export function HeaderActionsSlot({ store }: { store: HeaderActionsStore }) {
   const theme = useTheme();
@@ -117,7 +81,7 @@ export function HeaderActionsSlot({ store }: { store: HeaderActionsStore }) {
   if (actions.length === 1) {
     const [action] = actions;
     return (
-      <HeaderButton icon={action.icon} label={action.shortLabel ?? action.label} onPress={action.onPress} accessibilityLabel={action.label} />
+      <HeaderControl icon={action.icon} label={action.shortLabel ?? action.label} onPress={action.onPress} accessibilityLabel={action.label} />
     );
   }
   const menuLabel = menu?.label ?? 'Actions';
@@ -128,10 +92,10 @@ export function HeaderActionsSlot({ store }: { store: HeaderActionsStore }) {
       anchorPosition="bottom"
       contentStyle={{ borderRadius: Shape.small, backgroundColor: theme.colors.surface }}
       anchor={
-        <HeaderButton
+        <HeaderControl
           icon={menu?.icon ?? 'dots-three-vertical'}
           label={menuLabel}
-          menu
+          caret
           onPress={() => setOpen(true)}
           accessibilityLabel={`${menuLabel}: ${actions.map((action) => action.label).join(', ')}`}
         />
@@ -150,9 +114,3 @@ export function HeaderActionsSlot({ store }: { store: HeaderActionsStore }) {
     </Menu>
   );
 }
-
-const styles = StyleSheet.create({
-  button: { height: BUTTON_HEIGHT, borderWidth: 1, borderRadius: BUTTON_RADIUS, justifyContent: 'center' },
-  buttonContent: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12 },
-  buttonLabel: { fontFamily: Fonts.medium },
-});

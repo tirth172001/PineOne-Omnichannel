@@ -10,8 +10,8 @@ import { type BusinessScope, BusinessSwitcher } from './business-switcher';
 
 function BusinessSwitcherDemo() {
   const [visible, setVisible] = useState(true);
-  const [scope, setScope] = useState<BusinessScope>({ organisationId: ORGANISATIONS[0].id, shopIds: [], channel: 'all' });
-  const organisation = ORGANISATIONS.find((org) => org.id === scope.organisationId) ?? ORGANISATIONS[0];
+  const [scope, setScope] = useState<BusinessScope>({ shopIds: [], channel: 'all' });
+  const organisation = ORGANISATIONS[0];
   const stores = scope.shopIds.length === 0 ? 'All stores' : `${scope.shopIds.length} store(s)`;
 
   return (
@@ -22,7 +22,7 @@ function BusinessSwitcherDemo() {
       <Button mode="outlined" onPress={() => setVisible(true)}>
         Open switcher
       </Button>
-      <BusinessSwitcher visible={visible} onDismiss={() => setVisible(false)} organisations={ORGANISATIONS} scope={scope} onApply={setScope} />
+      <BusinessSwitcher visible={visible} onDismiss={() => setVisible(false)} shops={organisation.shops} scope={scope} onApply={setScope} />
     </View>
   );
 }
@@ -34,7 +34,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'The app-wide scope switcher, opened from the header: organisation, any combination of stores (or all), and channel (all, in-store, online), applied together. Pages have no store or channel filters of their own.',
+          'The app-wide scope switcher, opened from the header: channel (all, in-store, online) and any combination of stores (or all), applied together. The organisation is switched from Account settings. Pages have no store or channel filters of their own.',
       },
     },
   },

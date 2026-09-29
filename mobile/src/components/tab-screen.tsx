@@ -1,46 +1,60 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
 
-import { TabChrome, useTabNavBar } from '@/components/app-tabs';
-import { FloatingLayerHost, FloatingLayerProvider, FloatingLayerSpacer, useFloatingLayer } from '@/components/shared/floating-layer';
+import { TabChrome, TabHero, useTabNavBar, useTabScroll } from '@/components/app-tabs';
+import { type HeaderAction, type HeaderActionsMenu, useHeaderActions } from '@/components/header-actions';
 import { EndReachedProvider, useEndReached } from '@/components/shared/lazy-list';
 
+type TabScreenProps = {
+  tab: ComponentProps<typeof TabChrome>['tab'];
+  /**
+   * The page's own actions in the header (see useHeaderActions), for pages
+   * that draw their TabScreen themselves and so can't call the hook inside it.
+   */
+  actions?: HeaderAction[];
+  actionsMenu?: HeaderActionsMenu;
+  children: ReactNode;
+};
+
 /**
- * A tab's root screen (Payments, Settlements, Refunds, More): the tab chrome
- * (header and navigation bar) around scrolling content, where lazy lists load
- * their next rows as the end of the page comes into view, and a floating
- * layer just above the navigation bar (e.g. a listing's search and exports).
+ * A tab's root screen (Payments, Settlements, and every module: Refunds,
+ * Disputes, Reports…): the tab chrome (header and navigation bar) around
+ * scrolling content, where lazy lists load their next rows as the end of the
+ * page comes into view. `actions` is the header's trailing call to action.
  */
-export function TabScreen({ tab, children }: { tab: ComponentProps<typeof TabChrome>['tab']; children: ReactNode }) {
+export function TabScreen({ tab, actions, actionsMenu, children }: TabScreenProps) {
   return (
     <TabChrome tab={tab}>
+      {actions ? <PageHeaderActions actions={actions} menu={actionsMenu} /> : null}
       <TabScrollContent>{children}</TabScrollContent>
     </TabChrome>
   );
 }
 
-/** Inside TabChrome, so it can hide the navigation bar while scrolling down and ride the floating layer above it. */
+function PageHeaderActions({ actions, menu }: { actions: HeaderAction[]; menu?: HeaderActionsMenu }) {
+  useHeaderActions(actions, menu);
+  return null;
+}
+
+/** Inside TabChrome, so its scrolling can collapse the large title and hide the navigation bar while scrolling down. */
 function TabScrollContent({ children }: { children: ReactNode }) {
   const endReached = useEndReached();
-  const floating = useFloatingLayer();
   const navBar = useTabNavBar();
+  const tabScroll = useTabScroll(endReached.scrollProps.onScroll);
   return (
     <View style={styles.area}>
-      <ScrollView
+      <Animated.ScrollView
         {...endReached.scrollProps}
-        onScroll={(event) => {
-          endReached.scrollProps.onScroll(event);
-          navBar.onScroll(event.nativeEvent.contentOffset.y);
-        }}
-        contentContainerStyle={[styles.content, { paddingBottom: 32 + navBar.height }]}
+        {...tabScroll.scrollProps}
+        contentContainerStyle={[styles.content, { paddingTop: tabScroll.contentTop, paddingBottom: 32 + navBar.height }]}
         keyboardShouldPersistTaps="handled">
-        <FloatingLayerProvider store={floating}>
-          <EndReachedProvider value={endReached.value}>{children}</EndReachedProvider>
-        </FloatingLayerProvider>
-        <FloatingLayerSpacer store={floating} />
-      </ScrollView>
-      {/* Sits above the navigation bar, and follows it down when it slides away. */}
-      <FloatingLayerHost store={floating} offsetY={navBar.hidden.interpolate({ inputRange: [0, 1], outputRange: [-navBar.height, 0] })} />
+        <EndReachedProvider value={endReached.value}>
+          <View style={styles.stack}>
+            <TabHero />
+            {children}
+          </View>
+        </EndReachedProvider>
+      </Animated.ScrollView>
     </View>
   );
 }
@@ -48,4 +62,6 @@ function TabScrollContent({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   area: { flex: 1 },
   content: { padding: 16 },
+  // Sections of a page (e.g. summary cards, toolbar, listing) are 24dp apart.
+  stack: { gap: 24 },
 });

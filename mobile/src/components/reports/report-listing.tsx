@@ -2,11 +2,10 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
-import { FilterMenuButton } from '@/components/shared/controls';
-import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
+import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
-import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
-import { type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
+import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
+import { type MoreFilterSelection } from '@/components/shared/more-filters';
 import { StatusPill } from '@/components/shared/status';
 import { Fonts } from '@/constants/theme';
 import {
@@ -50,14 +49,12 @@ export function ReportListing({ tab }: { tab: 'history' | 'schedule' }) {
           lazy.reset();
         }}
         searchPlaceholder="Search reports"
-        filters={
-          <>
-            <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="week" />
-            <FilterMenuButton value={status} onValueChange={setStatus} options={REPORT_STATUS_OPTIONS} accessibilityLabel="Status" />
-            <MoreFilters categories={REPORT_MORE_FILTERS} applied={moreFilters} onApply={setMoreFilters} />
-          </>
-        }
-        floatingActions={[{ label: 'Download filtered', icon: 'download-simple' }]}
+        filters={[
+          { type: 'date', presets, value: dateRange, onApply: setDateRange, initialPresetId: 'week' },
+          selectFilter({ label: 'Status', options: REPORT_STATUS_OPTIONS, value: status, onApply: setStatus }),
+          { type: 'more', categories: REPORT_MORE_FILTERS, applied: moreFilters, onApply: setMoreFilters },
+        ]}
+        actions={[{ label: 'Download filtered', icon: 'download-simple' }]}
       />
 
       {tab === 'history' ? (

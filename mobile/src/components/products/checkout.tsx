@@ -2,13 +2,13 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Image } from 'expo-image';
 import { type ReactNode, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, Divider, Icon, Switch, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { Card, Divider, Icon, Switch, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { Tabs } from '@/components/material3/tabs';
 import { SearchField } from '@/components/search-field';
-import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen } from '@/components/shared/detail-screen';
 import { FormTextInput } from '@/components/shared/form-fields';
 import { PANEL_INNER_RADIUS, PanelSheet } from '@/components/shared/panel-sheet';
+import { TabScreen } from '@/components/tab-screen';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { DEFAULT_CHECKOUT_COLOR, PAYMODE_CARDS, type PaymodeCard } from '@/data/checkout';
@@ -59,7 +59,7 @@ function SettingsSection({ title, children }: { title: string; children: ReactNo
   const theme = useTheme();
   const rows = (Array.isArray(children) ? children : [children]).filter(Boolean);
   return (
-    <Card mode="outlined" style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+    <Card mode="contained" style={[styles.card, { backgroundColor: theme.colors.surface }]}>
       <Text variant="titleMedium" style={[styles.semiBold, styles.sectionTitle]}>
         {title}
       </Text>
@@ -437,7 +437,7 @@ function PaymodesTab() {
   return (
     <>
       {PAYMODE_CARDS.map((card) => (
-        <Card key={card.title} mode="outlined" style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+        <Card key={card.title} mode="contained" style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.paymodeBody}>
             <View style={styles.rowBetween}>
               <View style={[styles.iconTile, { borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceVariant }]}>
@@ -505,7 +505,7 @@ function PaymodesTab() {
 /**
  * Checkout (web: CheckoutContent): Customisation — checkout and wallet
  * branding, express-checkout preferences, and the live mobile checkout
- * preview, saved with the pinned Save details — and Paymodes, each payment
+ * preview, saved with the header's Save once edited — and Paymodes, each payment
  * mode with its issuers, banks, apps or wallets. The web's side-by-side
  * preview (with desktop view and zoom) stacks under the settings on a phone.
  */
@@ -516,22 +516,23 @@ export function Checkout() {
   const [dirty, setDirty] = useState(false);
 
   return (
-    <DetailScreen
-      title="Checkout"
-      fallbackHref="/more"
-      footer={
-        tab === 'customisation' ? (
-          <Button
-            mode="contained"
-            disabled={!dirty}
-            onPress={() => {
-              toast('Checkout settings saved');
-              setDirty(false);
-            }}
-            style={styles.footerButton}>
-            Save details
-          </Button>
-        ) : undefined
+    <TabScreen
+      tab="checkout"
+      // Save shows once the customisation has unsaved changes.
+      actions={
+        tab === 'customisation' && dirty
+          ? [
+              {
+                label: 'Save details',
+                shortLabel: 'Save',
+                icon: 'check',
+                onPress: () => {
+                  toast('Checkout settings saved');
+                  setDirty(false);
+                },
+              },
+            ]
+          : []
       }>
       <View style={styles.tabs}>
         <Tabs tabs={TABS} activeKey={tab} onChange={setTab} variant="secondary" />
@@ -547,7 +548,7 @@ export function Checkout() {
       ) : (
         <PaymodesTab />
       )}
-    </DetailScreen>
+    </TabScreen>
   );
 }
 
@@ -571,7 +572,6 @@ const styles = StyleSheet.create({
   fill: { width: '100%', height: '100%' },
   link: { borderRadius: INNER_RADIUS, paddingVertical: 4 },
   walletName: { paddingHorizontal: CARD_PADDING, paddingVertical: 14, gap: 4 },
-  footerButton: { flex: 1, borderRadius: DETAIL_FOOTER_BUTTON_RADIUS },
   // Preview
   previewWrap: { borderRadius: Shape.max, padding: CARD_PADDING, gap: 12 },
   previewHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

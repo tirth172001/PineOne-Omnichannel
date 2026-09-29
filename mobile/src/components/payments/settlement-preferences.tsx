@@ -68,7 +68,7 @@ export function SettlementPreferences() {
 
       {tab === 'settlement-cycle' ? (
         <View style={styles.block}>
-          <Card mode="outlined" style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+          <Card mode="contained" style={[styles.card, { backgroundColor: theme.colors.surface }]}>
             {/* Web: bg-gradient-to-r from-teal-50. */}
             <View style={[styles.cardRow, styles.weekend]}>
               <Icon source="calendar-check-fill" size={24} color="#0d9488" />
@@ -126,8 +126,8 @@ export function SettlementPreferences() {
           {SETTLEMENT_ACCOUNTS.map((account, index) => (
             <Card
               key={index}
-              mode="outlined"
-              style={[styles.card, styles.account, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+              mode="contained"
+              style={[styles.card, styles.account, { backgroundColor: theme.colors.surface }]}>
               <View style={styles.accountTop}>
                 <BankLogo bank={account.bank} size={32} />
                 <Button mode="text" compact icon="pencil-simple" style={styles.update} labelStyle={styles.updateLabel}>

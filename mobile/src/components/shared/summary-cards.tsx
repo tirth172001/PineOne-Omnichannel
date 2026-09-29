@@ -20,8 +20,8 @@ export function SummaryCards({ cards, carousel = false }: { cards: SummaryCardIt
   const items = cards.map((card) => (
         <Card
           key={card.label}
-          mode="outlined"
-          style={[styles.card, carousel && styles.fill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+          mode="contained"
+          style={[styles.card, carousel && styles.fill, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.content}>
             <View style={styles.header}>
               <Icon source={card.icon} size={16} color={theme.colors.onSurfaceVariant} />

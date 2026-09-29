@@ -65,6 +65,8 @@ Fixed for every merchant, role, and channel — no personalization:
 
 **Settlements → Transactions → Refunds → Disputes**
 
+> **Mobile override (2026-09-29, decision-log 87):** the mobile Overview leads with *Collected today* and keeps payout as the line directly under it, so both questions are answered in the first glance. See `docs/design/mobile-home-reference-analysis.md`.
+
 Settlements leads because "will I actually get paid, how much, and when" is the sharper day-to-day anxiety for a small merchant than "did today's sale go through" — Transactions, while higher-frequency, is answered the moment a sale completes; Settlements stays open until payout lands. Refunds and Disputes trail as lower-frequency, exception-driven areas.
 
 ### 2.3 Time Range
@@ -95,6 +97,8 @@ This is a new, lighter card design — it replaces `OverviewDetailCards`'s curre
 ## 3. Reports Touchpoint
 
 **No homepage touchpoint.** No attention item, no snapshot module, no quick-action button.
+
+> **Mobile override (2026-09-29, decision-log 87):** the mobile Overview keeps a *Report* verb among its four actions. Generating an end-of-day report is a daily task for many merchants, and on a phone the Reports tab is behind the More grid rather than one click away.
 
 Two reasons converge on this:
 - **Ticket 01's rule already excludes it as an attention item.** The attention surface is money-blocking issues only, no exceptions — a generated or ready report never blocks a merchant's money, so it can't qualify regardless of how "urgent" it might feel.

@@ -2,16 +2,16 @@ import { usePathname } from 'expo-router';
 import { createContext, type ReactNode, useContext, useState } from 'react';
 
 import { BusinessSwitcher } from '@/components/business-switcher';
-import { ORGANISATIONS } from '@/data/businesses';
 import { useBusiness } from '@/hooks/use-business';
 
 const ScopeSwitcherContext = createContext<(() => void) | null>(null);
 
 /**
- * Owns the one org / store / channel switcher sheet so any screen can open it:
+ * Owns the one channel / store switcher sheet so any screen can open it:
  * the home header, and inner pages whose data follows the scope (their title
  * row shows the scope with an arrow). Global switching only — pages never
- * filter by store or channel themselves.
+ * filter by store or channel themselves. The organisation isn't part of it:
+ * that's switched from Account settings (user decision).
  */
 export function ScopeSwitcherProvider({ children }: { children: ReactNode }) {
   const business = useBusiness();
@@ -24,13 +24,9 @@ export function ScopeSwitcherProvider({ children }: { children: ReactNode }) {
       <BusinessSwitcher
         visible={open}
         onDismiss={() => setOpen(false)}
-        organisations={ORGANISATIONS}
-        scope={{
-          organisationId: business.organisation.id,
-          shopIds: business.shopIds,
-          channel: allowAllChannels ? business.channel : business.specificChannel,
-        }}
-        onApply={business.applyScope}
+        shops={business.organisation.shops}
+        scope={{ shopIds: business.shopIds, channel: allowAllChannels ? business.channel : business.specificChannel }}
+        onApply={(scope) => business.applyScope({ organisationId: business.organisation.id, ...scope })}
         allowAllChannels={allowAllChannels}
       />
     </ScopeSwitcherContext.Provider>

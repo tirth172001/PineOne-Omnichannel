@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Appbar, Card, Switch, Text, useTheme } from 'react-native-paper';
+import { Card, Switch, Text, useTheme } from 'react-native-paper';
 
 import { BarChart, PieChart, XYChart } from '@/components/shared/charts';
 import { FilterMenuButton } from '@/components/shared/controls';
-import { DETAIL_HEADER_BUTTON_STYLE, DetailScreen } from '@/components/shared/detail-screen';
+import { HeaderControl } from '@/components/page-header';
+import { DetailScreen } from '@/components/shared/detail-screen';
 import { PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
@@ -59,11 +60,9 @@ export function TransactionAnalytics() {
   return (
     <DetailScreen
       title="Transaction Analytics"
+      subtitle="Deep performance analysis for transaction flows"
       fallbackHref="/payments"
-      actions={<Appbar.Action icon="sliders" onPress={() => setCustomizeOpen(true)} accessibilityLabel="Customize" style={DETAIL_HEADER_BUTTON_STYLE} />}>
-      <Text variant="bodyMedium" style={[styles.regular, { color: theme.colors.onSurfaceVariant }]}>
-        Deep performance analysis for transaction flows
-      </Text>
+      actions={<HeaderControl icon="sliders" onPress={() => setCustomizeOpen(true)} accessibilityLabel="Customize" />}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scroller} contentContainerStyle={styles.filters}>
         <FilterMenuButton value={date} onValueChange={setDate} options={ANALYTICS_DATE_OPTIONS} icon="calendar-dots" accessibilityLabel="Date range" />
         <FilterMenuButton value={compare} onValueChange={setCompare} options={ANALYTICS_COMPARE_OPTIONS} accessibilityLabel="Compare" />
@@ -71,7 +70,7 @@ export function TransactionAnalytics() {
       </ScrollView>
 
       {visible.map((widget) => (
-        <Card key={widget.id} mode="outlined" style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+        <Card key={widget.id} mode="contained" style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.cardBody}>
             <Text variant="labelLarge">{widget.title}</Text>
             <Text style={styles.value}>{widget.value}</Text>
@@ -114,7 +113,6 @@ export function TransactionAnalytics() {
 }
 
 const styles = StyleSheet.create({
-  regular: { fontFamily: Fonts.regular, marginTop: -12 },
   medium: { fontFamily: Fonts.medium },
   scroller: { marginHorizontal: -16 },
   filters: { gap: 8, paddingHorizontal: 16 },

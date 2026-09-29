@@ -5,10 +5,9 @@ import { useTheme } from 'react-native-paper';
 
 import { ORGANISATIONS } from '@/data/businesses';
 
-import { AppHeader } from './app-header';
+import { HeaderControl, PageTitle } from './page-header';
 import { NavigationBar, type NavigationBarDestination } from './material3/navigation-bar';
 import { ScreenTabs } from './screen-tabs';
-import { ShellTopBar } from './shell-top-bar';
 
 const DESTINATIONS: NavigationBarDestination[] = [
   { key: 'overview', label: 'Overview', icon: 'house', focusedIcon: 'house-fill' },
@@ -33,10 +32,13 @@ function AppShellDemo() {
 
   return (
     <View style={{ height: 640, backgroundColor: theme.colors.background, margin: -16 }}>
-      <ShellTopBar>
-        <AppHeader title="Payments" scope={`${org.shops[0].name} · In-store`} />
-        {destination === 'payments' ? <ScreenTabs tabs={PAYMENT_TABS} activeKey={tab} onChange={setTab} /> : null}
-      </ShellTopBar>
+      <View style={{ padding: 16, gap: 8 }}>
+        <View style={{ flexDirection: 'row' }}>
+          <HeaderControl icon="storefront" label={`In-store · ${org.shops[0].name}`} caret accessibilityLabel="Switch store or channel" />
+        </View>
+        <PageTitle title="Payments" />
+      </View>
+      {destination === 'payments' ? <ScreenTabs tabs={PAYMENT_TABS} activeKey={tab} onChange={setTab} /> : null}
       <View style={{ flex: 1 }} />
       <NavigationBar destinations={DESTINATIONS} activeKey={destination} onChange={setDestination} respectSafeArea={false} />
     </View>
@@ -50,7 +52,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'The app shell from the Figma "📱 Pine one App" file (node 47:2153): org/shop header, optional screen sub-tabs, content area, and the M3 Expressive navigation bar.',
+          'The app shell: the page header (store / channel switcher and large title, see PageHeader), optional screen sub-tabs, content area, and the M3 Expressive navigation bar.',
       },
     },
   },

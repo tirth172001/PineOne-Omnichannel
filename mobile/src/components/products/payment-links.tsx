@@ -3,15 +3,14 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Icon, Text, useTheme } from 'react-native-paper';
 
-import { FilterMenuButton } from '@/components/shared/controls';
-import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
-import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen } from '@/components/shared/detail-screen';
+import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DateTimeField, type DateTimeValue, FormField, FormTextInput } from '@/components/shared/form-fields';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
-import { LIST_ROW_INNER_RADIUS, ListCard, ListingToolbar, ListRow, ListRowLine } from '@/components/shared/listing';
+import { LIST_ROW_INNER_RADIUS, ListCard, ListingToolbar, ListRow, ListRowLine, selectFilter } from '@/components/shared/listing';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { RowActionsMenu } from '@/components/shared/row-actions';
 import { StatusPill } from '@/components/shared/status';
+import { TabScreen } from '@/components/tab-screen';
 import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import {
@@ -170,7 +169,7 @@ const SEARCH_FIELD_OPTIONS = PAYMENT_LINK_SEARCH_FIELDS.map((field) => ({ value:
  * (payment ID, amount, invoice, phone or email), date and status filters,
  * and the links as stacked records (link ID, amount, invoice, description,
  * created and expiry dates, status) with Copy / Duplicate. New payment link
- * is the pinned footer action.
+ * is the header action.
  */
 export function PaymentLinks({ startCreating = false }: { startCreating?: boolean }) {
   const theme = useTheme();
@@ -223,14 +222,7 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
     });
 
   return (
-    <DetailScreen
-      title="Payment links"
-      fallbackHref="/more"
-      footer={
-        <Button mode="contained" icon="plus" onPress={() => openCreate()} style={styles.footerButton}>
-          New payment link
-        </Button>
-      }>
+    <TabScreen tab="payment-links" actions={[{ label: 'New payment link', shortLabel: 'New link', icon: 'plus', onPress: () => openCreate() }]}>
       {/* Search floats above the footer; "Search by" picks the field it matches. */}
       <ListingToolbar
         search={search}
@@ -239,30 +231,28 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
           lazy.reset();
         }}
         searchPlaceholder={`Enter ${activeField.label.toLowerCase()}`}
-        filters={
-          <>
-            <FilterMenuButton
-              value={searchField}
-              onValueChange={(value) => {
-                setSearchField(value);
-                lazy.reset();
-              }}
-              options={SEARCH_FIELD_OPTIONS}
-              accessibilityLabel="Search by"
-            />
-            <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="today" />
-            <FilterMenuButton
-              value={status}
-              onValueChange={(value) => {
-                setStatus(value);
-                lazy.reset();
-              }}
-              options={STATUS_OPTIONS}
-              accessibilityLabel="Status"
-            />
-          </>
-        }
-        floatingActions={[{ label: 'Download filtered', icon: 'download-simple' }]}
+        filters={[
+          selectFilter({
+            label: 'Search by',
+            options: SEARCH_FIELD_OPTIONS,
+            value: searchField,
+            onApply: (value) => {
+              setSearchField(value);
+              lazy.reset();
+            },
+          }),
+          { type: 'date', presets, value: dateRange, onApply: setDateRange, initialPresetId: 'today' },
+          selectFilter({
+            label: 'Status',
+            options: STATUS_OPTIONS,
+            value: status,
+            onApply: (value) => {
+              setStatus(value);
+              lazy.reset();
+            },
+          }),
+        ]}
+        actions={[{ label: 'Download filtered', icon: 'download-simple' }]}
       />
 
       {showEmptyState ? (
@@ -328,7 +318,7 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
       {showEmptyState ? null : <LazyListFooter lazy={lazy} total={filtered.length} noun="payment links" />}
 
       <CreatePaymentLinkSheet visible={createOpen} onDismiss={() => setCreateOpen(false)} onCreate={create} initialValues={createSeed} />
-    </DetailScreen>
+    </TabScreen>
   );
 }
 
@@ -339,6 +329,5 @@ const styles = StyleSheet.create({
   center: { textAlign: 'center' },
   empty: { alignItems: 'center', gap: 8, padding: 32, borderWidth: 1, borderRadius: Shape.max },
   emptyIcon: { width: 36, height: 36, borderRadius: Shape.small, alignItems: 'center', justifyContent: 'center' },
-  footerButton: { flex: 1, borderRadius: DETAIL_FOOTER_BUTTON_RADIUS },
   panelButton: { borderRadius: PANEL_INNER_RADIUS },
 });

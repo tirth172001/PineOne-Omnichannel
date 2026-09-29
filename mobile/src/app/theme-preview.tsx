@@ -19,10 +19,9 @@ import {
   useTheme,
 } from 'react-native-paper';
 
-import { AppHeader } from '@/components/app-header';
+import { PageTitle, ScopeSwitcherButton } from '@/components/page-header';
 import { AttentionBanner } from '@/components/attention-banner';
 import { SearchBar } from '@/components/search-bar';
-import { ShellTopBar } from '@/components/shell-top-bar';
 import { StatCard } from '@/components/stat-card';
 import { ThemePreviewSection } from '@/components/theme-preview-section';
 import { ORGANISATIONS } from '@/data/businesses';
@@ -299,9 +298,10 @@ export default function ThemePreviewScreen() {
       <Divider />
 
       <ThemePreviewSection title="Our components">
-        <ShellTopBar>
-          <AppHeader title="Tirth Trivedi" badge="Admin" scope={`${ORGANISATIONS[0].shops[0].name} · All channels`} />
-        </ShellTopBar>
+        <View style={styles.row}>
+          <ScopeSwitcherButton label={`All channels · ${ORGANISATIONS[0].shops[0].name}`} onPress={() => {}} />
+        </View>
+        <PageTitle title="Tirth Trivedi" badge="Admin" />
         <SearchBar />
         <AttentionBanner
           title="Stay competitive — 65% of merchants in your area accept Amex"

@@ -2,10 +2,9 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, Text as RNText } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
-import { FilterMenuButton } from '@/components/shared/controls';
-import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
+import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DetailScreen } from '@/components/shared/detail-screen';
-import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
+import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { StatusPill } from '@/components/shared/status';
 import { Fonts } from '@/constants/theme';
@@ -47,7 +46,7 @@ export function SupportTickets() {
   const loaded = rows.slice(0, lazy.count);
 
   return (
-    <DetailScreen title="Support tickets" fallbackHref="/more/support">
+    <DetailScreen title="Support tickets" fallbackHref="/support">
       <Text variant="bodyMedium" style={[muted, styles.subtitle]}>
         {rows.length} of {tickets.length} tickets
       </Text>
@@ -58,20 +57,18 @@ export function SupportTickets() {
           lazy.reset();
         }}
         searchPlaceholder="Search support tickets"
-        filters={
-          <>
-            <FilterMenuButton
-              value={status}
-              onValueChange={(value) => {
-                setStatus(value);
-                lazy.reset();
-              }}
-              options={STATUS_OPTIONS}
-              accessibilityLabel="Status"
-            />
-            <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="today" />
-          </>
-        }
+        filters={[
+          selectFilter({
+            label: 'Status',
+            options: STATUS_OPTIONS,
+            value: status,
+            onApply: (value) => {
+              setStatus(value);
+              lazy.reset();
+            },
+          }),
+          { type: 'date', presets, value: dateRange, onApply: setDateRange, initialPresetId: 'today' },
+        ]}
       />
       <ListCard empty="No support tickets found.">
         {loaded.map((ticket) => (

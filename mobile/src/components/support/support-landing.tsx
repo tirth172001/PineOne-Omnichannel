@@ -53,7 +53,7 @@ export function SupportLanding() {
   const ask = () => {
     const text = prompt.trim();
     setPrompt('');
-    router.push(text ? { pathname: '/more/support/chat', params: { prompt: text } } : '/more/support/chat');
+    router.push(text ? { pathname: '/support/chat', params: { prompt: text } } : '/support/chat');
   };
 
   return (
@@ -76,7 +76,7 @@ export function SupportLanding() {
               mode="outlined"
               icon={topic.icon}
               compact
-              onPress={() => router.push({ pathname: '/more/support/chat', params: { topic: topic.slug } })}
+              onPress={() => router.push({ pathname: '/support/chat', params: { topic: topic.slug } })}
               style={[styles.chip, { backgroundColor: theme.colors.surface }]}
               textStyle={styles.chipText}>
               {topic.label}
@@ -87,24 +87,24 @@ export function SupportLanding() {
               +{SUPPORT_TOPICS.length - HERO_TOPIC_LIMIT} more
             </Chip>
           ) : null}
-          <Button mode="text" compact onPress={() => router.push('/more/support/faqs')} labelStyle={styles.chipText} style={styles.textButton}>
+          <Button mode="text" compact onPress={() => router.push('/support/faqs')} labelStyle={styles.chipText} style={styles.textButton}>
             View all FAQs
           </Button>
         </View>
       </View>
 
       <View style={styles.section}>
-        <SectionHeader title="Support tickets" onViewAll={() => router.push('/more/support/tickets')} />
+        <SectionHeader title="Support tickets" onViewAll={() => router.push('/support/tickets')} />
         {tickets.slice(0, 3).map((ticket) => (
           <Card
             key={ticket.id}
-            mode="outlined"
+            mode="contained"
             onPress={() => {
               setSelectedId(ticket.id);
               setDetailOpen(true);
             }}
             accessibilityLabel={`${ticket.issue}, ${ticket.status}`}
-            style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+            style={[styles.card, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.cardBody}>
               <StatusPill label={ticket.status} tone={ticketStatusTone(ticket.status)} radius={CARD_INNER_RADIUS} />
               <Text variant="bodyMedium" numberOfLines={2} style={styles.medium}>
@@ -119,11 +119,11 @@ export function SupportLanding() {
       </View>
 
       <View style={styles.section}>
-        <SectionHeader title="Tutorial videos" onViewAll={() => router.push('/more/support/videos')} />
+        <SectionHeader title="Tutorial videos" onViewAll={() => router.push('/support/videos')} />
         {SUPPORT_VIDEOS.slice(0, 3).map((video) => (
           <TouchableRipple
             key={video.title}
-            onPress={() => router.push('/more/support/videos')}
+            onPress={() => router.push('/support/videos')}
             borderless
             accessibilityRole="link"
             accessibilityLabel={video.title}

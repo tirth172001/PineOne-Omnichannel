@@ -3,14 +3,13 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Icon, Text, useTheme } from 'react-native-paper';
 
-import { FilterMenuButton } from '@/components/shared/controls';
-import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
+import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
-import { DetailScreen } from '@/components/shared/detail-screen';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
-import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
+import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
 import { StatusPill } from '@/components/shared/status';
 import { SummaryCards } from '@/components/shared/summary-cards';
+import { TabScreen } from '@/components/tab-screen';
 import { Fonts } from '@/constants/theme';
 import {
   DISPUTE_STATUSES,
@@ -54,7 +53,29 @@ export function DisputesList() {
   const won = forChannel.filter((row) => row.status === 'Closed' && row.outcome === 'Won');
 
   return (
-    <DetailScreen title="Disputes" fallbackHref="/more" scoped>
+    <TabScreen tab="disputes">
+      <ListingToolbar
+        search={search}
+        onSearchChange={(value) => {
+          setSearch(value);
+          lazy.reset();
+        }}
+        searchPlaceholder="Search by any ID"
+        filters={[
+          { type: 'date', presets, value: dateRange, onApply: setDateRange, initialPresetId: 'today' },
+          selectFilter({
+            label: 'Status',
+            options: STATUS_OPTIONS,
+            value: status,
+            onApply: (value) => {
+              setStatus(value);
+              lazy.reset();
+            },
+          }),
+        ]}
+        actions={[{ label: 'Download filtered', icon: 'download-simple' }]}
+      />
+
       <SummaryCards
         cards={[
           {
@@ -72,27 +93,6 @@ export function DisputesList() {
         ]}
         carousel
       />
-      <ListingToolbar
-        search={search}
-        onSearchChange={(value) => {
-          setSearch(value);
-          lazy.reset();
-        }}
-        searchPlaceholder="Search by any ID"
-        filters={
-          <>
-            <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="today" />
-            <FilterMenuButton
-              value={status}
-              onValueChange={(value) => {
-                setStatus(value);
-                lazy.reset();
-              }}
-              options={STATUS_OPTIONS} accessibilityLabel="Status" />
-          </>
-        }
-        floatingActions={[{ label: 'Download filtered', icon: 'download-simple' }]}
-      />
       <DayGroupedList
         groups={groupByDay(
           sortNewestFirst(rows, (row) => displayTimestamp(row.createdOn, row.time)).slice(0, lazy.count),
@@ -102,7 +102,7 @@ export function DisputesList() {
         renderRow={(row) => (
           <ListRow
             key={row.id}
-            onPress={() => router.push({ pathname: '/more/disputes/[disputeId]', params: { disputeId: row.id } })}
+            onPress={() => router.push({ pathname: '/disputes/[disputeId]', params: { disputeId: row.id } })}
             accessibilityLabel={`${row.amount}, dispute ${row.id}, ${disputeStatusLabel(row)}`}>
             {/* Amount with the dispute ID below on the left, status on the right (user decision); the rest is in the detail. */}
             <ListRowLine
@@ -126,7 +126,7 @@ export function DisputesList() {
         )}
       />
       <LazyListFooter lazy={lazy} total={rows.length} noun="disputes" />
-    </DetailScreen>
+    </TabScreen>
   );
 }
 

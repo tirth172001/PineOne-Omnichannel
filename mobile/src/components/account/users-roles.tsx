@@ -5,13 +5,14 @@ import { Button, Icon, Text, useTheme } from 'react-native-paper';
 
 import { Tabs } from '@/components/material3/tabs';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { FilterMenuButton, OutlinedActionButton } from '@/components/shared/controls';
-import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen } from '@/components/shared/detail-screen';
+import { OutlinedActionButton } from '@/components/shared/controls';
+import { DetailScreen } from '@/components/shared/detail-screen';
 import { FormField, FormTextInput } from '@/components/shared/form-fields';
-import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
+import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { RowActionsMenu, type RowAction } from '@/components/shared/row-actions';
+import { TabScreen } from '@/components/tab-screen';
 import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { computeAccessScope } from '@/data/roles';
@@ -211,7 +212,7 @@ function ViewRoleSheet({ role, onDismiss }: { role: ManagedRole | null; onDismis
   ].filter((section) => section.items.length > 0);
   const openForm = (params: { roleId?: string; cloneId?: string }) => {
     onDismiss();
-    router.push({ pathname: '/more/users/role', params });
+    router.push({ pathname: '/users/role', params });
   };
 
   return (
@@ -322,19 +323,17 @@ function UsersTab({ onEdit, onConfirm }: { onEdit: (entry: RosterEntry) => void;
           <Text variant="bodyMedium" style={styles.flex}>
             <Text style={styles.medium}>{pendingCount}</Text> Users are asking for approval to access the platform
           </Text>
-          <OutlinedActionButton label="View users" onPress={() => router.push('/more/users/pending')} />
+          <OutlinedActionButton label="View users" onPress={() => router.push('/users/pending')} />
         </View>
       ) : null}
       <ListingToolbar
         search={search}
         onSearchChange={resetList(setSearch)}
         searchPlaceholder="Search by name or email ID"
-        filters={
-          <>
-            <FilterMenuButton value={status} onValueChange={resetList(setStatus)} options={STATUS_OPTIONS} accessibilityLabel="Status" />
-            <FilterMenuButton value={role} onValueChange={resetList(setRole)} options={roleOptions} accessibilityLabel="Role" />
-          </>
-        }
+        filters={[
+          selectFilter({ label: 'Status', options: STATUS_OPTIONS, value: status, onApply: resetList(setStatus) }),
+          selectFilter({ label: 'Role', options: roleOptions, value: role, onApply: resetList(setRole) }),
+        ]}
       />
       <ListCard empty="No users match your search or filters.">
         {loaded.map((row) => {
@@ -389,10 +388,10 @@ function RolesTab({ onView, onDelete }: { onView: (role: ManagedRole) => void; o
       <ListCard empty="No roles match your search.">
         {roles.map((role) => {
           const actions: RowAction[] = [
-            { label: 'Create role from this', icon: 'copy', onPress: () => router.push({ pathname: '/more/users/role', params: { cloneId: role.id } }) },
+            { label: 'Create role from this', icon: 'copy', onPress: () => router.push({ pathname: '/users/role', params: { cloneId: role.id } }) },
             ...(role.roleType === 'custom'
               ? [
-                  { label: 'Edit role details', icon: 'pencil-simple', onPress: () => router.push({ pathname: '/more/users/role', params: { roleId: role.id } }) },
+                  { label: 'Edit role details', icon: 'pencil-simple', onPress: () => router.push({ pathname: '/users/role', params: { roleId: role.id } }) },
                   { label: 'Delete role', icon: 'trash', onPress: () => onDelete(role) },
                 ]
               : []),
@@ -433,10 +432,9 @@ type ConfirmTarget = { type: 'role'; role: ManagedRole } | { type: 'removeUser';
  * Manage users & roles (web: ManageUsersSection): Users (pending-approval
  * banner, search, status and role filters, users with status-dependent
  * actions) and Roles (default and custom roles; tap to view permissions).
- * Add new roles and Invite new users are the pinned footer actions.
+ * Invite new users and Add new role are in the header's Add menu.
  */
 export function UsersRoles({ openInvite = false }: { openInvite?: boolean }) {
-  const theme = useTheme();
   const toast = useToast();
   const { roleCatalog } = useUserManagement();
   const [tab, setTab] = useState('users');
@@ -488,23 +486,13 @@ export function UsersRoles({ openInvite = false }: { openInvite?: boolean }) {
   };
 
   return (
-    <DetailScreen
-      title="Manage users & roles"
-      fallbackHref="/more"
-      footer={
-        <>
-          <Button
-            mode="outlined"
-            onPress={() => router.push('/more/users/role')}
-            textColor={theme.colors.onSurface}
-            style={[styles.footerButton, { borderColor: theme.colors.outlineVariant }]}>
-            Add new roles
-          </Button>
-          <Button mode="contained" icon="user-plus" onPress={() => setFormTarget({ entry: null })} style={styles.footerButton}>
-            Invite new users
-          </Button>
-        </>
-      }>
+    <TabScreen
+      tab="users"
+      actions={[
+        { label: 'Invite new users', icon: 'user-plus', onPress: () => setFormTarget({ entry: null }) },
+        { label: 'Add new role', icon: 'shield', onPress: () => router.push('/users/role') },
+      ]}
+      actionsMenu={{ label: 'Add', icon: 'plus' }}>
       <View style={styles.tabs}>
         <Tabs tabs={TABS} activeKey={tab} onChange={setTab} variant="secondary" />
       </View>
@@ -552,7 +540,7 @@ export function UsersRoles({ openInvite = false }: { openInvite?: boolean }) {
           </FormField>
         ) : null}
       </ConfirmDialog>
-    </DetailScreen>
+    </TabScreen>
   );
 }
 
@@ -569,7 +557,7 @@ export function PendingApprovals() {
   const muted = { color: theme.colors.onSurfaceVariant };
 
   return (
-    <DetailScreen title="Pending access requests" fallbackHref="/more/users">
+    <DetailScreen title="Pending access requests" fallbackHref="/users">
       <ListCard empty="No pending access requests.">
         {rows.map((row) => {
           const permissionKeys = roleCatalog.find((role) => role.name === row.role)?.permissionKeys ?? [];
@@ -638,7 +626,6 @@ const styles = StyleSheet.create({
   half: { flex: 1 },
   sheetFooter: { flexDirection: 'row', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 8 },
   panelButton: { borderRadius: PANEL_INNER_RADIUS },
-  footerButton: { flex: 1, borderRadius: DETAIL_FOOTER_BUTTON_RADIUS },
   approvalActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
   approvalButton: { flex: 1, borderRadius: LIST_ROW_INNER_RADIUS },
 });

@@ -1,18 +1,17 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Card, Divider, Icon, Text, useTheme } from 'react-native-paper';
+import { Button, Divider, Icon, Text, useTheme } from 'react-native-paper';
 
-import { useHeaderActions } from '@/components/header-actions';
 import { DimmedDecimalAmount } from '@/components/shared/amount';
 import { BankLogo } from '@/components/shared/bank-logo';
-import { CompactSegmentedButtons, FilterMenuButton } from '@/components/shared/controls';
+import { CompactSegmentedButtons } from '@/components/shared/controls';
 import { CardCarousel } from '@/components/shared/card-carousel';
 import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
-import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
+import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DetailRow } from '@/components/shared/detail-rows';
-import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
-import { type MoreFilterCategory, type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
+import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
+import { type MoreFilterCategory, type MoreFilterSelection } from '@/components/shared/more-filters';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { DotStatusBadge, type DotTone } from '@/components/shared/status';
@@ -112,19 +111,35 @@ export function SettlementsView() {
   // Settlement cycle, account and the preferences link live behind the header's preferences
   // button (user decision) instead of info lines at the top of the page.
   const [preferencesOpen, setPreferencesOpen] = useState(false);
-  useHeaderActions([{ label: 'Settlement preferences', shortLabel: 'Preferences', icon: 'sliders', onPress: () => setPreferencesOpen(true) }]);
 
   return (
     <View style={styles.container}>
+      <ListingToolbar
+        search={search}
+        onSearchChange={resetList(setSearch)}
+        searchPlaceholder="Search by UTR or Trxn ID"
+        filters={[
+          { type: 'date', presets, value: dateRange, onApply: setDateRange, initialPresetId: 'today' },
+          selectFilter({ label: 'Status', options: STATUS_OPTIONS, value: status, onApply: resetList(setStatus) }),
+          { type: 'more', categories: MORE_FILTER_CATEGORIES, applied: moreFilters, onApply: resetList(setMoreFilters) },
+        ]}
+        actions={[
+          { label: 'Settlement preferences', icon: 'sliders', onPress: () => setPreferencesOpen(true) },
+          { label: 'Email filtered', icon: 'envelope-simple' },
+          { label: 'Download filtered', icon: 'download-simple' },
+        ]}
+      />
+
       {/* Settled and Remaining amount as a swipeable row (user decision). */}
       <CardCarousel>
-        <Card key="settled" mode="outlined" style={[styles.summary, styles.fill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+        {/* Plain Views, not Paper Cards: on iOS a Card's content doesn't stretch with it, and these share the tallest one's height. */}
+        <View key="settled" style={[styles.summary, styles.fill, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.summaryHeader}>
             <View style={styles.summaryTitle}>
               <Icon source="check-circle" size={20} color={theme.colors.onSurface} />
               <Text variant="titleMedium">Settled amount</Text>
             </View>
-            <CompactSegmentedButtons value={period} onValueChange={setPeriod} options={PERIOD_OPTIONS} radius={INNER_RADIUS} grow />
+            <CompactSegmentedButtons value={period} onValueChange={setPeriod} options={PERIOD_OPTIONS} radius={INNER_RADIUS} />
           </View>
           <Divider />
           <View style={styles.summaryBody}>
@@ -132,7 +147,7 @@ export function SettlementsView() {
             <Text variant="bodyMedium" style={[styles.medium, muted]}>
               {formatCount(summary.settledCount)} payments settled in {summary.batchCount} batches
             </Text>
-            <View style={styles.inlineRow}>
+            <View style={[styles.inlineRow, styles.summaryDetails]}>
               <Text variant="bodyMedium" style={styles.medium}>
                 <Text style={{ color: theme.colors.error }}>{rupees(summary.deductionsAmount)}</Text>
                 <Text style={muted}> deductions</Text>
@@ -142,8 +157,8 @@ export function SettlementsView() {
               </Button>
             </View>
           </View>
-        </Card>
-        <Card key="remaining" mode="outlined" style={[styles.summary, styles.fill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+        </View>
+        <View key="remaining" style={[styles.summary, styles.fill, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.summaryHeaderStatic}>
             <Icon source="hourglass" size={20} color={theme.colors.onSurface} />
             <Text variant="titleMedium">Remaining amount</Text>
@@ -155,7 +170,7 @@ export function SettlementsView() {
               {formatCount(summary.remainingCount)} payments remaining · Next settlement by{' '}
               <Text style={{ color: theme.colors.onSurface }}>{summary.nextSettlementAt}</Text>
             </Text>
-            <View style={styles.inlineRow}>
+            <View style={[styles.inlineRow, styles.summaryDetails]}>
               <Text variant="bodyMedium" style={styles.medium}>
                 <Text style={{ color: theme.colors.error }}>{summary.failedCount}</Text>
                 <Text style={muted}> settlement failed</Text>
@@ -187,22 +202,8 @@ export function SettlementsView() {
               </View>
             </>
           ) : null}
-        </Card>
+        </View>
       </CardCarousel>
-
-      <ListingToolbar
-        search={search}
-        onSearchChange={resetList(setSearch)}
-        searchPlaceholder="Search by UTR or Trxn ID"
-        filters={
-          <>
-            <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="today" />
-            <FilterMenuButton value={status} onValueChange={resetList(setStatus)} options={STATUS_OPTIONS} accessibilityLabel="Status" />
-            <MoreFilters categories={MORE_FILTER_CATEGORIES} applied={moreFilters} onApply={resetList(setMoreFilters)} />
-          </>
-        }
-        floatingActions={[{ label: 'Email filtered', icon: 'envelope-simple' }, { label: 'Download filtered', icon: 'download-simple' }]}
-      />
 
       <DayGroupedList
         groups={groupByDay(loadedRows, (row) => row.settlementDatePrimary)}
@@ -310,7 +311,10 @@ const styles = StyleSheet.create({
   summaryHeader: { padding: CARD_PADDING, gap: 12 },
   summaryHeaderStatic: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: CARD_PADDING },
   summaryTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  summaryBody: { padding: CARD_PADDING, gap: 8 },
+  // Takes the extra height, so the space above the details row is what flexes.
+  summaryBody: { flexGrow: 1, padding: CARD_PADDING, gap: 8 },
+  // Deductions / failed and on-hold sit at the bottom of the body.
+  summaryDetails: { marginTop: 'auto' },
   inlineRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
   // Logo and text stay on one line; the text truncates rather than wrapping under the logo.
   bankRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

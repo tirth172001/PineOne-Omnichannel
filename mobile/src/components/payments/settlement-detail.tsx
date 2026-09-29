@@ -133,7 +133,7 @@ export function SettlementDetail({ settlement }: { settlement: SettlementRow }) 
           pointerEvents={searchShown ? 'box-none' : 'none'}
           style={[styles.floatingSearch, { opacity: searchAnim, transform: [{ translateY: searchAnim.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] }]}>
           {searchOpen ? (
-            <View style={[styles.searchBar, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+            <View style={[styles.searchBar, { backgroundColor: theme.colors.surface }]}>
               <View style={styles.flex}>
                 <SearchField
                   value={search}
@@ -270,7 +270,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     padding: SEARCH_PADDING,
-    borderWidth: 1,
     borderRadius: Shape.max,
     boxShadow: '0 4px 16px rgba(0, 0, 0, 0.12)',
   },

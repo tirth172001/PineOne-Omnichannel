@@ -1,15 +1,15 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Text, useTheme } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 
-import { FilterMenuButton } from '@/components/shared/controls';
-import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
-import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen } from '@/components/shared/detail-screen';
-import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
-import { type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
+import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
+import { DetailScreen } from '@/components/shared/detail-screen';
+import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
+import { type MoreFilterSelection } from '@/components/shared/more-filters';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { RowActionsMenu } from '@/components/shared/row-actions';
+import { TabScreen } from '@/components/tab-screen';
 import { Fonts } from '@/constants/theme';
 import { CURRENT_USER } from '@/data/businesses';
 import {
@@ -47,11 +47,11 @@ export function ModePill({ mode, radius = LIST_ROW_INNER_RADIUS }: { mode: Devic
 }
 
 /**
- * Terminal devices (web: PosTerminalsListingContent): search, date, mode and
+ * In-store devices (web: PosTerminalsListingContent): search, date, mode and
  * hardware-model filters, and the devices as stacked records (model and
  * hardware ID, POS ID, installation, store, mode) with a ⋮ menu to change
- * mode (recorded in the audit log) or deactivate. Audit log and Add new
- * device are the pinned footer actions.
+ * mode (recorded in the audit log) or deactivate. Add new device and Audit
+ * log are in the header's Manage menu.
  */
 export function TerminalDevices() {
   const theme = useTheme();
@@ -103,24 +103,9 @@ export function TerminalDevices() {
   };
 
   return (
-    <DetailScreen
-      title="Terminal devices"
-      fallbackHref="/more"
-      footer={
-        <>
-          <Button
-            mode="outlined"
-            icon="file-text"
-            onPress={() => router.push('/more/terminal-devices/audit-log')}
-            textColor={theme.colors.onSurface}
-            style={[styles.footerButton, { borderColor: theme.colors.outlineVariant }]}>
-            Audit log
-          </Button>
-          <Button mode="contained" onPress={addDevice} style={styles.footerButton}>
-            Add new device
-          </Button>
-        </>
-      }>
+    <TabScreen
+      tab="terminal-devices"
+      actions={[{ label: 'Add new device', shortLabel: 'Add device', icon: 'plus', onPress: addDevice }]}>
       <ListingToolbar
         search={search}
         onSearchChange={(value) => {
@@ -128,22 +113,23 @@ export function TerminalDevices() {
           lazy.reset();
         }}
         searchPlaceholder="Search by device ID"
-        filters={
-          <>
-            <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="today" />
-            <FilterMenuButton
-              value={status}
-              onValueChange={(value) => {
-                setStatus(value);
-                lazy.reset();
-              }}
-              options={STATUS_OPTIONS}
-              accessibilityLabel="Status"
-            />
-            <MoreFilters categories={MODEL_FILTER} applied={moreFilters} onApply={setMoreFilters} />
-          </>
-        }
-        floatingActions={[{ label: 'Download filtered', icon: 'download-simple' }]}
+        filters={[
+          { type: 'date', presets, value: dateRange, onApply: setDateRange, initialPresetId: 'today' },
+          selectFilter({
+            label: 'Status',
+            options: STATUS_OPTIONS,
+            value: status,
+            onApply: (value) => {
+              setStatus(value);
+              lazy.reset();
+            },
+          }),
+          { type: 'more', categories: MODEL_FILTER, applied: moreFilters, onApply: setMoreFilters },
+        ]}
+        actions={[
+          { label: 'Audit log', icon: 'file-text', onPress: () => router.push('/terminal-devices/audit-log') },
+          { label: 'Download filtered', icon: 'download-simple' },
+        ]}
       />
       <ListCard empty="No devices found for current filters.">
         {loaded.map((row) => (
@@ -185,13 +171,13 @@ export function TerminalDevices() {
         ))}
       </ListCard>
       <LazyListFooter lazy={lazy} total={filtered.length} noun="devices" />
-    </DetailScreen>
+    </TabScreen>
   );
 }
 
 /**
  * Audit log (web: DeviceAuditLogContent): every mode change made from
- * Terminal devices this session — device, who changed it, store, previous
+ * In-store devices this session — device, who changed it, store, previous
  * and final mode, and when — with search, date and store filters.
  */
 export function DeviceAuditLog() {
@@ -211,18 +197,16 @@ export function DeviceAuditLog() {
   });
 
   return (
-    <DetailScreen title="Audit log" fallbackHref="/more/terminal-devices">
+    <DetailScreen title="Audit log" fallbackHref="/terminal-devices">
       <ListingToolbar
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search by device ID"
-        filters={
-          <>
-            <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="today" />
-            <FilterMenuButton value={store} onValueChange={setStore} options={storeOptions} accessibilityLabel="Store" />
-          </>
-        }
-        floatingActions={[{ label: 'Download', icon: 'download-simple' }]}
+        filters={[
+          { type: 'date', presets, value: dateRange, onApply: setDateRange, initialPresetId: 'today' },
+          selectFilter({ label: 'Store', options: storeOptions, value: store, onApply: setStore }),
+        ]}
+        actions={[{ label: 'Download', icon: 'download-simple' }]}
       />
       <ListCard empty="No mode changes recorded yet.">
         {filtered.map((row) => (
@@ -263,7 +247,6 @@ export function DeviceAuditLog() {
 
 const styles = StyleSheet.create({
   medium: { fontFamily: Fonts.medium },
-  footerButton: { flex: 1, borderRadius: DETAIL_FOOTER_BUTTON_RADIUS },
   pill: {
     height: PILL_HEIGHT,
     flexDirection: 'row',

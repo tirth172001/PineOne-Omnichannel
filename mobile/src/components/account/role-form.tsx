@@ -73,7 +73,7 @@ export function RoleForm({ roleId, cloneId }: { roleId?: string; cloneId?: strin
     toast('error' in result ? result.error : result.message);
     if (!('error' in result)) {
       if (router.canGoBack()) router.back();
-      else router.replace('/more/users');
+      else router.replace('/users');
     }
   };
 
@@ -133,7 +133,7 @@ export function RoleForm({ roleId, cloneId }: { roleId?: string; cloneId?: strin
   return (
     <DetailScreen
       title={editing ? 'Edit custom role' : 'Create new role'}
-      fallbackHref="/more/users"
+      fallbackHref="/users"
       footer={
         <Button mode="contained" disabled={!canSave} onPress={save} style={styles.footerButton}>
           {editing ? 'Save changes' : 'Save role and permission'}

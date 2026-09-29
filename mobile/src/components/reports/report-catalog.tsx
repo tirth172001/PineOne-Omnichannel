@@ -27,8 +27,8 @@ export function ReportCatalog({ onGenerate }: { onGenerate: (kind: ReportKind, t
           {section.cards.map((card) => (
             <Card
               key={card.title}
-              mode="outlined"
-              style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+              mode="contained"
+              style={[styles.card, { backgroundColor: theme.colors.surface }]}>
               <View style={styles.cardBody}>
                 <View style={[styles.iconTile, { backgroundColor: theme.colors.surfaceVariant }]}>
                   <Icon source={card.icon} size={24} color={theme.colors.onSurface} />

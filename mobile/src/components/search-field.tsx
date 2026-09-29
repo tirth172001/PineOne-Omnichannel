@@ -1,6 +1,8 @@
+import { useEffect, useRef } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
-import { Icon, useTheme } from 'react-native-paper';
+import { Icon, TouchableRipple, useTheme } from 'react-native-paper';
 
+import { MIN_RADIUS } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 
 type SearchFieldProps = {
@@ -10,6 +12,10 @@ type SearchFieldProps = {
   /** concentric() of the container it sits in. */
   radius: number;
   autoFocus?: boolean;
+  /** Defaults to 40dp. */
+  height?: number;
+  /** Focuses the field whenever it changes (e.g. a timestamp from "Find a payment" on Overview). */
+  focusRequest?: string;
 };
 
 /**
@@ -17,12 +23,17 @@ type SearchFieldProps = {
  * from a plain TextInput rather than Paper's Searchbar/TextInput.Icon, whose
  * icon buttons are fixed circles, so the shape follows the concentric rule.
  */
-export function SearchField({ value, onChangeText, placeholder, radius, autoFocus }: SearchFieldProps) {
+export function SearchField({ value, onChangeText, placeholder, radius, autoFocus, height = 40, focusRequest }: SearchFieldProps) {
   const theme = useTheme();
+  const input = useRef<TextInput>(null);
+  useEffect(() => {
+    if (focusRequest) input.current?.focus();
+  }, [focusRequest]);
   return (
-    <View style={[styles.field, { borderRadius: radius, borderColor: theme.colors.outlineVariant }]}>
+    <View style={[styles.field, { height, borderRadius: radius, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }]}>
       <Icon source="magnifying-glass" size={16} color={theme.colors.onSurfaceVariant} />
       <TextInput
+        ref={input}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -31,13 +42,17 @@ export function SearchField({ value, onChangeText, placeholder, radius, autoFocu
         accessibilityLabel={placeholder}
         style={[styles.input, { color: theme.colors.onSurface }]}
       />
+      {value ? (
+        <TouchableRipple onPress={() => onChangeText('')} borderless accessibilityRole="button" accessibilityLabel="Clear search" style={styles.clear}>
+          <Icon source="x" size={16} color={theme.colors.onSurfaceVariant} />
+        </TouchableRipple>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   field: {
-    height: 40,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -45,4 +60,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   input: { flex: 1, height: '100%', fontFamily: Fonts.regular, fontSize: 14 },
+  clear: { padding: 4, marginRight: -4, borderRadius: MIN_RADIUS },
 });

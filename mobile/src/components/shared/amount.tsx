@@ -5,6 +5,8 @@ import { Text, useTheme } from 'react-native-paper';
 import { Fonts } from '@/constants/theme';
 
 const SIZES = {
+  /** Overview's one hero figure (Collected today): the only text this large in the app. */
+  display: { fontFamily: Fonts.semiBold, fontSize: 44, lineHeight: 52, letterSpacing: -0.5 },
   /** Detail-screen hero amount (web: text-[32px]–[36px] font-semibold). */
   hero: { fontFamily: Fonts.semiBold, fontSize: 32, lineHeight: 38 },
   /** Card totals (web: text-[24px] font-semibold). */
@@ -29,7 +31,7 @@ export function DimmedDecimalAmount({ value, size = 'large' }: { value: string; 
     <Text style={[SIZES[size], styles.tabular, { color: theme.colors.onSurface }]}>
       {main}
       {decimals ? (
-        <Text style={[styles.decimals, { color: color(theme.colors.onSurfaceVariant).alpha(0.5).rgb().string() }]}>
+        <Text style={[styles.decimals, { fontFamily: SIZES[size].fontFamily, color: color(theme.colors.onSurfaceVariant).alpha(0.5).rgb().string() }]}>
           {decimals}
         </Text>
       ) : null}
@@ -39,6 +41,6 @@ export function DimmedDecimalAmount({ value, size = 'large' }: { value: string; 
 
 const styles = StyleSheet.create({
   tabular: { fontVariant: ['tabular-nums'] },
-  // The paise are 14px at every size; the weight is inherited from the parent Text.
+  // The paise are 14px at every size, in the amount's own weight (nested Paper Text doesn't inherit it).
   decimals: { fontSize: 14 },
 });

@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
-import { Appbar, Button, Icon, IconButton, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { Button, Icon, IconButton, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { OutlinedActionButton } from '@/components/shared/controls';
-import { DETAIL_HEADER_BUTTON_STYLE, DetailScreen } from '@/components/shared/detail-screen';
+import { HeaderControl } from '@/components/page-header';
+import { DetailScreen } from '@/components/shared/detail-screen';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { CHAT_DEVICES, type TicketEditDraft } from '@/data/support';
@@ -116,7 +117,7 @@ function BotContent({ message, handlers }: { message: ChatMessage; handlers: Han
       return (
         <View style={styles.stack}>
           <Text variant="bodyMedium">Select the device you want me to check.</Text>
-          <View style={[styles.deviceList, border, { backgroundColor: theme.colors.surface }]}>
+          <View style={[styles.deviceList, { backgroundColor: theme.colors.surface }]}>
             {CHAT_DEVICES.map((device, index) => (
               <TouchableRipple
                 key={device.id}
@@ -156,7 +157,7 @@ function BotContent({ message, handlers }: { message: ChatMessage; handlers: Han
           </View>
           <View style={styles.healthGrid}>
             {message.cards.map((card) => (
-              <View key={card.label} style={[styles.healthCard, border, { backgroundColor: theme.colors.surface }]}>
+              <View key={card.label} style={[styles.healthCard, { backgroundColor: theme.colors.surface }]}>
                 <View style={styles.rowBetween}>
                   <Icon source={card.icon} size={20} color={theme.colors.onSurfaceVariant} />
                   <Icon source={card.ok ? 'check-circle-fill' : 'x-circle-fill'} size={16} color={card.ok ? SUCCESS : DESTRUCTIVE} />
@@ -189,7 +190,7 @@ function BotContent({ message, handlers }: { message: ChatMessage; handlers: Han
     case 'raise-ticket': {
       const { draft } = message;
       return (
-        <View style={[styles.ticketCard, border, { backgroundColor: theme.colors.surface }]}>
+        <View style={[styles.ticketCard, { backgroundColor: theme.colors.surface }]}>
           <Text variant="bodyMedium" style={styles.semiBold}>
             Raise a ticket
           </Text>
@@ -348,19 +349,10 @@ export function SupportChat({ topic, prompt }: { topic?: string; prompt?: string
   return (
     <DetailScreen
       title={chat.title}
-      fallbackHref="/more/support"
+      fallbackHref="/support"
       scroll={false}
-      actions={
-        <>
-          <Appbar.Action
-            icon="sidebar-simple"
-            onPress={() => toast("Chat history isn't available in this demo")}
-            accessibilityLabel="Toggle chat list"
-            style={DETAIL_HEADER_BUTTON_STYLE}
-          />
-          <OutlinedActionButton label="New chat" icon="plus" onPress={() => setChat(startChat())} />
-        </>
-      }>
+      actions={<HeaderControl icon="sidebar-simple" onPress={() => toast("Chat history isn't available in this demo")} accessibilityLabel="Toggle chat list" />}
+      action={{ label: 'New chat', icon: 'plus', onPress: () => setChat(startChat()) }}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           ref={scrollRef}
@@ -413,17 +405,17 @@ const styles = StyleSheet.create({
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   // Standalone controls in the message column.
   option: { borderWidth: 1, borderRadius: Shape.small, paddingHorizontal: 14, paddingVertical: 10 },
-  deviceList: { borderWidth: 1, borderRadius: Shape.max, overflow: 'hidden' },
+  deviceList: { borderRadius: Shape.max, overflow: 'hidden' },
   deviceRow: { paddingHorizontal: 16, paddingVertical: 12 },
   deviceMore: { paddingVertical: 10, alignItems: 'center' },
   divider: { borderTopWidth: StyleSheet.hairlineWidth },
   healthGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  healthCard: { flexBasis: '45%', flexGrow: 1, borderWidth: 1, borderRadius: Shape.max, padding: 12, gap: 8 },
+  healthCard: { flexBasis: '45%', flexGrow: 1, borderRadius: Shape.max, padding: 12, gap: 8 },
   issueNote: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   feedback: { flexDirection: 'row', gap: 4, marginLeft: -8 },
   feedbackButton: { margin: 0, borderRadius: Shape.small },
   suggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  ticketCard: { borderWidth: 1, borderRadius: Shape.max, padding: CARD_PADDING, gap: 10 },
+  ticketCard: { borderRadius: Shape.max, padding: CARD_PADDING, gap: 10 },
   keyValue: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   keyValueValue: { flexShrink: 1, textAlign: 'right' },
   link: { borderRadius: CARD_INNER_RADIUS, flexShrink: 1 },

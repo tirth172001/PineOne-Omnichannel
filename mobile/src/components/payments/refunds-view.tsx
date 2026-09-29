@@ -2,12 +2,10 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Icon, Text, useTheme } from 'react-native-paper';
 
-import { useHeaderActions } from '@/components/header-actions';
-import { FilterMenuButton } from '@/components/shared/controls';
 import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
-import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
-import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
-import { type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
+import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
+import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
+import { type MoreFilterSelection } from '@/components/shared/more-filters';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { DotStatusBadge } from '@/components/shared/status';
 import { SummaryCards } from '@/components/shared/summary-cards';
@@ -49,36 +47,32 @@ export function RefundsView() {
   };
   const muted = { color: theme.colors.onSurfaceVariant };
 
-  // Page actions live in the tab header, merged into one menu.
-  useHeaderActions(
-    [
-      { label: 'Bulk refunds', icon: 'upload-simple' },
-      { label: 'Bulk upload history', icon: 'clock-counter-clockwise' },
-    ],
-    { label: 'Bulk', icon: 'upload-simple' }
-  );
-
   return (
     <View style={styles.container}>
-      <SummaryCards cards={REFUND_SUMMARY} carousel />
-
       <ListingToolbar
         search={search}
         onSearchChange={resetList(setSearch)}
         searchPlaceholder="Search by any ID"
-        filters={
-          <>
-            <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="today" />
-            <FilterMenuButton value={status} onValueChange={resetList(setStatus)} options={STATUS_OPTIONS} accessibilityLabel="Status" />
-            <MoreFilters
-              categories={[{ id: 'amount-type', label: 'Amount type', display: 'badge', searchable: false, options: REFUND_AMOUNT_TYPES }]}
-              applied={moreFilters}
-              onApply={setMoreFilters}
-            />
-          </>
-        }
-        floatingActions={[{ label: 'Email filtered', icon: 'envelope-simple' }, { label: 'Download filtered', icon: 'download-simple' }]}
+        filters={[
+          { type: 'date', presets, value: dateRange, onApply: setDateRange, initialPresetId: 'today' },
+          selectFilter({ label: 'Status', options: STATUS_OPTIONS, value: status, onApply: resetList(setStatus) }),
+          {
+            type: 'more',
+            categories: [{ id: 'amount-type', label: 'Amount type', display: 'badge', searchable: false, options: REFUND_AMOUNT_TYPES }],
+            applied: moreFilters,
+            onApply: setMoreFilters,
+          },
+        ]}
+        actions={[
+          { label: 'Bulk refunds', icon: 'upload-simple' },
+          { label: 'Bulk upload history', icon: 'clock-counter-clockwise' },
+          { label: 'Email filtered', icon: 'envelope-simple' },
+          { label: 'Download filtered', icon: 'download-simple' },
+        ]}
       />
+
+      <SummaryCards cards={REFUND_SUMMARY} carousel />
+
 
       <DayGroupedList
         groups={groupByDay(loaded, (row) => row.datePrimary)}

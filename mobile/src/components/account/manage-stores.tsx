@@ -5,17 +5,17 @@ import { Button, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { Tabs } from '@/components/material3/tabs';
 import { ModePill } from '@/components/products/terminal-devices';
-import { FilterMenuButton } from '@/components/shared/controls';
 import { CopyableValue } from '@/components/shared/copyable-value';
-import { DateRangeFilter, getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
+import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen } from '@/components/shared/detail-screen';
 import { FormField, FormTextInput, SelectField } from '@/components/shared/form-fields';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
-import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar } from '@/components/shared/listing';
+import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { QR_BACKGROUND_SWATCHES, QrPreview } from '@/components/shared/qr-preview';
 import { RowActionsMenu } from '@/components/shared/row-actions';
 import { DotStatusBadge } from '@/components/shared/status';
+import { TabScreen } from '@/components/tab-screen';
 import { Fonts } from '@/constants/theme';
 import { CURRENT_USER } from '@/data/businesses';
 import { computeAccessScope, DEFAULT_ROLE_CATALOG } from '@/data/roles';
@@ -78,7 +78,7 @@ export function ManageStores() {
   });
 
   return (
-    <DetailScreen title="Manage stores" fallbackHref="/more">
+    <TabScreen tab="stores">
       <ListingToolbar
         search={search}
         onSearchChange={(value) => {
@@ -86,26 +86,24 @@ export function ManageStores() {
           lazy.reset();
         }}
         searchPlaceholder="Search by store name"
-        filters={
-          <>
-            <DateRangeFilter presets={presets} value={dateRange} onApply={setDateRange} initialPresetId="today" />
-            <FilterMenuButton
-              value={status}
-              onValueChange={(value) => {
-                setStatus(value);
-                lazy.reset();
-              }}
-              options={STATUS_OPTIONS}
-              accessibilityLabel="Status"
-            />
-          </>
-        }
+        filters={[
+          { type: 'date', presets, value: dateRange, onApply: setDateRange, initialPresetId: 'today' },
+          selectFilter({
+            label: 'Status',
+            options: STATUS_OPTIONS,
+            value: status,
+            onApply: (value) => {
+              setStatus(value);
+              lazy.reset();
+            },
+          }),
+        ]}
       />
       <ListCard empty="No stores found for current filters.">
         {stores.slice(0, lazy.count).map((store) => (
           <ListRow
             key={store.id}
-            onPress={() => router.push({ pathname: '/more/stores/[storeId]', params: { storeId: store.storeId } })}
+            onPress={() => router.push({ pathname: '/stores/[storeId]', params: { storeId: store.storeId } })}
             accessibilityLabel={`${store.name}, ${store.status}`}>
             <ListRowLine
               left={
@@ -131,7 +129,7 @@ export function ManageStores() {
         ))}
       </ListCard>
       <LazyListFooter lazy={lazy} total={stores.length} noun="stores" />
-    </DetailScreen>
+    </TabScreen>
   );
 }
 
@@ -416,7 +414,7 @@ export function StoreDetail({ store }: { store: StoreRecord }) {
   return (
     <DetailScreen
       title="Store details"
-      fallbackHref="/more/stores"
+      fallbackHref="/stores"
       footer={
         <>
           <Button

@@ -3,17 +3,19 @@ import { type ReactNode, useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Button, Card, Checkbox, Divider, Icon, RadioButton, Switch, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
+import { OrganisationSwitcher } from '@/components/account/organisation-switcher';
 import { Tabs } from '@/components/material3/tabs';
 import { SearchField } from '@/components/search-field';
 import { CompactSegmentedButtons, OutlinedActionButton } from '@/components/shared/controls';
-import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen } from '@/components/shared/detail-screen';
 import { SelectField } from '@/components/shared/form-fields';
 import { PANEL_INNER_RADIUS, PanelSheet } from '@/components/shared/panel-sheet';
+import { TabScreen } from '@/components/tab-screen';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
-import { CURRENT_USER } from '@/data/businesses';
+import { CURRENT_USER, ORGANISATIONS } from '@/data/businesses';
 import { STORE_IDENTITIES } from '@/data/terminal-devices';
 import { INITIAL_ROSTER, type RosterEntry } from '@/data/user-roster';
+import { useBusiness } from '@/hooks/use-business';
 import { useToast } from '@/hooks/use-toast';
 
 const TABS = [
@@ -74,7 +76,7 @@ function FieldGroup({ children }: { children: ReactNode }) {
   const theme = useTheme();
   const rows = (Array.isArray(children) ? children : [children]).filter(Boolean);
   return (
-    <Card mode="outlined" style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+    <Card mode="contained" style={[styles.card, { backgroundColor: theme.colors.surface }]}>
       {rows.map((row, index) => (
         <View key={index}>
           {index > 0 ? <Divider /> : null}
@@ -86,8 +88,33 @@ function FieldGroup({ children }: { children: ReactNode }) {
 }
 
 function PersonalDetails() {
+  const toast = useToast();
+  const business = useBusiness();
+  const [switching, setSwitching] = useState(false);
+  const organisation = business.organisation;
   return (
     <>
+      {/* The organisation lives with the profile, not in the header's channel / store switcher (user decision). */}
+      <SectionIntro title="Organisation" description="The business you're signed in to. Everything in the app shows this organisation's data" />
+      <FieldGroup>
+        <FieldRow
+          icon="buildings"
+          label={organisation.name}
+          value={`${organisation.shops.length} stores`}
+          action={ORGANISATIONS.length > 1 ? <OutlinedActionButton label="Switch" icon="arrows-left-right" onPress={() => setSwitching(true)} /> : undefined}
+        />
+      </FieldGroup>
+      <OrganisationSwitcher
+        visible={switching}
+        onDismiss={() => setSwitching(false)}
+        organisations={ORGANISATIONS}
+        currentId={organisation.id}
+        onApply={(organisationId) => {
+          business.applyScope({ organisationId, shopIds: [], channel: business.channel });
+          toast(`Switched to ${ORGANISATIONS.find((org) => org.id === organisationId)?.name ?? 'organisation'}`);
+        }}
+      />
+
       <SectionIntro title="Basic details" description="All your personal details related to your login" />
       <FieldGroup>
         <FieldRow icon="user-circle" label="Name" value={CURRENT_USER.name} action={<OutlinedActionButton label="Update" />} />
@@ -475,20 +502,21 @@ function OnlinePaymentSettings() {
 /**
  * Account settings (web: AccountSettingsContent): Personal details,
  * Credentials, Webhooks, Refunds (refund permissions, user access, security
- * controls, payment modes) and Online payment settings, with Change password
- * as the pinned footer action. As on web, Update / Change password are no-ops.
+ * controls, payment modes) and Online payment settings. Change password and
+ * Logout (web: the account menu) sit in the header's Account menu. As on web,
+ * Update / Change password are no-ops.
  */
 export function AccountSettings() {
   const [tab, setTab] = useState('personal-details');
+  const toast = useToast();
   return (
-    <DetailScreen
-      title="Account settings"
-      fallbackHref="/more"
-      footer={
-        <Button mode="contained" style={styles.footerButton}>
-          Change password
-        </Button>
-      }>
+    <TabScreen
+      tab="account-settings"
+      actions={[
+        { label: 'Change password', icon: 'key' },
+        { label: 'Logout', icon: 'sign-out', onPress: () => toast("Sign-in isn't part of the mobile app yet") },
+      ]}
+      actionsMenu={{ label: 'Account', icon: 'user-circle' }}>
       <View style={styles.tabs}>
         <Tabs tabs={TABS} activeKey={tab} onChange={setTab} variant="secondary" scrollable />
       </View>
@@ -497,7 +525,7 @@ export function AccountSettings() {
       {tab === 'webhooks' ? <Webhooks /> : null}
       {tab === 'refunds' ? <RefundSettings /> : null}
       {tab === 'online-payments' ? <OnlinePaymentSettings /> : null}
-    </DetailScreen>
+    </TabScreen>
   );
 }
 
@@ -517,7 +545,6 @@ const styles = StyleSheet.create({
   subRow: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: INNER_RADIUS, paddingHorizontal: 12, paddingVertical: 8 },
   amountInput: { height: 32, flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: INNER_RADIUS, paddingHorizontal: 8 },
   amountText: { flex: 1, height: '100%', fontFamily: Fonts.regular, fontSize: 14 },
-  footerButton: { flex: 1, borderRadius: DETAIL_FOOTER_BUTTON_RADIUS },
   sheetFooter: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
   panelButton: { borderRadius: PANEL_INNER_RADIUS },
   sheetBody: { flex: 1, padding: 16, gap: 12 },

@@ -1,24 +1,22 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useTheme } from 'react-native-paper';
+import { Button, Icon, Text, useTheme } from 'react-native-paper';
 
-import { useHeaderActions } from '@/components/header-actions';
 import { Tabs } from '@/components/material3/tabs';
 import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
-import { FilterMenuButton } from '@/components/shared/controls';
 import {
   type DateRangeValue,
-  DateRangeFilter,
   getDefaultDateRangePresets,
   makeDateRangeValue,
 } from '@/components/shared/date-range-filter';
 import { EmailReportSheet } from '@/components/shared/email-report-sheet';
-import { LIST_ROW_INNER_RADIUS, ListingToolbar } from '@/components/shared/listing';
-import { type MoreFilterCategory, type MoreFilterSelection, MoreFilters } from '@/components/shared/more-filters';
+import { LIST_ROW_INNER_RADIUS, ListingToolbar, selectFilter } from '@/components/shared/listing';
+import { type MoreFilterCategory, type MoreFilterSelection } from '@/components/shared/more-filters';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { StatusPill } from '@/components/shared/status';
 import { SummaryCards } from '@/components/shared/summary-cards';
+import { Shape } from '@/constants/shape';
 import { useBusiness } from '@/hooks/use-business';
 
 import { PaymentRow } from './payment-row';
@@ -137,12 +135,22 @@ const MORE_FILTER_CATEGORIES: MoreFilterCategory[] = [
  */
 export function TransactionsView() {
   const theme = useTheme();
+  // Overview's "Find a payment" and "Refund a payment" open this page with the search focused (a new token each tap).
+  const { search: focusSearch, intent } = useLocalSearchParams<{ search?: string; intent?: string }>();
   // The listing follows the header's channel (In-store or Online; this page has no All channels).
   const { specificChannel: channel } = useBusiness();
   const mode: ListingMode = channel === 'online' ? 'online' : 'in-store';
   const [onlineView, setOnlineView] = useState<OnlineView>('order');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  // "Refund a payment": refunds start from a payment, so show the successful ones with a hint to pick one.
+  const [refundHint, setRefundHint] = useState(false);
+  const [lastFocusRequest, setLastFocusRequest] = useState<string | undefined>();
+  if (focusSearch !== lastFocusRequest) {
+    setLastFocusRequest(focusSearch);
+    setRefundHint(intent === 'refund');
+    if (intent === 'refund') setStatusFilter('success');
+  }
   const [paymentModeFilter, setPaymentModeFilter] = useState<'all' | 'upi' | 'card' | 'netbanking'>('all');
   const [providerFilter, setProviderFilter] = useState('all');
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<'all' | 'order' | 'payment'>('all');
@@ -229,17 +237,51 @@ export function TransactionsView() {
     lazy.reset();
   };
 
-  // Page actions live in the tab header (merged into one menu when there are several).
-  useHeaderActions(
-    [
-      ...(mode === 'online' ? [{ label: 'Verify IMEI No', icon: 'device-mobile' }] : []),
-      { label: 'View analytics', shortLabel: 'Analytics', icon: 'chart-bar', onPress: () => router.push('/payments/transactions/analytics') },
-    ],
-    { label: 'Tools', icon: 'squares-four' }
-  );
-
   return (
     <View style={styles.container}>
+      <ListingToolbar
+        search={search}
+        onSearchChange={resetList(setSearch)}
+        searchPlaceholder={mode === 'in-store' ? 'Search by any ID' : 'Search by any value'}
+        focusSearch={focusSearch}
+        filters={[
+          { type: 'date', presets, value: dateRange, onApply: resetList(setDateRange), initialPresetId: '30d' },
+          selectFilter({ label: 'Status', options: STATUS_OPTIONS, value: statusFilter, onApply: resetList(setStatusFilter) }),
+          ...(mode === 'online'
+            ? [selectFilter({ label: 'Transaction type', options: TRANSACTION_TYPE_OPTIONS, value: transactionTypeFilter, onApply: resetList(setTransactionTypeFilter) })]
+            : [
+                selectFilter({ label: 'Payment mode', options: PAYMENT_MODE_OPTIONS, value: paymentModeFilter, onApply: resetList(setPaymentModeFilter) }),
+                selectFilter({ label: 'Provider', options: PROVIDER_OPTIONS, value: providerFilter, onApply: resetList(setProviderFilter) }),
+                { type: 'more' as const, categories: MORE_FILTER_CATEGORIES, applied: moreFilters, onApply: resetList(setMoreFilters) },
+              ]),
+        ]}
+        actions={[
+          { label: 'Analytics', icon: 'chart-bar', onPress: () => router.push('/payments/transactions/analytics') },
+          ...(mode === 'in-store' ? [{ label: 'Email filtered', icon: 'envelope-simple', onPress: () => setEmailOpen(true) }] : []),
+          { label: 'Download filtered', icon: 'download-simple' },
+          ...(mode === 'online' ? [{ label: 'Verify IMEI No', icon: 'device-mobile' }] : []),
+        ]}
+      />
+
+      {/* Only while the list is still on successful payments; changing the status filter ends it. */}
+      {refundHint && statusFilter === 'success' ? (
+        <View style={[styles.hint, { backgroundColor: theme.colors.surface }]} accessibilityRole="summary">
+          <Icon source="arrow-u-up-left" size={18} color={theme.colors.onSurfaceVariant} />
+          <Text variant="bodyMedium" style={styles.hintText}>
+            Pick the payment to refund. Showing successful payments.
+          </Text>
+          <Button
+            mode="text"
+            compact
+            onPress={() => {
+              setRefundHint(false);
+              resetList(setStatusFilter)('all');
+            }}>
+            Show all
+          </Button>
+        </View>
+      ) : null}
+
       {mode === 'online' ? (
         <View style={styles.header}>
           <Tabs
@@ -255,41 +297,6 @@ export function TransactionsView() {
           />
         </View>
       ) : null}
-
-      <ListingToolbar
-        search={search}
-        onSearchChange={resetList(setSearch)}
-        searchPlaceholder={mode === 'in-store' ? 'Search by any ID' : 'Search by any value'}
-        filters={
-          <>
-            <DateRangeFilter presets={presets} value={dateRange} onApply={resetList(setDateRange)} initialPresetId="30d" />
-            <FilterMenuButton value={statusFilter} onValueChange={resetList(setStatusFilter)} options={STATUS_OPTIONS} accessibilityLabel="Status" />
-            {mode === 'online' ? (
-              <FilterMenuButton
-                value={transactionTypeFilter}
-                onValueChange={resetList(setTransactionTypeFilter)}
-                options={TRANSACTION_TYPE_OPTIONS}
-                accessibilityLabel="Transaction type"
-              />
-            ) : (
-              <>
-                <FilterMenuButton
-                  value={paymentModeFilter}
-                  onValueChange={resetList(setPaymentModeFilter)}
-                  options={PAYMENT_MODE_OPTIONS}
-                  accessibilityLabel="Payment mode"
-                />
-                <FilterMenuButton value={providerFilter} onValueChange={resetList(setProviderFilter)} options={PROVIDER_OPTIONS} accessibilityLabel="Provider" />
-                <MoreFilters categories={MORE_FILTER_CATEGORIES} applied={moreFilters} onApply={resetList(setMoreFilters)} />
-              </>
-            )}
-          </>
-        }
-        floatingActions={[
-          ...(mode === 'in-store' ? [{ label: 'Email filtered', icon: 'envelope-simple', onPress: () => setEmailOpen(true) }] : []),
-          { label: 'Download filtered', icon: 'download-simple' },
-        ]}
-      />
 
       <SummaryCards cards={[{ icon: 'wallet', label: 'Total volume', value: totalVolume, subtext: `${filteredRows.length} payments` }]} />
 
@@ -320,4 +327,6 @@ const styles = StyleSheet.create({
   container: { gap: 16 },
   header: { gap: 12 },
   onlineTabs: { backgroundColor: 'transparent' },
+  hint: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 12, paddingRight: 4, paddingVertical: 4, borderRadius: Shape.max },
+  hintText: { flex: 1 },
 });

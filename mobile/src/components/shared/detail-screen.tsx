@@ -1,19 +1,16 @@
-import { router, type Href } from 'expo-router';
+import { type Href } from 'expo-router';
 import { type ReactNode, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, View } from 'react-native';
-import { Appbar, Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { Animated, StyleSheet, View } from 'react-native';
+import { Appbar, Text, useTheme } from 'react-native-paper';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
+import { BackButton, HeaderControl, PageTitle, PageTopBar, useCollapsingHeader } from '@/components/page-header';
 import { useOpenScopeSwitcher } from '@/components/scope-switcher';
-import { ScreenTabs } from '@/components/screen-tabs';
-import type { ShellTabsConfig } from '@/components/shell-tabs';
-import { ShellTopBar } from '@/components/shell-top-bar';
 import { useBusiness } from '@/hooks/use-business';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 
 import { useSvgId } from './hatch';
-import { FloatingLayerHost, FloatingLayerProvider, FloatingLayerSpacer, useFloatingLayer } from './floating-layer';
 import { EndReachedProvider, useEndReached } from './lazy-list';
 
 /** Web status gradients (from-success/25 via-success/10 to-background, etc.). */
@@ -48,12 +45,16 @@ function StatusGradient({ tone }: { tone: StatusGradientTone }) {
 
 type DetailScreenProps = {
   title: string;
+  /** A muted line under the large title, e.g. what the page is for. */
+  subtitle?: string;
   /** Where Back goes when there's no history (e.g. the page was opened directly). */
   fallbackHref: Href;
   gradient?: StatusGradientTone;
-  /** Appbar actions, e.g. an overflow or download icon. */
+  /** The page's call to action in the header's trailing slot (e.g. "New"), filled in the brand colour. */
+  action?: { label: string; icon: string; onPress?: () => void };
+  /** Other header controls before it, e.g. icon buttons (HeaderControl) for chat history or customise. */
   actions?: ReactNode;
-  /** Set false when the screen lays out its own scrolling, e.g. a chat with a pinned composer. */
+  /** Set false when the screen lays out its own scrolling, e.g. a chat with a pinned composer: the title then stays small in the header. */
   scroll?: boolean;
   /**
    * The screen's main call(s) to action, pinned to the bottom (e.g. Refund
@@ -62,92 +63,82 @@ type DetailScreenProps = {
    */
   footer?: ReactNode;
   /**
-   * The page's data follows the global store / channel scope: the title row
-   * shows it as "<stores> · <channel> ▾" underneath, like the home header,
-   * and tapping it opens the switcher.
+   * The page's data follows the global store / channel scope: it's shown
+   * under the title as "<channel> · <stores> ▾", opening the switcher.
    */
   scoped?: boolean;
-  /** Sub-tabs shown under the title in the top bar (e.g. Reports / History / Schedule). */
-  tabs?: ShellTabsConfig;
   children: ReactNode;
 };
 
-const ROW_PADDING = 12;
 const FOOTER_PADDING = 16;
 /** Radius for buttons in the pinned footer (16dp inside its rounded top corners). */
 export const DETAIL_FOOTER_BUTTON_RADIUS = concentric(Shape.max, FOOTER_PADDING);
-// Back / action buttons sit 12dp inside the rounded top bar.
-const HEADER_BUTTON_RADIUS = concentric(Shape.max, ROW_PADDING, 40);
 
 /**
- * Frame for a pushed detail screen (web: the detail pages' "← Back" row):
- * rounded top bar with back and title, then scrolling content over the web's
- * status gradient, and an optional pinned footer holding the main call to
- * action. Replaces the org header (and the nav bar) while a detail is open.
+ * Frame for a pushed inner page, with the shared page header (see
+ * page-header.tsx): Back leading the top bar and the page's call to action
+ * trailing it, then the large left-aligned title opening the scrolling
+ * content (over the web's status gradient), which hands off to a small title
+ * in the bar as it scrolls away. An optional pinned footer holds the main call
+ * to action. Replaces the tab header (and the nav bar) while the page is open.
  */
-export function DetailScreen({ title, fallbackHref, gradient, actions, scroll = true, footer, scoped = false, tabs, children }: DetailScreenProps) {
+export function DetailScreen({ title, subtitle, fallbackHref, gradient, action, actions, scroll = true, footer, scoped = false, children }: DetailScreenProps) {
   const theme = useTheme();
-  const goBack = () => (router.canGoBack() ? router.back() : router.navigate(fallbackHref));
   const endReached = useEndReached();
-  const floating = useFloatingLayer();
+  const header = useCollapsingHeader();
+  const [shown] = useState(() => new Animated.Value(1));
+  const { scopeText } = useBusiness();
+  const openScopeSwitcher = useOpenScopeSwitcher();
+  // Scoped inner pages are channel-split, so never "All channels".
+  const scope = scoped ? scopeText(false) : undefined;
+  const trailing =
+    actions || action ? (
+      <>
+        {actions}
+        {action ? <HeaderControl icon={action.icon} label={action.label} primary onPress={action.onPress} accessibilityLabel={action.label} /> : null}
+      </>
+    ) : undefined;
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
-      <ShellTopBar>
-        <Appbar.Header mode="small" elevated={false} style={styles.appbar}>
-          <Appbar.Action icon="arrow-left" onPress={goBack} accessibilityLabel="Back" style={styles.headerButton} />
-          {scoped ? <ScopedTitle title={title} /> : <Appbar.Content title={title} titleStyle={styles.title} />}
-          {actions}
-        </Appbar.Header>
-        {tabs ? <ScreenTabs {...tabs} /> : null}
-      </ShellTopBar>
       {scroll ? (
-        <View style={styles.screen}>
-          <ScrollView {...endReached.scrollProps} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-            {gradient ? <StatusGradient tone={gradient} /> : null}
-            {/* Lazy lists on the page load their next rows as the end comes into view; floating
-                content (e.g. a listing's search and exports) sits just above the footer. */}
-            <FloatingLayerProvider store={floating}>
-              <EndReachedProvider value={endReached.value}>{children}</EndReachedProvider>
-            </FloatingLayerProvider>
-            <FloatingLayerSpacer store={floating} />
-          </ScrollView>
-          <FloatingLayerHost store={floating} />
-        </View>
+        <Animated.ScrollView
+          {...endReached.scrollProps}
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: header.scrollY } } }], {
+            useNativeDriver: true,
+            listener: endReached.scrollProps.onScroll,
+          })}
+          contentContainerStyle={[styles.content, { paddingTop: header.barHeight }]}
+          keyboardShouldPersistTaps="handled">
+          {gradient ? <StatusGradient tone={gradient} /> : null}
+          <PageTitle
+            title={title}
+            subtitle={scope ?? subtitle}
+            onPressSubtitle={scope ? openScopeSwitcher : undefined}
+            subtitleAccessibilityLabel={scope ? `${scope}. Switch store or channel` : undefined}
+            style={header.titleStyle}
+            onLayout={header.onTitleLayout}
+          />
+          {/* Lazy lists on the page load their next rows as the end comes into view. */}
+          <EndReachedProvider value={endReached.value}>{children}</EndReachedProvider>
+        </Animated.ScrollView>
       ) : (
-        <View style={styles.screen}>{children}</View>
+        <View style={[styles.screen, { paddingTop: header.barHeight }]}>{children}</View>
       )}
+      <PageTopBar
+        onLayout={header.onBarLayout}
+        leading={<BackButton fallbackHref={fallbackHref} />}
+        title={title}
+        subtitle={scope}
+        onPressTitle={scope ? openScopeSwitcher : undefined}
+        titleAccessibilityLabel={scope ? `${title}. ${scope}. Switch store or channel` : undefined}
+        trailing={trailing}
+        // Without its own scrolling the page has no large title: the small one shows from the start.
+        collapsed={scroll ? header.collapsed : shown}
+        surfaceOpacity={scroll ? header.surfaceOpacity : shown}
+      />
       {footer ? <View style={[styles.footer, { backgroundColor: theme.colors.surface }]}>{footer}</View> : null}
     </View>
-  );
-}
-
-/** Page title with the current scope and an arrow under it (the home header's subtext). */
-function ScopedTitle({ title }: { title: string }) {
-  const theme = useTheme();
-  const { scopeText } = useBusiness();
-  // Scoped inner pages are channel-split, so never "All channels".
-  const scope = scopeText(false);
-  const openScopeSwitcher = useOpenScopeSwitcher();
-  return (
-    <TouchableRipple
-      onPress={openScopeSwitcher}
-      borderless
-      accessibilityRole="button"
-      accessibilityLabel={`${title}. ${scope}. Switch store or channel`}
-      style={styles.scopedTitle}>
-      <View>
-        <Text variant="titleMedium" numberOfLines={1}>
-          {title}
-        </Text>
-        <View style={styles.scope}>
-          <Text variant="bodySmall" numberOfLines={1} style={[styles.scopeText, { color: theme.colors.onSurfaceVariant }]}>
-            {scope}
-          </Text>
-          <Icon source="caret-down" size={14} color={theme.colors.onSurfaceVariant} />
-        </View>
-      </View>
-    </TouchableRipple>
   );
 }
 
@@ -187,7 +178,6 @@ export function CollapsingDetailScreen({
   children,
 }: CollapsingDetailScreenProps) {
   const theme = useTheme();
-  const goBack = () => (router.canGoBack() ? router.back() : router.navigate(fallbackHref));
   const [scrollY] = useState(() => new Animated.Value(0));
   const [headerHeight, setHeaderHeight] = useState(64);
   const [heroHeight, setHeroHeight] = useState(180);
@@ -231,7 +221,7 @@ export function CollapsingDetailScreen({
       <View style={styles.floatingHeader} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
         <Animated.View pointerEvents="none" style={[styles.headerSurface, { backgroundColor: theme.colors.surface, opacity: surfaceOpacity }]} />
         <Appbar.Header mode="small" elevated={false} style={styles.appbar}>
-          <Appbar.Action icon="arrow-left" onPress={goBack} accessibilityLabel="Back" style={styles.headerButton} />
+          <BackButton fallbackHref={fallbackHref} />
           <Animated.View
             pointerEvents="none"
             accessibilityElementsHidden
@@ -264,16 +254,10 @@ export function CollapsingDetailScreen({
   );
 }
 
-export const DETAIL_HEADER_BUTTON_STYLE = { borderRadius: HEADER_BUTTON_RADIUS };
-
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  appbar: { backgroundColor: 'transparent', paddingHorizontal: 4 },
-  headerButton: { borderRadius: HEADER_BUTTON_RADIUS },
-  title: { fontSize: 16, lineHeight: 24 },
-  scopedTitle: { flex: 1, borderRadius: HEADER_BUTTON_RADIUS, paddingHorizontal: 8, paddingVertical: 2, marginRight: 4 },
-  scope: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  scopeText: { flexShrink: 1 },
+  // Back lines up with the page's 16dp content edge, as on the other pages' header.
+  appbar: { backgroundColor: 'transparent', paddingHorizontal: 16, gap: 8 },
   content: { padding: 16, paddingBottom: 32, gap: 24 },
   gradient: { position: 'absolute', top: 0, left: 0, right: 0 },
   floatingHeader: { position: 'absolute', top: 0, left: 0, right: 0 },
