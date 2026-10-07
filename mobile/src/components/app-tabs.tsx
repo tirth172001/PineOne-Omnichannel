@@ -46,7 +46,6 @@ const MODULE_TABS = [
   { key: 'checkout', href: '/checkout', label: 'Checkout', icon: 'palette', focusedIcon: 'palette-fill' },
   { key: 'stores', href: '/stores', label: 'Stores', title: 'Manage stores', icon: 'storefront', focusedIcon: 'storefront-fill' },
   { key: 'users', href: '/users', label: 'Users', title: 'Users & roles', icon: 'users', focusedIcon: 'users-fill' },
-  { key: 'account-settings', href: '/account-settings', label: 'Settings', title: 'Account settings', icon: 'gear', focusedIcon: 'gear-fill' },
   { key: 'support', href: '/support', label: 'Support', icon: 'chat-centered-text', focusedIcon: 'chat-centered-text-fill' },
 ] as const satisfies readonly TabItem[];
 

@@ -3,8 +3,12 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Icon, Text, useTheme } from 'react-native-paper';
 
+import { AnswerHero, HERO_OVERLAP } from '@/components/listing-hero/answer-hero';
+import { ListingCard } from '@/components/listing-hero/listing-card';
+import { type RangeScope, type RangeValue, rangePhrase, resolveRange } from '@/components/listing-hero/time-scope';
 import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DateTimeField, type DateTimeValue, FormField, FormTextInput } from '@/components/shared/form-fields';
+import { DayGroupedList, dayTotals, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListingToolbar, ListRow, ListRowLine, selectFilter } from '@/components/shared/listing';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
@@ -26,6 +30,9 @@ import {
   type PaymentLinkStatus,
   paymentLinkTone,
 } from '@/data/payment-links';
+import { LISTING_HERO_LAYOUT } from '@/constants/experiments';
+import { parseInr } from '@/data/common';
+import { parseDisplayDate } from '@/data/transactions';
 import { useToast } from '@/hooks/use-toast';
 
 export type CreatePaymentLinkValues = {
@@ -183,6 +190,8 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
   const [createOpen, setCreateOpen] = useState(startCreating);
   const [createSeed, setCreateSeed] = useState<Partial<CreatePaymentLinkValues>>();
   const lazy = useLazyList();
+  const [range, setRange] = useState<RangeValue>({ preset: '30d' });
+  const [heroView, setHeroView] = useState<'paid' | 'open'>('paid');
   const muted = { color: theme.colors.onSurfaceVariant };
   const activeField = PAYMENT_LINK_SEARCH_FIELDS.find((field) => field.id === searchField) ?? PAYMENT_LINK_SEARCH_FIELDS[0];
 
@@ -220,6 +229,167 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
       invoiceNumber: row.invoiceNumber === '-' ? '' : row.invoiceNumber,
       customerMobile: row.customerMobile,
     });
+
+  const renderRow = (row: PaymentLinkRow) => (
+    <ListRow key={row.id} accessibilityLabel={`Payment link ${row.paymentLink}, ${row.amount}, ${row.status}`}>
+      <ListRowLine
+        left={
+          <>
+            <Text variant="bodyMedium" style={styles.medium}>
+              {row.paymentLink}
+            </Text>
+            <Text variant="bodySmall" style={muted}>
+              {row.amount} · Invoice {row.invoiceNumber}
+            </Text>
+          </>
+        }
+        right={
+          <RowActionsMenu
+            accessibilityLabel={`Actions for ${row.paymentLink}`}
+            actions={[
+              {
+                label: 'Copy link',
+                icon: 'copy',
+                onPress: () => {
+                  void Clipboard.setStringAsync(row.paymentLink);
+                  toast('Payment link copied');
+                },
+              },
+              { label: 'Duplicate link', onPress: () => duplicate(row) },
+            ]}
+          />
+        }
+      />
+      <Text variant="bodySmall">{row.description}</Text>
+      <ListRowLine
+        left={
+          <Text variant="bodySmall" style={muted}>
+            Created {row.createdDate}, {row.createdTime}
+            {'\n'}
+            Expires {row.expiryDate}
+            {row.expiryTime ? `, ${row.expiryTime}` : ''}
+          </Text>
+        }
+        right={<StatusPill label={row.status} tone={paymentLinkTone(row.status)} radius={LIST_ROW_INNER_RADIUS} />}
+      />
+    </ListRow>
+  );
+
+  // The listing hero experiment (constants/experiments.ts): the answer, then the records.
+  const latest = new Date(Math.max(0, ...rows.map((row) => createdAt(row)?.getTime() ?? 0)));
+  const [rangeFrom, rangeTo] = resolveRange(range, latest);
+  const inRange = rows.filter((row) => {
+    const at = createdAt(row);
+    return !!at && at >= rangeFrom && at < rangeTo;
+  });
+  const heroFiltered = inRange.filter((row) => (status === 'all' || row.status === status) && matchesSearchField(row, searchField, search));
+  const heroLoaded = sortNewestFirst(heroFiltered, (row) => displayTimestamp(row.createdDate, row.createdTime)).slice(0, lazy.count);
+  const paid = inRange.filter((row) => row.status === 'Fully paid');
+  // Open links are a balance right now, whatever the dates.
+  const open = rows.filter((row) => row.status === 'Created');
+  const expired = inRange.filter((row) => row.status === 'Expired').length;
+  const linkTotal = (list: PaymentLinkRow[]) => list.reduce((sum, row) => sum + parseInr(row.amount), 0);
+  const dates: RangeScope = {
+    kind: 'range',
+    subject: 'payment links',
+    presets: ['today', 'yesterday', '7d', '30d', '90d'],
+    value: range,
+    onChange: (value) => {
+      setRange(value);
+      lazy.reset();
+    },
+    allowCustom: true,
+    maxDays: 90,
+  };
+  const linkFilters = [
+    selectFilter({
+      label: 'Search by',
+      options: SEARCH_FIELD_OPTIONS,
+      value: searchField,
+      onApply: (value) => {
+        setSearchField(value);
+        lazy.reset();
+      },
+    }),
+    selectFilter({
+      label: 'Status',
+      options: STATUS_OPTIONS,
+      value: status,
+      onApply: (value) => {
+        setStatus(value);
+        lazy.reset();
+      },
+    }),
+  ];
+
+  if (LISTING_HERO_LAYOUT) {
+    return (
+      <TabScreen tab="payment-links" actions={[{ label: 'New payment link', shortLabel: 'New link', icon: 'plus', onPress: () => openCreate() }]}>
+        <View style={styles.heroContainer}>
+          <AnswerHero
+            activeKey={heroView}
+            onActiveChange={(key) => setHeroView(key as 'paid' | 'open')}
+            views={[
+              {
+                key: 'paid',
+                label: 'Paid via links',
+                amount: linkTotal(paid),
+                line: paid.length ? `${paid.length} ${paid.length === 1 ? 'link' : 'links'} paid ${rangePhrase(range)}` : `No links paid ${rangePhrase(range)}`,
+                time: dates,
+              },
+              {
+                key: 'open',
+                label: 'Open links',
+                amount: linkTotal(open),
+                line: `${open.length} ${open.length === 1 ? 'link is' : 'links are'} waiting to be paid`,
+                time: { kind: 'live' },
+              },
+            ]}
+          />
+          <ListingCard
+            style={styles.overHero}
+            search={search}
+            onSearchChange={(value) => {
+              setSearch(value);
+              lazy.reset();
+            }}
+            searchPlaceholder={`Enter ${activeField.label.toLowerCase()}`}
+            time={heroView === 'open' ? dates : undefined}
+            suggestions={
+              expired > 0 && status !== 'Expired'
+                ? [
+                    {
+                      key: 'expired',
+                      label: `${expired} expired`,
+                      icon: 'warning-circle',
+                      color: theme.colors.error,
+                      onPress: () => {
+                        setStatus('Expired');
+                        lazy.reset();
+                      },
+                    },
+                  ]
+                : []
+            }
+            filters={linkFilters}
+            actions={[{ label: 'Download filtered', icon: 'download-simple' }]}
+            totals={{ all: inRange.length, shown: heroFiltered.length, amount: linkTotal(heroFiltered) }}
+            noun={{ one: 'link', other: 'links' }}>
+            <DayGroupedList
+              flat
+              groups={groupByDay(heroLoaded, (row) => row.createdDate)}
+              totals={dayTotals(heroFiltered, (row) => row.createdDate)}
+              noun={{ one: 'link', other: 'links' }}
+              empty={inRange.length ? 'No payment links match. Try clearing the search or filters.' : 'No payment links created in these dates.'}
+              renderRow={renderRow}
+            />
+            <LazyListFooter lazy={lazy} total={heroFiltered.length} noun="payment links" />
+          </ListingCard>
+        </View>
+        <CreatePaymentLinkSheet visible={createOpen} onDismiss={() => setCreateOpen(false)} onCreate={create} initialValues={createSeed} />
+      </TabScreen>
+    );
+  }
 
   return (
     <TabScreen tab="payment-links" actions={[{ label: 'New payment link', shortLabel: 'New link', icon: 'plus', onPress: () => openCreate() }]}>
@@ -269,50 +439,7 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
         </View>
       ) : (
         <ListCard empty="No payment links found for current filters.">
-          {filtered.slice(0, lazy.count).map((row) => (
-            <ListRow key={row.id} accessibilityLabel={`Payment link ${row.paymentLink}, ${row.amount}, ${row.status}`}>
-              <ListRowLine
-                left={
-                  <>
-                    <Text variant="bodyMedium" style={styles.medium}>
-                      {row.paymentLink}
-                    </Text>
-                    <Text variant="bodySmall" style={muted}>
-                      {row.amount} · Invoice {row.invoiceNumber}
-                    </Text>
-                  </>
-                }
-                right={
-                  <RowActionsMenu
-                    accessibilityLabel={`Actions for ${row.paymentLink}`}
-                    actions={[
-                      {
-                        label: 'Copy link',
-                        icon: 'copy',
-                        onPress: () => {
-                          void Clipboard.setStringAsync(row.paymentLink);
-                          toast('Payment link copied');
-                        },
-                      },
-                      { label: 'Duplicate link', onPress: () => duplicate(row) },
-                    ]}
-                  />
-                }
-              />
-              <Text variant="bodySmall">{row.description}</Text>
-              <ListRowLine
-                left={
-                  <Text variant="bodySmall" style={muted}>
-                    Created {row.createdDate}, {row.createdTime}
-                    {'\n'}
-                    Expires {row.expiryDate}
-                    {row.expiryTime ? `, ${row.expiryTime}` : ''}
-                  </Text>
-                }
-                right={<StatusPill label={row.status} tone={paymentLinkTone(row.status)} radius={LIST_ROW_INNER_RADIUS} />}
-              />
-            </ListRow>
-          ))}
+          {filtered.slice(0, lazy.count).map(renderRow)}
         </ListCard>
       )}
       {showEmptyState ? null : <LazyListFooter lazy={lazy} total={filtered.length} noun="payment links" />}
@@ -330,4 +457,12 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', gap: 8, padding: 32, borderWidth: 1, borderRadius: Shape.max },
   emptyIcon: { width: 36, height: 36, borderRadius: Shape.small, alignItems: 'center', justifyContent: 'center' },
   panelButton: { borderRadius: PANEL_INNER_RADIUS },
+  heroContainer: { gap: 16 },
+  // The container's gap plus the hero's open foot.
+  overHero: { marginTop: -(16 + HERO_OVERLAP) },
 });
+
+/** When a link was created (rows carry "12 Aug 2026" + "10:10 PM"). */
+function createdAt(row: PaymentLinkRow) {
+  return parseDisplayDate(row.createdDate, row.createdTime);
+}

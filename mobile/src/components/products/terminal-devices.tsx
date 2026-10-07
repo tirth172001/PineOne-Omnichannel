@@ -3,20 +3,29 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
+import { AnswerHero, HERO_OVERLAP } from '@/components/listing-hero/answer-hero';
+import { ListingCard } from '@/components/listing-hero/listing-card';
+import { useListDates } from '@/components/listing-hero/time-scope';
 import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DetailScreen } from '@/components/shared/detail-screen';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
 import { type MoreFilterSelection } from '@/components/shared/more-filters';
+import { DayGroupedList, dayTotals, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { RowActionsMenu } from '@/components/shared/row-actions';
 import { TabScreen } from '@/components/tab-screen';
+import { LISTING_HERO_LAYOUT } from '@/constants/experiments';
 import { Fonts } from '@/constants/theme';
 import { CURRENT_USER } from '@/data/businesses';
+import { parseDisplayDate } from '@/data/transactions';
 import {
   DEVICE_MODELS,
   type DeviceMode,
+  formatTime,
+  type DeviceAuditRow,
   getAuditRows,
   getDeviceRows,
+  MONTHS,
   recordModeChange,
   type TerminalDeviceRow,
   toggleDeviceStatus,
@@ -27,6 +36,18 @@ const STATUS_OPTIONS = [
   { value: 'all', label: 'All status' },
   { value: 'standalone', label: 'Standalone' },
   { value: 'integrated', label: 'Integrated' },
+] as const;
+
+// The hero layout names the existing "Status" filter for what it is (mode), and adds a real status.
+const MODE_OPTIONS = [
+  { value: 'all', label: 'All modes' },
+  { value: 'standalone', label: 'Standalone' },
+  { value: 'integrated', label: 'Integrated' },
+] as const;
+const DEVICE_STATUS_OPTIONS = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'Active', label: 'Active' },
+  { value: 'Inactive', label: 'Inactive' },
 ] as const;
 
 const MODEL_FILTER = [
@@ -62,7 +83,15 @@ export function TerminalDevices() {
   const [status, setStatus] = useState<string>('all');
   const [dateRange, setDateRange] = useState(() => makeDateRangeValue(presets, 'today'));
   const [moreFilters, setMoreFilters] = useState<MoreFilterSelection>({});
+  const [deviceStatus, setDeviceStatus] = useState<'all' | 'Active' | 'Inactive'>('all');
   const lazy = useLazyList();
+  // The devices list keeps its own dates (installed on); the hero's count is live.
+  const installed = useListDates(rows, (row) => parseDisplayDate(row.installationDate, row.installationTime || '12:00 PM'), {
+    subject: 'devices installed',
+    presets: ['all', '30d', '90d'],
+    initial: 'all',
+    onChange: lazy.reset,
+  });
   const muted = { color: theme.colors.onSurfaceVariant };
 
   const query = search.trim().toLowerCase();
@@ -86,14 +115,15 @@ export function TerminalDevices() {
     toast(`${device.model} ${updated.status === 'Active' ? 'reactivated' : 'deactivated'}`);
   };
   const addDevice = () => {
+    const now = new Date();
     const newRow: TerminalDeviceRow = {
       ...rows[0],
       id: `dev-new-${Date.now()}`,
       model: 'Touch A910',
       hardwareId: `HRD-${Math.floor(100000 + Math.random() * 900000)}`,
       posId: `POS-${Math.floor(700000000 + Math.random() * 90000000)}`,
-      installationDate: 'Just now',
-      installationTime: '',
+      installationDate: `${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`,
+      installationTime: formatTime(now.getHours(), now.getMinutes()),
       mode: 'Standalone',
       status: 'Active',
     };
@@ -101,6 +131,139 @@ export function TerminalDevices() {
     lazy.reset();
     toast(`${newRow.model} added`);
   };
+
+  const renderRow = (row: TerminalDeviceRow) => (
+    <ListRow key={row.id} accessibilityLabel={`${row.model}, ${row.hardwareId}, ${row.mode}`}>
+      <ListRowLine
+        left={
+          <>
+            <Text variant="bodyMedium" style={styles.medium}>
+              {row.model}
+            </Text>
+            <Text variant="bodySmall" style={muted}>
+              {row.hardwareId} · {row.posId}
+            </Text>
+          </>
+        }
+        right={
+          <RowActionsMenu
+            accessibilityLabel={`Actions for ${row.model}`}
+            actions={[
+              { label: `Change mode to ${row.mode === 'Standalone' ? 'Integrated' : 'Standalone'}`, onPress: () => changeMode(row) },
+              { label: row.status === 'Active' ? 'Deactivate device' : 'Reactivate device', onPress: () => toggleStatus(row) },
+            ]}
+          />
+        }
+      />
+      <ListRowLine
+        left={
+          <>
+            <Text variant="bodySmall">{row.storeName}</Text>
+            <Text variant="bodySmall" style={muted} numberOfLines={1}>
+              Installed {row.installationDate}
+              {row.installationTime ? `, ${row.installationTime}` : ''}
+            </Text>
+          </>
+        }
+        right={<ModePill mode={row.mode} />}
+      />
+    </ListRow>
+  );
+
+  if (LISTING_HERO_LAYOUT) {
+    // The listing hero experiment (constants/experiments.ts): how many devices are working right now, then the devices.
+    const active = rows.filter((row) => row.status === 'Active');
+    const inactive = rows.length - active.length;
+    const integrated = active.filter((row) => row.mode === 'Integrated').length;
+    const heroFiltered = installed.inRange.filter((row) => {
+      if (deviceStatus !== 'all' && row.status !== deviceStatus) return false;
+      if (status !== 'all' && row.mode.toLowerCase() !== status) return false;
+      const models = moreFilters.model ?? [];
+      if (models.length && !models.includes(row.model)) return false;
+      return !query || `${row.model} ${row.hardwareId} ${row.posId} ${row.storeName}`.toLowerCase().includes(query);
+    });
+    const heroLoaded = sortNewestFirst(heroFiltered, (row) => displayTimestamp(row.installationDate, row.installationTime)).slice(0, lazy.count);
+    return (
+      <TabScreen tab="terminal-devices" actions={[{ label: 'Add new device', shortLabel: 'Add device', icon: 'plus', onPress: addDevice }]}>
+        <View style={styles.heroContainer}>
+          <AnswerHero
+            views={[
+              {
+                key: 'active',
+                label: 'Active devices',
+                amount: 0,
+                count: { value: active.length, of: rows.length },
+                line: `${active.length - integrated} standalone · ${integrated} integrated${inactive ? ` · ${inactive} inactive` : ''}`,
+                time: { kind: 'live' },
+              },
+            ]}
+          />
+          <ListingCard
+            style={styles.overHero}
+            search={search}
+            onSearchChange={(value) => {
+              setSearch(value);
+              lazy.reset();
+            }}
+            searchPlaceholder="Search by device ID"
+            time={installed.scope}
+            suggestions={
+              inactive > 0 && deviceStatus !== 'Inactive'
+                ? [
+                    {
+                      key: 'inactive',
+                      label: `${inactive} inactive`,
+                      icon: 'warning-circle',
+                      color: theme.colors.error,
+                      onPress: () => {
+                        setDeviceStatus('Inactive');
+                        lazy.reset();
+                      },
+                    },
+                  ]
+                : []
+            }
+            filters={[
+              selectFilter({
+                label: 'Status',
+                options: DEVICE_STATUS_OPTIONS,
+                value: deviceStatus,
+                onApply: (value) => {
+                  setDeviceStatus(value);
+                  lazy.reset();
+                },
+              }),
+              selectFilter({
+                label: 'Mode',
+                options: MODE_OPTIONS,
+                value: status,
+                onApply: (value) => {
+                  setStatus(value);
+                  lazy.reset();
+                },
+              }),
+              { type: 'more', categories: MODEL_FILTER, applied: moreFilters, onApply: setMoreFilters },
+            ]}
+            actions={[
+              { label: 'Audit log', icon: 'file-text', onPress: () => router.push('/terminal-devices/audit-log') },
+              { label: 'Download filtered', icon: 'download-simple' },
+            ]}
+            totals={{ all: installed.inRange.length, shown: heroFiltered.length }}
+            noun={{ one: 'device', other: 'devices' }}>
+            <DayGroupedList
+              flat
+              groups={groupByDay(heroLoaded, (row) => row.installationDate)}
+              totals={dayTotals(heroFiltered, (row) => row.installationDate)}
+              noun={{ one: 'device', other: 'devices' }}
+              empty={installed.inRange.length ? 'No devices match. Try clearing the search or filters.' : 'No devices installed in these dates.'}
+              renderRow={renderRow}
+            />
+            <LazyListFooter lazy={lazy} total={heroFiltered.length} noun="devices" />
+          </ListingCard>
+        </View>
+      </TabScreen>
+    );
+  }
 
   return (
     <TabScreen
@@ -132,43 +295,7 @@ export function TerminalDevices() {
         ]}
       />
       <ListCard empty="No devices found for current filters.">
-        {loaded.map((row) => (
-          <ListRow key={row.id} accessibilityLabel={`${row.model}, ${row.hardwareId}, ${row.mode}`}>
-            <ListRowLine
-              left={
-                <>
-                  <Text variant="bodyMedium" style={styles.medium}>
-                    {row.model}
-                  </Text>
-                  <Text variant="bodySmall" style={muted}>
-                    {row.hardwareId} · {row.posId}
-                  </Text>
-                </>
-              }
-              right={
-                <RowActionsMenu
-                  accessibilityLabel={`Actions for ${row.model}`}
-                  actions={[
-                    { label: `Change mode to ${row.mode === 'Standalone' ? 'Integrated' : 'Standalone'}`, onPress: () => changeMode(row) },
-                    { label: row.status === 'Active' ? 'Deactivate device' : 'Reactivate device', onPress: () => toggleStatus(row) },
-                  ]}
-                />
-              }
-            />
-            <ListRowLine
-              left={
-                <>
-                  <Text variant="bodySmall">{row.storeName}</Text>
-                  <Text variant="bodySmall" style={muted} numberOfLines={1}>
-                    Installed {row.installationDate}
-                    {row.installationTime ? `, ${row.installationTime}` : ''}
-                  </Text>
-                </>
-              }
-              right={<ModePill mode={row.mode} />}
-            />
-          </ListRow>
-        ))}
+        {loaded.map(renderRow)}
       </ListCard>
       <LazyListFooter lazy={lazy} total={filtered.length} noun="devices" />
     </TabScreen>
@@ -184,6 +311,7 @@ export function DeviceAuditLog() {
   const theme = useTheme();
   const presets = useMemo(() => getDefaultDateRangePresets(), []);
   const [rows] = useState(() => getAuditRows());
+  const changed = useListDates(rows, (row) => parseDisplayDate(row.date, row.time), { subject: 'mode changes', presets: ['today', '7d', '30d', '90d'], initial: '30d' });
   const [search, setSearch] = useState('');
   const [store, setStore] = useState('all');
   const [dateRange, setDateRange] = useState(() => makeDateRangeValue(presets, 'today'));
@@ -195,6 +323,70 @@ export function DeviceAuditLog() {
     if (store !== 'all' && row.storeName !== store) return false;
     return !query || `${row.hardwareId} ${row.model} ${row.changedBy} ${row.storeName}`.toLowerCase().includes(query);
   });
+
+  const renderChange = (row: DeviceAuditRow) => (
+    <ListRow key={row.id} accessibilityLabel={`${row.model} changed to ${row.finalMode} by ${row.changedBy}`}>
+      <ListRowLine
+        left={
+          <>
+            <Text variant="bodyMedium" style={styles.medium}>
+              {row.model}
+            </Text>
+            <Text variant="bodySmall" style={muted}>
+              {row.hardwareId}
+            </Text>
+          </>
+        }
+        right={
+          <Text variant="bodySmall" style={muted}>
+            {row.date}, {row.time}
+          </Text>
+        }
+      />
+      <View style={styles.modeChange}>
+        <ModePill mode={row.previousMode} />
+        <Text variant="bodyMedium" style={muted}>
+          →
+        </Text>
+        <ModePill mode={row.finalMode} />
+      </View>
+      <Text variant="bodySmall" style={muted}>
+        {row.changedBy} ({row.changedByRole}) · {row.storeName}
+      </Text>
+    </ListRow>
+  );
+
+  if (LISTING_HERO_LAYOUT) {
+    // The listing format (constants/experiments.ts): one card for search, filters and dates; changes by day.
+    const shown = changed.inRange.filter((row) => {
+      if (store !== 'all' && row.storeName !== store) return false;
+      return !query || `${row.hardwareId} ${row.model} ${row.changedBy} ${row.storeName}`.toLowerCase().includes(query);
+    });
+    const ordered = sortNewestFirst(shown, (row) => displayTimestamp(row.date, row.time));
+    const noun = { one: 'change', other: 'changes' };
+    return (
+      <DetailScreen title="Audit log" fallbackHref="/terminal-devices">
+        <ListingCard
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search by device ID"
+          time={changed.scope}
+          filters={[selectFilter({ label: 'Store', options: storeOptions, value: store, onApply: setStore })]}
+          actions={[{ label: 'Download', icon: 'download-simple' }]}
+          totals={{ all: changed.inRange.length, shown: shown.length }}
+          noun={noun}>
+          <DayGroupedList
+            flat
+            groups={groupByDay(ordered, (row) => row.date)}
+            totals={dayTotals(shown, (row) => row.date)}
+            noun={noun}
+            empty={!rows.length ? 'No mode changes recorded yet.' : changed.inRange.length ? 'No changes match. Try clearing the search or filters.' : 'No mode changes recorded in these dates.'}
+            renderRow={renderChange}
+          />
+        </ListingCard>
+      </DetailScreen>
+    );
+  }
 
   return (
     <DetailScreen title="Audit log" fallbackHref="/terminal-devices">
@@ -209,37 +401,7 @@ export function DeviceAuditLog() {
         actions={[{ label: 'Download', icon: 'download-simple' }]}
       />
       <ListCard empty="No mode changes recorded yet.">
-        {filtered.map((row) => (
-          <ListRow key={row.id} accessibilityLabel={`${row.model} changed to ${row.finalMode} by ${row.changedBy}`}>
-            <ListRowLine
-              left={
-                <>
-                  <Text variant="bodyMedium" style={styles.medium}>
-                    {row.model}
-                  </Text>
-                  <Text variant="bodySmall" style={muted}>
-                    {row.hardwareId}
-                  </Text>
-                </>
-              }
-              right={
-                <Text variant="bodySmall" style={muted}>
-                  {row.date}, {row.time}
-                </Text>
-              }
-            />
-            <View style={styles.modeChange}>
-              <ModePill mode={row.previousMode} />
-              <Text variant="bodyMedium" style={muted}>
-                →
-              </Text>
-              <ModePill mode={row.finalMode} />
-            </View>
-            <Text variant="bodySmall" style={muted}>
-              {row.changedBy} ({row.changedByRole}) · {row.storeName}
-            </Text>
-          </ListRow>
-        ))}
+        {filtered.map(renderChange)}
       </ListCard>
     </DetailScreen>
   );
@@ -257,5 +419,8 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   dot: { width: 6, height: 6, borderRadius: 3 },
+  heroContainer: { gap: 16 },
+  // The container's gap plus the hero's open foot.
+  overHero: { marginTop: -(16 + HERO_OVERLAP) },
   modeChange: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 2 },
 });

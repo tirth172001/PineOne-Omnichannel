@@ -11,7 +11,6 @@ import { SelectField } from '@/components/shared/form-fields';
 import { DetailScreen } from '@/components/shared/detail-screen';
 import { NotFound } from '@/components/shared/not-found';
 import { PANEL_INNER_RADIUS, PanelSheet } from '@/components/shared/panel-sheet';
-import { TabScreen } from '@/components/tab-screen';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { CURRENT_USER, ORGANISATIONS } from '@/data/businesses';
@@ -82,6 +81,12 @@ const GROUPS: { label: string; keys: SectionKey[] }[] = [
   { label: 'Payments', keys: ['refunds', 'online-payments'] },
   { label: 'Developers', keys: ['credentials', 'webhooks'] },
 ];
+
+/** The settings sections in their groups, for the profile panel, which lists them directly. */
+export const SETTINGS_GROUPS = GROUPS.map((group) => ({
+  label: group.label,
+  sections: group.keys.map((key) => ({ key, title: SECTIONS[key].title, icon: SECTIONS[key].icon })),
+}));
 
 const CARD_PADDING = 16;
 const INNER_RADIUS = concentric(Shape.max, CARD_PADDING);
@@ -560,23 +565,16 @@ function OnlinePaymentSettings() {
  * Account settings (web: AccountSettingsContent), as a list: each of the
  * web's tabs — Personal details, Refunds, Online payment settings,
  * Credentials and Webhooks — is a row in a grouped card, opening its own
- * page. Change password and Logout (web: the account menu) sit in the
- * header's Account menu. As on web, Update / Change password are no-ops.
+ * page. Opened from the profile panel (Overview's avatar), so it's an inner
+ * page: Back, no navigation bar. Log out is in the profile panel.
  */
 export function AccountSettings() {
   const theme = useTheme();
-  const toast = useToast();
   const { organisation } = useBusiness();
   // The organisation is the first thing people look for here, so its row says which one is active.
   const summaryOf = (section: Section) => (section.key === 'personal-details' ? `${CURRENT_USER.name} · ${organisation.name}` : section.summary);
   return (
-    <TabScreen
-      tab="account-settings"
-      actions={[
-        { label: 'Change password', icon: 'key' },
-        { label: 'Logout', icon: 'sign-out', onPress: () => toast("Sign-in isn't part of the mobile app yet") },
-      ]}
-      actionsMenu={{ label: 'Account', icon: 'user-circle' }}>
+    <DetailScreen title="Settings" fallbackHref="/">
       {GROUPS.map((group) => (
         <View key={group.label} style={styles.group}>
           <Text accessibilityRole="header" style={[styles.groupLabel, { color: theme.colors.onSurfaceVariant }]}>
@@ -613,7 +611,7 @@ export function AccountSettings() {
           </View>
         </View>
       ))}
-    </TabScreen>
+    </DetailScreen>
   );
 }
 
@@ -623,7 +621,7 @@ export function AccountSettingsSection({ sectionKey }: { sectionKey: string }) {
   if (!section) return <NotFound title="Settings" message="This settings page doesn't exist." fallbackHref="/account-settings" />;
   const { Content } = section;
   return (
-    <DetailScreen title={section.title} subtitle={section.description} fallbackHref="/account-settings">
+    <DetailScreen title={section.title} subtitle={section.description} fallbackHref="/">
       <Content />
     </DetailScreen>
   );

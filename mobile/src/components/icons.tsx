@@ -15,6 +15,7 @@ import { ThumbsDownIcon } from 'phosphor-react-native/src/icons/ThumbsDown';
 import { UploadSimpleIcon } from 'phosphor-react-native/src/icons/UploadSimple';
 import { LinkBreakIcon } from 'phosphor-react-native/src/icons/LinkBreak';
 import { MoonIcon } from 'phosphor-react-native/src/icons/Moon';
+import { SunIcon } from 'phosphor-react-native/src/icons/Sun';
 import { PaletteIcon } from 'phosphor-react-native/src/icons/Palette';
 import { ImageSquareIcon } from 'phosphor-react-native/src/icons/ImageSquare';
 import { CellSignalFullIcon } from 'phosphor-react-native/src/icons/CellSignalFull';
@@ -156,6 +157,7 @@ const ICONS = {
   'path': PathIcon,
   'handshake': HandshakeIcon,
   'moon': MoonIcon,
+  'sun': SunIcon,
   'palette': PaletteIcon,
   'image-square': ImageSquareIcon,
   'cell-signal-full': CellSignalFullIcon,

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, BackHandler, Easing, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Button, Icon, Portal, Text, TouchableRipple, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { SETTINGS_GROUPS } from '@/components/account/account-settings';
 import { OrganisationLogo, OrganisationSwitcher } from '@/components/account/organisation-switcher';
-import { CompactSegmentedButtons } from '@/components/shared/controls';
 import { OutlineTag } from '@/components/shared/status';
 import { useAppColors } from '@/constants/app-colors';
 import { concentric, Shape } from '@/constants/shape';
@@ -15,11 +16,14 @@ import { useBusiness } from '@/hooks/use-business';
 import { type ThemeMode, useThemeMode } from '@/hooks/use-theme-mode';
 import { useToast } from '@/hooks/use-toast';
 
-const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'system', label: 'System' },
+const THEME_OPTIONS: { value: ThemeMode; label: string; icon: string }[] = [
+  { value: 'light', label: 'Light', icon: 'sun' },
+  { value: 'dark', label: 'Dark', icon: 'moon' },
+  { value: 'system', label: 'System', icon: 'device-mobile' },
 ];
+const SWITCHER_PADDING = 4;
+/** Long enough to see the pick land before the app fades to the new look. */
+const APPLY_DELAY_MS = 160;
 
 const MAX_WIDTH = 320;
 const PADDING = 16;
@@ -32,10 +36,10 @@ const USER_EMAIL = INITIAL_ROSTER.find((entry) => entry.name === CURRENT_USER.na
 /**
  * The profile panel, opened from the initials avatar in Overview's header: a
  * drawer from the leading edge, where the avatar is. Only what's about the
- * person, not the app's pages (those are in the navigation bar and More): who's
+ * person, not the app's modules (those are in the navigation bar and More): who's
  * signed in; the organisation, with Switch opening the organisation sheet to
- * pick and confirm another (it starts on all its stores); Light, Dark or
- * System appearance; and Log out. Tap outside or Android Back closes it.
+ * pick and confirm another (it starts on all its stores); the settings
+ * sections in their groups, each opening its page; Light, Dark or System appearance; and Log out. Tap outside or Android Back closes it.
  */
 export function ProfilePanel({ visible, onDismiss }: { visible: boolean; onDismiss: () => void }) {
   const theme = useTheme();
@@ -44,7 +48,6 @@ export function ProfilePanel({ visible, onDismiss }: { visible: boolean; onDismi
   const business = useBusiness();
   const toast = useToast();
   const appColors = useAppColors();
-  const themeMode = useThemeMode();
   const [switching, setSwitching] = useState(false);
   const organisation = business.organisation;
   const width = Math.min(MAX_WIDTH, Math.round(windowWidth * 0.86));
@@ -175,11 +178,43 @@ export function ProfilePanel({ visible, onDismiss }: { visible: boolean; onDismi
                   </View>
                 </View>
 
+                {/* The settings, each opening its own page — reached from here rather than the navigation bar. */}
+                {SETTINGS_GROUPS.map((group) => (
+                  <View key={group.label} style={styles.section}>
+                    <Text accessibilityRole="header" style={[styles.sectionLabel, { color: theme.colors.onSurfaceVariant }]}>
+                      {group.label.toUpperCase()}
+                    </Text>
+                    <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+                      {group.sections.map((section, index) => (
+                        <View key={section.key}>
+                          {index > 0 ? <View style={[styles.rowDivider, { backgroundColor: theme.colors.surfaceVariant }]} /> : null}
+                          <TouchableRipple
+                            onPress={() => {
+                              onDismiss();
+                              router.push({ pathname: '/account-settings/[section]', params: { section: section.key } });
+                            }}
+                            accessibilityRole="button">
+                            <View style={[styles.row, styles.linkRow]}>
+                              <View style={[styles.rowTile, { backgroundColor: theme.colors.surfaceVariant }]}>
+                                <Icon source={section.icon} size={16} color={theme.colors.onSurface} />
+                              </View>
+                              <Text numberOfLines={1} style={[styles.flex, styles.rowTitle, { color: theme.colors.onSurface }]}>
+                                {section.title}
+                              </Text>
+                              <Icon source="caret-right" size={16} color={theme.colors.onSurfaceVariant} />
+                            </View>
+                          </TouchableRipple>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                ))}
+
                 <View style={styles.section}>
                   <Text accessibilityRole="header" style={[styles.sectionLabel, { color: theme.colors.onSurfaceVariant }]}>
                     APPEARANCE
                   </Text>
-                  <CompactSegmentedButtons value={themeMode.mode} onValueChange={themeMode.setMode} options={THEME_OPTIONS} radius={Shape.small} grow />
+                  <AppearanceSwitcher />
                 </View>
               </ScrollView>
 
@@ -269,6 +304,14 @@ const styles = StyleSheet.create({
     paddingRight: 4,
     paddingVertical: 10,
   },
+  linkRow: { paddingRight: 12 },
+  rowDivider: { height: 1, marginLeft: 12 + 32 + 12 },
+  rowTile: { width: 32, height: 32, borderRadius: Shape.small, alignItems: 'center', justifyContent: 'center' },
+  switcher: { flexDirection: 'row', padding: SWITCHER_PADDING },
+  switcherThumb: { position: 'absolute', top: SWITCHER_PADDING, bottom: SWITCHER_PADDING, left: SWITCHER_PADDING, borderRadius: concentric(Shape.max, SWITCHER_PADDING) },
+  switcherOption: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, height: 64 },
+  switcherLabel: { fontSize: 12, lineHeight: 16 },
+  switcherHint: { paddingHorizontal: 4 },
   rowTitle: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 20 },
   footer: { paddingHorizontal: PADDING, paddingTop: 8 },
   logout: { borderRadius: concentric(Shape.max, 0) },
@@ -280,3 +323,82 @@ const styles = StyleSheet.create({
     height: 48,
   },
 });
+
+/**
+ * Light, Dark or System as three equal tiles on a card, the pick marked by a
+ * lime thumb that slides to it (as the listing heroes' view switch). The pick
+ * lands first, then the app fades to the new look; under System, a line says
+ * what the phone is set to.
+ */
+function AppearanceSwitcher() {
+  const theme = useTheme();
+  const appColors = useAppColors();
+  const { mode, setMode, systemScheme } = useThemeMode();
+  const [picked, setPicked] = useState<ThemeMode>(mode);
+  const [trackWidth, setTrackWidth] = useState(0);
+  const [thumb] = useState(() => new Animated.Value(THEME_OPTIONS.findIndex((option) => option.value === mode)));
+  const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Follow a pick made elsewhere (or restored from storage after launch).
+  const [lastMode, setLastMode] = useState(mode);
+  if (mode !== lastMode) {
+    setLastMode(mode);
+    setPicked(mode);
+  }
+  const pickedIndex = THEME_OPTIONS.findIndex((option) => option.value === picked);
+  useEffect(() => {
+    Animated.timing(thumb, { toValue: pickedIndex, duration: 220, easing: EMPHASIZED_DECELERATE, useNativeDriver: true }).start();
+  }, [pickedIndex, thumb]);
+  useEffect(() => () => {
+    if (pending.current) clearTimeout(pending.current);
+  }, []);
+
+  const segment = trackWidth ? (trackWidth - SWITCHER_PADDING * 2) / THEME_OPTIONS.length : 0;
+  const choose = (next: ThemeMode) => {
+    setPicked(next);
+    if (pending.current) clearTimeout(pending.current);
+    pending.current = setTimeout(() => setMode(next), APPLY_DELAY_MS);
+  };
+
+  return (
+    <View style={styles.section}>
+      <View
+        accessibilityRole="radiogroup"
+        onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
+        style={[styles.card, styles.switcher, { backgroundColor: theme.colors.surface }]}>
+        {segment ? (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.switcherThumb,
+              {
+                width: segment,
+                backgroundColor: appColors.highlight,
+                transform: [{ translateX: thumb.interpolate({ inputRange: [0, THEME_OPTIONS.length - 1], outputRange: [0, segment * (THEME_OPTIONS.length - 1)] }) }],
+              },
+            ]}
+          />
+        ) : null}
+        {THEME_OPTIONS.map((option) => {
+          const active = option.value === picked;
+          const color = active ? theme.colors.onSurface : theme.colors.onSurfaceVariant;
+          return (
+            <Pressable
+              key={option.value}
+              onPress={() => choose(option.value)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: active }}
+              aria-checked={active}
+              accessibilityLabel={`${option.label} appearance`}
+              style={styles.switcherOption}>
+              <Icon source={option.icon} size={20} color={color} />
+              <Text style={[styles.switcherLabel, { color, fontFamily: active ? Fonts.semiBold : Fonts.medium }]}>{option.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Text style={[styles.small, styles.switcherHint, { color: theme.colors.onSurfaceVariant }]}>
+        {picked === 'system' ? `Follows your phone · ${systemScheme === 'dark' ? 'Dark' : 'Light'} right now` : 'Stays this way until you change it'}
+      </Text>
+    </View>
+  );
+}

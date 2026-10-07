@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, type LayoutChangeEvent, LayoutAnimation, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Animated, Easing, type LayoutChangeEvent, LayoutAnimation, StyleSheet, View } from 'react-native';
 import { Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { useTabLayout } from '@/components/app-tabs';
@@ -37,6 +37,8 @@ export type AnswerView = {
   /** The switch's label (two views), or the title over the number (one view). */
   label: string;
   amount: number;
+  /** Shown instead of the amount when the answer isn't money (e.g. 12 of 14 devices). */
+  count?: { value: number; of?: number };
   /** One plain line under the number: what it covers ("20 batches reached your bank in the last 7 days"). */
   line: string;
   /** A limit worth seeing, under the line (e.g. "Settled totals go back 7 days · the list shows the full 30 days"). */
@@ -63,27 +65,23 @@ const animateLayout = () => LayoutAnimation.configureNext(LayoutAnimation.create
  *
  *   [ what — a switch, or a title ]             [ when — date button / Live ]
  *
- *   ₹ 30,05,200 .00          ← the one large thing on screen; counts on change
+ *   ₹ 30,05,200 .00          ← the number (or a count, e.g. 12 of 14)
  *   one plain line of what it covers
  *
  *   ┌ one detail row, leading with its figure ┐
  *
- * Half the screen tall, on the page itself; the records card's top edge lands
- * at the middle and rides up over the hero as the page scrolls.
+ * Sized to its content, on the page itself; the records card rides up over
+ * its foot and slides over it as the page scrolls.
  */
 export function AnswerHero({ views, activeKey, onActiveChange }: AnswerHeroProps) {
   const theme = useTheme();
   const view = views.find((item) => item.key === activeKey) ?? views[0];
-  const { height: windowHeight } = useWindowDimensions();
-  const { headerHeight, scrollY } = useTabLayout();
+  const { scrollY } = useTabLayout();
   const [canvasHeight, setCanvasHeight] = useState(0);
-  const shown = useCountUp(view.amount);
-  // Half the screen: the records card's top edge lands at the middle, the hint that there's more below.
-  const minHeight = Math.max(0, Math.round(windowHeight * 0.5) - headerHeight + HERO_OVERLAP);
   const fadeOut = Math.max(canvasHeight * 0.75, 1);
 
   return (
-    <View onLayout={(event) => setCanvasHeight(event.nativeEvent.layout.height)} style={[styles.hero, { minHeight }]}>
+    <View onLayout={(event) => setCanvasHeight(event.nativeEvent.layout.height)} style={styles.hero}>
       {/* The answer scrolls at about 60% of the page's speed and fades as the records card slides up over it. */}
       <Animated.View
         style={[
@@ -109,10 +107,8 @@ export function AnswerHero({ views, activeKey, onActiveChange }: AnswerHeroProps
           <TimeControl scope={view.time} />
         </View>
 
-        <View style={styles.spacer} />
-
         <View style={styles.answer}>
-          <HeroAmount value={shown} />
+          {view.count ? <HeroCount {...view.count} /> : <HeroAmount value={view.amount} />}
           <Text style={[styles.line, { color: theme.colors.onSurfaceVariant }]}>{view.line}</Text>
           {view.note ? (
             <View style={styles.noteRow}>
@@ -121,9 +117,6 @@ export function AnswerHero({ views, activeKey, onActiveChange }: AnswerHeroProps
             </View>
           ) : null}
         </View>
-
-        {/* The same air below as above: the answer sits mid-canvas, its detail row rests just above the records. */}
-        <View style={styles.spacer} />
 
         {view.details?.length ? (
           <View style={[styles.details, { backgroundColor: theme.colors.surface }]}>
@@ -152,6 +145,17 @@ function HeroAmount({ value }: { value: number }) {
         {formatCount(rupees)}
       </Text>
       <Text style={[styles.paise, { color: theme.colors.onSurfaceVariant }]}>.{String(paise).padStart(2, '0')}</Text>
+    </View>
+  );
+}
+
+/** A count in the amount's place: "12" with "of 14" lighter, for answers that aren't money. */
+function HeroCount({ value, of }: { value: number; of?: number }) {
+  const theme = useTheme();
+  return (
+    <View accessible accessibilityLabel={of !== undefined ? `${value} of ${of}` : String(value)} style={styles.amount}>
+      <Text style={[styles.rupees, { color: theme.colors.onSurface }]}>{formatCount(value)}</Text>
+      {of !== undefined ? <Text style={[styles.countOf, { color: theme.colors.onSurfaceVariant }]}> of {formatCount(of)}</Text> : null}
     </View>
   );
 }
@@ -207,45 +211,6 @@ function DetailRow({ detail, first }: { detail: AnswerDetail; first: boolean }) 
       ) : null}
     </View>
   );
-}
-
-/**
- * The number counting to its value (on arrival, and whenever the period or
- * view changes), so a change of dates visibly does something. Jumps straight
- * there with Reduce Motion on.
- */
-function useCountUp(target: number) {
-  const [shown, setShown] = useState(target);
-  const [value] = useState(() => new Animated.Value(0));
-  const from = useRef(0);
-  useEffect(() => {
-    let cancelled = false;
-    AccessibilityInfo.isReduceMotionEnabled().then(
-      (reduce) => {
-        if (cancelled) return;
-        if (reduce) {
-          from.current = target;
-          setShown(target);
-          return;
-        }
-        const start = from.current;
-        value.setValue(0);
-        const id = value.addListener(({ value: progress }) => setShown(start + (target - start) * progress));
-        Animated.timing(value, { toValue: 1, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start(() => {
-          value.removeListener(id);
-          from.current = target;
-          setShown(target);
-        });
-      },
-      () => setShown(target)
-    );
-    return () => {
-      cancelled = true;
-      value.stopAnimation();
-      value.removeAllListeners();
-    };
-  }, [target, value]);
-  return Math.round(shown * 100) / 100;
 }
 
 /**
@@ -307,21 +272,21 @@ const PAGE_TOP_GAP = 24;
 
 const styles = StyleSheet.create({
   hero: { marginHorizontal: -PAGE_PADDING, marginTop: -PAGE_TOP_GAP },
-  content: { flex: 1, paddingHorizontal: PAGE_PADDING, paddingTop: 20, paddingBottom: 28 + HERO_OVERLAP, gap: 24 },
-  spacer: { flex: 1, minHeight: 8 },
+  content: { paddingHorizontal: PAGE_PADDING, paddingTop: 16, paddingBottom: 20 + HERO_OVERLAP, gap: 20 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: TIME_CONTROL_HEIGHT },
   title: { fontFamily: Fonts.semiBold, fontSize: 16, lineHeight: 22 },
   switch: { flexDirection: 'row', borderRadius: Shape.small, borderWidth: 1, padding: 3, height: TIME_CONTROL_HEIGHT },
   thumb: { position: 'absolute', top: 3, bottom: 3, borderRadius: Shape.small - 3 },
   segment: { justifyContent: 'center', paddingHorizontal: 14, borderRadius: Shape.small - 3 },
   segmentLabel: { fontSize: 13, lineHeight: 16 },
-  answer: { gap: 6 },
+  answer: { gap: 4 },
   // Baseline-aligned: the ₹ and paise sit on the rupees' baseline.
   amount: { flexDirection: 'row', alignItems: 'baseline' },
-  currency: { fontFamily: Fonts.medium, fontSize: 24, lineHeight: 30, marginRight: 4 },
-  rupees: { flexShrink: 1, fontFamily: Fonts.semiBold, fontSize: 44, lineHeight: 52, letterSpacing: -1, fontVariant: ['tabular-nums', 'lining-nums'] },
-  paise: { fontFamily: Fonts.medium, fontSize: 20, lineHeight: 26, marginLeft: 1, opacity: 0.6 },
-  line: { fontFamily: Fonts.regular, fontSize: 15, lineHeight: 22 },
+  currency: { fontFamily: Fonts.regular, fontSize: 16, lineHeight: 22, marginRight: 2 },
+  rupees: { flexShrink: 1, fontFamily: Fonts.semiBold, fontSize: 24, lineHeight: 30, letterSpacing: -0.2, fontVariant: ['tabular-nums', 'lining-nums'] },
+  countOf: { fontFamily: Fonts.regular, fontSize: 16, lineHeight: 22 },
+  paise: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20, marginLeft: 1, opacity: 0.6 },
+  line: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20 },
   noteRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   note: { flexShrink: 1, fontFamily: Fonts.regular, fontSize: 12, lineHeight: 16 },
   details: { borderRadius: Shape.max, overflow: 'hidden' },

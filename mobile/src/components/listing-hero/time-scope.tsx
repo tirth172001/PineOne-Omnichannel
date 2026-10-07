@@ -23,7 +23,7 @@ import { Fonts } from '@/constants/theme';
  * first in the records card's control row when a list keeps its own dates.
  */
 
-export type RangePreset = 'today' | 'yesterday' | '7d' | '30d' | '90d';
+export type RangePreset = 'today' | 'yesterday' | '7d' | '30d' | '90d' | 'all';
 export type RangeValue = { preset: RangePreset | 'custom'; custom?: DateRange };
 
 const PRESET_LABELS: Record<RangePreset, string> = {
@@ -32,8 +32,10 @@ const PRESET_LABELS: Record<RangePreset, string> = {
   '7d': 'Last 7 days',
   '30d': 'Last 30 days',
   '90d': 'Last 90 days',
+  // For records that aren't a stream (stores, users, devices): the list starts whole.
+  all: 'All time',
 };
-const PRESET_DAYS: Record<RangePreset, number> = { today: 1, yesterday: 1, '7d': 7, '30d': 30, '90d': 90 };
+const PRESET_DAYS: Record<Exclude<RangePreset, 'all'>, number> = { today: 1, yesterday: 1, '7d': 7, '30d': 30, '90d': 90 };
 
 export type RangeScope = {
   kind: 'range';
@@ -68,6 +70,7 @@ export function resolveRange(value: RangeValue, latest: Date): [Date, Date] {
     return [startOfDay(value.custom.from), new Date(startOfDay(value.custom.to).getTime() + DAY_MS)];
   }
   const preset = value.preset === 'custom' ? '7d' : value.preset;
+  if (preset === 'all') return [new Date(0), new Date(8.64e15)];
   const end = new Date(startOfDay(latest).getTime() + DAY_MS);
   if (preset === 'yesterday') return [new Date(end.getTime() - 2 * DAY_MS), new Date(end.getTime() - DAY_MS)];
   return [new Date(end.getTime() - PRESET_DAYS[preset] * DAY_MS), end];
@@ -82,6 +85,7 @@ export function rangeLabel(value: RangeValue) {
 /** Words for a sentence: "today", "in the last 7 days", "from 12 Aug to 18 Aug". */
 export function rangePhrase(value: RangeValue) {
   if (value.preset === 'custom') return value.custom ? `from ${shortDate(value.custom.from)} to ${shortDate(value.custom.to)}` : '';
+  if (value.preset === 'all') return '';
   if (value.preset === 'today' || value.preset === 'yesterday') return PRESET_LABELS[value.preset].toLowerCase();
   return `in the ${PRESET_LABELS[value.preset].toLowerCase()}`;
 }
@@ -235,3 +239,36 @@ const styles = StyleSheet.create({
   apply: { borderRadius: PANEL_INNER_RADIUS },
   applyContent: { height: 48 },
 });
+
+/**
+ * A list's own dates, for a ListingCard's `time`: the range state, the scope
+ * for its date button, and the rows inside the range (presets end on the
+ * newest record, as the web's do). `onChange` runs after a new range is set,
+ * e.g. to reset lazy loading.
+ */
+export function useListDates<T>(
+  rows: T[],
+  dateOf: (row: T) => Date | null,
+  options: { subject: string; presets: RangePreset[]; initial: RangePreset; onChange?: () => void }
+) {
+  const [range, setRange] = useState<RangeValue>({ preset: options.initial });
+  const latest = new Date(Math.max(0, ...rows.map((row) => dateOf(row)?.getTime() ?? 0)));
+  const [from, to] = resolveRange(range, latest);
+  const inRange = rows.filter((row) => {
+    const date = dateOf(row);
+    // Records without a parseable date stay listed rather than vanish.
+    return !date || (date >= from && date < to);
+  });
+  const scope: RangeScope = {
+    kind: 'range',
+    subject: options.subject,
+    presets: options.presets,
+    value: range,
+    onChange: (value) => {
+      setRange(value);
+      options.onChange?.();
+    },
+    allowCustom: true,
+  };
+  return { range, setRange, inRange, scope };
+}

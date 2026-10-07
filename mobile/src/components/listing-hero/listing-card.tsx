@@ -57,7 +57,7 @@ type ListingCardProps = {
   /** Page actions on the list (analytics, email, download…), in the ⋯ menu. */
   actions?: ListingAction[];
   /** Records and amount in the hero's period, and what the search and filters leave of them. */
-  totals: { all: number; shown: number; amount: number };
+  totals: { all: number; shown: number; /** Omitted when the records aren't money (devices). */ amount?: number };
   noun: { one: string; other: string };
   /**
    * The list's own date range, when it doesn't follow the hero (e.g.
@@ -109,7 +109,7 @@ export function ListingCard({
   const chips = appliedChips(filters);
   const narrowed = chips.length > 0 || search.trim().length > 0;
   // Shown only once the list is narrowed: unfiltered, the hero (or the dates and day headers) already say it.
-  const summary = `Showing ${totals.shown} of ${totals.all} ${totals.all === 1 ? noun.one : noun.other}${periodPhrase ? ` ${periodPhrase}` : ''} · ${formatInr(totals.amount).replace(/\.00$/, '')}`;
+  const summary = `Showing ${totals.shown} of ${totals.all} ${totals.all === 1 ? noun.one : noun.other}${periodPhrase ? ` ${periodPhrase}` : ''}${totals.amount === undefined ? '' : ` · ${formatInr(totals.amount).replace(/\.00$/, '')}`}`;
 
   return (
     // The shadow sits on a wrapper: iOS drops shadows on a view that clips its content.
@@ -239,4 +239,27 @@ const styles = StyleSheet.create({
   // Same height and edge as Filters beside it.
   more: { margin: 0, width: CONTROL_HEIGHT, height: CONTROL_HEIGHT, borderRadius: Shape.small, borderWidth: 1 },
   divider: { height: 1 },
+  emptyRows: { padding: 16, fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20 },
 });
+
+/**
+ * Rows inside a ListingCard for lists that aren't grouped by day (e.g.
+ * payment links, devices): hairlines between rows, a quiet line when empty.
+ */
+export function ListingRows({ children, empty }: { children: ReactNode[]; empty: string }) {
+  const theme = useTheme();
+  const rows = children.filter(Boolean);
+  if (rows.length === 0) {
+    return <Text style={[styles.emptyRows, { color: theme.colors.onSurfaceVariant }]}>{empty}</Text>;
+  }
+  return (
+    <View>
+      {rows.map((row, index) => (
+        <View key={index}>
+          {index > 0 ? <View style={[styles.divider, { backgroundColor: theme.colors.surfaceVariant }]} /> : null}
+          {row}
+        </View>
+      ))}
+    </View>
+  );
+}

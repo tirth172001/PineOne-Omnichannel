@@ -8,11 +8,15 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { OutlinedActionButton } from '@/components/shared/controls';
 import { DetailScreen } from '@/components/shared/detail-screen';
 import { FormField, FormTextInput } from '@/components/shared/form-fields';
+import { ListingCard, ListingRows } from '@/components/listing-hero/listing-card';
+import { useListDates } from '@/components/listing-hero/time-scope';
+import { DayGroupedList, dayTotals, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { RowActionsMenu, type RowAction } from '@/components/shared/row-actions';
 import { TabScreen } from '@/components/tab-screen';
+import { LISTING_HERO_LAYOUT } from '@/constants/experiments';
 import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { computeAccessScope } from '@/data/roles';
@@ -29,6 +33,7 @@ import {
   updateUser,
   useUserManagement,
 } from '@/data/user-management';
+import { parseDisplayDate } from '@/data/transactions';
 import type { RosterEntry } from '@/data/user-roster';
 import { useToast } from '@/hooks/use-toast';
 
@@ -287,6 +292,12 @@ function UsersTab({ onEdit, onConfirm }: { onEdit: (entry: RosterEntry) => void;
     return !query || `${row.name} ${row.email}`.toLowerCase().includes(query);
   });
   const loaded = rows.slice(0, lazy.count);
+  const invited = useListDates(listed, (row) => parseDisplayDate(row.addedOnDate, row.addedOnTime), {
+    subject: 'users invited',
+    presets: ['all', '30d', '90d'],
+    initial: 'all',
+    onChange: lazy.reset,
+  });
   const resetList = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
     lazy.reset();
@@ -315,6 +326,83 @@ function UsersTab({ onEdit, onConfirm }: { onEdit: (entry: RosterEntry) => void;
             },
           ];
 
+  const renderUser = (row: RosterEntry) => {
+    const permissionKeys = roleCatalog.find((entry) => entry.name === row.role)?.permissionKeys ?? [];
+    const dim = row.status === 'Deactivated' ? styles.dim : null;
+    return (
+      <ListRow key={row.id} accessibilityLabel={`${row.name}, ${row.role}, ${row.status}`}>
+        <ListRowLine
+          left={
+            <View style={dim}>
+              <Text variant="bodyMedium" style={styles.medium}>
+                {row.name}
+              </Text>
+              <Text variant="bodySmall" style={muted}>
+                {row.email}
+              </Text>
+            </View>
+          }
+          right={<RowActionsMenu accessibilityLabel={`Actions for ${row.name}`} actions={actionsFor(row)} />}
+        />
+        <View style={[styles.badges, dim]}>
+          <RoleBadge role={row.role} />
+          <AccessScopeBadge scope={computeAccessScope(permissionKeys)} />
+        </View>
+        <ListRowLine
+          left={
+            <Text variant="bodySmall" style={muted}>
+              Invited on {row.addedOnDate}, {row.addedOnTime}
+            </Text>
+          }
+          right={<UserStatusBadge status={row.status} />}
+        />
+      </ListRow>
+    );
+  };
+
+  if (LISTING_HERO_LAYOUT) {
+    // The listing format (constants/experiments.ts): one card for search, filters and dates; people by the day they were invited.
+    const shown = invited.inRange.filter((row) => {
+      if (status !== 'all' && row.status !== status) return false;
+      if (role !== 'all' && row.role !== role) return false;
+      return !query || `${row.name} ${row.email}`.toLowerCase().includes(query);
+    });
+    const shownLoaded = sortNewestFirst(shown, (row) => displayTimestamp(row.addedOnDate, row.addedOnTime)).slice(0, lazy.count);
+    const invitedCount = invited.inRange.filter((row) => row.status === 'Invited').length;
+    const noun = { one: 'user', other: 'users' };
+    return (
+      <ListingCard
+        search={search}
+        onSearchChange={resetList(setSearch)}
+        searchPlaceholder="Search by name or email ID"
+        time={invited.scope}
+        suggestions={[
+          ...(pendingCount > 0
+            ? [{ key: 'pending', label: `${pendingCount} asking for access`, icon: 'warning-circle', color: theme.colors.error, onPress: () => router.push('/users/pending') }]
+            : []),
+          ...(invitedCount > 0 && status !== 'Invited'
+            ? [{ key: 'invited', label: `${invitedCount} yet to join`, icon: 'envelope-simple', color: theme.colors.onSurfaceVariant, onPress: () => resetList(setStatus)('Invited') }]
+            : []),
+        ]}
+        filters={[
+          selectFilter({ label: 'Status', options: STATUS_OPTIONS, value: status, onApply: resetList(setStatus) }),
+          selectFilter({ label: 'Role', options: roleOptions, value: role, onApply: resetList(setRole) }),
+        ]}
+        totals={{ all: invited.inRange.length, shown: shown.length }}
+        noun={noun}>
+        <DayGroupedList
+          flat
+          groups={groupByDay(shownLoaded, (row) => row.addedOnDate)}
+          totals={dayTotals(shown, (row) => row.addedOnDate)}
+          noun={noun}
+          empty={invited.inRange.length ? 'No users match. Try clearing the search or filters.' : 'No users invited in these dates.'}
+          renderRow={renderUser}
+        />
+        <LazyListFooter lazy={lazy} total={shown.length} noun="users" />
+      </ListingCard>
+    );
+  }
+
   return (
     <>
       {pendingCount > 0 ? (
@@ -336,39 +424,7 @@ function UsersTab({ onEdit, onConfirm }: { onEdit: (entry: RosterEntry) => void;
         ]}
       />
       <ListCard empty="No users match your search or filters.">
-        {loaded.map((row) => {
-          const permissionKeys = roleCatalog.find((entry) => entry.name === row.role)?.permissionKeys ?? [];
-          const dim = row.status === 'Deactivated' ? styles.dim : null;
-          return (
-            <ListRow key={row.id} accessibilityLabel={`${row.name}, ${row.role}, ${row.status}`}>
-              <ListRowLine
-                left={
-                  <View style={dim}>
-                    <Text variant="bodyMedium" style={styles.medium}>
-                      {row.name}
-                    </Text>
-                    <Text variant="bodySmall" style={muted}>
-                      {row.email}
-                    </Text>
-                  </View>
-                }
-                right={<RowActionsMenu accessibilityLabel={`Actions for ${row.name}`} actions={actionsFor(row)} />}
-              />
-              <View style={[styles.badges, dim]}>
-                <RoleBadge role={row.role} />
-                <AccessScopeBadge scope={computeAccessScope(permissionKeys)} />
-              </View>
-              <ListRowLine
-                left={
-                  <Text variant="bodySmall" style={muted}>
-                    Invited on {row.addedOnDate}, {row.addedOnTime}
-                  </Text>
-                }
-                right={<UserStatusBadge status={row.status} />}
-              />
-            </ListRow>
-          );
-        })}
+        {loaded.map(renderUser)}
       </ListCard>
       <LazyListFooter lazy={lazy} total={rows.length} noun="users" />
     </>
@@ -382,45 +438,62 @@ function RolesTab({ onView, onDelete }: { onView: (role: ManagedRole) => void; o
   const query = search.trim().toLowerCase();
   const roles = roleCatalog.filter((role) => !query || `${role.name} ${role.description}`.toLowerCase().includes(query));
 
+  const renderRole = (role: ManagedRole) => {
+    const actions: RowAction[] = [
+      { label: 'Create role from this', icon: 'copy', onPress: () => router.push({ pathname: '/users/role', params: { cloneId: role.id } }) },
+      ...(role.roleType === 'custom'
+        ? [
+            { label: 'Edit role details', icon: 'pencil-simple', onPress: () => router.push({ pathname: '/users/role', params: { roleId: role.id } }) },
+            { label: 'Delete role', icon: 'trash', onPress: () => onDelete(role) },
+          ]
+        : []),
+    ];
+    return (
+      <ListRow key={role.id} onPress={() => onView(role)} accessibilityLabel={`${role.name} role`}>
+        <ListRowLine
+          left={
+            <>
+              <Text variant="bodyMedium" style={styles.medium}>
+                {role.name}
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                {role.description}
+              </Text>
+            </>
+          }
+          right={<RowActionsMenu accessibilityLabel={`Actions for ${role.name}`} actions={actions} />}
+        />
+        <View style={styles.badges}>
+          <RoleTypeChip roleType={role.roleType} />
+          <AccessScopeBadge scope={computeAccessScope(role.permissionKeys)} />
+        </View>
+        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+          {assignedUserCount(role.name, roster)} user(s) assigned
+        </Text>
+      </ListRow>
+    );
+  };
+
+  if (LISTING_HERO_LAYOUT) {
+    // Roles have no dates or filters: the same card, search only, rows ungrouped.
+    return (
+      <ListingCard
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by role name or description"
+        filters={[]}
+        totals={{ all: roleCatalog.length, shown: roles.length }}
+        noun={{ one: 'role', other: 'roles' }}>
+        <ListingRows empty="No roles match your search.">{roles.map(renderRole)}</ListingRows>
+      </ListingCard>
+    );
+  }
+
   return (
     <>
       <ListingToolbar search={search} onSearchChange={setSearch} searchPlaceholder="Search by role name or description" />
       <ListCard empty="No roles match your search.">
-        {roles.map((role) => {
-          const actions: RowAction[] = [
-            { label: 'Create role from this', icon: 'copy', onPress: () => router.push({ pathname: '/users/role', params: { cloneId: role.id } }) },
-            ...(role.roleType === 'custom'
-              ? [
-                  { label: 'Edit role details', icon: 'pencil-simple', onPress: () => router.push({ pathname: '/users/role', params: { roleId: role.id } }) },
-                  { label: 'Delete role', icon: 'trash', onPress: () => onDelete(role) },
-                ]
-              : []),
-          ];
-          return (
-            <ListRow key={role.id} onPress={() => onView(role)} accessibilityLabel={`${role.name} role`}>
-              <ListRowLine
-                left={
-                  <>
-                    <Text variant="bodyMedium" style={styles.medium}>
-                      {role.name}
-                    </Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                      {role.description}
-                    </Text>
-                  </>
-                }
-                right={<RowActionsMenu accessibilityLabel={`Actions for ${role.name}`} actions={actions} />}
-              />
-              <View style={styles.badges}>
-                <RoleTypeChip roleType={role.roleType} />
-                <AccessScopeBadge scope={computeAccessScope(role.permissionKeys)} />
-              </View>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                {assignedUserCount(role.name, roster)} user(s) assigned
-              </Text>
-            </ListRow>
-          );
-        })}
+        {roles.map(renderRole)}
       </ListCard>
     </>
   );

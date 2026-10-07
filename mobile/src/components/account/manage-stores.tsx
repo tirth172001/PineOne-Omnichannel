@@ -9,6 +9,9 @@ import { CopyableValue } from '@/components/shared/copyable-value';
 import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen } from '@/components/shared/detail-screen';
 import { FormField, FormTextInput, SelectField } from '@/components/shared/form-fields';
+import { ListingCard } from '@/components/listing-hero/listing-card';
+import { useListDates } from '@/components/listing-hero/time-scope';
+import { DayGroupedList, dayTotals, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
@@ -17,6 +20,7 @@ import { RowActionsMenu } from '@/components/shared/row-actions';
 import { DotStatusBadge } from '@/components/shared/status';
 import { TabScreen } from '@/components/tab-screen';
 import { Fonts } from '@/constants/theme';
+import { LISTING_HERO_LAYOUT } from '@/constants/experiments';
 import { CURRENT_USER } from '@/data/businesses';
 import { computeAccessScope, DEFAULT_ROLE_CATALOG } from '@/data/roles';
 import { STORE_RECORDS, type StoreRecord, terminalsLinkedCount, usersInvitedForStore } from '@/data/stores';
@@ -31,6 +35,7 @@ import {
   toggleDeviceStatus,
 } from '@/data/terminal-devices';
 import { addRosterEntry, useUserManagement } from '@/data/user-management';
+import { parseDisplayDate } from '@/data/transactions';
 import { usersForStore } from '@/data/user-roster';
 import { useToast } from '@/hooks/use-toast';
 
@@ -69,6 +74,12 @@ export function ManageStores() {
   const [status, setStatus] = useState('all');
   const [dateRange, setDateRange] = useState(() => makeDateRangeValue(presets, 'today'));
   const lazy = useLazyList();
+  const created = useListDates(STORE_RECORDS, (store) => parseDisplayDate(store.createdOnDate, store.createdOnTime), {
+    subject: 'stores added',
+    presets: ['all', '30d', '90d'],
+    initial: 'all',
+    onChange: lazy.reset,
+  });
   const muted = { color: theme.colors.onSurfaceVariant };
 
   const query = search.trim().toLowerCase();
@@ -76,6 +87,79 @@ export function ManageStores() {
     if (status !== 'all' && store.status.toLowerCase() !== status) return false;
     return !query || `${store.name} ${store.storeId} ${store.merchantId}`.toLowerCase().includes(query);
   });
+
+  const renderStore = (store: StoreRecord) => (
+    <ListRow
+      key={store.id}
+      onPress={() => router.push({ pathname: '/stores/[storeId]', params: { storeId: store.storeId } })}
+      accessibilityLabel={`${store.name}, ${store.status}`}>
+      <ListRowLine
+        left={
+          <>
+            <Text variant="bodyMedium" style={styles.medium}>
+              {store.name}
+            </Text>
+            <Text variant="bodySmall" style={muted} numberOfLines={1}>
+              {store.address}
+            </Text>
+          </>
+        }
+        right={<ActiveBadge active={store.status === 'Active'} />}
+      />
+      {/* Plain text: the row is itself a button, so no nested copy button (copy from the store's detail). */}
+      <Text variant="bodySmall" style={muted}>
+        Store ID {store.storeId}
+      </Text>
+      <Text variant="bodySmall" style={muted}>
+        {terminalsLinkedCount(store.storeId)} terminals · {usersInvitedForStore(store.storeId, roster)} users · Created {store.createdOnDate}, {store.createdOnTime}
+      </Text>
+    </ListRow>
+  );
+
+  if (LISTING_HERO_LAYOUT) {
+    // The listing format (constants/experiments.ts): search, filters and the store's own dates in one card, stores by the day they were added.
+    const shown = created.inRange.filter((store) => {
+      if (status !== 'all' && store.status.toLowerCase() !== status) return false;
+      return !query || `${store.name} ${store.storeId} ${store.merchantId}`.toLowerCase().includes(query);
+    });
+    const loaded = sortNewestFirst(shown, (store) => displayTimestamp(store.createdOnDate, store.createdOnTime)).slice(0, lazy.count);
+    const noun = { one: 'store', other: 'stores' };
+    return (
+      <TabScreen tab="stores">
+        <ListingCard
+          search={search}
+          onSearchChange={(value) => {
+            setSearch(value);
+            lazy.reset();
+          }}
+          searchPlaceholder="Search by store name"
+          time={created.scope}
+          filters={[
+            selectFilter({
+              label: 'Status',
+              options: STATUS_OPTIONS,
+              value: status,
+              onApply: (value) => {
+                setStatus(value);
+                lazy.reset();
+              },
+            }),
+          ]}
+          totals={{ all: created.inRange.length, shown: shown.length }}
+          noun={noun}>
+          <DayGroupedList
+            flat
+            groups={groupByDay(loaded, (store) => store.createdOnDate)}
+            totals={dayTotals(shown, (store) => store.createdOnDate)}
+            noun={noun}
+            empty={created.inRange.length ? 'No stores match. Try clearing the search or filters.' : 'No stores added in these dates.'}
+            renderRow={renderStore}
+          />
+          <LazyListFooter lazy={lazy} total={shown.length} noun="stores" />
+        </ListingCard>
+      </TabScreen>
+    );
+  }
 
   return (
     <TabScreen tab="stores">
@@ -100,33 +184,7 @@ export function ManageStores() {
         ]}
       />
       <ListCard empty="No stores found for current filters.">
-        {stores.slice(0, lazy.count).map((store) => (
-          <ListRow
-            key={store.id}
-            onPress={() => router.push({ pathname: '/stores/[storeId]', params: { storeId: store.storeId } })}
-            accessibilityLabel={`${store.name}, ${store.status}`}>
-            <ListRowLine
-              left={
-                <>
-                  <Text variant="bodyMedium" style={styles.medium}>
-                    {store.name}
-                  </Text>
-                  <Text variant="bodySmall" style={muted} numberOfLines={1}>
-                    {store.address}
-                  </Text>
-                </>
-              }
-              right={<ActiveBadge active={store.status === 'Active'} />}
-            />
-            {/* Plain text: the row is itself a button, so no nested copy button (copy from the store's detail). */}
-            <Text variant="bodySmall" style={muted}>
-              Store ID {store.storeId}
-            </Text>
-            <Text variant="bodySmall" style={muted}>
-              {terminalsLinkedCount(store.storeId)} terminals · {usersInvitedForStore(store.storeId, roster)} users · Created {store.createdOnDate}, {store.createdOnTime}
-            </Text>
-          </ListRow>
-        ))}
+        {stores.slice(0, lazy.count).map(renderStore)}
       </ListCard>
       <LazyListFooter lazy={lazy} total={stores.length} noun="stores" />
     </TabScreen>

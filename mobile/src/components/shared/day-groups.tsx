@@ -11,19 +11,20 @@ import { ListCard } from './listing';
 export type DayGroup<T> = { day: string; label: string; rows: T[] };
 
 /** A day's total amount and record count, keyed by its display date. */
-export type DayTotals = Map<string, { amount: number; count: number }>;
+export type DayTotals = Map<string, { amount?: number; count: number }>;
 
 /**
  * Each day's total and count over every row the filters match — not just the
  * rows loaded so far — so a day heading stays right while the list is still
- * loading that day's records.
+ * loading that day's records. Without `amount` (stores, users, tickets…) a
+ * day heading shows just its count.
  */
-export function dayTotals<T>(rows: T[], day: (row: T) => string, amount: (row: T) => number): DayTotals {
+export function dayTotals<T>(rows: T[], day: (row: T) => string, amount?: (row: T) => number): DayTotals {
   const totals: DayTotals = new Map();
   for (const row of rows) {
     const key = day(row);
-    const entry = totals.get(key) ?? { amount: 0, count: 0 };
-    entry.amount += amount(row);
+    const entry = totals.get(key) ?? { amount: amount ? 0 : undefined, count: 0 };
+    if (amount) entry.amount = (entry.amount ?? 0) + amount(row);
     entry.count += 1;
     totals.set(key, entry);
   }
@@ -141,13 +142,13 @@ export function DayGroupedList<T>({
 }
 
 /** The end of a day heading: the day's amount, then how many records it has. */
-function DaySummary({ total, count, noun }: { total?: { amount: number; count: number }; count: number; noun: { one: string; other: string } }) {
+function DaySummary({ total, count, noun }: { total?: { amount?: number; count: number }; count: number; noun: { one: string; other: string } }) {
   const theme = useTheme();
   const records = total?.count ?? count;
   const countText = `${records} ${records === 1 ? noun.one : noun.other}`;
   return (
     <Text variant="bodySmall" numberOfLines={1} style={[styles.summary, { color: theme.colors.onSurfaceVariant }]}>
-      {total ? (
+      {total?.amount !== undefined ? (
         <>
           <Text style={[styles.summaryAmount, { color: theme.colors.onSurface }]}>{dayAmount(total.amount)}</Text>
           {' · '}
