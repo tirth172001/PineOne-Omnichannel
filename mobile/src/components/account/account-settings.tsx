@@ -1,13 +1,15 @@
 import * as Clipboard from 'expo-clipboard';
+import { router } from 'expo-router';
 import { type ReactNode, useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Button, Card, Checkbox, Divider, Icon, RadioButton, Switch, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { OrganisationSwitcher } from '@/components/account/organisation-switcher';
-import { Tabs } from '@/components/material3/tabs';
 import { SearchField } from '@/components/search-field';
 import { CompactSegmentedButtons, OutlinedActionButton } from '@/components/shared/controls';
 import { SelectField } from '@/components/shared/form-fields';
+import { DetailScreen } from '@/components/shared/detail-screen';
+import { NotFound } from '@/components/shared/not-found';
 import { PANEL_INNER_RADIUS, PanelSheet } from '@/components/shared/panel-sheet';
 import { TabScreen } from '@/components/tab-screen';
 import { concentric, Shape } from '@/constants/shape';
@@ -18,12 +20,67 @@ import { INITIAL_ROSTER, type RosterEntry } from '@/data/user-roster';
 import { useBusiness } from '@/hooks/use-business';
 import { useToast } from '@/hooks/use-toast';
 
-const TABS = [
-  { key: 'personal-details', label: 'Personal details' },
-  { key: 'credentials', label: 'Credentials' },
-  { key: 'webhooks', label: 'Webhooks' },
-  { key: 'refunds', label: 'Refunds' },
-  { key: 'online-payments', label: 'Online payment settings' },
+type SectionKey = 'personal-details' | 'credentials' | 'webhooks' | 'refunds' | 'online-payments';
+
+type Section = {
+  key: SectionKey;
+  title: string;
+  icon: string;
+  /** Under the title on its page: what the section is for. */
+  description: string;
+  /** Under the title in the list: what's inside, so the right row is easy to find. */
+  summary: string;
+  Content: () => ReactNode;
+};
+
+/** The web's Account settings tabs, each a page of its own on mobile, in the list's groups. */
+const SECTIONS: Record<SectionKey, Section> = {
+  'personal-details': {
+    key: 'personal-details',
+    title: 'Personal details',
+    icon: 'user-circle',
+    description: 'Your organisation and the details you sign in with',
+    summary: 'Organisation, name, phone and email',
+    Content: PersonalDetails,
+  },
+  refunds: {
+    key: 'refunds',
+    title: 'Refunds',
+    icon: 'arrow-u-up-left',
+    description: 'Who can refund, the checks before a refund, and which payment modes support it',
+    summary: 'Permissions, user access and security checks',
+    Content: RefundSettings,
+  },
+  'online-payments': {
+    key: 'online-payments',
+    title: 'Online payment settings',
+    icon: 'globe',
+    description: 'Payouts, subscriptions and limits for online payments',
+    summary: 'Payouts, subscriptions, payment link limit',
+    Content: OnlinePaymentSettings,
+  },
+  credentials: {
+    key: 'credentials',
+    title: 'Credentials',
+    icon: 'key',
+    description: 'Keys for connecting your systems to Pine Labs',
+    summary: 'Merchant ID, client ID and secret key',
+    Content: Credentials,
+  },
+  webhooks: {
+    key: 'webhooks',
+    title: 'Webhooks',
+    icon: 'plug',
+    description: 'Where Pine Labs sends payment status updates',
+    summary: 'pinelabs.com/updates',
+    Content: Webhooks,
+  },
+};
+
+const GROUPS: { label: string; keys: SectionKey[] }[] = [
+  { label: 'Account', keys: ['personal-details'] },
+  { label: 'Payments', keys: ['refunds', 'online-payments'] },
+  { label: 'Developers', keys: ['credentials', 'webhooks'] },
 ];
 
 const CARD_PADDING = 16;
@@ -353,7 +410,7 @@ function RefundSettings() {
 
   return (
     <>
-      <SectionIntro title="Refunds" description="Enable refunds to get settings and options to initiate refunds for transactions" />
+      <SectionIntro title="Permissions" description="Enable refunds to get settings and options to initiate refunds for transactions" />
       <FieldGroup>
         <FieldRow
           icon="arrow-counter-clockwise"
@@ -500,15 +557,18 @@ function OnlinePaymentSettings() {
 }
 
 /**
- * Account settings (web: AccountSettingsContent): Personal details,
- * Credentials, Webhooks, Refunds (refund permissions, user access, security
- * controls, payment modes) and Online payment settings. Change password and
- * Logout (web: the account menu) sit in the header's Account menu. As on web,
- * Update / Change password are no-ops.
+ * Account settings (web: AccountSettingsContent), as a list: each of the
+ * web's tabs — Personal details, Refunds, Online payment settings,
+ * Credentials and Webhooks — is a row in a grouped card, opening its own
+ * page. Change password and Logout (web: the account menu) sit in the
+ * header's Account menu. As on web, Update / Change password are no-ops.
  */
 export function AccountSettings() {
-  const [tab, setTab] = useState('personal-details');
+  const theme = useTheme();
   const toast = useToast();
+  const { organisation } = useBusiness();
+  // The organisation is the first thing people look for here, so its row says which one is active.
+  const summaryOf = (section: Section) => (section.key === 'personal-details' ? `${CURRENT_USER.name} · ${organisation.name}` : section.summary);
   return (
     <TabScreen
       tab="account-settings"
@@ -517,15 +577,55 @@ export function AccountSettings() {
         { label: 'Logout', icon: 'sign-out', onPress: () => toast("Sign-in isn't part of the mobile app yet") },
       ]}
       actionsMenu={{ label: 'Account', icon: 'user-circle' }}>
-      <View style={styles.tabs}>
-        <Tabs tabs={TABS} activeKey={tab} onChange={setTab} variant="secondary" scrollable />
-      </View>
-      {tab === 'personal-details' ? <PersonalDetails /> : null}
-      {tab === 'credentials' ? <Credentials /> : null}
-      {tab === 'webhooks' ? <Webhooks /> : null}
-      {tab === 'refunds' ? <RefundSettings /> : null}
-      {tab === 'online-payments' ? <OnlinePaymentSettings /> : null}
+      {GROUPS.map((group) => (
+        <View key={group.label} style={styles.group}>
+          <Text accessibilityRole="header" style={[styles.groupLabel, { color: theme.colors.onSurfaceVariant }]}>
+            {group.label.toUpperCase()}
+          </Text>
+          <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+            {group.keys.map((key, index) => {
+              const section = SECTIONS[key];
+              return (
+                <View key={key}>
+                  {index > 0 ? <View style={[styles.rowDivider, { backgroundColor: theme.colors.surfaceVariant }]} /> : null}
+                  <TouchableRipple
+                    onPress={() => router.push({ pathname: '/account-settings/[section]', params: { section: key } })}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${section.title}. ${summaryOf(section)}`}>
+                    <View style={styles.row}>
+                      <View style={[styles.rowTile, { backgroundColor: theme.colors.surfaceVariant }]}>
+                        <Icon source={section.icon} size={18} color={theme.colors.onSurface} />
+                      </View>
+                      <View style={styles.flex}>
+                        <Text numberOfLines={1} style={[styles.rowTitle, { color: theme.colors.onSurface }]}>
+                          {section.title}
+                        </Text>
+                        <Text numberOfLines={1} style={[styles.rowSummary, { color: theme.colors.onSurfaceVariant }]}>
+                          {summaryOf(section)}
+                        </Text>
+                      </View>
+                      <Icon source="caret-right" size={16} color={theme.colors.onSurfaceVariant} />
+                    </View>
+                  </TouchableRipple>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      ))}
     </TabScreen>
+  );
+}
+
+/** One section of Account settings on its own page (an inner page: Back, no navigation bar). */
+export function AccountSettingsSection({ sectionKey }: { sectionKey: string }) {
+  const section = SECTIONS[sectionKey as SectionKey];
+  if (!section) return <NotFound title="Settings" message="This settings page doesn't exist." fallbackHref="/account-settings" />;
+  const { Content } = section;
+  return (
+    <DetailScreen title={section.title} subtitle={section.description} fallbackHref="/account-settings">
+      <Content />
+    </DetailScreen>
   );
 }
 
@@ -534,7 +634,14 @@ const styles = StyleSheet.create({
   inline: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   medium: { fontFamily: Fonts.medium },
   semiBold: { fontFamily: Fonts.semiBold },
-  tabs: { marginHorizontal: -16, marginVertical: -8 },
+  group: { gap: 8 },
+  groupLabel: { fontFamily: Fonts.medium, fontSize: 12, lineHeight: 16, letterSpacing: 0.6, paddingHorizontal: 4 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, paddingHorizontal: 12, paddingVertical: 12 },
+  rowTile: { width: 32, height: 32, borderRadius: Shape.small, alignItems: 'center', justifyContent: 'center' },
+  rowTitle: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 20 },
+  rowSummary: { fontFamily: Fonts.regular, fontSize: 12, lineHeight: 16 },
+  // Starts under the row's text, so the icon tiles read as one column.
+  rowDivider: { height: 1, marginLeft: 12 + 32 + 12 },
   intro: { gap: 4, marginBottom: -12 },
   stack: { gap: 24 },
   disabled: { opacity: 0.5 },

@@ -17,6 +17,11 @@ export function formatCount(value: number) {
 }
 
 /** "₹19,42,250.00": Indian digit grouping, two decimals (the web's formatInrAmount). */
+/** "₹ 20,000" → 20000 (whole rupees, as the mock data's string amounts are). */
+export function parseInr(amount: string) {
+  return Number(amount.replace(/[^\d]/g, '')) || 0;
+}
+
 export function formatInr(value: number) {
   const [rupees, paise] = Math.abs(value).toFixed(2).split('.');
   return `${value < 0 ? '-' : ''}₹${formatCount(Number(rupees))}.${paise}`;

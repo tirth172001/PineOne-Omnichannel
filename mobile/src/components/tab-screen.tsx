@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 
-import { TabChrome, TabHero, useTabNavBar, useTabScroll } from '@/components/app-tabs';
+import { TabChrome, useTabNavBar, useTabScroll } from '@/components/app-tabs';
 import { type HeaderAction, type HeaderActionsMenu, useHeaderActions } from '@/components/header-actions';
 import { EndReachedProvider, useEndReached } from '@/components/shared/lazy-list';
 
@@ -46,11 +46,11 @@ function TabScrollContent({ children }: { children: ReactNode }) {
       <Animated.ScrollView
         {...endReached.scrollProps}
         {...tabScroll.scrollProps}
-        contentContainerStyle={[styles.content, { paddingTop: tabScroll.contentTop, paddingBottom: 32 + navBar.height }]}
+        // 24dp clear of the header (or its sub-tabs), as on Overview.
+        contentContainerStyle={[styles.content, { paddingTop: tabScroll.contentTop + 24, paddingBottom: 32 + navBar.height }]}
         keyboardShouldPersistTaps="handled">
         <EndReachedProvider value={endReached.value}>
           <View style={styles.stack}>
-            <TabHero />
             {children}
           </View>
         </EndReachedProvider>

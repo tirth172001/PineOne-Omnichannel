@@ -18,7 +18,7 @@ export type HeaderActionsMenu = { label: string; icon: string };
 type HeaderActionsState = { actions: HeaderAction[]; menu?: HeaderActionsMenu };
 const EMPTY: HeaderActionsState = { actions: [] };
 
-type HeaderActionsStore = {
+export type HeaderActionsStore = {
   get: () => HeaderActionsState;
   set: (state: HeaderActionsState) => void;
   subscribe: (listener: () => void) => () => void;
@@ -66,13 +66,13 @@ export function useHeaderActions(actions: HeaderAction[], menu?: HeaderActionsMe
 }
 
 /**
- * The page's header actions, the top bar's trailing control: its main call to
+ * The page's header actions, at the end of its tab header: its main call to
  * action (e.g. New link, Add device). One action shows as its own labelled
  * button; several merge into one labelled button (with a caret) that opens
  * them as a menu (user decisions). Secondary page actions (Analytics,
  * downloads…) go in the toolbar's action row instead.
  */
-export function HeaderActionsSlot({ store }: { store: HeaderActionsStore }) {
+export function HeaderActionsSlot({ store, tinted = false }: { store: HeaderActionsStore; tinted?: boolean }) {
   const theme = useTheme();
   const { actions, menu } = useSyncExternalStore(store.subscribe, store.get);
   const [open, setOpen] = useState(false);
@@ -81,7 +81,7 @@ export function HeaderActionsSlot({ store }: { store: HeaderActionsStore }) {
   if (actions.length === 1) {
     const [action] = actions;
     return (
-      <HeaderControl icon={action.icon} label={action.shortLabel ?? action.label} onPress={action.onPress} accessibilityLabel={action.label} />
+      <HeaderControl icon={action.icon} label={action.shortLabel ?? action.label} tinted={tinted} onPress={action.onPress} accessibilityLabel={action.label} />
     );
   }
   const menuLabel = menu?.label ?? 'Actions';
@@ -96,6 +96,7 @@ export function HeaderActionsSlot({ store }: { store: HeaderActionsStore }) {
           icon={menu?.icon ?? 'dots-three-vertical'}
           label={menuLabel}
           caret
+          tinted={tinted}
           onPress={() => setOpen(true)}
           accessibilityLabel={`${menuLabel}: ${actions.map((action) => action.label).join(', ')}`}
         />

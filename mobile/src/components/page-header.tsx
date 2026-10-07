@@ -1,10 +1,11 @@
 import { router, type Href } from 'expo-router';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, type RefObject, useState } from 'react';
 import { Animated, type LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import { Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OutlineTag } from '@/components/shared/status';
+import { useAppColors } from '@/constants/app-colors';
 import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 
@@ -12,10 +13,12 @@ import { Fonts } from '@/constants/theme';
  * The page header every screen shares (reference: Figma 6254:20, Mercury and
  * Revolut Business). From the top:
  *
- * 1. PageTopBar — a configurable leading control (the channel switcher on a
- *    tab's page, Back on an inner page) and a trailing one (the page's main
- *    call to action); it floats over the page and fades its surface in, with
- *    a small title, once the large title has scrolled away.
+ * 1. The top bar. A tab's page has AppHeader (Figma 6470:982): on Overview,
+ *    who's signed in, with notifications; on the other tabs, the page's name
+ *    and its actions. Both show the store / channel scope. An inner page has
+ *    PageTopBar — Back and the page's main call to action; it floats over the
+ *    page and fades its surface in, with a small title, once the large title
+ *    has scrolled away.
  * 2. PageTitle — the large, left-aligned title (with an optional subtitle),
  *    first thing in the scrolling content.
  * 3. The page's toolbar (ListingToolbar): search with every filter combined
@@ -177,6 +180,125 @@ export function PageTopBar({
   );
 }
 
+type AppHeaderProps = {
+  /** Overview: the signed-in user (initials avatar, name and role). Other tabs: omit, and pass the page's `title`. */
+  user?: { name: string; roleLabel: string };
+  title?: string;
+  /** Under the title: the store / channel scope, or the organisation on pages that don't follow it. */
+  context: string;
+  /** Makes the context line the store / channel switcher (with a caret). */
+  onPressContext?: () => void;
+  contextAccessibilityLabel?: string;
+  /** The avatar opens the profile panel. */
+  onPressAvatar?: () => void;
+  /** The scope line, for measuring where it sits (see useScopeLine). */
+  contextRef?: RefObject<View | null>;
+  onContextLayout?: () => void;
+  /** 0–1: a lime pulse behind the scope line, e.g. when the scope changes. */
+  contextHighlight?: Animated.Value;
+  trailing?: ReactNode;
+  onLayout?: (event: LayoutChangeEvent) => void;
+};
+
+/**
+ * A tab page's top bar (Figma 6470:982). Overview leads with the user — their
+ * initials (opening the profile panel), name and role; the other tabs with the
+ * page's name. Under it, the store / channel scope, which opens the global
+ * switcher; the trailing controls at the end. A solid white bar that stays
+ * put while the page scrolls under it.
+ */
+export function AppHeader({
+  user,
+  title,
+  context,
+  onPressContext,
+  contextAccessibilityLabel,
+  onPressAvatar,
+  contextRef,
+  onContextLayout,
+  contextHighlight,
+  trailing,
+  onLayout,
+}: AppHeaderProps) {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const initials = user?.name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+  const contextText = (
+    <Text numberOfLines={1} style={[styles.appHeaderContext, { color: theme.colors.onSurfaceVariant }]}>
+      {context}
+    </Text>
+  );
+  const appColors = useAppColors();
+  const pulse = contextHighlight ? (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.appHeaderContextPulse, { backgroundColor: appColors.highlight, opacity: contextHighlight }]}
+    />
+  ) : null;
+
+  return (
+    <View onLayout={onLayout} style={[styles.bar, { paddingTop: insets.top, backgroundColor: theme.colors.surface }]}>
+      <View style={[styles.appHeaderRow, !user && styles.appHeaderRowTitled]}>
+        <View style={styles.appHeaderLeading}>
+          {user ? (
+            <TouchableRipple
+              onPress={onPressAvatar}
+              borderless
+              accessibilityRole="button"
+              accessibilityLabel={`${user.name}, ${user.roleLabel}. Open profile`}
+              style={styles.avatarTarget}>
+              <View>
+                <View style={[styles.avatar, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceVariant }]}>
+                  <Text style={[styles.avatarInitials, { color: appColors.brand }]}>{initials}</Text>
+                </View>
+                <View style={[styles.avatarBadge, { backgroundColor: theme.colors.surfaceVariant }]}>
+                  <Icon source="list" size={9} color={theme.colors.onSurface} />
+                </View>
+              </View>
+            </TouchableRipple>
+          ) : null}
+          <View style={styles.appHeaderText}>
+            {user ? (
+              <View style={styles.appHeaderNameRow}>
+                <Text numberOfLines={1} style={styles.appHeaderName}>
+                  {user.name}
+                </Text>
+                <OutlineTag label={user.roleLabel} radius={Shape.max} />
+              </View>
+            ) : (
+              <Text accessibilityRole="header" numberOfLines={1} style={styles.appHeaderTitle}>
+                {title}
+              </Text>
+            )}
+            {onPressContext ? (
+              <TouchableRipple
+                onPress={onPressContext}
+                borderless
+                accessibilityRole="button"
+                accessibilityLabel={contextAccessibilityLabel ?? context}
+                style={styles.appHeaderContextButton}>
+                <View ref={contextRef} collapsable={false} onLayout={onContextLayout} style={styles.appHeaderContextRow}>
+                  {pulse}
+                  {contextText}
+                  <Icon source="caret-right" size={16} color={theme.colors.onSurfaceVariant} />
+                </View>
+              </TouchableRipple>
+            ) : (
+              <View style={styles.appHeaderContextRow}>{contextText}</View>
+            )}
+          </View>
+        </View>
+        {trailing ? <View style={styles.trailing}>{trailing}</View> : null}
+      </View>
+    </View>
+  );
+}
+
 type PageTitleProps = {
   title: string;
   /** Beside the title, e.g. the user's role. */
@@ -242,8 +364,10 @@ type HeaderControlProps = {
   caret?: boolean;
   /** The page's main call to action: filled in the brand colour. */
   primary?: boolean;
-  /** Icon only, no fill (e.g. Overview's search and notifications), so the switcher stays the header's one box. */
+  /** Icon only, no fill (e.g. Overview's notifications). */
   quiet?: boolean;
+  /** On a white bar (a tab's header): filled grey rather than white, so the control still reads as one. */
+  tinted?: boolean;
   onPress?: () => void;
   accessibilityLabel: string;
 };
@@ -253,7 +377,7 @@ type HeaderControlProps = {
  * label (the switcher, a "New" call to action). Borderless white, like the
  * app's other floating surfaces; filled for the page's main action.
  */
-export function HeaderControl({ icon, label, caret = false, primary = false, quiet = false, onPress, accessibilityLabel }: HeaderControlProps) {
+export function HeaderControl({ icon, label, caret = false, primary = false, quiet = false, tinted = false, onPress, accessibilityLabel }: HeaderControlProps) {
   const theme = useTheme();
   const color = primary ? theme.colors.onPrimary : theme.colors.onSurface;
   return (
@@ -262,7 +386,7 @@ export function HeaderControl({ icon, label, caret = false, primary = false, qui
       borderless
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      style={[styles.control, { backgroundColor: primary ? theme.colors.primary : quiet ? 'transparent' : theme.colors.surface }, !label && styles.controlIconOnly]}>
+      style={[styles.control, { backgroundColor: primary ? theme.colors.primary : quiet ? 'transparent' : tinted ? theme.colors.surfaceVariant : theme.colors.surface }, !label && styles.controlIconOnly]}>
       <View style={[styles.controlContent, label ? styles.controlContentLabelled : null]}>
         {icon ? <Icon source={icon} size={20} color={color} /> : null}
         {label ? (
@@ -293,6 +417,24 @@ export function ScopeSwitcherButton({ label, onPress }: { label: string; onPress
 
 const styles = StyleSheet.create({
   bar: { position: 'absolute', top: 0, left: 0, right: 0 },
+  appHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingLeft: 12, paddingRight: 16, paddingVertical: 12 },
+  // Without the avatar, the title lines up with the page's 16dp margin; its controls centre on the two lines.
+  appHeaderRowTitled: { paddingLeft: 16, alignItems: 'center' },
+  appHeaderLeading: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 10, minWidth: 0 },
+  avatarTarget: { width: CONTROL_HEIGHT, height: CONTROL_HEIGHT, borderRadius: Shape.max, alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 32, height: 32, borderRadius: Shape.small, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  avatarInitials: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 20 },
+  // The account menu's mark, on the avatar's bottom-right corner.
+  avatarBadge: { position: 'absolute', left: 20, top: 20, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  appHeaderText: { flexShrink: 1, minHeight: 48, justifyContent: 'center' },
+  appHeaderNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  appHeaderName: { fontFamily: Fonts.medium, fontSize: 16, lineHeight: 24, flexShrink: 1 },
+  appHeaderTitle: { fontFamily: Fonts.semiBold, fontSize: 20, lineHeight: 24 },
+  appHeaderContextButton: { alignSelf: 'flex-start', maxWidth: '100%', borderRadius: Shape.extraSmall },
+  appHeaderContextRow: { flexDirection: 'row', alignItems: 'center', gap: 2, height: 24 },
+  // Bleeds a little past the line so the pulse reads as a highlight, not a box around the text.
+  appHeaderContextPulse: { position: 'absolute', top: 0, bottom: 0, left: -6, right: -4, borderRadius: Shape.small },
+  appHeaderContext: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 18, flexShrink: 1 },
   surface: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   // Attached to the top edge: only the content-facing (bottom) corners are rounded.
   surfaceRounded: { borderBottomLeftRadius: Shape.max, borderBottomRightRadius: Shape.max },

@@ -25,7 +25,8 @@ type ListingToolbarProps = {
   focusSearch?: string;
 };
 
-const SEARCH_HEIGHT = 44;
+/** Search, Filters and the action buttons share one height, so the toolbar reads as one set of controls. */
+export const TOOLBAR_CONTROL_HEIGHT = 36;
 
 /**
  * The listing's part of the page header (see page-header.tsx), right under
@@ -38,14 +39,21 @@ export function ListingToolbar({ search, onSearchChange, searchPlaceholder, filt
     <View style={styles.toolbar}>
       <View style={styles.searchRow}>
         <View style={styles.flex}>
-          <SearchField value={search} onChangeText={onSearchChange} placeholder={searchPlaceholder} radius={Shape.small} height={SEARCH_HEIGHT} focusRequest={focusSearch} />
+          <SearchField
+            value={search}
+            onChangeText={onSearchChange}
+            placeholder={searchPlaceholder}
+            radius={Shape.small}
+            height={TOOLBAR_CONTROL_HEIGHT}
+            focusRequest={focusSearch}
+          />
         </View>
-        {filters.length ? <FiltersButton filters={filters} height={SEARCH_HEIGHT} /> : null}
+        {filters.length ? <FiltersButton filters={filters} height={TOOLBAR_CONTROL_HEIGHT} /> : null}
       </View>
       {actions.length ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.actionScroller} contentContainerStyle={styles.actions}>
           {actions.map((action) => (
-            <OutlinedActionButton key={action.label} label={action.label} icon={action.icon} onPress={action.onPress} />
+            <OutlinedActionButton key={action.label} label={action.label} icon={action.icon} onPress={action.onPress} height={TOOLBAR_CONTROL_HEIGHT} />
           ))}
         </ScrollView>
       ) : null}
@@ -125,7 +133,7 @@ export function ListRowLine({ left, right, centered = false }: { left: ReactNode
 }
 
 const styles = StyleSheet.create({
-  toolbar: { gap: 12 },
+  toolbar: { gap: 8 },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   flex: { flex: 1 },
   // Runs edge to edge, starting in line with the page's content.

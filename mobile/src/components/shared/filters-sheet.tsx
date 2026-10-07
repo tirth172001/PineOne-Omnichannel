@@ -1,10 +1,11 @@
 import { type ReactNode, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Chip, Text } from 'react-native-paper';
+import { Button, Chip, Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
+import { useAppColors } from '@/constants/app-colors';
+import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 
-import { OutlinedActionButton } from './controls';
 import { DateRangeFields, type DateRangePreset, type DateRangeValue, makeDateRangeValue } from './date-range-filter';
 import { countSelection, type MoreFilterCategory, type MoreFilterSelection } from './more-filters';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from './panel-sheet';
@@ -167,17 +168,13 @@ export function FiltersButton({ filters, height }: { filters: ListingFilter[]; h
 
   return (
     <>
-      <OutlinedActionButton
-        label="Filters"
-        icon="funnel-simple"
+      <FiltersTrigger
         count={count}
-        active={count > 0}
         height={height}
         onPress={() => {
           setDrafts(filters.map(valueOf));
           setOpen(true);
         }}
-        accessibilityLabel={count ? `Filters, ${count} applied` : 'Filters'}
       />
       <PanelSheet
         visible={open}
@@ -200,6 +197,43 @@ export function FiltersButton({ filters, height }: { filters: ListingFilter[]; h
         ))}
       </PanelSheet>
     </>
+  );
+}
+
+/**
+ * The Filters button, styled like the toolbar's other controls (white, hairline
+ * border, 12dp label). With filters applied it turns the nav bar's lime and
+ * a badge counts them, so a filtered list is obvious at a
+ * glance.
+ */
+function FiltersTrigger({ count, height = 36, onPress }: { count: number; height?: number; onPress: () => void }) {
+  const theme = useTheme();
+  const active = count > 0;
+  const appColors = useAppColors();
+  return (
+    <TouchableRipple
+      onPress={onPress}
+      borderless
+      accessibilityRole="button"
+      accessibilityLabel={active ? `Filters, ${count} applied` : 'Filters'}
+      style={[
+        styles.trigger,
+        {
+          height,
+          backgroundColor: active ? appColors.highlight : theme.colors.surface,
+          borderColor: active ? appColors.highlightBorder : theme.colors.outlineVariant,
+        },
+      ]}>
+      <View style={styles.triggerContent}>
+        <Icon source="funnel-simple" size={16} color={theme.colors.onSurface} />
+        <Text style={[styles.triggerLabel, { color: theme.colors.onSurface }]}>Filters</Text>
+        {active ? (
+          <View style={[styles.badge, { backgroundColor: theme.colors.onSurface }]}>
+            <Text style={[styles.badgeLabel, { color: theme.colors.surface }]}>{count}</Text>
+          </View>
+        ) : null}
+      </View>
+    </TouchableRipple>
   );
 }
 
@@ -233,7 +267,15 @@ function Choice({ label, selected, onPress }: { label: string; selected: boolean
   );
 }
 
+const BADGE_SIZE = 18;
+
 const styles = StyleSheet.create({
+  // Page-level control, like the toolbar's action buttons.
+  trigger: { borderRadius: Shape.small, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 12 },
+  triggerContent: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  triggerLabel: { fontFamily: Fonts.medium, fontSize: 12, lineHeight: 16 },
+  badge: { minWidth: BADGE_SIZE, height: BADGE_SIZE, borderRadius: BADGE_SIZE / 2, paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center' },
+  badgeLabel: { fontFamily: Fonts.semiBold, fontSize: 11, lineHeight: 14, fontVariant: ['tabular-nums'] },
   section: { gap: 12 },
   sectionTitle: { fontFamily: Fonts.semiBold },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

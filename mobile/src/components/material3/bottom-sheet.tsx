@@ -29,7 +29,7 @@ const DISMISS_VELOCITY = 1;
  * PanResponder (rather than @gorhom/bottom-sheet, whose snap animation doesn't
  * run on web with our Reanimated version) so it behaves the same in Expo Go
  * and the web preview. Shape.max top corners, a 32×4 drag handle,
- * and the level-1 surface. Renders absolutely at the bottom of its nearest
+ * and a white surface. Renders absolutely at the bottom of its nearest
  * positioned parent — wrap in Paper's <Portal> to cover a whole screen.
  */
 export function BottomSheet({
@@ -112,7 +112,8 @@ export function BottomSheet({
             height,
             borderTopLeftRadius: radius,
             borderTopRightRadius: radius,
-            backgroundColor: theme.colors.elevation.level1,
+            // White like the app's cards, not M3's tinted surface (which reads green with our seed).
+            backgroundColor: theme.colors.surface,
             transform: [{ translateY }],
           },
         ]}

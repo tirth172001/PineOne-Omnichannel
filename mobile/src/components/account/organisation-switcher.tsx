@@ -5,6 +5,7 @@ import { Button, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { SelectionMark } from '@/components/shared/selection-mark';
+import { useAppColors } from '@/constants/app-colors';
 import { concentric } from '@/constants/shape';
 import type { Organisation } from '@/data/businesses';
 
@@ -44,6 +45,7 @@ export function OrganisationSwitcher({
   currentId: string;
   onApply: (organisationId: string) => void;
 }) {
+  const highlight = useAppColors().highlight;
   const theme = useTheme();
   const [draft, setDraft] = useState(currentId);
   // Start from the current organisation each time the sheet opens (adjusting state during render).
@@ -82,7 +84,7 @@ export function OrganisationSwitcher({
               accessibilityRole="radio"
               aria-checked={checked}
               accessibilityState={{ checked }}
-              style={[styles.row, checked && { backgroundColor: theme.colors.secondaryContainer }]}>
+              style={[styles.row, checked && { backgroundColor: highlight }]}>
               <View style={styles.rowContent}>
                 <OrganisationLogo organisation={org} />
                 <View style={styles.flex}>

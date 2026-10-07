@@ -1,21 +1,23 @@
 import { type Href, router, Slot, usePathname } from 'expo-router';
 import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from 'react';
-import { Animated, BackHandler, Easing, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, BackHandler, Easing, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, StyleSheet, View } from 'react-native';
 import { useTheme } from 'react-native-paper';
 
 import { HeaderActionsProvider, HeaderActionsSlot, useHeaderActionsStore } from '@/components/header-actions';
-import { HeaderControl, PageTitle, PageTopBar, ScopeSwitcherButton, useCollapsingHeader } from '@/components/page-header';
+import { AppHeader, HeaderControl, useCollapsingHeader } from '@/components/page-header';
+import { ScopeIntroProvider, useScopeLine } from '@/components/scope-intro';
 import { ScopeSwitcherProvider, useOpenScopeSwitcher } from '@/components/scope-switcher';
 import { ScreenTabs } from '@/components/screen-tabs';
+import { ProfilePanel } from '@/components/profile-panel';
 import { ShellTabsProvider, useShellTabsConfig } from '@/components/shell-tabs';
 import { NavigationBar, type NavigationBarDestination } from '@/components/material3/navigation-bar';
-import { Shape } from '@/constants/shape';
+import { CURRENT_USER } from '@/data/businesses';
 import { useBusiness } from '@/hooks/use-business';
 import { ToastProvider } from '@/hooks/use-toast';
 
 type TabItem = NavigationBarDestination & {
   href: Href & string;
-  /** The page's header title, when the nav label is a short form of it. */
+  /** The page's title, when the nav label is a short form of it. */
   title?: string;
   /** A shorter label for the bar's fourth slot, which is narrower than the expanded grid's cells. */
   slotLabel?: string;
@@ -23,17 +25,17 @@ type TabItem = NavigationBarDestination & {
   scoped?: boolean;
 };
 
-/** Always in the navigation bar. */
+/** Always in the navigation bar (Figma 6470:1236). */
 const FIXED_TABS = [
   { key: 'index', href: '/', label: 'Overview', icon: 'house', focusedIcon: 'house-fill', scoped: true },
   { key: 'payments', href: '/payments', label: 'Payments', icon: 'wallet', focusedIcon: 'wallet-fill', scoped: true },
-  { key: 'settlements', href: '/settlements', label: 'Settlements', icon: 'bank', focusedIcon: 'bank-fill', scoped: true },
+  { key: 'settlements', href: '/settlements', label: 'Settlement', title: 'Settlements', icon: 'bank', focusedIcon: 'bank-fill', scoped: true },
 ] as const satisfies readonly TabItem[];
 
 /**
  * Every other module, in the web sidebar's groups (Payments, Products, Other).
  * They live behind the bar's expand button; whichever was opened last takes
- * the bar's fourth slot (Refunds until then).
+ * the bar's fourth slot (Support until then, as in the design).
  */
 const MODULE_TABS = [
   { key: 'refunds', href: '/refunds', label: 'Refunds', icon: 'arrow-u-up-left', focusedIcon: 'arrow-u-up-left-fill', scoped: true },
@@ -59,11 +61,15 @@ const OVERFLOW_TITLE = 'More';
 const NavBarHeightContext = createContext<(height: number) => void>(() => {});
 
 /** The module in the navigation bar's fourth slot, shared by every tab's bar. */
-const ModuleSlotContext = createContext<{ slot: ModuleKey; setSlot: (key: ModuleKey) => void }>({ slot: 'refunds', setSlot: () => {} });
+const ModuleSlotContext = createContext<{ slot: ModuleKey; setSlot: (key: ModuleKey) => void }>({ slot: 'support', setSlot: () => {} });
+
+function moduleAt(pathname: string) {
+  return MODULE_TABS.find((item) => item.href === pathname)?.key;
+}
 
 /**
  * The app shell (Figma node 47:2153): the business / scope providers, the
- * active tab's stack and the app-wide toast. The chrome — the rounded top bar
+ * active tab's stack and the app-wide toast. The chrome — the app header
  * and the M3 Expressive navigation bar — is drawn by each tab's root screen
  * (TabChrome), so it slides away with the tab page when an inner page is
  * pushed. Navigation is driven by expo-router's pathname rather than a
@@ -79,15 +85,11 @@ export default function AppTabs() {
   );
 }
 
-function moduleAt(pathname: string) {
-  return MODULE_TABS.find((item) => item.href === pathname)?.key;
-}
-
 function Shell() {
   const pathname = usePathname();
   const theme = useTheme();
   const [navBarHeight, setNavBarHeight] = useState(0);
-  const [slot, setSlot] = useState<ModuleKey>(() => moduleAt(pathname) ?? 'refunds');
+  const [slot, setSlot] = useState<ModuleKey>(() => moduleAt(pathname) ?? 'support');
   // Opening a module by any route (e.g. an Overview quick action) also puts it in the slot.
   const [lastPathname, setLastPathname] = useState(pathname);
   if (pathname !== lastPathname) {
@@ -105,7 +107,10 @@ function Shell() {
       <ModuleSlotContext.Provider value={{ slot, setSlot }}>
         <NavBarHeightContext.Provider value={setNavBarHeight}>
           <ToastProvider bottomOffset={isTabRoot ? navBarHeight : 0}>
-            <Slot />
+            {/* Once a session, the first page that follows the scope opens on it (see scope-intro.tsx). */}
+            <ScopeIntroProvider scopedPage={ALL_TABS.some((item) => item.href === pathname && item.scoped)} allowAllChannels={pathname === '/'}>
+              <Slot />
+            </ScopeIntroProvider>
           </ToastProvider>
         </NavBarHeightContext.Provider>
       </ModuleSlotContext.Provider>
@@ -135,35 +140,36 @@ export function useTabNavBar() {
 }
 
 type TabHeader = {
-  /** The page's scroll offset, driving the large title's collapse. */
+  /** The page's scroll offset. */
   scrollY: Animated.Value;
-  /** The header row's height (status bar included), which floats over the page. */
+  /** The header's height (status bar included), which sits over the page. */
   height: number;
-  /** The sub-tabs' height, if the page has any: they rest under the large title. */
+  /** The sub-tabs' height, if the page has any: they sit under the header. */
   tabsHeight: number;
-  titleStyle?: Animated.WithAnimatedObject<object>;
-  onTitleLayout: (event: LayoutChangeEvent) => void;
-  title: string;
 };
 
-const TabHeaderContext = createContext<TabHeader>({
-  scrollY: new Animated.Value(0),
-  height: 0,
-  tabsHeight: 0,
-  onTitleLayout: () => {},
-  title: '',
-});
+const TabHeaderContext = createContext<TabHeader>({ scrollY: new Animated.Value(0), height: 0, tabsHeight: 0 });
+
+/**
+ * For content on a tab page that responds to its layout or scrolling (e.g. a
+ * hero sized to half the screen that drifts as the page scrolls): the header's
+ * height and the page's scroll offset.
+ */
+export function useTabLayout() {
+  const header = useContext(TabHeaderContext);
+  return { headerHeight: header.height + header.tabsHeight, scrollY: header.scrollY };
+}
 
 /**
  * For a tab page's scroll view (an Animated.ScrollView): feeds the scroll
- * offset to the collapsing header and the navigation bar. `contentTop` is the
- * top padding that clears the floating header; put <TabHero /> first.
+ * offset to the navigation bar. `contentTop` is the top padding that clears
+ * the header and its sub-tabs, if the page has any.
  */
 export function useTabScroll(listener?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void) {
   const navBar = useTabNavBar();
   const header = useContext(TabHeaderContext);
   return {
-    contentTop: header.height,
+    contentTop: header.height + header.tabsHeight,
     scrollProps: {
       scrollEventThrottle: 16,
       onScroll: Animated.event([{ nativeEvent: { contentOffset: { y: header.scrollY } } }], {
@@ -178,47 +184,16 @@ export function useTabScroll(listener?: (event: NativeSyntheticEvent<NativeScrol
 }
 
 /**
- * For a tab page that draws its own hero instead of TabHero (Overview's
- * collected-today figure): pass these to it so it still collapses into the
- * header's small title as the page scrolls.
- */
-export function useTabHeroCollapse() {
-  const header = useContext(TabHeaderContext);
-  return { style: header.titleStyle, onLayout: header.onTitleLayout };
-}
-
-/**
- * The page's large title, first thing in its scrolling content (the page
- * name). As the page scrolls it shrinks
- * and fades while the header's small title fades in, driven continuously by
- * the scroll position.
- */
-export function TabHero() {
-  const header = useContext(TabHeaderContext);
-  return (
-    <View>
-      <PageTitle title={header.title} style={header.titleStyle} onLayout={header.onTitleLayout} />
-      {/* The sub-tabs float here until they dock under the header. */}
-      {/* (The title's -8dp bottom margin is given back here, as the docked tabs are placed from its height.) */}
-      {header.tabsHeight ? <View style={{ height: header.tabsHeight + 8 }} /> : null}
-    </View>
-  );
-}
-
-/**
  * A tab's root screen chrome: the header, the page, and the navigation bar.
- * The header (see page-header.tsx) leads with the store / channel switcher and
- * ends with search and notifications on Overview, or the page's main action
- * registered via useHeaderActions; the page opens with its large title
- * (TabHero: the page name; Overview draws its own hero, see
- * useTabHeroCollapse). As that scrolls away, the
- * header's rounded surface fades in and the small title (with the scope under
- * it, still opening the switcher) takes the switcher's place, as on inner
- * pages. Sub-tabs registered via useShellTabs rest under the large title and
- * dock under the header. The bar overlays the bottom of the page and slides
- * away while the page scrolls down, returning on scroll up or at the top
- * (user decision). Its last item expands it in place to every module; picking
- * one puts it in the fourth slot, then opens it once the bar has settled.
+ * The header (AppHeader, Figma 6470:982) leads with the user on Overview, with
+ * notifications at its end; on the other tabs, with the page's name, and ends
+ * with the page's own actions registered via useHeaderActions. Under either,
+ * the store / channel scope opens the switcher (the organisation on pages that
+ * don't follow the scope). Sub-tabs registered via useShellTabs sit under the
+ * header. The bar overlays the bottom of the
+ * page and slides away while the page scrolls down, returning on scroll up or
+ * at the top (user decision). Its last item expands it in place to every
+ * other module; picking one opens it once the bar has settled.
  */
 export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode }) {
   const theme = useTheme();
@@ -233,6 +208,7 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
   const [hidden] = useState(() => new Animated.Value(0));
   const [navHidden, setNavHidden] = useState(false);
   const [modulesOpen, setModulesOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const header = useCollapsingHeader();
   const { scrollY } = header;
   const [tabsHeight, setTabsHeight] = useState(0);
@@ -287,79 +263,45 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
 
   const title = item.title ?? item.label;
   // Only pages whose data follows the channel / stores get the switcher; the others (e.g. Payment links) have nothing to switch.
-  const scope = item.scoped ? business.scopeText(tab === 'index') : undefined;
+  const scope = item.scoped ? business.scopeText(tab === 'index').split(' · ').join(' • ') : undefined;
   const hasTabs = screenTabs !== null;
-  const collapse = Math.max(header.titleHeight, 1);
+  const scopeLine = useScopeLine(scope);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <View style={{ flex: 1 }}>
         <TabNavBarContext.Provider value={{ height: navHeight, hidden, onScroll, openModules }}>
           <TabHeaderContext.Provider
-            value={{
-              scrollY,
-              height: header.barHeight,
-              tabsHeight: hasTabs ? tabsHeight : 0,
-              titleStyle: header.titleStyle,
-              onTitleLayout: header.onTitleLayout,
-              title,
-            }}>
+            value={{ scrollY, height: header.barHeight, tabsHeight: hasTabs ? tabsHeight : 0 }}>
             <HeaderActionsProvider store={headerActions}>{children}</HeaderActionsProvider>
           </TabHeaderContext.Provider>
         </TabNavBarContext.Provider>
       </View>
 
-      {/* Floats over the page, so the large title scrolls up under it until its surface fades in. */}
-      <PageTopBar
+      {/* Over the page, which scrolls up under it. */}
+      <AppHeader
         onLayout={header.onBarLayout}
-        leading={scope ? <ScopeSwitcherButton label={scope} onPress={openScopeSwitcher} /> : undefined}
+        user={tab === 'index' ? CURRENT_USER : undefined}
         title={title}
-        subtitle={scope}
-        onPressTitle={scope ? openScopeSwitcher : undefined}
-        titleAccessibilityLabel={scope ? `${title}, ${scope}. Switch store or channel` : undefined}
-        replaceLeading
-        // Overview: search (find a payment from anywhere, user decision) and notifications; other tabs show their page's main action.
-        trailing={
-          tab === 'index' ? (
-            <>
-              <HeaderControl
-                icon="magnifying-glass"
-                quiet
-                accessibilityLabel="Find a payment"
-                onPress={() => router.navigate({ pathname: '/payments', params: { search: String(Date.now()) } })}
-              />
-              <HeaderControl icon="bell" quiet accessibilityLabel="Notifications" />
-            </>
-          ) : (
-            <HeaderActionsSlot store={headerActions} />
-          )
-        }
-        collapsed={header.collapsed}
-        surfaceOpacity={header.surfaceOpacity}
-        roundedSurface={!hasTabs}
+        context={scope ?? business.organisation.name}
+        onPressContext={scope ? openScopeSwitcher : undefined}
+        contextAccessibilityLabel={scope ? `${scope}. Switch store or channel` : undefined}
+        onPressAvatar={() => setProfileOpen(true)}
+        contextRef={scopeLine.ref}
+        onContextLayout={scopeLine.onLayout}
+        contextHighlight={scopeLine.highlight}
+        // Notifications on Overview (user decision); the other tabs show their page's own actions.
+        trailing={tab === 'index' ? <HeaderControl icon="bell" quiet accessibilityLabel="Notifications" /> : <HeaderActionsSlot store={headerActions} tinted />}
       />
       {screenTabs ? (
-        // Rest under the large title, move up with the page, and dock under the header.
-        <Animated.View
+        // Docked under the header, on the same white.
+        <View
           onLayout={(event) => setTabsHeight(event.nativeEvent.layout.height)}
-          style={[
-            styles.tabs,
-            {
-              transform: [
-                {
-                  translateY: scrollY.interpolate({
-                    inputRange: [0, collapse],
-                    outputRange: [header.barHeight + header.titleHeight, header.barHeight],
-                    extrapolateRight: 'clamp',
-                  }),
-                },
-              ],
-            },
-          ]}>
-          <Animated.View pointerEvents="none" style={[styles.surface, { backgroundColor: theme.colors.surface, opacity: header.surfaceOpacity }]} />
+          style={[styles.tabs, { top: header.barHeight, backgroundColor: theme.colors.surface }]}>
           <ScreenTabs {...screenTabs} />
-        </Animated.View>
+        </View>
       ) : null}
+      <ProfilePanel visible={profileOpen} onDismiss={() => setProfileOpen(false)} />
       {/* While expanded, a tap anywhere else closes the bar. */}
       {modulesOpen ? (
         <Pressable style={StyleSheet.absoluteFill} onPress={() => setModulesOpen(false)} accessibilityLabel={`Close ${OVERFLOW_TITLE}`} />
@@ -393,5 +335,4 @@ const styles = StyleSheet.create({
   navBar: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   tabs: { position: 'absolute', top: 0, left: 0, right: 0 },
   // Attached to the top edge: only the content-facing (bottom) corners are rounded.
-  surface: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderBottomLeftRadius: Shape.max, borderBottomRightRadius: Shape.max },
 });

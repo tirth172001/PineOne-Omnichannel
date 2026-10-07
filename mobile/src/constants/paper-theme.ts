@@ -1,6 +1,6 @@
 import { argbFromHex, hexFromArgb, themeFromSourceColor } from '@material/material-color-utilities';
 import color from 'color';
-import { configureFonts, MD3LightTheme, type MD3Theme } from 'react-native-paper';
+import { configureFonts, MD3DarkTheme, MD3LightTheme, type MD3Theme } from 'react-native-paper';
 
 import { Fonts } from './theme';
 
@@ -9,16 +9,19 @@ import { Fonts } from './theme';
  * in theme.ts, itself converted from the web app's OKLCH --primary token) using
  * Google's own Material color algorithm — a full, correct MD3 tonal palette (all
  * ~30 color roles, each properly contrast-checked against its pair) rather than
- * ~30 hand-picked hex values. Locked to light only, matching the rest of the app
- * (see .scratch/mobile-app/map.md — dark mode is explicitly deferred).
+ * ~30 hand-picked hex values. Light and dark schemes come from the same seed;
+ * the user picks Light, Dark or System in the profile panel (use-theme-mode).
  */
 export const BRAND_SEED_COLOR = '#365314';
 
 const materialTheme = themeFromSourceColor(argbFromHex(BRAND_SEED_COLOR));
 
-const colors = Object.fromEntries(
-  Object.entries(materialTheme.schemes.light.toJSON()).map(([role, argb]) => [role, hexFromArgb(argb)])
-) as Record<keyof ReturnType<typeof materialTheme.schemes.light.toJSON>, string>;
+type SchemeColors = Record<keyof ReturnType<typeof materialTheme.schemes.light.toJSON>, string>;
+
+const schemeColors = (scheme: typeof materialTheme.schemes.light) =>
+  Object.fromEntries(Object.entries(scheme.toJSON()).map(([role, argb]) => [role, hexFromArgb(argb)])) as SchemeColors;
+
+const colors = schemeColors(materialTheme.schemes.light);
 
 /**
  * Variables from the "📱 Pine one App" Figma file (app shell, node 47:2153).
@@ -63,22 +66,40 @@ colors.onSecondaryContainer = FIGMA_TOKENS.accentForeground;
 // `surface` tinted with the *default* primary at Paper's own fixed opacities
 // (see node_modules/react-native-paper/src/styles/themes/v3/LightTheme.tsx).
 // Recomputed the same way, but tinted with OUR primary instead.
-const surface = color(colors.surface);
-const primary = color(colors.primary);
-const onSurface = color(colors.onSurface);
+function additionalColors(scheme: SchemeColors) {
+  const surface = color(scheme.surface);
+  const primary = color(scheme.primary);
+  const onSurface = color(scheme.onSurface);
+  return {
+    elevation: {
+      level0: 'transparent',
+      level1: surface.mix(primary, 0.05).hex(),
+      level2: surface.mix(primary, 0.08).hex(),
+      level3: surface.mix(primary, 0.11).hex(),
+      level4: surface.mix(primary, 0.12).hex(),
+      level5: surface.mix(primary, 0.14).hex(),
+    },
+    surfaceDisabled: onSurface.alpha(0.12).rgb().string(),
+    onSurfaceDisabled: onSurface.alpha(0.38).rgb().string(),
+  };
+}
 
-const additionalColors = {
-  elevation: {
-    level0: 'transparent',
-    level1: surface.mix(primary, 0.05).hex(),
-    level2: surface.mix(primary, 0.08).hex(),
-    level3: surface.mix(primary, 0.11).hex(),
-    level4: surface.mix(primary, 0.12).hex(),
-    level5: surface.mix(primary, 0.14).hex(),
-  },
-  surfaceDisabled: onSurface.alpha(0.12).rgb().string(),
-  onSurfaceDisabled: onSurface.alpha(0.38).rgb().string(),
-};
+/**
+ * Dark mode: the same structure as light — a near-black page, cards a step
+ * lighter, hairlines and tiles a step lighter again — in Tailwind's neutral
+ * greys (the web's dark tokens), so nothing reads green-tinted. Primary and
+ * the other roles Figma doesn't define stay generated from the brand seed.
+ */
+const darkColors = schemeColors(materialTheme.schemes.dark);
+darkColors.background = '#0a0a0a'; // page
+darkColors.surface = '#171717'; // cards, header, navigation bar, sheets
+darkColors.surfaceVariant = '#262626'; // hairlines, tiles, tracks
+darkColors.onBackground = '#fafafa';
+darkColors.onSurface = '#fafafa';
+darkColors.onSurfaceVariant = '#a3a3a3';
+darkColors.outlineVariant = '#333333';
+darkColors.secondaryContainer = '#3f6212'; // lime-800: the lime role on dark
+darkColors.onSecondaryContainer = '#e5e5e5';
 
 // Each MD3 typescale role gets one of our four static Inter Display weights — these are
 // discrete font files (assets/fonts), not a variable font, so
@@ -121,8 +142,14 @@ const typescale = configureFonts({ config: fontConfig });
 
 export const paperTheme: MD3Theme = {
   ...MD3LightTheme,
-  colors: { ...MD3LightTheme.colors, ...colors, ...additionalColors },
+  colors: { ...MD3LightTheme.colors, ...colors, ...additionalColors(colors) },
   // `default` is what a Text without a variant gets — including text nested inside another Text,
   // which Paper doesn't let inherit its parent's family. Left unset it's Roboto (San Francisco on iOS).
   fonts: { ...typescale, default: { ...typescale.default, fontFamily: Fonts.regular, fontWeight: 'normal' } },
+};
+
+export const paperDarkTheme: MD3Theme = {
+  ...MD3DarkTheme,
+  colors: { ...MD3DarkTheme.colors, ...darkColors, ...additionalColors(darkColors) },
+  fonts: paperTheme.fonts,
 };

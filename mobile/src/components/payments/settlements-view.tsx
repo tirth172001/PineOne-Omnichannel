@@ -7,7 +7,7 @@ import { DimmedDecimalAmount } from '@/components/shared/amount';
 import { BankLogo } from '@/components/shared/bank-logo';
 import { CompactSegmentedButtons } from '@/components/shared/controls';
 import { CardCarousel } from '@/components/shared/card-carousel';
-import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
+import { DayGroupedList, dayTotals, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DetailRow } from '@/components/shared/detail-rows';
 import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
@@ -16,6 +16,7 @@ import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { DotStatusBadge, type DotTone } from '@/components/shared/status';
 import { concentric, Shape } from '@/constants/shape';
+import { useAppColors } from '@/constants/app-colors';
 import { Fonts } from '@/constants/theme';
 import { useBusiness } from '@/hooks/use-business';
 import { formatCount, formatInr } from '@/data/common';
@@ -27,9 +28,11 @@ import {
   SETTLEMENT_STATUSES,
   SETTLEMENT_TIDS,
   SETTLEMENT_TYPES,
+  type SettlementRow,
   type SettlementStatus,
   settlementRows,
 } from '@/data/settlements';
+import { parseDisplayDate } from '@/data/transactions';
 
 const PERIOD_OPTIONS = [
   { value: 'today', label: 'Today' },
@@ -37,13 +40,13 @@ const PERIOD_OPTIONS = [
   { value: '7days', label: '7 days' },
 ] as const;
 
-const STATUS_OPTIONS = [
+export const STATUS_OPTIONS = [
   { value: 'all', label: 'All statuses' },
   ...SETTLEMENT_STATUSES.map((status) => ({ value: status, label: status })),
 ] as const;
 
 /** Web: settlementMoreFilterCategories (all single-select lists). */
-const MORE_FILTER_CATEGORIES: MoreFilterCategory[] = [
+export const MORE_FILTER_CATEGORIES: MoreFilterCategory[] = [
   { id: 'type', label: 'Settlement type', display: 'list', selectionMode: 'single', searchable: false, options: SETTLEMENT_TYPES.map((type) => ({ id: type, label: type })) },
   { id: 'payment', label: 'Payment method', display: 'list', selectionMode: 'single', searchable: false, options: SETTLEMENT_PAYMENT_METHODS.map((method) => ({ id: method, label: paymentMethodLabel(method) })) },
   { id: 'bank', label: 'Acquiring bank', display: 'list', selectionMode: 'single', searchable: false, options: SETTLEMENT_BANKS.map((bank) => ({ id: bank.toLowerCase(), label: bank })) },
@@ -61,6 +64,21 @@ export function settlementStatusTone(status: SettlementStatus): DotTone {
 /** Web: rm() — "₹ 1,06,550" (whole rupees). */
 export const rupees = (value: number) => formatInr(value).replace(/\.\d\d$/, '');
 
+/**
+ * Which day's collections a settlement pays out, from its captured range:
+ * "15 Aug, 12:00 AM - 11:59 PM" → "Collections of Sat, 15 Aug". A part day
+ * (an on-demand settlement) says where it stopped: "…, till 12 PM".
+ */
+export function collectionLabel(row: Pick<SettlementRow, 'capturedRange' | 'settlementDatePrimary'>) {
+  const [day, window = ''] = row.capturedRange.split(', ');
+  const end = window.split(' - ')[1]?.trim();
+  // The range has no year: it's the settlement's (collections settle within days).
+  const date = parseDisplayDate(`${day} ${row.settlementDatePrimary.split(' ')[2]}`, '12:00 PM');
+  const weekday = date ? `${date.toLocaleDateString('en-GB', { weekday: 'short' })}, ` : '';
+  const till = end && end !== '11:59 PM' ? `, till ${end.replace(':00', '')}` : '';
+  return `Collections of ${weekday}${day}${till}`;
+}
+
 const CARD_PADDING = 16;
 const INNER_RADIUS = concentric(Shape.max, CARD_PADDING);
 
@@ -73,6 +91,7 @@ const INNER_RADIUS = concentric(Shape.max, CARD_PADDING);
  */
 export function SettlementsView() {
   const theme = useTheme();
+  const appColors = useAppColors();
   // Follows the header's channel (In-store or Online; this page has no All channels).
   const { specificChannel: channel } = useBusiness();
   const [period, setPeriod] = useState<(typeof PERIOD_OPTIONS)[number]['value']>('today');
@@ -191,7 +210,7 @@ export function SettlementsView() {
           {channel === 'in-store' ? (
             <>
               <Divider />
-              <View style={styles.odsStrip}>
+              <View style={[styles.odsStrip, { backgroundColor: appColors.tint.indigo }]}>
                 <Icon source="lightning" size={20} color="#4f46e5" />
                 <Text variant="bodyMedium" style={[styles.medium, styles.flex]}>
                   Get some of it in your account today via On-Demand settlement
@@ -207,12 +226,14 @@ export function SettlementsView() {
 
       <DayGroupedList
         groups={groupByDay(loadedRows, (row) => row.settlementDatePrimary)}
+        totals={dayTotals(filteredRows, (row) => row.settlementDatePrimary, (row) => row.netAmount)}
+        noun={{ one: 'settlement', other: 'settlements' }}
         empty="No settlements found."
         renderRow={(row) => (
             <ListRow
               key={row.id}
               onPress={() => router.push(`/settlements/${row.batchId}`)}
-              accessibilityLabel={`Settled ${rupees(row.netAmount)} to ${row.bankName} bank ending ${row.accountLabel.slice(-4)}, ${row.status}`}>
+              accessibilityLabel={`Settled ${rupees(row.netAmount)} to ${row.bankName} bank ending ${row.accountLabel.slice(-4)}, ${collectionLabel(row)}, ${row.status}`}>
               {/* Settled amount with the bank and account below on the left, status on the right (user decision); the rest is in the detail. */}
               <ListRowLine
                 left={
@@ -224,6 +245,13 @@ export function SettlementsView() {
                       <BankLogo bank={row.bankName} size={16} />
                       <Text variant="bodySmall" numberOfLines={1} style={muted}>
                         {row.bankName} Bank •••• {row.accountLabel.slice(-4)}
+                      </Text>
+                    </View>
+                    {/* Which day's money this is: settlements land days after the payments they pay out. */}
+                    <View style={styles.bankRow}>
+                      <Icon source="calendar-blank" size={16} color={theme.colors.onSurfaceVariant} />
+                      <Text variant="bodySmall" numberOfLines={1} style={muted}>
+                        {collectionLabel(row)}
                       </Text>
                     </View>
                   </>
@@ -323,6 +351,6 @@ const styles = StyleSheet.create({
   linkLabel: { marginVertical: 2, marginHorizontal: 4, textDecorationLine: 'underline' },
   // Web: bg-[#eef2ff] strip across the card's bottom edge.
   // Tinted footer strip of the Remaining amount card; pushed to the bottom when the card is stretched to the row's height.
-  odsStrip: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: CARD_PADDING, marginTop: 'auto', backgroundColor: '#eef2ff' },
+  odsStrip: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: CARD_PADDING, marginTop: 'auto' },
   settleNow: { borderRadius: INNER_RADIUS },
 });

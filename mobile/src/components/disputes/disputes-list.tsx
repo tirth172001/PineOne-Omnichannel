@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { Icon, Text, useTheme } from 'react-native-paper';
 
 import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
-import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
+import { DayGroupedList, dayTotals, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
 import { StatusPill } from '@/components/shared/status';
@@ -98,6 +98,8 @@ export function DisputesList() {
           sortNewestFirst(rows, (row) => displayTimestamp(row.createdOn, row.time)).slice(0, lazy.count),
           (row) => row.createdOn
         )}
+        totals={dayTotals(rows, (row) => row.createdOn, (row) => parseInr(row.amount))}
+        noun={{ one: 'dispute', other: 'disputes' }}
         empty="No disputes found."
         renderRow={(row) => (
           <ListRow

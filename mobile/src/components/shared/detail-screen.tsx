@@ -30,16 +30,20 @@ function StatusGradient({ tone }: { tone: StatusGradientTone }) {
   const id = useSvgId('status-gradient');
   const color = STATUS_GRADIENT[tone];
   return (
-    <Svg pointerEvents="none" style={styles.gradient} width="100%" height={GRADIENT_HEIGHT}>
-      <Defs>
-        <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={color} stopOpacity={0.25} />
-          <Stop offset="0.5" stopColor={color} stopOpacity={0.1} />
-          <Stop offset="1" stopColor={color} stopOpacity={0} />
-        </LinearGradient>
-      </Defs>
-      <Rect width="100%" height="100%" fill={`url(#${id})`} />
-    </Svg>
+    // Pinned to both edges of the padded content: a percentage width on the Svg itself resolves
+    // against the content box, which left the wash short of the right edge.
+    <View pointerEvents="none" style={styles.gradient}>
+      <Svg width="100%" height="100%">
+        <Defs>
+          <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={color} stopOpacity={0.25} />
+            <Stop offset="0.5" stopColor={color} stopOpacity={0.1} />
+            <Stop offset="1" stopColor={color} stopOpacity={0} />
+          </LinearGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill={`url(#${id})`} />
+      </Svg>
+    </View>
   );
 }
 
@@ -259,7 +263,7 @@ const styles = StyleSheet.create({
   // Back lines up with the page's 16dp content edge, as on the other pages' header.
   appbar: { backgroundColor: 'transparent', paddingHorizontal: 16, gap: 8 },
   content: { padding: 16, paddingBottom: 32, gap: 24 },
-  gradient: { position: 'absolute', top: 0, left: 0, right: 0 },
+  gradient: { position: 'absolute', top: 0, left: 0, right: 0, height: GRADIENT_HEIGHT },
   floatingHeader: { position: 'absolute', top: 0, left: 0, right: 0 },
   floating: { position: 'absolute', left: 16, right: 16 },
   // Same shape as the shell's top bar: attached to the top edge, bottom corners rounded.

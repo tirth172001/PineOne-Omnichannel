@@ -227,9 +227,7 @@ export function disputeStatusLabel(record: Pick<DisputeRecord, 'status' | 'outco
 
 export const DISPUTE_STATUSES: DisputeStatus[] = ['Action pending', 'Reviewing', 'Closed'];
 
-export function parseInr(amount: string) {
-  return Number(amount.replace(/[^\d]/g, '')) || 0;
-}
+export { parseInr } from './common';
 
 /** The detail page's flow (web: FlowState in dispute-detail-content.tsx). */
 export type DisputeFlowState = 'pending' | 'submitted' | 'rejected' | 'won' | 'lost';

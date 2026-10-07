@@ -1,41 +1,17 @@
 import { useFonts } from 'expo-font';
-import { DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { Appearance } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import type { ReactNode } from 'react';
 import { PaperProvider } from 'react-native-paper';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import { paperIconSettings } from '@/components/icons';
-import { paperTheme } from '@/constants/paper-theme';
+import { paperDarkTheme, paperTheme } from '@/constants/paper-theme';
 import { FONT_ASSETS } from '@/constants/theme';
 import { BusinessProvider } from '@/hooks/use-business';
-
-// Force light mode regardless of system/device setting. `userInterfaceStyle: "light"`
-// in app.json only takes effect in a native build (prebuild/EAS) — it's a no-op under
-// Expo Go, which is how this app gets previewed here. This JS-level override is what
-// actually works in Expo Go. react-native-web doesn't implement setColorScheme (see
-// hooks/use-color-scheme.web.ts for the web-side equivalent) — guard it here so this
-// doesn't crash the web preview. Revisit once dark mode is a designed, deliberate feature.
-if (typeof Appearance.setColorScheme === 'function') {
-  Appearance.setColorScheme('light');
-}
-
-// Keeps react-navigation's own chrome (headers, native screen background during
-// transitions) in sync with the Paper/Material 3 theme, instead of two competing
-// color systems.
-const navigationTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: paperTheme.colors.primary,
-    background: paperTheme.colors.background,
-    card: paperTheme.colors.surface,
-    text: paperTheme.colors.onSurface,
-    border: paperTheme.colors.outlineVariant,
-    notification: paperTheme.colors.error,
-  },
-};
+import { ThemeModeProvider, useThemeMode } from '@/hooks/use-theme-mode';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -47,12 +23,44 @@ export default function TabLayout() {
   }
 
   return (
-    <PaperProvider theme={paperTheme} settings={paperIconSettings}>
-      <ThemeProvider value={navigationTheme}>
+    <ThemeModeProvider>
+      <Themed>
         <BusinessProvider>
           <AnimatedSplashOverlay />
           <AppTabs />
         </BusinessProvider>
+      </Themed>
+    </ThemeModeProvider>
+  );
+}
+
+/**
+ * The Paper / Material 3 theme for the user's Light, Dark or System pick (see
+ * use-theme-mode), with react-navigation's own chrome (headers, the screen
+ * background during transitions) kept in sync with it rather than two
+ * competing colour systems, and the status bar's text to match.
+ */
+function Themed({ children }: { children: ReactNode }) {
+  const { scheme } = useThemeMode();
+  const theme = scheme === 'dark' ? paperDarkTheme : paperTheme;
+  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  const navigationTheme = {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: theme.colors.primary,
+      background: theme.colors.background,
+      card: theme.colors.surface,
+      text: theme.colors.onSurface,
+      border: theme.colors.outlineVariant,
+      notification: theme.colors.error,
+    },
+  };
+  return (
+    <PaperProvider theme={theme} settings={paperIconSettings}>
+      <ThemeProvider value={navigationTheme}>
+        <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+        {children}
       </ThemeProvider>
     </PaperProvider>
   );

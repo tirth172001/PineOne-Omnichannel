@@ -7,6 +7,7 @@ import { BankLogo } from '@/components/shared/bank-logo';
 import { DetailScreen } from '@/components/shared/detail-screen';
 import { OutlineTag } from '@/components/shared/status';
 import { concentric, Shape } from '@/constants/shape';
+import { useAppColors } from '@/constants/app-colors';
 import { Fonts } from '@/constants/theme';
 import { SETTLEMENT_ACCOUNTS } from '@/data/settlements';
 
@@ -47,6 +48,7 @@ const INNER_RADIUS = concentric(Shape.max, CARD_PADDING);
  */
 export function SettlementPreferences() {
   const theme = useTheme();
+  const appColors = useAppColors();
   const [weekend, setWeekend] = useState(false);
   const [tab, setTab] = useState<'settlement-cycle' | 'settlement-account'>('settlement-cycle');
   const muted = { color: theme.colors.onSurfaceVariant };
@@ -70,7 +72,7 @@ export function SettlementPreferences() {
         <View style={styles.block}>
           <Card mode="contained" style={[styles.card, { backgroundColor: theme.colors.surface }]}>
             {/* Web: bg-gradient-to-r from-teal-50. */}
-            <View style={[styles.cardRow, styles.weekend]}>
+            <View style={[styles.cardRow, { backgroundColor: appColors.tint.teal }]}>
               <Icon source="calendar-check-fill" size={24} color="#0d9488" />
               <View style={styles.flex}>
                 <Text variant="titleMedium">Enable weekend settlement</Text>
@@ -153,7 +155,6 @@ const styles = StyleSheet.create({
   block: { gap: 16 },
   card: { borderRadius: Shape.max, overflow: 'hidden' },
   cardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: CARD_PADDING },
-  weekend: { backgroundColor: '#f0fdfa' },
   flex: { flex: 1, gap: 4 },
   inline: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   regular: { fontFamily: Fonts.regular },

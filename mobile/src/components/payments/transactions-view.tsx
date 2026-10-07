@@ -1,16 +1,17 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Icon, Text, useTheme } from 'react-native-paper';
 
-import { Tabs } from '@/components/material3/tabs';
-import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
+import type { TabItem } from '@/components/material3/tabs';
+import { DayGroupedList, dayTotals, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import {
   type DateRangeValue,
   getDefaultDateRangePresets,
   makeDateRangeValue,
 } from '@/components/shared/date-range-filter';
 import { EmailReportSheet } from '@/components/shared/email-report-sheet';
+import { useShellTabs } from '@/components/shell-tabs';
 import { LIST_ROW_INNER_RADIUS, ListingToolbar, selectFilter } from '@/components/shared/listing';
 import { type MoreFilterCategory, type MoreFilterSelection } from '@/components/shared/more-filters';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
@@ -23,9 +24,9 @@ import { PaymentRow } from './payment-row';
 import { formatInr } from '@/data/common';
 import { parseDisplayDate, transactionRows } from '@/data/transactions';
 
-type ListingMode = 'in-store' | 'online';
-type OnlineView = 'order' | 'payments';
-type StatusFilter =
+export type ListingMode = 'in-store' | 'online';
+export type OnlineView = 'order' | 'payments';
+export type StatusFilter =
   | 'all'
   | 'pending'
   | 'success'
@@ -36,7 +37,7 @@ type StatusFilter =
   | 'session-expired'
   | 'user-cancelled';
 
-const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+export const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { label: 'Status', value: 'all' },
   { label: 'Pending', value: 'pending' },
   { label: 'Success', value: 'success' },
@@ -48,20 +49,20 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { label: 'User cancelled', value: 'user-cancelled' },
 ];
 
-const PAYMENT_MODE_OPTIONS = [
+export const PAYMENT_MODE_OPTIONS = [
   { label: 'All modes', value: 'all' },
   { label: 'UPI', value: 'upi' },
   { label: 'Card', value: 'card' },
   { label: 'Net banking', value: 'netbanking' },
 ] as const;
 
-const TRANSACTION_TYPE_OPTIONS = [
+export const TRANSACTION_TYPE_OPTIONS = [
   { label: 'All', value: 'all' },
   { label: 'Order', value: 'order' },
   { label: 'Payment', value: 'payment' },
 ] as const;
 
-const PROVIDER_OPTIONS = [
+export const PROVIDER_OPTIONS = [
   { label: 'All providers', value: 'all' },
   ...Array.from(new Set(transactionRows.map((row) => row.provider)))
     .sort((a, b) => a.localeCompare(b))
@@ -69,7 +70,7 @@ const PROVIDER_OPTIONS = [
 ];
 
 /** Web: toStatusFilterKey(). */
-function toStatusFilterKey(label: string): StatusFilter {
+export function toStatusFilterKey(label: string): StatusFilter {
   const value = label.toLowerCase();
   if (value.includes('session expired')) return 'session-expired';
   if (value.includes('user cancelled')) return 'user-cancelled';
@@ -85,7 +86,7 @@ function toStatusFilterKey(label: string): StatusFilter {
  * Web: the in-store "More filters" categories, minus Stores — stores are
  * chosen only in the header's scope switcher on mobile (user decision).
  */
-const MORE_FILTER_CATEGORIES: MoreFilterCategory[] = [
+export const MORE_FILTER_CATEGORIES: MoreFilterCategory[] = [
   {
     id: 'payment-modes',
     label: 'Payment modes',
@@ -124,6 +125,11 @@ const MORE_FILTER_CATEGORIES: MoreFilterCategory[] = [
     label: 'Batch status',
     options: ['Open', 'Closed', 'Settled'].map((label) => ({ id: label.toLowerCase(), label })),
   },
+];
+
+export const ONLINE_TABS: TabItem[] = [
+  { key: 'order', label: 'By Order' },
+  { key: 'payments', label: 'By payments' },
 ];
 
 /**
@@ -236,6 +242,15 @@ export function TransactionsView() {
     setter(value);
     lazy.reset();
   };
+  // Online's By Order / By payments views sit in the header, docked under it like Reports' tabs.
+  const changeOnlineView = useCallback((key: string) => setOnlineView(key as OnlineView), []);
+  // Switching view starts the list again from the first rows.
+  const [lastOnlineView, setLastOnlineView] = useState(onlineView);
+  if (onlineView !== lastOnlineView) {
+    setLastOnlineView(onlineView);
+    lazy.reset();
+  }
+  useShellTabs(mode === 'online' ? { tabs: ONLINE_TABS, activeKey: onlineView, onChange: changeOnlineView } : null);
 
   return (
     <View style={styles.container}>
@@ -282,26 +297,12 @@ export function TransactionsView() {
         </View>
       ) : null}
 
-      {mode === 'online' ? (
-        <View style={styles.header}>
-          <Tabs
-            variant="secondary"
-            tabs={[
-              { key: 'order', label: 'By Order' },
-              { key: 'payments', label: 'By payments' },
-            ]}
-            activeKey={onlineView}
-            onChange={(key) => resetList(setOnlineView)(key as OnlineView)}
-            indicatorColor={theme.colors.onSurface}
-            style={styles.onlineTabs}
-          />
-        </View>
-      ) : null}
-
       <SummaryCards cards={[{ icon: 'wallet', label: 'Total volume', value: totalVolume, subtext: `${filteredRows.length} payments` }]} />
 
       <DayGroupedList
         groups={groupByDay(visibleRows, (row) => row.date)}
+        totals={dayTotals(filteredRows, (row) => row.date, (row) => row.amount)}
+        noun={{ one: 'payment', other: 'payments' }}
         empty="No transactions found."
         renderRow={(row) => (
           <PaymentRow
@@ -325,8 +326,6 @@ export function TransactionsView() {
 
 const styles = StyleSheet.create({
   container: { gap: 16 },
-  header: { gap: 12 },
-  onlineTabs: { backgroundColor: 'transparent' },
   hint: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 12, paddingRight: 4, paddingVertical: 4, borderRadius: Shape.max },
   hintText: { flex: 1 },
 });

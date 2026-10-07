@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Icon, Text, useTheme } from 'react-native-paper';
 
-import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
+import { DayGroupedList, dayTotals, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { LIST_ROW_INNER_RADIUS, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
 import { type MoreFilterSelection } from '@/components/shared/more-filters';
@@ -10,6 +10,7 @@ import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { DotStatusBadge } from '@/components/shared/status';
 import { SummaryCards } from '@/components/shared/summary-cards';
 import { Fonts } from '@/constants/theme';
+import { parseInr } from '@/data/common';
 import { REFUND_AMOUNT_TYPES, REFUND_STATUSES, REFUND_SUMMARY, type RefundStatus, refundRows, refundStatusTone } from '@/data/refunds';
 
 const STATUS_OPTIONS = [
@@ -76,6 +77,8 @@ export function RefundsView() {
 
       <DayGroupedList
         groups={groupByDay(loaded, (row) => row.datePrimary)}
+        totals={dayTotals(filtered, (row) => row.datePrimary, (row) => parseInr(row.amount))}
+        noun={{ one: 'refund', other: 'refunds' }}
         empty="No refunds found."
         renderRow={(row) => (
             <ListRow key={row.id} accessibilityLabel={`Refund ${row.refundId}, ${row.amount}, ${row.status}`}>

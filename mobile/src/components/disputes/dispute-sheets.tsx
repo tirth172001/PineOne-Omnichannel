@@ -5,6 +5,7 @@ import { Button, Dialog, Icon, Portal, Text, TouchableRipple, useTheme } from 'r
 import { FormField, FormTextInput } from '@/components/shared/form-fields';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
 import { concentric, Shape } from '@/constants/shape';
+import { useAppColors } from '@/constants/app-colors';
 import { Fonts } from '@/constants/theme';
 import {
   EVIDENCE_FIELDS,
@@ -49,6 +50,7 @@ export function DisputeEvidenceSheet({
   onSubmit: () => void;
 }) {
   const theme = useTheme();
+  const appColors = useAppColors();
   const toast = useToast();
   const isView = mode === 'view';
   const copy = EVIDENCE_PANEL_COPY[mode];
@@ -98,7 +100,7 @@ export function DisputeEvidenceSheet({
         {mode === 'reupload' && issueMessage ? (
           <View style={styles.issue}>
             <Icon source="info-fill" size={16} color="#d97706" />
-            <Text variant="bodyMedium" style={[styles.flex, { color: '#78350f' }]}>
+            <Text variant="bodyMedium" style={[styles.flex, { color: appColors.amberText }]}>
               {issueMessage}
             </Text>
           </View>

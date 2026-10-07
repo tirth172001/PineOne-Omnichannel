@@ -21,6 +21,8 @@ type PanelSheetProps = {
   height?: number;
   /** Set false when the body manages its own scrolling or layout (e.g. a two-level filter list). */
   scroll?: boolean;
+  /** The body on the page's grey, for content laid out as white cards (like the app's pages). */
+  grouped?: boolean;
 };
 
 /**
@@ -29,7 +31,7 @@ type PanelSheetProps = {
  * Every web side panel (refund, charge slip, activity details, deductions,
  * email report, filters…) opens in one of these on mobile.
  */
-export function PanelSheet({ visible, onDismiss, title, children, footer, height, scroll = true }: PanelSheetProps) {
+export function PanelSheet({ visible, onDismiss, title, children, footer, height, scroll = true, grouped = false }: PanelSheetProps) {
   const theme = useTheme();
   const { height: windowHeight } = useWindowDimensions();
 
@@ -51,11 +53,11 @@ export function PanelSheet({ visible, onDismiss, title, children, footer, height
         </View>
         <Divider />
         {scroll ? (
-          <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
+          <ScrollView style={[styles.body, grouped && { backgroundColor: theme.colors.background }]} keyboardShouldPersistTaps="handled">
             {children}
           </ScrollView>
         ) : (
-          <View style={styles.body}>{children}</View>
+          <View style={[styles.body, grouped && { backgroundColor: theme.colors.background }]}>{children}</View>
         )}
         {footer ? (
           <>

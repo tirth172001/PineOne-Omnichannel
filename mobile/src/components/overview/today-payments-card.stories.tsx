@@ -11,7 +11,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Overview card for today’s payments. Same content and section order as the web Overview’s Transactions card: total with faded paise, payment count with failures, the last three payments, and a link to the history.',
+          'Overview card for today’s payments (Figma 6470:685): total with faded paise over a lime glow, the payment count, the latest payments with their status (led by a channel’s share when given), and a link to the history.',
       },
     },
   },
@@ -24,4 +24,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const NoFailures: Story = { args: { failedCount: 0 } };
+export const WithChannelShare: Story = {
+  args: { channel: { label: 'In-store payments', count: 21, amount: 835168 }, recent: TODAY_PAYMENTS.recent.slice(0, 2) },
+};

@@ -10,7 +10,7 @@ import { CopyableValue } from '@/components/shared/copyable-value';
 import { DetailRow, SECTION_CARD_INNER_RADIUS, SectionCard } from '@/components/shared/detail-rows';
 import { HelpCard } from '@/components/shared/help-card';
 import { CollapsingDetailScreen, DETAIL_FOOTER_BUTTON_RADIUS, type StatusGradientTone } from '@/components/shared/detail-screen';
-import { DayGroupedList, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
+import { DayGroupedList, dayTotals, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { LIST_ROW_INNER_RADIUS } from '@/components/shared/listing';
 import { DotStatusBadge } from '@/components/shared/status';
 import { concentric, Shape } from '@/constants/shape';
@@ -166,8 +166,8 @@ export function SettlementDetail({ settlement }: { settlement: SettlementRow }) 
         </Animated.View>
       }
       footer={
-        <Button mode="contained" icon="download-simple" onPress={() => toast('Downloading settlement report...')} style={styles.footerButton}>
-          Download
+        <Button mode="contained" icon="download-simple" onPress={() => toast('Downloading MPR...')} accessibilityLabel="Download MPR (merchant payment report)" style={styles.footerButton}>
+          Download MPR
         </Button>
       }>
       {/* One card per segment, evenly spaced (same layout as Transaction details). */}
@@ -209,6 +209,8 @@ export function SettlementDetail({ settlement }: { settlement: SettlementRow }) 
             <DayGroupedList
               flat
               groups={groupByDay(shown, (row) => row.paymentDate)}
+              totals={dayTotals(filtered, (row) => row.paymentDate, (row) => row.transactionAmount)}
+              noun={{ one: 'payment', other: 'payments' }}
               empty="No transactions match your search."
               renderRow={(row) => (
                 <PaymentRow

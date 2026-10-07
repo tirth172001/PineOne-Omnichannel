@@ -3,11 +3,35 @@ import { StyleSheet, View } from 'react-native';
 import { Divider, Text, useTheme } from 'react-native-paper';
 
 import { Fonts } from '@/constants/theme';
+import { formatInr } from '@/data/common';
 import { parseDisplayDate } from '@/data/transactions';
 
 import { ListCard } from './listing';
 
 export type DayGroup<T> = { day: string; label: string; rows: T[] };
+
+/** A day's total amount and record count, keyed by its display date. */
+export type DayTotals = Map<string, { amount: number; count: number }>;
+
+/**
+ * Each day's total and count over every row the filters match — not just the
+ * rows loaded so far — so a day heading stays right while the list is still
+ * loading that day's records.
+ */
+export function dayTotals<T>(rows: T[], day: (row: T) => string, amount: (row: T) => number): DayTotals {
+  const totals: DayTotals = new Map();
+  for (const row of rows) {
+    const key = day(row);
+    const entry = totals.get(key) ?? { amount: 0, count: 0 };
+    entry.amount += amount(row);
+    entry.count += 1;
+    totals.set(key, entry);
+  }
+  return totals;
+}
+
+/** "₹4,12,500" — paise only when there are some. */
+const dayAmount = (value: number) => formatInr(value).replace(/\.00$/, '');
 
 /** Timestamp of a "16 Aug 2026" + "10:10 PM" pair (unparseable dates sort last). */
 export function displayTimestamp(date: string, time: string) {
@@ -49,11 +73,17 @@ export function DayGroupedList<T>({
   groups,
   renderRow,
   empty,
+  totals,
+  noun = { one: 'record', other: 'records' },
   flat = false,
 }: {
   groups: DayGroup<T>[];
   renderRow: (row: T) => ReactNode;
   empty: string;
+  /** Each day's amount and count (see dayTotals), shown at the end of its heading. Without it, the loaded rows are counted. */
+  totals?: DayTotals;
+  /** What a row is, for the count: e.g. payment / payments. */
+  noun?: { one: string; other: string };
   /**
    * Inside a card that already frames the list (e.g. Settlement details →
    * Transactions included): no card per day, just the day heading and rows
@@ -79,9 +109,7 @@ export function DayGroupedList<T>({
               <Text variant="labelLarge" style={styles.day} accessibilityRole="header">
                 {group.label}
               </Text>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                {group.rows.length} {group.rows.length === 1 ? 'record' : 'records'}
-              </Text>
+              <DaySummary total={totals?.get(group.day)} count={group.rows.length} noun={noun} />
             </View>
             {group.rows.map((row, index) => (
               <View key={index}>
@@ -103,9 +131,7 @@ export function DayGroupedList<T>({
             <Text variant="titleSmall" style={styles.day} accessibilityRole="header">
               {group.label}
             </Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              {group.rows.length} {group.rows.length === 1 ? 'record' : 'records'}
-            </Text>
+            <DaySummary total={totals?.get(group.day)} count={group.rows.length} noun={noun} />
           </View>
           <ListCard>{group.rows.map(renderRow)}</ListCard>
         </View>
@@ -114,7 +140,27 @@ export function DayGroupedList<T>({
   );
 }
 
+/** The end of a day heading: the day's amount, then how many records it has. */
+function DaySummary({ total, count, noun }: { total?: { amount: number; count: number }; count: number; noun: { one: string; other: string } }) {
+  const theme = useTheme();
+  const records = total?.count ?? count;
+  const countText = `${records} ${records === 1 ? noun.one : noun.other}`;
+  return (
+    <Text variant="bodySmall" numberOfLines={1} style={[styles.summary, { color: theme.colors.onSurfaceVariant }]}>
+      {total ? (
+        <>
+          <Text style={[styles.summaryAmount, { color: theme.colors.onSurface }]}>{dayAmount(total.amount)}</Text>
+          {' · '}
+        </>
+      ) : null}
+      {countText}
+    </Text>
+  );
+}
+
 const styles = StyleSheet.create({
+  summary: { flexShrink: 1, textAlign: 'right', fontVariant: ['tabular-nums'] },
+  summaryAmount: { fontFamily: Fonts.medium },
   groups: { gap: 20 },
   group: { gap: 8 },
   heading: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, paddingHorizontal: 4 },

@@ -1,33 +1,34 @@
 import { Image } from 'expo-image';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { PRODUCT_BANNERS } from '@/data/overview';
 
-import { OutlinedActionButton } from '@/components/shared/controls';
-
 const BANNER_WIDTH = 306;
 const BANNER_HEIGHT = 136;
 
 /**
- * "Explore products" (web: OverviewExploreProducts): a title with its own
- * View all button (titles aren't links, user decision), then the four product
- * promo banners in a horizontal scroll. It's our promotion, not a merchant
- * job, so its heading is quieter than the page's other sections and Overview
- * sets it furthest down (docs/design/mobile-home-hierarchy-audit.md F4). Banners are the
- * web app's own images (public/images/overview-products).
+ * "Explore products" (Figma 6470:811; web: OverviewExploreProducts): a title
+ * with its own View all link (titles aren't links, user decision), then the
+ * four product promo banners in a horizontal scroll. Banners are the web
+ * app's own images (public/images/overview-products), the same as the design's.
  */
 export function ExploreProducts({ onPressViewAll, onPressBanner }: { onPressViewAll?: () => void; onPressBanner?: (id: string) => void }) {
   const theme = useTheme();
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <Text variant="labelLarge" style={[styles.title, { color: theme.colors.onSurfaceVariant }]} accessibilityRole="header">
+        <Text style={[styles.title, { color: theme.colors.onSurface }]} accessibilityRole="header">
           Explore products
         </Text>
-        <OutlinedActionButton label="View all" icon="caret-right" trailingIcon onPress={onPressViewAll} accessibilityLabel="View all products" />
+        <TouchableRipple onPress={onPressViewAll} borderless accessibilityRole="button" accessibilityLabel="View all products" style={styles.viewAll}>
+          <View style={styles.viewAllContent}>
+            <Text style={[styles.viewAllLabel, { color: theme.colors.primary }]}>View all</Text>
+            <Icon source="caret-right" size={16} color={theme.colors.primary} />
+          </View>
+        </TouchableRipple>
       </View>
       {/* Bleeds to the screen edges so the next banner peeks in, as the web's fade hints. */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scroller} contentContainerStyle={styles.row}>
@@ -48,12 +49,14 @@ export function ExploreProducts({ onPressViewAll, onPressBanner }: { onPressView
 }
 
 const styles = StyleSheet.create({
-  section: { gap: 16 },
-  // Web: text-2xl font-semibold.
+  section: { gap: 8 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  title: { fontFamily: Fonts.medium },
+  title: { fontFamily: Fonts.medium, fontSize: 16, lineHeight: 24 },
+  viewAll: { borderRadius: Shape.small },
+  viewAllContent: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 32, paddingHorizontal: 10 },
+  viewAllLabel: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 20 },
   scroller: { marginHorizontal: -16 },
-  row: { gap: 16, paddingHorizontal: 16 },
+  row: { gap: 12, paddingHorizontal: 16 },
   banner: { width: BANNER_WIDTH, height: BANNER_HEIGHT, borderRadius: Shape.max, overflow: 'hidden' },
   image: { width: '100%', height: '100%' },
 });

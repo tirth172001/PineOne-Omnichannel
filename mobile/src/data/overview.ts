@@ -84,23 +84,30 @@ export const SETTLEMENT_TODAY: Record<
     netAmount: number;
     transactionsConsidered: number;
     lastSettlement: string;
+    /** The Overview card's wording (Figma 6470:737). */
+    lastSettledLabel: string;
     pendingAmount: number;
     nextSettlement: string;
+    nextSettlementLabel: string;
   }
 > = {
   pinelabs: {
     netAmount: 184567.72,
     transactionsConsidered: 324,
     lastSettlement: 'Today · 03:00 PM',
+    lastSettledLabel: 'Last settled at 3 PM today',
     pendingAmount: 52340.18,
     nextSettlement: 'Tomorrow · 03:00 PM',
+    nextSettlementLabel: 'Today by 6 PM',
   },
   'partner-bank': {
     netAmount: 42180,
     transactionsConsidered: 96,
     lastSettlement: 'Today · 11:30 AM',
+    lastSettledLabel: 'Last settled at 11:30 AM today',
     pendingAmount: 11860,
     nextSettlement: 'Tomorrow · 11:30 AM',
+    nextSettlementLabel: 'Today by 7:30 PM',
   },
 };
 

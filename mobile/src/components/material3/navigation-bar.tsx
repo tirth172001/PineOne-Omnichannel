@@ -1,4 +1,3 @@
-import color from 'color';
 import { useEffect, useEffectEvent, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { Badge, Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
@@ -6,7 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { useSvgId } from '@/components/shared/hatch';
-import { concentric, Shape } from '@/constants/shape';
+import { useAppColors } from '@/constants/app-colors';
+import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 
 export type NavigationBarDestination = {
@@ -33,16 +33,13 @@ type NavigationBarProps = {
   /** Called with the key of the destination pressed, in the bar or in the overflow grid. */
   onChange: (key: string) => void;
   overflow?: NavigationBarOverflow;
-  /** The bar's height while collapsed (fade included), for padding content and placing toasts above it. */
+  /** The bar's height while collapsed (safe-area inset included), for padding content and placing toasts above it. */
   onRestingHeightChange?: (height: number) => void;
-  /** Lifts the bar clear of the bottom safe-area inset (gesture bar). On by default. */
+  /** Pads the bar over the bottom safe-area inset (gesture bar). On by default. */
   respectSafeArea?: boolean;
 };
 
-/** The fade's run-up above the bar: part of the bar's resting height, but not its visible surface. */
-export const NAVIGATION_BAR_FADE_HEIGHT = 32;
-const FADE_HEIGHT = NAVIGATION_BAR_FADE_HEIGHT;
-// While expanded the fade reaches further up, washing the page out behind the open bar.
+// While expanded a fade reaches up from the bar, washing the page out behind it.
 const EXPANDED_FADE_HEIGHT = 240;
 const OVERFLOW_COLUMNS = 4;
 // M3 emphasized easing: quick to start, long gentle settle.
@@ -50,12 +47,11 @@ const EXPAND_EASING = Easing.bezier(0.2, 0, 0, 1);
 
 /**
  * M3 Expressive navigation bar ("vertical items") — the 64dp bar in the Figma
- * app shell (node 47:2377). Paper's BottomNavigation.Bar implements the older
- * 80dp M3 bar with its padding hard-coded, so this is built in-house from
- * Paper primitives: 80dp items, a 56×32 indicator, 10dp labels. It floats as
- * a rounded bar inset from the screen edges, over a white fade so the page
- * dissolves beneath it rather than being cut off by a hard edge; items and
- * the indicator are concentric with its corners.
+ * app shell (PineOne - Omni-channel, node 6470:1236). Paper's
+ * BottomNavigation.Bar implements the older 80dp M3 bar with its padding
+ * hard-coded, so this is built in-house from Paper primitives: equal-width
+ * items, a 56×32 indicator, 10dp labels. It runs edge to edge along the bottom
+ * of the screen, white with a hairline on top, padded over the gesture bar.
  *
  * With `overflow`, the last item is an expand button: the bar grows upward in
  * place to show the overflow destinations under a title, four to a row, drawn
@@ -65,8 +61,7 @@ export function NavigationBar({ destinations, activeKey, onChange, overflow, onR
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const fadeId = useSvgId('nav-fade');
-  // The bar sits partly inside the gesture-bar inset, which is mostly empty space.
-  const bottomGap = Math.max((respectSafeArea ? insets.bottom : 0) - 12, 12);
+  const bottomInset = respectSafeArea ? insets.bottom : 0;
   const expanded = overflow?.expanded ?? false;
 
   const [progress] = useState(() => new Animated.Value(expanded ? 1 : 0));
@@ -104,21 +99,20 @@ export function NavigationBar({ destinations, activeKey, onChange, overflow, onR
     // box-none: the fade is decoration only, so taps on it reach the page below.
     <Animated.View
       pointerEvents="box-none"
-      style={[
-        styles.container,
-        { paddingBottom: bottomGap, paddingTop: progress.interpolate({ inputRange: [0, 1], outputRange: [FADE_HEIGHT, EXPANDED_FADE_HEIGHT] }) },
-      ]}>
-      <Svg style={StyleSheet.absoluteFill} viewBox="0 0 1 1" preserveAspectRatio="none" pointerEvents="none">
-        <Defs>
-          <LinearGradient id={fadeId} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={theme.colors.surface} stopOpacity={0} />
-            <Stop offset="0.45" stopColor={theme.colors.surface} stopOpacity={0.85} />
-            <Stop offset="1" stopColor={theme.colors.surface} stopOpacity={1} />
-          </LinearGradient>
-        </Defs>
-        <Rect width={1} height={1} fill={`url(#${fadeId})`} />
-      </Svg>
-      <View style={[styles.bar, { backgroundColor: theme.colors.surface }]}>
+      style={{ paddingTop: progress.interpolate({ inputRange: [0, 1], outputRange: [0, EXPANDED_FADE_HEIGHT] }) }}>
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: progress }]}>
+        <Svg style={StyleSheet.absoluteFill} viewBox="0 0 1 1" preserveAspectRatio="none">
+          <Defs>
+            <LinearGradient id={fadeId} x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={theme.colors.surface} stopOpacity={0} />
+              <Stop offset="0.45" stopColor={theme.colors.surface} stopOpacity={0.85} />
+              <Stop offset="1" stopColor={theme.colors.surface} stopOpacity={1} />
+            </LinearGradient>
+          </Defs>
+          <Rect width={1} height={1} fill={`url(#${fadeId})`} />
+        </Svg>
+      </Animated.View>
+      <View style={[styles.bar, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.surfaceVariant, paddingBottom: bottomInset }]}>
         {overflow ? (
           <Animated.View
             aria-hidden={!expanded}
@@ -157,7 +151,8 @@ export function NavigationBar({ destinations, activeKey, onChange, overflow, onR
         ) : null}
         <View
           accessibilityRole="tablist"
-          onLayout={(event) => onRestingHeightChange?.(FADE_HEIGHT + event.nativeEvent.layout.height + bottomGap)}
+          // The top hairline is part of the bar's height.
+          onLayout={(event) => onRestingHeightChange?.(event.nativeEvent.layout.height + StyleSheet.hairlineWidth + bottomInset)}
           style={styles.row}>
           {destinations.map((destination) => (
             <NavItem
@@ -196,6 +191,11 @@ export function NavigationBar({ destinations, activeKey, onChange, overflow, onR
   );
 }
 
+/** Figma layers a 50% white over base/secondary for the indicator (see useAppColors). */
+function useIndicatorColor() {
+  return useAppColors().highlight;
+}
+
 function NavItem({
   destination,
   active,
@@ -211,8 +211,7 @@ function NavItem({
   style: object;
 }) {
   const theme = useTheme();
-  // Figma layers a 50% white over base/secondary for the indicator.
-  const indicatorColor = color(theme.colors.secondaryContainer).mix(color('#ffffff'), 0.5).hex();
+  const indicatorColor = useIndicatorColor();
   const [entrance] = useState(() => new Animated.Value(popIn ? 0 : 1));
   useEffect(() => {
     Animated.timing(entrance, { toValue: 1, duration: 280, easing: EXPAND_EASING, useNativeDriver: true }).start();
@@ -249,22 +248,12 @@ function NavItem({
   );
 }
 
-// Items touch the bar's top and bottom edges (gap 0), so they share its radius; the
-// indicator sits 6dp inside an item.
-const ITEM_RADIUS = concentric(Shape.max, 0, 64);
-const INDICATOR_RADIUS = concentric(ITEM_RADIUS, 6, 32);
+const ITEM_RADIUS = Shape.max;
+// Figma rounds the indicator fully (16dp); the app caps every radius at Shape.max.
+const INDICATOR_RADIUS = Shape.max;
 
 const styles = StyleSheet.create({
-  // The top padding (animated) is the fade's run-up above the bar.
-  container: { paddingHorizontal: 16 },
-  bar: {
-    borderRadius: Shape.max,
-    shadowColor: '#000000',
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
+  bar: { borderTopWidth: StyleSheet.hairlineWidth },
   panel: { overflow: 'hidden' },
   panelContent: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   panelTitle: { fontFamily: Fonts.semiBold, fontSize: 12, lineHeight: 16, letterSpacing: 1, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
@@ -273,8 +262,8 @@ const styles = StyleSheet.create({
   // Separators run edge to edge across the bar.
   divider: { height: 1, marginTop: 4 },
   titleDivider: { marginTop: 0, marginBottom: 4 },
-  row: { flexDirection: 'row', justifyContent: 'center', paddingHorizontal: 6 },
-  item: { flex: 1, maxWidth: 80, borderRadius: ITEM_RADIUS },
+  row: { flexDirection: 'row', justifyContent: 'center', paddingHorizontal: 8 },
+  item: { flex: 1, borderRadius: ITEM_RADIUS },
   itemContent: { alignItems: 'center', gap: 4, paddingTop: 6, paddingBottom: 10 },
   indicator: { width: 32, height: 32, borderRadius: INDICATOR_RADIUS, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: 2, right: 8 },
