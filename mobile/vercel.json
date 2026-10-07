@@ -6,10 +6,25 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/payments/transactions/:transactionId", "destination": "/payments/transactions/[transactionId].html" },
-    { "source": "/settlements/:batchId", "destination": "/settlements/[batchId].html" },
-    { "source": "/disputes/:disputeId", "destination": "/disputes/[disputeId].html" },
-    { "source": "/stores/:storeId", "destination": "/stores/[storeId].html" },
-    { "source": "/account-settings/:section", "destination": "/account-settings/[section].html" }
+    {
+      "source": "/payments/transactions/:transactionId",
+      "destination": "/payments/transactions/%5BtransactionId%5D"
+    },
+    {
+      "source": "/settlements/:batchId",
+      "destination": "/settlements/%5BbatchId%5D"
+    },
+    {
+      "source": "/disputes/:disputeId",
+      "destination": "/disputes/%5BdisputeId%5D"
+    },
+    {
+      "source": "/stores/:storeId",
+      "destination": "/stores/%5BstoreId%5D"
+    },
+    {
+      "source": "/account-settings/:section",
+      "destination": "/account-settings/%5Bsection%5D"
+    }
   ]
 }
