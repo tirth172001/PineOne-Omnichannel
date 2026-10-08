@@ -51,7 +51,8 @@ const EXPAND_EASING = Easing.bezier(0.2, 0, 0, 1);
  * BottomNavigation.Bar implements the older 80dp M3 bar with its padding
  * hard-coded, so this is built in-house from Paper primitives: equal-width
  * items, a 56×32 indicator, 10dp labels. It runs edge to edge along the bottom
- * of the screen, white with a hairline on top, padded over the gesture bar.
+ * of the screen, white with a hairline and a slight shadow on top, padded over
+ * the gesture bar.
  *
  * With `overflow`, the last item is an expand button: the bar grows upward in
  * place to show the overflow destinations under a title, four to a row, drawn
@@ -253,7 +254,15 @@ const ITEM_RADIUS = Shape.max;
 const INDICATOR_RADIUS = Shape.max;
 
 const styles = StyleSheet.create({
-  bar: { borderTopWidth: StyleSheet.hairlineWidth },
+  // A slight shadow above the bar, so it lifts off the page behind it.
+  bar: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -2 },
+    elevation: 8,
+  },
   panel: { overflow: 'hidden' },
   panelContent: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   panelTitle: { fontFamily: Fonts.semiBold, fontSize: 12, lineHeight: 16, letterSpacing: 1, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Platform, StyleSheet, TextInput, View } from 'react-native';
 import { Icon, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { MIN_RADIUS } from '@/constants/shape';
@@ -31,7 +31,10 @@ export function SearchField({ value, onChangeText, placeholder, radius, autoFocu
   }, [focusRequest]);
   return (
     <View style={[styles.field, { height, borderRadius: radius, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }]}>
-      <Icon source="magnifying-glass" size={16} color={theme.colors.onSurfaceVariant} />
+      {/* Never squeezed out by the input on narrow screens. */}
+      <View style={styles.icon}>
+        <Icon source="magnifying-glass" size={16} color={theme.colors.onSurfaceVariant} />
+      </View>
       <TextInput
         ref={input}
         value={value}
@@ -59,6 +62,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderWidth: 1,
   },
-  input: { flex: 1, height: '100%', fontFamily: Fonts.regular, fontSize: 14 },
+  icon: { flexShrink: 0 },
+  // minWidth 0 lets the input shrink below the browser's default width; long placeholders end in an ellipsis.
+  input: {
+    flex: 1,
+    minWidth: 0,
+    height: '100%',
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    ...(Platform.OS === 'web' ? ({ textOverflow: 'ellipsis' } as object) : null),
+  },
   clear: { padding: 4, marginRight: -4, borderRadius: MIN_RADIUS },
 });

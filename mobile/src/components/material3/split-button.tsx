@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Icon, Menu, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
+import { LazyMenu } from '@/components/shared/lazy-menu';
 import { Shape } from '@/constants/shape';
 
 export type SplitButtonOption = {
@@ -49,7 +50,7 @@ export function SplitButton({ label, icon, onPress, options, variant = 'filled' 
           </Text>
         </View>
       </TouchableRipple>
-      <Menu
+      <LazyMenu
         visible={open}
         onDismiss={() => setOpen(false)}
         anchorPosition="bottom"
@@ -82,7 +83,7 @@ export function SplitButton({ label, icon, onPress, options, variant = 'filled' 
             }}
           />
         ))}
-      </Menu>
+      </LazyMenu>
     </View>
   );
 }

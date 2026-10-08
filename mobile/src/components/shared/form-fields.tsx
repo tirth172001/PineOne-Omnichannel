@@ -3,6 +3,7 @@ import { type KeyboardTypeOptions, StyleSheet, TextInput, View } from 'react-nat
 import { Checkbox, Icon, Menu, RadioButton, Text, TouchableRipple, useTheme } from 'react-native-paper';
 import { DatePickerModal, TimePickerModal } from 'react-native-paper-dates';
 
+import { LazyMenu } from '@/components/shared/lazy-menu';
 import { Fonts } from '@/constants/theme';
 
 import type { DateRange } from './date-range-filter';
@@ -157,7 +158,7 @@ export function SelectField<T extends string>({
   const selected = options.find((option) => option.value === value);
 
   return (
-    <Menu
+    <LazyMenu
       visible={open}
       onDismiss={() => setOpen(false)}
       anchorPosition="bottom"
@@ -184,7 +185,7 @@ export function SelectField<T extends string>({
           }}
         />
       ))}
-    </Menu>
+    </LazyMenu>
   );
 }
 

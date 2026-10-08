@@ -2,6 +2,7 @@ import { type ReactNode, useState } from 'react';
 import { ScrollView, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Icon, IconButton, Menu, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
+import { LazyMenu } from '@/components/shared/lazy-menu';
 import { SearchField } from '@/components/search-field';
 import { FiltersButton, type ListingFilter } from '@/components/shared/filters-sheet';
 import type { ListingAction } from '@/components/shared/listing';
@@ -129,7 +130,7 @@ export function ListingCard({
             </View>
             {filters.length ? <FiltersButton filters={filters} height={CONTROL_HEIGHT} /> : null}
             {actions.length ? (
-              <Menu
+              <LazyMenu
                 visible={menuOpen}
                 onDismiss={() => setMenuOpen(false)}
                 anchorPosition="bottom"
@@ -154,7 +155,7 @@ export function ListingCard({
                     }}
                   />
                 ))}
-              </Menu>
+              </LazyMenu>
             ) : null}
           </View>
 

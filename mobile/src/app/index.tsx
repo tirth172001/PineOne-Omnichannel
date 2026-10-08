@@ -7,6 +7,7 @@ import { OnDemandBanner } from '@/components/overview/on-demand-banner';
 import { QuickActions } from '@/components/overview/quick-actions';
 import { type ChannelSummary, TodayPaymentsCard } from '@/components/overview/today-payments-card';
 import { TodaySettlementCard } from '@/components/overview/today-settlement-card';
+import { usePullToRefresh } from '@/components/pull-to-refresh';
 import { CHANNEL_MULTIPLIER, TODAY_PAYMENTS } from '@/data/overview';
 import { useBusiness } from '@/hooks/use-business';
 
@@ -34,6 +35,7 @@ function OverviewContent() {
   const scale = storeScale * channelScale;
   const navBar = useTabNavBar();
   const tabScroll = useTabScroll();
+  const { attach: attachPull, refreshControl, indicator: pullIndicator } = usePullToRefresh(tabScroll.contentTop);
   const count = Math.max(0, Math.round(TODAY_PAYMENTS.count * scale));
   const totalAmount = Math.round(TODAY_PAYMENTS.totalAmount * scale);
   // All channels: today split by channel. Online takes the remainder, so the two rows add up to the total.
@@ -48,34 +50,40 @@ function OverviewContent() {
       : undefined;
 
   return (
-    <Animated.ScrollView
-      {...tabScroll.scrollProps}
-      contentContainerStyle={[styles.content, { paddingTop: tabScroll.contentTop + 24, paddingBottom: 32 + navBar.height }]}>
-      {/* Today's two cards, one under the other. */}
-      <View style={styles.cards}>
-        <TodayPaymentsCard
-          totalAmount={totalAmount}
-          count={count}
-          channels={channels}
-          recent={TODAY_PAYMENTS.recent.slice(0, 3)}
-          recentKind={channel === 'online' ? 'online' : 'in-store'}
-          onPressChannel={() => router.navigate('/payments')}
-          onPressPayment={(transactionId) => router.push(`/payments/transactions/${transactionId}`)}
-          onPressHistory={() => router.navigate('/payments')}
-        />
-        <TodaySettlementCard scale={scale} onPressHistory={() => router.navigate('/settlements')} />
-      </View>
+    <View style={styles.area}>
+      <Animated.ScrollView
+        ref={attachPull}
+        refreshControl={refreshControl}
+        {...tabScroll.scrollProps}
+        contentContainerStyle={[styles.content, { paddingTop: tabScroll.contentTop + 24, paddingBottom: 32 + navBar.height }]}>
+        {/* Today's two cards, one under the other. */}
+        <View style={styles.cards}>
+          <TodayPaymentsCard
+            totalAmount={totalAmount}
+            count={count}
+            channels={channels}
+            recent={TODAY_PAYMENTS.recent.slice(0, 3)}
+            recentKind={channel === 'online' ? 'online' : 'in-store'}
+            onPressChannel={() => router.navigate('/payments')}
+            onPressPayment={(transactionId) => router.push(`/payments/transactions/${transactionId}`)}
+            onPressHistory={() => router.navigate('/payments')}
+          />
+          <TodaySettlementCard scale={scale} onPressHistory={() => router.navigate('/settlements')} />
+        </View>
 
-      <OnDemandBanner onPress={() => router.navigate('/settlements')} />
+        <OnDemandBanner onPress={() => router.navigate('/settlements')} />
 
-      <QuickActions />
+        <QuickActions />
 
-      <ExploreProducts onPressViewAll={navBar.openModules} onPressBanner={navBar.openModules} />
-    </Animated.ScrollView>
+        <ExploreProducts onPressViewAll={navBar.openModules} onPressBanner={navBar.openModules} />
+      </Animated.ScrollView>
+      {pullIndicator}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 16, gap: 32 },
+  area: { flex: 1 },
   cards: { gap: 16 },
 });

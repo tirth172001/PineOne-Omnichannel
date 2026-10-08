@@ -1,6 +1,7 @@
 import { createContext, type ReactNode, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 import { Menu, useTheme } from 'react-native-paper';
 
+import { LazyMenu } from '@/components/shared/lazy-menu';
 import { HeaderControl } from '@/components/page-header';
 import { Shape } from '@/constants/shape';
 
@@ -86,7 +87,7 @@ export function HeaderActionsSlot({ store, tinted = false }: { store: HeaderActi
   }
   const menuLabel = menu?.label ?? 'Actions';
   return (
-    <Menu
+    <LazyMenu
       visible={open}
       onDismiss={() => setOpen(false)}
       anchorPosition="bottom"
@@ -112,6 +113,6 @@ export function HeaderActionsSlot({ store, tinted = false }: { store: HeaderActi
           }}
         />
       ))}
-    </Menu>
+    </LazyMenu>
   );
 }

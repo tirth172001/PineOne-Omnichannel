@@ -3,6 +3,7 @@ import { Animated, StyleSheet, View } from 'react-native';
 
 import { TabChrome, useTabNavBar, useTabScroll } from '@/components/app-tabs';
 import { type HeaderAction, type HeaderActionsMenu, useHeaderActions } from '@/components/header-actions';
+import { usePullToRefresh } from '@/components/pull-to-refresh';
 import { EndReachedProvider, useEndReached } from '@/components/shared/lazy-list';
 
 type TabScreenProps = {
@@ -41,20 +42,22 @@ function TabScrollContent({ children }: { children: ReactNode }) {
   const endReached = useEndReached();
   const navBar = useTabNavBar();
   const tabScroll = useTabScroll(endReached.scrollProps.onScroll);
+  const { attach: attachPull, refreshControl, indicator: pullIndicator } = usePullToRefresh(tabScroll.contentTop);
   return (
     <View style={styles.area}>
       <Animated.ScrollView
+        ref={attachPull}
+        refreshControl={refreshControl}
         {...endReached.scrollProps}
         {...tabScroll.scrollProps}
         // 24dp clear of the header (or its sub-tabs), as on Overview.
         contentContainerStyle={[styles.content, { paddingTop: tabScroll.contentTop + 24, paddingBottom: 32 + navBar.height }]}
         keyboardShouldPersistTaps="handled">
         <EndReachedProvider value={endReached.value}>
-          <View style={styles.stack}>
-            {children}
-          </View>
+          <View style={styles.stack}>{children}</View>
         </EndReachedProvider>
       </Animated.ScrollView>
+      {pullIndicator}
     </View>
   );
 }

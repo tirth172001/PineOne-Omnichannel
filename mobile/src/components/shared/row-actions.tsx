@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { IconButton, Menu, useTheme } from 'react-native-paper';
 
+import { LazyMenu } from '@/components/shared/lazy-menu';
 import { Shape } from '@/constants/shape';
 
 import { LIST_ROW_INNER_RADIUS } from './listing';
@@ -16,7 +17,7 @@ export function RowActionsMenu({ actions, accessibilityLabel = 'Row actions' }: 
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   return (
-    <Menu
+    <LazyMenu
       visible={open}
       onDismiss={() => setOpen(false)}
       anchorPosition="bottom"
@@ -42,7 +43,7 @@ export function RowActionsMenu({ actions, accessibilityLabel = 'Row actions' }: 
           }}
         />
       ))}
-    </Menu>
+    </LazyMenu>
   );
 }
 

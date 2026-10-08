@@ -128,8 +128,12 @@ export default function Root({ children }: PropsWithChildren) {
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        {/* viewport-fit=cover: the page reaches the screen edges and reads the safe-area insets (iPhone home bar). */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
         <ScrollViewStyleReset />
+        {/* Size the app to the visible screen (dvh), not 100vh, which on phone browsers includes the area under the
+            browser's toolbar — that hid the bottom navigation bar. */}
+        <style dangerouslySetInnerHTML={{ __html: 'html, body { height: 100%; } body, #root { height: 100vh; height: 100dvh; }' }} />
         {process.env.NODE_ENV === 'development' ? (
           <>
             <script dangerouslySetInnerHTML={{ __html: PHONE_VIEWPORT }} />
