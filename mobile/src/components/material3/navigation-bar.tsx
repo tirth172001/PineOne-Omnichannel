@@ -99,9 +99,7 @@ export function NavigationBar({ destinations, activeKey, onChange, overflow, onR
 
   return (
     // box-none: the fade is decoration only, so taps on it reach the page below.
-    <Animated.View
-      pointerEvents="box-none"
-      style={{ paddingTop: progress.interpolate({ inputRange: [0, 1], outputRange: [0, EXPANDED_FADE_HEIGHT] }) }}>
+    <Animated.View pointerEvents="box-none" style={{ paddingTop: progress.interpolate({ inputRange: [0, 1], outputRange: [0, EXPANDED_FADE_HEIGHT] }) }}>
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: progress }]}>
         <Svg style={StyleSheet.absoluteFill} viewBox="0 0 1 1" preserveAspectRatio="none">
           <Defs>
@@ -134,19 +132,21 @@ export function NavigationBar({ destinations, activeKey, onChange, overflow, onR
                 {overflow.title.toUpperCase()}
               </Text>
               <View style={[styles.divider, styles.titleDivider, { backgroundColor: theme.colors.surfaceVariant }]} />
-              {rows.map((row) => (
-                <View key={row[0].key} style={styles.gridRow}>
-                  {row.map((destination) => (
-                    <NavItem
-                      key={destination.key}
-                      destination={destination}
-                      active={destination.key === activeKey}
-                      onPress={() => onChange(destination.key)}
-                      style={styles.gridItem}
-                    />
-                  ))}
-                </View>
-              ))}
+              <View style={styles.gridRows}>
+                {rows.map((row) => (
+                  <View key={row[0].key} style={styles.gridRow}>
+                    {row.map((destination) => (
+                      <NavItem
+                        key={destination.key}
+                        destination={destination}
+                        active={destination.key === activeKey}
+                        onPress={() => onChange(destination.key)}
+                        style={styles.gridItem}
+                      />
+                    ))}
+                  </View>
+                ))}
+              </View>
               <View style={[styles.divider, { backgroundColor: theme.colors.surfaceVariant }]} />
             </Animated.View>
           </Animated.View>
@@ -176,8 +176,7 @@ export function NavigationBar({ destinations, activeKey, onChange, overflow, onR
               style={styles.item}>
               <View style={styles.itemContent}>
                 <View style={styles.indicator}>
-                  <Animated.View
-                    style={{ transform: [{ rotate: progress.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
+                  <Animated.View style={{ transform: [{ rotate: progress.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
                     <Icon source="caret-up" size={24} color={theme.colors.onSurface} />
                   </Animated.View>
                 </View>
@@ -220,18 +219,9 @@ function NavItem({
   }, [entrance]);
 
   return (
-    <TouchableRipple
-      onPress={onPress}
-      accessibilityRole="tab"
-      aria-selected={active}
-      accessibilityLabel={destination.label}
-      borderless
-      style={style}>
+    <TouchableRipple onPress={onPress} accessibilityRole="tab" aria-selected={active} accessibilityLabel={destination.label} borderless style={style}>
       <Animated.View
-        style={[
-          styles.itemContent,
-          { opacity: entrance, transform: [{ scale: entrance.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }] },
-        ]}>
+        style={[styles.itemContent, { opacity: entrance, transform: [{ scale: entrance.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }] }]}>
         <View style={[styles.indicator, active && { width: 56, backgroundColor: indicatorColor }]}>
           <Icon source={active ? destination.focusedIcon : destination.icon} size={24} color={theme.colors.onSurface} />
           {destination.badge ? (
@@ -240,9 +230,7 @@ function NavItem({
             </Badge>
           ) : null}
         </View>
-        <Text
-          numberOfLines={1}
-          style={[styles.label, { color: theme.colors.onSecondaryContainer, fontFamily: active ? Fonts.medium : Fonts.regular }]}>
+        <Text numberOfLines={1} style={[styles.label, { color: theme.colors.onSecondaryContainer, fontFamily: active ? Fonts.medium : Fonts.regular }]}>
           {destination.label}
         </Text>
       </Animated.View>
@@ -269,6 +257,8 @@ const styles = StyleSheet.create({
   panelTitle: { fontFamily: Fonts.semiBold, fontSize: 12, lineHeight: 16, letterSpacing: 1, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 12 },
   // Same side padding as the bar's row, so the grid's columns sit over its items.
   gridRow: { flexDirection: 'row', paddingHorizontal: 8 },
+  // Breathing room between the rows of modules.
+  gridRows: { gap: 12 },
   gridItem: { width: `${100 / OVERFLOW_COLUMNS}%`, borderRadius: ITEM_RADIUS },
   // Separators run edge to edge across the bar.
   // Room above the modules and between them and the bar's own items.
