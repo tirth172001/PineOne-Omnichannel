@@ -9,9 +9,8 @@ import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { formatInr, SETTLEMENT_SOURCES, SETTLEMENT_TODAY, type SettlementSource } from '@/data/overview';
 
-import { OVERVIEW_CARD_PADDING, OverviewCard, OverviewCardDivider, OverviewCardFooter, OverviewCardGlow, OverviewCardHeader } from './overview-card';
+import { OVERVIEW_CARD_PADDING, OverviewCard, OverviewCardDivider, OverviewCardFooter, OverviewCardHeader } from './overview-card';
 
-const GLOW = require('../../../assets/images/overview/glow-settlement.svg');
 const PINE_LABS_MARK = require('../../../assets/images/overview/pine-labs.svg');
 
 type TodaySettlementCardProps = {
@@ -22,8 +21,8 @@ type TodaySettlementCardProps = {
 };
 
 /**
- * "Today's settlement" (Figma 6470:737): a Pine Labs / Partner Bank switch
- * over an indigo glow, the amount settled today from that source and when,
+ * "Today's settlement" (Figma 6470:737): a Pine Labs / Partner Bank switch,
+ * the amount settled today from that source and when,
  * what's still to settle and when the next run is, and a link to the history.
  */
 export function TodaySettlementCard({ scale = 1, onPressHistory, style }: TodaySettlementCardProps) {
@@ -37,7 +36,6 @@ export function TodaySettlementCard({ scale = 1, onPressHistory, style }: TodayS
       <OverviewCardHeader title="Today's settlement" />
 
       <View style={styles.summary}>
-        <OverviewCardGlow source={GLOW} />
         <View accessibilityRole="tablist" style={[styles.tabs, { backgroundColor: theme.colors.surfaceVariant }]}>
           {SETTLEMENT_SOURCES.map((option) => {
             const active = option.value === source;
@@ -84,8 +82,8 @@ const TABS_RADIUS = Shape.small;
 const TAB_RADIUS = concentric(TABS_RADIUS, TABS_PADDING, 24);
 
 const styles = StyleSheet.create({
-  // Grows to fill the card when it's stretched to its neighbour's height; clips the glow.
-  summary: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 32, paddingHorizontal: OVERVIEW_CARD_PADDING, paddingVertical: 24, overflow: 'hidden' },
+  // Grows to fill the card when it's stretched to a taller neighbour.
+  summary: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 32, paddingHorizontal: OVERVIEW_CARD_PADDING, paddingVertical: 24 },
   tabs: { flexDirection: 'row', height: 32, padding: TABS_PADDING, borderRadius: TABS_RADIUS },
   tab: { height: 24, borderRadius: TAB_RADIUS, justifyContent: 'center' },
   tabContent: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12 },

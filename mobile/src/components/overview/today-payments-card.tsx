@@ -8,34 +8,36 @@ import { DotStatusBadge, type DotTone } from '@/components/shared/status';
 import { Fonts } from '@/constants/theme';
 import { formatInr, type RecentPayment, type StatusTone } from '@/data/overview';
 
-import { OVERVIEW_CARD_PADDING, OverviewCard, OverviewCardDivider, OverviewCardFooter, OverviewCardGlow, OverviewCardHeader } from './overview-card';
+import { OVERVIEW_CARD_PADDING, OverviewCard, OverviewCardDivider, OverviewCardFooter, OverviewCardHeader } from './overview-card';
 
 const QR_ICON = require('../../../assets/images/overview/payment-qr.svg');
-const GLOW = require('../../../assets/images/overview/glow-payments.svg');
 
 const STATUS_DOT: Record<StatusTone, DotTone> = { success: 'success', processing: 'warning', initiated: 'info', failed: 'danger' };
 
-type ChannelSummary = { label: string; count: number; amount: number };
+export type ChannelSummary = { label: string; count: number; amount: number; /** In-store shows the QR mark; online a globe. */ kind: 'in-store' | 'online' };
 
 type TodayPaymentsCardProps = {
   totalAmount: number;
   count: number;
-  /** A channel's share of today, as the first row (e.g. in-store, while Overview shows all channels). */
-  channel?: ChannelSummary;
-  recent: RecentPayment[];
-  onPressChannel?: () => void;
+  /** Today split by channel (all channels on show). When given, these rows replace the latest payments. */
+  channels?: ChannelSummary[];
+  /** The latest payments (a single channel on show). */
+  recent?: RecentPayment[];
+  /** Which channel the latest payments are from, for their mark. */
+  recentKind?: ChannelSummary['kind'];
+  onPressChannel?: (kind: ChannelSummary['kind']) => void;
   onPressPayment?: (transactionId: string) => void;
   onPressHistory?: () => void;
   style?: StyleProp<ViewStyle>;
 };
 
 /**
- * "Today's payments" (Figma 6470:685): today's total and payment count over a
- * lime glow, then the latest payments — amount and time, with their status —
- * led by a channel's share when one is given, and a link to the full history.
+ * "Today's payments" (Figma 6470:685): today's total and payment count, then either today's split by channel (In-store and Online, while
+ * all channels are on show) or the latest payments — amount and time, with
+ * their status — for the one channel on show, and a link to the full history.
  * Every row opens what it shows.
  */
-export function TodayPaymentsCard({ totalAmount, count, channel, recent, onPressChannel, onPressPayment, onPressHistory, style }: TodayPaymentsCardProps) {
+export function TodayPaymentsCard({ totalAmount, count, channels, recent = [], recentKind = 'in-store', onPressChannel, onPressPayment, onPressHistory, style }: TodayPaymentsCardProps) {
   const theme = useTheme();
   const muted = { color: theme.colors.onSurfaceVariant };
 
@@ -44,20 +46,23 @@ export function TodayPaymentsCard({ totalAmount, count, channel, recent, onPress
       <OverviewCardHeader title="Today's payments" />
 
       <View style={styles.summary}>
-        <OverviewCardGlow source={GLOW} />
         <DimmedDecimalAmount value={formatInr(totalAmount)} />
         <Text style={[styles.body, muted]}>{count} payments</Text>
       </View>
 
-      {channel ? (
-        <>
+      {channels?.map((channel) => (
+        <Fragment key={channel.kind}>
           <OverviewCardDivider />
-          <Row onPress={onPressChannel} accessibilityLabel={`${channel.label}, ${channel.count} payments, ${formatInr(channel.amount)}`}>
+          <Row
+            onPress={onPressChannel ? () => onPressChannel(channel.kind) : undefined}
+            accessibilityLabel={`${channel.label}, ${channel.count} payments, ${formatInr(channel.amount)}`}>
             <View style={styles.rowMain}>
-              <Image source={QR_ICON} style={styles.icon} />
+              <ChannelMark kind={channel.kind} />
               <View style={styles.rowText}>
                 <Text style={styles.strong}>{channel.label}</Text>
-                <Text style={[styles.body, muted]}>{channel.count} payments</Text>
+                <Text style={[styles.body, muted]}>
+                  {channel.count} {channel.count === 1 ? 'payment' : 'payments'}
+                </Text>
               </View>
             </View>
             <View style={styles.rowEnd}>
@@ -65,17 +70,17 @@ export function TodayPaymentsCard({ totalAmount, count, channel, recent, onPress
               <Icon source="caret-right" size={16} color={theme.colors.onSurface} />
             </View>
           </Row>
-        </>
-      ) : null}
+        </Fragment>
+      ))}
 
-      {recent.map((payment) => (
+      {(channels ? [] : recent).map((payment) => (
         <Fragment key={payment.transactionId}>
           <OverviewCardDivider />
           <Row
             onPress={onPressPayment ? () => onPressPayment(payment.transactionId) : undefined}
             accessibilityLabel={`${formatInr(payment.amount)}, ${payment.time}, ${payment.status.label}`}>
             <View style={styles.rowMain}>
-              <Image source={QR_ICON} style={styles.icon} />
+              <ChannelMark kind={recentKind} />
               <View style={styles.rowText}>
                 <Text style={styles.strong}>{formatInr(payment.amount)}</Text>
                 <Text style={[styles.body, muted]}>{payment.time}</Text>
@@ -94,6 +99,11 @@ export function TodayPaymentsCard({ totalAmount, count, channel, recent, onPress
   );
 }
 
+function ChannelMark({ kind }: { kind: ChannelSummary['kind'] }) {
+  const theme = useTheme();
+  return kind === 'in-store' ? <Image source={QR_ICON} style={styles.icon} /> : <Icon source="globe" size={20} color={theme.colors.onSurface} />;
+}
+
 function Row({ onPress, accessibilityLabel, children }: { onPress?: () => void; accessibilityLabel: string; children: ReactNode }) {
   return (
     <TouchableRipple onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel}>
@@ -103,8 +113,7 @@ function Row({ onPress, accessibilityLabel, children }: { onPress?: () => void; 
 }
 
 const styles = StyleSheet.create({
-  // Clips the glow to the summary section.
-  summary: { alignItems: 'center', gap: 8, paddingHorizontal: OVERVIEW_CARD_PADDING, paddingVertical: 48, overflow: 'hidden' },
+  summary: { alignItems: 'center', gap: 8, paddingHorizontal: OVERVIEW_CARD_PADDING, paddingVertical: 32 },
   body: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20, fontVariant: ['tabular-nums'] },
   strong: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 20, fontVariant: ['tabular-nums'] },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: OVERVIEW_CARD_PADDING },

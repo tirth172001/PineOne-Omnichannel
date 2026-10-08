@@ -1,20 +1,20 @@
 import { router } from 'expo-router';
-import { Animated, StyleSheet } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
 
 import { TabChrome, useTabNavBar, useTabScroll } from '@/components/app-tabs';
 import { ExploreProducts } from '@/components/overview/explore-products';
 import { OnDemandBanner } from '@/components/overview/on-demand-banner';
 import { QuickActions } from '@/components/overview/quick-actions';
-import { TodayPaymentsCard } from '@/components/overview/today-payments-card';
+import { type ChannelSummary, TodayPaymentsCard } from '@/components/overview/today-payments-card';
 import { TodaySettlementCard } from '@/components/overview/today-settlement-card';
-import { CardCarousel } from '@/components/shared/card-carousel';
 import { CHANNEL_MULTIPLIER, TODAY_PAYMENTS } from '@/data/overview';
 import { useBusiness } from '@/hooks/use-business';
 
 /**
  * Overview (Figma 6470:676, "PineOne - Omni-channel"), top to bottom:
- * 1. Today's payments and today's settlement, as two cards side by side that
- *    swipe (the carousel).
+ * 1. Today's payments, then today's settlement, stacked. On all channels the
+ *    payments card splits today into In-store and Online; on one channel it
+ *    lists that channel's latest three payments.
  * 2. A nudge towards On-Demand settlement.
  * 3. Quick actions, then Explore products.
  * Sections are 32dp apart. Every number follows the stores and channel chosen
@@ -35,31 +35,36 @@ function OverviewContent() {
   const navBar = useTabNavBar();
   const tabScroll = useTabScroll();
   const count = Math.max(0, Math.round(TODAY_PAYMENTS.count * scale));
-  // On all channels, the in-store share leads the latest payments (the design's first row).
-  const inStore = channel === 'all' ? CHANNEL_MULTIPLIER['in-store'] : 0;
+  const totalAmount = Math.round(TODAY_PAYMENTS.totalAmount * scale);
+  // All channels: today split by channel. Online takes the remainder, so the two rows add up to the total.
+  const inStoreCount = Math.round(count * CHANNEL_MULTIPLIER['in-store']);
+  const inStoreAmount = Math.round(totalAmount * CHANNEL_MULTIPLIER['in-store']);
+  const channels: ChannelSummary[] | undefined =
+    channel === 'all'
+      ? [
+          { kind: 'in-store', label: 'In-store payments', count: inStoreCount, amount: inStoreAmount },
+          { kind: 'online', label: 'Online payments', count: count - inStoreCount, amount: totalAmount - inStoreAmount },
+        ]
+      : undefined;
 
   return (
     <Animated.ScrollView
       {...tabScroll.scrollProps}
       contentContainerStyle={[styles.content, { paddingTop: tabScroll.contentTop + 24, paddingBottom: 32 + navBar.height }]}>
-      {/* The two cards are the same height, the settlement card's amount section growing to fill it. */}
-      <CardCarousel>
+      {/* Today's two cards, one under the other. */}
+      <View style={styles.cards}>
         <TodayPaymentsCard
-          style={styles.fill}
-          totalAmount={Math.round(TODAY_PAYMENTS.totalAmount * scale)}
+          totalAmount={totalAmount}
           count={count}
-          channel={
-            inStore
-              ? { label: 'In-store payments', count: Math.round(count * inStore), amount: Math.round(TODAY_PAYMENTS.totalAmount * scale * inStore) }
-              : undefined
-          }
-          recent={inStore ? TODAY_PAYMENTS.recent.slice(0, 2) : TODAY_PAYMENTS.recent}
+          channels={channels}
+          recent={TODAY_PAYMENTS.recent.slice(0, 3)}
+          recentKind={channel === 'online' ? 'online' : 'in-store'}
           onPressChannel={() => router.navigate('/payments')}
           onPressPayment={(transactionId) => router.push(`/payments/transactions/${transactionId}`)}
           onPressHistory={() => router.navigate('/payments')}
         />
-        <TodaySettlementCard style={styles.fill} scale={scale} onPressHistory={() => router.navigate('/settlements')} />
-      </CardCarousel>
+        <TodaySettlementCard scale={scale} onPressHistory={() => router.navigate('/settlements')} />
+      </View>
 
       <OnDemandBanner onPress={() => router.navigate('/settlements')} />
 
@@ -72,5 +77,5 @@ function OverviewContent() {
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 16, gap: 32 },
-  fill: { flex: 1 },
+  cards: { gap: 16 },
 });

@@ -189,8 +189,10 @@ type AppHeaderProps = {
   /** Makes the context line the store / channel switcher (with a caret). */
   onPressContext?: () => void;
   contextAccessibilityLabel?: string;
-  /** The avatar opens the profile panel. */
+  /** The avatar (at the end of the bar) opens the profile panel. */
   onPressAvatar?: () => void;
+  /** Unread notifications, counted on the avatar's badge (they're read in the profile panel). */
+  unreadCount?: number;
   /** The scope line, for measuring where it sits (see useScopeLine). */
   contextRef?: RefObject<View | null>;
   onContextLayout?: () => void;
@@ -201,9 +203,9 @@ type AppHeaderProps = {
 };
 
 /**
- * A tab page's top bar (Figma 6470:982). Overview leads with the user — their
- * initials (opening the profile panel), name and role; the other tabs with the
- * page's name. Under it, the store / channel scope, which opens the global
+ * A tab page's top bar (Figma 6470:982). Overview leads with the user's name
+ * and role and ends with their initials, which open the profile panel (and
+ * count unread notifications); the other tabs lead with the page's name. Under it, the store / channel scope, which opens the global
  * switcher; the trailing controls at the end. A solid white bar that stays
  * put while the page scrolls under it.
  */
@@ -214,6 +216,7 @@ export function AppHeader({
   onPressContext,
   contextAccessibilityLabel,
   onPressAvatar,
+  unreadCount = 0,
   contextRef,
   onContextLayout,
   contextHighlight,
@@ -243,25 +246,8 @@ export function AppHeader({
 
   return (
     <View onLayout={onLayout} style={[styles.bar, { paddingTop: insets.top, backgroundColor: theme.colors.surface }]}>
-      <View style={[styles.appHeaderRow, !user && styles.appHeaderRowTitled]}>
+      <View style={[styles.appHeaderRow, styles.appHeaderRowTitled]}>
         <View style={styles.appHeaderLeading}>
-          {user ? (
-            <TouchableRipple
-              onPress={onPressAvatar}
-              borderless
-              accessibilityRole="button"
-              accessibilityLabel={`${user.name}, ${user.roleLabel}. Open profile`}
-              style={styles.avatarTarget}>
-              <View>
-                <View style={[styles.avatar, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceVariant }]}>
-                  <Text style={[styles.avatarInitials, { color: appColors.brand }]}>{initials}</Text>
-                </View>
-                <View style={[styles.avatarBadge, { backgroundColor: theme.colors.surfaceVariant }]}>
-                  <Icon source="list" size={9} color={theme.colors.onSurface} />
-                </View>
-              </View>
-            </TouchableRipple>
-          ) : null}
           <View style={styles.appHeaderText}>
             {user ? (
               <View style={styles.appHeaderNameRow}>
@@ -294,6 +280,27 @@ export function AppHeader({
           </View>
         </View>
         {trailing ? <View style={styles.trailing}>{trailing}</View> : null}
+        {user ? (
+          // The profile sits at the end, where notifications used to be; its badge counts the unread ones inside.
+          <View>
+            <TouchableRipple
+              onPress={onPressAvatar}
+              borderless
+              accessibilityRole="button"
+              accessibilityLabel={`${user.name}, ${user.roleLabel}. Open profile${unreadCount ? `, ${unreadCount} unread notifications` : ''}`}
+              style={styles.avatarTarget}>
+              <View style={[styles.avatar, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceVariant }]}>
+                <Text style={[styles.avatarInitials, { color: appColors.brand }]}>{initials}</Text>
+              </View>
+            </TouchableRipple>
+            {/* Outside the ripple, which clips to its round shape: the badge sits over the avatar's corner whole. */}
+            {unreadCount ? (
+              <View pointerEvents="none" style={[styles.avatarBadge, { backgroundColor: theme.colors.error, borderColor: theme.colors.surface }]}>
+                <Text style={[styles.avatarBadgeLabel, { color: theme.colors.onError }]}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -418,17 +425,19 @@ export function ScopeSwitcherButton({ label, onPress }: { label: string; onPress
 const styles = StyleSheet.create({
   bar: { position: 'absolute', top: 0, left: 0, right: 0 },
   appHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingLeft: 12, paddingRight: 16, paddingVertical: 12 },
-  // Without the avatar, the title lines up with the page's 16dp margin; its controls centre on the two lines.
+  // The title lines up with the page's 16dp margin; the controls centre on the two lines.
   appHeaderRowTitled: { paddingLeft: 16, alignItems: 'center' },
   appHeaderLeading: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 10, minWidth: 0 },
   avatarTarget: { width: CONTROL_HEIGHT, height: CONTROL_HEIGHT, borderRadius: Shape.max, alignItems: 'center', justifyContent: 'center' },
   avatar: { width: 32, height: 32, borderRadius: Shape.small, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   avatarInitials: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 20 },
-  // The account menu's mark, on the avatar's bottom-right corner.
-  avatarBadge: { position: 'absolute', left: 20, top: 20, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  // Unread notifications, on the avatar's top-right corner.
+  avatarBadge: { position: 'absolute', right: 0, top: 0, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  avatarBadgeLabel: { fontFamily: Fonts.semiBold, fontSize: 10, lineHeight: 12 },
   appHeaderText: { flexShrink: 1, minHeight: 48, justifyContent: 'center' },
   appHeaderNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  appHeaderName: { fontFamily: Fonts.medium, fontSize: 16, lineHeight: 24, flexShrink: 1 },
+  // The same size as the other tabs' page titles (appHeaderTitle).
+  appHeaderName: { fontFamily: Fonts.semiBold, fontSize: 20, lineHeight: 24, flexShrink: 1 },
   appHeaderTitle: { fontFamily: Fonts.semiBold, fontSize: 20, lineHeight: 24 },
   appHeaderContextButton: { alignSelf: 'flex-start', maxWidth: '100%', borderRadius: Shape.extraSmall },
   appHeaderContextRow: { flexDirection: 'row', alignItems: 'center', gap: 2, height: 24 },

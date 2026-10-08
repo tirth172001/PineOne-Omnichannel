@@ -13,10 +13,15 @@ import type { Organisation } from '@/data/businesses';
 const LOGO_RADIUS = concentric(PANEL_INNER_RADIUS, 4, 40);
 
 /** An organisation's logo, or its initial when it has none. */
-export function OrganisationLogo({ organisation }: { organisation: Organisation }) {
+export function OrganisationLogo({ organisation, size }: { organisation: Organisation; /** Square side; the default suits a list row. */ size?: number }) {
   const theme = useTheme();
   return (
-    <View style={[styles.logo, { borderColor: theme.colors.surfaceVariant, backgroundColor: theme.colors.surface }]}>
+    <View
+      style={[
+        styles.logo,
+        size ? { width: size, height: size, borderRadius: Math.round(size / 4) } : null,
+        { borderColor: theme.colors.surfaceVariant, backgroundColor: theme.colors.surface },
+      ]}>
       {organisation.logo ? (
         <Image source={organisation.logo} style={styles.logoImage} contentFit="cover" />
       ) : (

@@ -4,14 +4,16 @@ import { Animated, BackHandler, Easing, type NativeScrollEvent, type NativeSynth
 import { useTheme } from 'react-native-paper';
 
 import { HeaderActionsProvider, HeaderActionsSlot, useHeaderActionsStore } from '@/components/header-actions';
-import { AppHeader, HeaderControl, useCollapsingHeader } from '@/components/page-header';
+import { AppHeader, useCollapsingHeader } from '@/components/page-header';
 import { ScopeIntroProvider, useScopeLine } from '@/components/scope-intro';
 import { ScopeSwitcherProvider, useOpenScopeSwitcher } from '@/components/scope-switcher';
 import { ScreenTabs } from '@/components/screen-tabs';
 import { ProfilePanel } from '@/components/profile-panel';
+import { clearReturnToProfile, shouldReturnToProfile } from '@/components/profile-return';
 import { ShellTabsProvider, useShellTabsConfig } from '@/components/shell-tabs';
 import { NavigationBar, type NavigationBarDestination } from '@/components/material3/navigation-bar';
 import { CURRENT_USER } from '@/data/businesses';
+import { useNotifications } from '@/data/notifications';
 import { useBusiness } from '@/hooks/use-business';
 import { ToastProvider } from '@/hooks/use-toast';
 
@@ -184,8 +186,8 @@ export function useTabScroll(listener?: (event: NativeSyntheticEvent<NativeScrol
 
 /**
  * A tab's root screen chrome: the header, the page, and the navigation bar.
- * The header (AppHeader, Figma 6470:982) leads with the user on Overview, with
- * notifications at its end; on the other tabs, with the page's name, and ends
+ * The header (AppHeader, Figma 6470:982) leads with the user on Overview and
+ * ends with their avatar (the profile panel, where notifications are); on the other tabs, with the page's name, and ends
  * with the page's own actions registered via useHeaderActions. Under either,
  * the store / channel scope opens the switcher (the organisation on pages that
  * don't follow the scope). Sub-tabs registered via useShellTabs sit under the
@@ -198,6 +200,7 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
   const theme = useTheme();
   const business = useBusiness();
   const openScopeSwitcher = useOpenScopeSwitcher();
+  const notifications = useNotifications();
   const screenTabs = useShellTabsConfig();
   const reportNavBarHeight = useContext(NavBarHeightContext);
   const { slot, setSlot } = useContext(ModuleSlotContext);
@@ -207,7 +210,12 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
   const [hidden] = useState(() => new Animated.Value(0));
   const [navHidden, setNavHidden] = useState(false);
   const [modulesOpen, setModulesOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  // Back from a page opened in the profile lands here with the profile already open (see profile-return).
+  const [profileReturn] = useState(() => tab === 'index' && shouldReturnToProfile());
+  const [profileOpen, setProfileOpen] = useState(profileReturn);
+  useEffect(() => {
+    if (profileReturn) clearReturnToProfile();
+  }, [profileReturn]);
   const header = useCollapsingHeader();
   const { scrollY } = header;
   const [tabsHeight, setTabsHeight] = useState(0);
@@ -286,11 +294,12 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
         onPressContext={scope ? openScopeSwitcher : undefined}
         contextAccessibilityLabel={scope ? `${scope}. Switch store or channel` : undefined}
         onPressAvatar={() => setProfileOpen(true)}
+        unreadCount={tab === 'index' ? notifications.unread : 0}
         contextRef={scopeLine.ref}
         onContextLayout={scopeLine.onLayout}
         contextHighlight={scopeLine.highlight}
-        // Notifications on Overview (user decision); the other tabs show their page's own actions.
-        trailing={tab === 'index' ? <HeaderControl icon="bell" quiet accessibilityLabel="Notifications" /> : <HeaderActionsSlot store={headerActions} tinted />}
+        // Overview ends with the profile (notifications are inside it); the other tabs show their page's own actions.
+        trailing={tab === 'index' ? undefined : <HeaderActionsSlot store={headerActions} tinted />}
       />
       {screenTabs ? (
         // Docked under the header, on the same white.
@@ -300,7 +309,7 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
           <ScreenTabs {...screenTabs} />
         </View>
       ) : null}
-      <ProfilePanel visible={profileOpen} onDismiss={() => setProfileOpen(false)} />
+      <ProfilePanel visible={profileOpen} instant={profileReturn} onDismiss={() => setProfileOpen(false)} />
       {/* While expanded, a tap anywhere else closes the bar. */}
       {modulesOpen ? (
         <Pressable style={StyleSheet.absoluteFill} onPress={() => setModulesOpen(false)} accessibilityLabel={`Close ${OVERFLOW_TITLE}`} />

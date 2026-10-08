@@ -6,15 +6,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SETTINGS_GROUPS } from '@/components/account/account-settings';
 import { OrganisationLogo, OrganisationSwitcher } from '@/components/account/organisation-switcher';
+import { PANEL_INNER_RADIUS, PANEL_PADDING, PanelSheet } from '@/components/shared/panel-sheet';
 import { OutlineTag } from '@/components/shared/status';
 import { useAppColors } from '@/constants/app-colors';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { CURRENT_USER, ORGANISATIONS } from '@/data/businesses';
+import { markAllNotificationsRead, markNotificationRead, useNotifications } from '@/data/notifications';
 import { INITIAL_ROSTER } from '@/data/user-roster';
 import { useBusiness } from '@/hooks/use-business';
 import { type ThemeMode, useThemeMode } from '@/hooks/use-theme-mode';
 import { useToast } from '@/hooks/use-toast';
+
+import { markReturnToProfile } from './profile-return';
 
 const THEME_OPTIONS: { value: ThemeMode; label: string; icon: string }[] = [
   { value: 'light', label: 'Light', icon: 'sun' },
@@ -25,7 +29,6 @@ const SWITCHER_PADDING = 4;
 /** Long enough to see the pick land before the app fades to the new look. */
 const APPLY_DELAY_MS = 160;
 
-const MAX_WIDTH = 320;
 const PADDING = 16;
 // M3 emphasized easings, as the app's sheets.
 const EMPHASIZED_DECELERATE = Easing.bezier(0.05, 0.7, 0.1, 1);
@@ -34,14 +37,27 @@ const EMPHASIZED_ACCELERATE = Easing.bezier(0.3, 0, 0.8, 0.15);
 const USER_EMAIL = INITIAL_ROSTER.find((entry) => entry.name === CURRENT_USER.name)?.email ?? '';
 
 /**
- * The profile panel, opened from the initials avatar in Overview's header: a
- * drawer from the leading edge, where the avatar is. Only what's about the
- * person, not the app's modules (those are in the navigation bar and More): who's
- * signed in; the organisation, with Switch opening the organisation sheet to
+ * The profile page (Figma 6622:916), opened from the initials avatar at the
+ * end of Overview's header: a full page that comes in from the right, where
+ * the avatar is, with Back to close. Centred at the top, who's signed in and
+ * then the organisation as a card whose Switch opens the organisation
+ * sheet; then one list
+ * — Notifications (unread counted; a sheet whose items open their pages) and
+ * the settings pages — then appearance and Log out. Not the app's modules
+ * (those are in the navigation bar and More). Previously: the organisation, with Switch opening the organisation sheet to
  * pick and confirm another (it starts on all its stores); the settings
  * sections in their groups, each opening its page; Light, Dark or System appearance; and Log out. Tap outside or Android Back closes it.
  */
-export function ProfilePanel({ visible, onDismiss }: { visible: boolean; onDismiss: () => void }) {
+export function ProfilePanel({
+  visible,
+  onDismiss,
+  instant = false,
+}: {
+  visible: boolean;
+  onDismiss: () => void;
+  /** Already open on first show, without sliding in (returning from a page opened here). */
+  instant?: boolean;
+}) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
@@ -49,9 +65,10 @@ export function ProfilePanel({ visible, onDismiss }: { visible: boolean; onDismi
   const toast = useToast();
   const appColors = useAppColors();
   const [switching, setSwitching] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notifications = useNotifications();
   const organisation = business.organisation;
-  const width = Math.min(MAX_WIDTH, Math.round(windowWidth * 0.86));
-  const [progress] = useState(() => new Animated.Value(0));
+  const [progress] = useState(() => new Animated.Value(instant && visible ? 1 : 0));
   const [mounted, setMounted] = useState(visible);
   // Mount immediately on open; unmount only once the exit animation finishes.
   if (visible && !mounted) setMounted(true);
@@ -83,171 +100,210 @@ export function ProfilePanel({ visible, onDismiss }: { visible: boolean; onDismi
     return () => subscription.remove();
   }, [visible, onDismiss]);
 
+  // One list, as the reference: what needs a look first, then the settings pages.
+  const rows: { key: string; icon: string; title: string; badge?: number; onPress: () => void }[] = [
+    { key: 'notifications', icon: 'bell', title: 'Notifications', badge: notifications.unread, onPress: () => setNotificationsOpen(true) },
+    ...SETTINGS_GROUPS.flatMap((group) =>
+      group.sections.map((section) => ({
+        key: section.key,
+        icon: section.icon,
+        title: section.title,
+        onPress: () => {
+          // Back from the page returns here (see profile-return).
+          markReturnToProfile();
+          onDismiss();
+          router.push({ pathname: '/account-settings/[section]', params: { section: section.key } });
+        },
+      }))
+    ),
+  ];
+
   return (
     <>
       {mounted ? (
         <Portal>
-          <View style={StyleSheet.absoluteFill}>
-            <Animated.View
-              style={[
-                StyleSheet.absoluteFill,
-                {
-                  backgroundColor: theme.colors.scrim,
-                  opacity: progress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 0.32],
-                  }),
-                },
-              ]}>
-              <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} accessibilityLabel="Close profile" />
-            </Animated.View>
-            <Animated.View
-              accessibilityViewIsModal
-              style={[
-                styles.panel,
-                {
-                  width,
-                  paddingTop: insets.top,
-                  backgroundColor: theme.colors.background,
-                  transform: [
-                    {
-                      translateX: progress.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-width, 0],
-                      }),
-                    },
-                  ],
-                },
-              ]}>
-              <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                {/* Who's signed in. */}
-                <View style={styles.profile}>
-                  <View
-                    style={[
-                      styles.avatar,
-                      {
-                        borderColor: theme.colors.outlineVariant,
-                        backgroundColor: theme.colors.surface,
-                      },
-                    ]}>
-                    <Text style={[styles.initials, { color: appColors.brand }]}>{initials}</Text>
-                  </View>
-                  <View style={styles.flex}>
-                    <View style={styles.nameRow}>
-                      <Text numberOfLines={1} style={[styles.name, { color: theme.colors.onSurface }]}>
-                        {CURRENT_USER.name}
-                      </Text>
-                      <OutlineTag label={CURRENT_USER.roleLabel} radius={Shape.max} />
-                    </View>
-                    <Text numberOfLines={1} style={[styles.small, { color: theme.colors.onSurfaceVariant }]}>
-                      {USER_EMAIL}
-                    </Text>
-                  </View>
-                </View>
+          <Animated.View
+            accessibilityViewIsModal
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: theme.colors.background,
+                transform: [{ translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [windowWidth, 0] }) }],
+              },
+            ]}>
+            {/* Back, as on every inner page; the page came in from the right, where the avatar is. */}
+            <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
+              <TouchableRipple
+                onPress={onDismiss}
+                borderless
+                accessibilityRole="button"
+                accessibilityLabel="Close profile"
+                style={[styles.back, { backgroundColor: theme.colors.surface }]}>
+                <Icon source="arrow-left" size={20} color={theme.colors.onSurface} />
+              </TouchableRipple>
+            </View>
 
-                {/* The organisation everything shows; Switch opens the sheet to pick and confirm another. */}
-                <View style={styles.section}>
-                  <Text accessibilityRole="header" style={[styles.sectionLabel, { color: theme.colors.onSurfaceVariant }]}>
-                    ORGANISATION
+            <ScrollView contentContainerStyle={[styles.content, { paddingBottom: Math.max(PADDING, insets.bottom) + 16 }]} showsVerticalScrollIndicator={false}>
+              {/* Who's signed in and for which organisation, centred (Figma 6622:916). */}
+              <View style={styles.identity}>
+                <View style={[styles.avatar, { backgroundColor: appColors.highlight }]}>
+                  <Text style={[styles.initials, { color: appColors.brand }]}>{initials}</Text>
+                </View>
+                <View style={styles.nameRow}>
+                  <Text numberOfLines={1} style={[styles.name, { color: theme.colors.onSurface }]}>
+                    {CURRENT_USER.name}
                   </Text>
-                  <View style={[styles.card, styles.row, { backgroundColor: theme.colors.surface }]}>
-                    <OrganisationLogo organisation={organisation} />
-                    <View style={styles.flex}>
-                      <Text numberOfLines={1} style={[styles.rowTitle, { color: theme.colors.onSurface }]}>
-                        {organisation.name}
-                      </Text>
-                      <Text style={[styles.small, { color: theme.colors.onSurfaceVariant }]}>{organisation.shops.length} stores</Text>
-                    </View>
-                    {ORGANISATIONS.length > 1 ? (
-                      <Button
-                        mode="outlined"
-                        compact
-                        icon="arrows-left-right"
-                        onPress={() => {
-                          // The panel steps aside so the organisation sheet is in front.
-                          onDismiss();
-                          setSwitching(true);
-                        }}
-                        textColor={theme.colors.onSurface}
-                        accessibilityLabel={`Switch organisation from ${organisation.name}`}
-                        labelStyle={styles.switchLabel}
-                        style={[styles.switchButton, { borderColor: theme.colors.outlineVariant }]}>
-                        Switch
-                      </Button>
-                    ) : null}
-                  </View>
+                  <OutlineTag label={CURRENT_USER.roleLabel} radius={Shape.max} />
                 </View>
+                <Text numberOfLines={1} style={[styles.small, { color: theme.colors.onSurfaceVariant }]}>
+                  {USER_EMAIL}
+                </Text>
+              </View>
 
-                {/* The settings, each opening its own page — reached from here rather than the navigation bar. */}
-                {SETTINGS_GROUPS.map((group) => (
-                  <View key={group.label} style={styles.section}>
-                    <Text accessibilityRole="header" style={[styles.sectionLabel, { color: theme.colors.onSurfaceVariant }]}>
-                      {group.label.toUpperCase()}
-                    </Text>
-                    <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-                      {group.sections.map((section, index) => (
-                        <View key={section.key}>
-                          {index > 0 ? <View style={[styles.rowDivider, { backgroundColor: theme.colors.surfaceVariant }]} /> : null}
-                          <TouchableRipple
-                            onPress={() => {
-                              onDismiss();
-                              router.push({ pathname: '/account-settings/[section]', params: { section: section.key } });
-                            }}
-                            accessibilityRole="button">
-                            <View style={[styles.row, styles.linkRow]}>
-                              <View style={[styles.rowTile, { backgroundColor: theme.colors.surfaceVariant }]}>
-                                <Icon source={section.icon} size={16} color={theme.colors.onSurface} />
-                              </View>
-                              <Text numberOfLines={1} style={[styles.flex, styles.rowTitle, { color: theme.colors.onSurface }]}>
-                                {section.title}
-                              </Text>
-                              <Icon source="caret-right" size={16} color={theme.colors.onSurfaceVariant} />
+              {/* The organisation everything shows, as a card; Switch opens the sheet to pick and confirm another. */}
+              <View style={[styles.card, styles.orgCard, { backgroundColor: theme.colors.surface }]}>
+                <OrganisationLogo organisation={organisation} />
+                <View style={styles.flex}>
+                  <Text numberOfLines={1} style={[styles.rowTitle, { color: theme.colors.onSurface }]}>
+                    {organisation.name}
+                  </Text>
+                  <Text style={[styles.small, { color: theme.colors.onSurfaceVariant }]}>{organisation.shops.length} stores</Text>
+                </View>
+                {ORGANISATIONS.length > 1 ? (
+                  <Button
+                    mode="outlined"
+                    compact
+                    icon="arrows-left-right"
+                    onPress={() => setSwitching(true)}
+                    textColor={theme.colors.onSurface}
+                    accessibilityLabel={`Switch organisation from ${organisation.name}`}
+                    labelStyle={styles.switchLabel}
+                    style={[styles.switchButton, { borderColor: theme.colors.outlineVariant }]}>
+                    Switch
+                  </Button>
+                ) : null}
+              </View>
+
+              <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+                {rows.map((row, index) => (
+                  <View key={row.key}>
+                    {index > 0 ? <View style={[styles.rowDivider, { backgroundColor: theme.colors.surfaceVariant }]} /> : null}
+                    <TouchableRipple
+                      onPress={row.onPress}
+                      accessibilityRole="button"
+                      accessibilityLabel={row.badge ? `${row.title}, ${row.badge} unread` : row.title}>
+                      <View style={styles.row}>
+                        <View>
+                          <Icon source={row.icon} size={22} color={theme.colors.onSurface} />
+                          {row.badge ? (
+                            <View style={[styles.badge, { backgroundColor: theme.colors.error, borderColor: theme.colors.surface }]}>
+                              <Text style={[styles.badgeLabel, { color: theme.colors.onError }]}>{row.badge}</Text>
                             </View>
-                          </TouchableRipple>
+                          ) : null}
                         </View>
-                      ))}
-                    </View>
+                        <Text numberOfLines={1} style={[styles.flex, styles.rowTitle, { color: theme.colors.onSurface }]}>
+                          {row.title}
+                        </Text>
+                        <Icon source="caret-right" size={16} color={theme.colors.onSurfaceVariant} />
+                      </View>
+                    </TouchableRipple>
                   </View>
                 ))}
-
-                <View style={styles.section}>
-                  <Text accessibilityRole="header" style={[styles.sectionLabel, { color: theme.colors.onSurfaceVariant }]}>
-                    APPEARANCE
-                  </Text>
-                  <AppearanceSwitcher />
-                </View>
-              </ScrollView>
-
-              <View style={[styles.footer, { paddingBottom: Math.max(PADDING, insets.bottom) }]}>
-                <TouchableRipple
-                  onPress={() => toast("Sign-in isn't part of the mobile app yet")}
-                  borderless
-                  accessibilityRole="button"
-                  style={[styles.logout, { backgroundColor: theme.colors.surface }]}>
-                  <View style={styles.logoutContent}>
-                    <Icon source="sign-out" size={20} color={theme.colors.error} />
-                    <Text style={[styles.rowTitle, { color: theme.colors.error }]}>Log out</Text>
-                  </View>
-                </TouchableRipple>
               </View>
-            </Animated.View>
-          </View>
+
+              <View style={styles.section}>
+                <Text accessibilityRole="header" style={[styles.sectionLabel, { color: theme.colors.onSurfaceVariant }]}>
+                  APPEARANCE
+                </Text>
+                <AppearanceSwitcher />
+              </View>
+
+              <TouchableRipple
+                onPress={() => toast("Sign-in isn't part of the mobile app yet")}
+                borderless
+                accessibilityRole="button"
+                style={[styles.logout, { backgroundColor: theme.colors.surface }]}>
+                <View style={styles.logoutContent}>
+                  <Icon source="sign-out" size={20} color={theme.colors.error} />
+                  <Text style={[styles.rowTitle, { color: theme.colors.error }]}>Log out</Text>
+                </View>
+              </TouchableRipple>
+            </ScrollView>
+          </Animated.View>
         </Portal>
       ) : null}
-      <OrganisationSwitcher
-        visible={switching}
-        onDismiss={() => setSwitching(false)}
-        organisations={ORGANISATIONS}
-        currentId={organisation.id}
-        onApply={(organisationId) => {
-          business.applyScope({
-            organisationId,
-            shopIds: [],
-            channel: business.channel,
-          });
-          toast(`Switched to ${ORGANISATIONS.find((org) => org.id === organisationId)?.name ?? 'organisation'}`);
-        }}
-      />
+      {/* Mounted after the page, so these sheets stack above it (Paper portals layer in mount order). */}
+      {mounted ? (
+        <>
+          <PanelSheet
+            visible={notificationsOpen}
+            onDismiss={() => setNotificationsOpen(false)}
+            title="Notifications"
+            grouped
+            height={520}
+            footer={
+              notifications.unread ? (
+                <Button
+                  mode="outlined"
+                  onPress={markAllNotificationsRead}
+                  textColor={theme.colors.onSurface}
+                  style={[styles.markAll, { borderColor: theme.colors.outlineVariant }]}>
+                  Mark all as read
+                </Button>
+              ) : undefined
+            }>
+            <View style={styles.sheetBody}>
+              <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+                {notifications.items.map((item, index) => {
+                  const unread = !notifications.isRead(item.id);
+                  return (
+                    <View key={item.id}>
+                      {index > 0 ? <View style={[styles.rowDivider, { backgroundColor: theme.colors.surfaceVariant }]} /> : null}
+                      <TouchableRipple
+                        onPress={() => {
+                          markNotificationRead(item.id);
+                          setNotificationsOpen(false);
+                          onDismiss();
+                          router.navigate(item.href);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${unread ? 'Unread. ' : ''}${item.title}. ${item.detail}. ${item.time}`}>
+                        <View style={[styles.notification, unread && { backgroundColor: appColors.highlight }]}>
+                          <Icon source={item.icon} size={20} color={theme.colors.onSurface} />
+                          <View style={styles.flex}>
+                            <Text numberOfLines={1} style={[styles.rowTitle, { color: theme.colors.onSurface }]}>
+                              {item.title}
+                            </Text>
+                            <Text numberOfLines={2} style={[styles.small, { color: theme.colors.onSurfaceVariant }]}>
+                              {item.detail}
+                            </Text>
+                            <Text style={[styles.small, styles.time, { color: theme.colors.onSurfaceVariant }]}>{item.time}</Text>
+                          </View>
+                          {unread ? <View style={[styles.unreadDot, { backgroundColor: theme.colors.error }]} /> : null}
+                        </View>
+                      </TouchableRipple>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          </PanelSheet>
+          <OrganisationSwitcher
+            visible={switching}
+            onDismiss={() => setSwitching(false)}
+            organisations={ORGANISATIONS}
+            currentId={organisation.id}
+            onApply={(organisationId) => {
+              business.applyScope({
+                organisationId,
+                shopIds: [],
+                channel: business.channel,
+              });
+              toast(`Switched to ${ORGANISATIONS.find((org) => org.id === organisationId)?.name ?? 'organisation'}`);
+            }}
+          />
+        </>
+      ) : null}
     </>
   );
 }
@@ -255,73 +311,57 @@ export function ProfilePanel({ visible, onDismiss }: { visible: boolean; onDismi
 const CARD_RADIUS = Shape.max;
 
 const styles = StyleSheet.create({
-  // Attached to the leading edge: only the content-facing (trailing) corners are rounded.
-  panel: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    borderTopRightRadius: Shape.max,
-    borderBottomRightRadius: Shape.max,
-    overflow: 'hidden',
-  },
-  content: { padding: PADDING, gap: 24 },
+  topBar: { paddingHorizontal: PADDING, paddingBottom: 8 },
+  back: { width: 40, height: 40, borderRadius: Shape.max, alignItems: 'center', justifyContent: 'center' },
+  content: { paddingHorizontal: PADDING, gap: 24 },
   flex: { flex: 1, minWidth: 0 },
-  profile: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: Shape.small,
-    borderWidth: 1,
+  identity: { alignItems: 'center', gap: 10, paddingTop: 4 },
+  avatar: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
+  initials: { fontFamily: Fonts.semiBold, fontSize: 24, lineHeight: 30 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, maxWidth: '100%' },
+  name: { fontFamily: Fonts.semiBold, fontSize: 20, lineHeight: 26, flexShrink: 1 },
+  orgCard: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 12, paddingRight: 8, paddingVertical: 12 },
+  switchButton: { borderRadius: Shape.small, margin: 0 },
+  switchLabel: { fontSize: 12, marginVertical: 6 },
+  small: { fontFamily: Fonts.regular, fontSize: 12, lineHeight: 16 },
+  section: { gap: 8 },
+  sectionLabel: { fontFamily: Fonts.medium, fontSize: 12, lineHeight: 16, letterSpacing: 0.6, paddingHorizontal: 4 },
+  card: { borderRadius: CARD_RADIUS, overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 60, paddingHorizontal: 16 },
+  rowDivider: { height: 1, marginLeft: 16 },
+  rowTitle: { fontFamily: Fonts.medium, fontSize: 15, lineHeight: 20 },
+  // The unread count, on the bell's top-left as in the reference.
+  badge: {
+    position: 'absolute',
+    left: -8,
+    top: -8,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  initials: { fontFamily: Fonts.medium, fontSize: 16, lineHeight: 20 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  name: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 16,
-    lineHeight: 24,
-    flexShrink: 1,
-  },
-  small: { fontFamily: Fonts.regular, fontSize: 12, lineHeight: 16 },
-  section: { gap: 8 },
-  sectionLabel: {
-    fontFamily: Fonts.medium,
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.6,
-    paddingHorizontal: 4,
-  },
-  card: { borderRadius: CARD_RADIUS, overflow: 'hidden' },
-  switchButton: { borderRadius: Shape.small, margin: 0 },
-  switchLabel: { fontSize: 12, marginVertical: 6 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingLeft: 12,
-    paddingRight: 4,
-    paddingVertical: 10,
-  },
-  linkRow: { paddingRight: 12 },
-  rowDivider: { height: 1, marginLeft: 12 + 32 + 12 },
-  rowTile: { width: 32, height: 32, borderRadius: Shape.small, alignItems: 'center', justifyContent: 'center' },
+  badgeLabel: { fontFamily: Fonts.semiBold, fontSize: 10, lineHeight: 12 },
   switcher: { flexDirection: 'row', padding: SWITCHER_PADDING },
-  switcherThumb: { position: 'absolute', top: SWITCHER_PADDING, bottom: SWITCHER_PADDING, left: SWITCHER_PADDING, borderRadius: concentric(Shape.max, SWITCHER_PADDING) },
+  switcherThumb: {
+    position: 'absolute',
+    top: SWITCHER_PADDING,
+    bottom: SWITCHER_PADDING,
+    left: SWITCHER_PADDING,
+    borderRadius: concentric(Shape.max, SWITCHER_PADDING),
+  },
   switcherOption: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, height: 64 },
   switcherLabel: { fontSize: 12, lineHeight: 16 },
   switcherHint: { paddingHorizontal: 4 },
-  rowTitle: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 20 },
-  footer: { paddingHorizontal: PADDING, paddingTop: 8 },
-  logout: { borderRadius: concentric(Shape.max, 0) },
-  logoutContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    height: 48,
-  },
+  sheetBody: { padding: PANEL_PADDING },
+  notification: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, paddingHorizontal: 16, paddingVertical: 14 },
+  time: { marginTop: 2 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, marginTop: 6 },
+  markAll: { borderRadius: PANEL_INNER_RADIUS },
+  logout: { borderRadius: CARD_RADIUS },
+  logoutContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52 },
 });
 
 /**
@@ -348,9 +388,12 @@ function AppearanceSwitcher() {
   useEffect(() => {
     Animated.timing(thumb, { toValue: pickedIndex, duration: 220, easing: EMPHASIZED_DECELERATE, useNativeDriver: true }).start();
   }, [pickedIndex, thumb]);
-  useEffect(() => () => {
-    if (pending.current) clearTimeout(pending.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (pending.current) clearTimeout(pending.current);
+    },
+    []
+  );
 
   const segment = trackWidth ? (trackWidth - SWITCHER_PADDING * 2) / THEME_OPTIONS.length : 0;
   const choose = (next: ThemeMode) => {
@@ -373,7 +416,9 @@ function AppearanceSwitcher() {
               {
                 width: segment,
                 backgroundColor: appColors.highlight,
-                transform: [{ translateX: thumb.interpolate({ inputRange: [0, THEME_OPTIONS.length - 1], outputRange: [0, segment * (THEME_OPTIONS.length - 1)] }) }],
+                transform: [
+                  { translateX: thumb.interpolate({ inputRange: [0, THEME_OPTIONS.length - 1], outputRange: [0, segment * (THEME_OPTIONS.length - 1)] }) },
+                ],
               },
             ]}
           />

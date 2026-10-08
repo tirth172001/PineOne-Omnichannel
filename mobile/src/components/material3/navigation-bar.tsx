@@ -39,8 +39,8 @@ type NavigationBarProps = {
   respectSafeArea?: boolean;
 };
 
-// While expanded a fade reaches up from the bar, washing the page out behind it.
-const EXPANDED_FADE_HEIGHT = 240;
+// While expanded a light dark tint reaches up from the bar, dimming the page just enough that the white panel stands apart.
+const EXPANDED_FADE_HEIGHT = 320;
 const OVERFLOW_COLUMNS = 4;
 // M3 emphasized easing: quick to start, long gentle settle.
 const EXPAND_EASING = Easing.bezier(0.2, 0, 0, 1);
@@ -104,9 +104,9 @@ export function NavigationBar({ destinations, activeKey, onChange, overflow, onR
         <Svg style={StyleSheet.absoluteFill} viewBox="0 0 1 1" preserveAspectRatio="none">
           <Defs>
             <LinearGradient id={fadeId} x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor={theme.colors.surface} stopOpacity={0} />
-              <Stop offset="0.45" stopColor={theme.colors.surface} stopOpacity={0.85} />
-              <Stop offset="1" stopColor={theme.colors.surface} stopOpacity={1} />
+              <Stop offset="0" stopColor={theme.colors.scrim} stopOpacity={0} />
+              <Stop offset="0.5" stopColor={theme.colors.scrim} stopOpacity={0.08} />
+              <Stop offset="1" stopColor={theme.colors.scrim} stopOpacity={0.18} />
             </LinearGradient>
           </Defs>
           <Rect width={1} height={1} fill={`url(#${fadeId})`} />
