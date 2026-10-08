@@ -16,8 +16,8 @@ import { Fonts } from '@/constants/theme';
  * - `range`: a total over dates the user picks (Collected, Settled, a list of
  *   records). Shown as a date button; it opens a sheet with the ranges this
  *   one supports, its limits said in words, and a custom range when allowed.
- * - `live`: a balance right now (To settle, At risk). Shown as a Live tag —
- *   a status, not a control — so it never looks like it has dates to change.
+ * - `live`: a balance right now (To settle, At risk). Shows no control at all
+ *   (no "Live" tag — user decision), so it never looks like it has dates to change.
  *
  * The control always sits in the same place: the top-right of the answer, or
  * first in the records card's control row when a list keeps its own dates.
@@ -90,20 +90,10 @@ export function rangePhrase(value: RangeValue) {
   return `in the ${PRESET_LABELS[value.preset].toLowerCase()}`;
 }
 
-/** The time control for a scope: a date button that opens its sheet, or the Live tag. */
+/** The time control for a scope: a date button that opens its sheet (nothing for a live balance). */
 export function TimeControl({ scope }: { scope: TimeScope }) {
-  return scope.kind === 'live' ? <LiveTag updatedAt={scope.updatedAt} /> : <DateButton scope={scope} />;
-}
-
-/** A balance right now: a status, not a control. */
-export function LiveTag({ updatedAt }: { updatedAt?: string }) {
-  const theme = useTheme();
-  return (
-    <View accessible accessibilityLabel={updatedAt ? `Live, updated ${updatedAt}` : 'Live, right now'} style={styles.live}>
-      <View style={styles.liveDot} />
-      <Text style={[styles.liveLabel, { color: theme.colors.onSurfaceVariant }]}>{updatedAt ? `Live · ${updatedAt}` : 'Live'}</Text>
-    </View>
-  );
+  // A live balance shows nothing here (user decision): only totals over dates get a control.
+  return scope.kind === 'live' ? null : <DateButton scope={scope} />;
 }
 
 /** The dates a total covers: always a visible button, opening the range sheet. */
@@ -221,9 +211,6 @@ export const TIME_CONTROL_HEIGHT = 36;
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  live: { flexDirection: 'row', alignItems: 'center', gap: 6, height: TIME_CONTROL_HEIGHT, paddingHorizontal: 4 },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e' },
-  liveLabel: { fontFamily: Fonts.medium, fontSize: 13, lineHeight: 16 },
   dateButton: { borderRadius: Shape.small, borderWidth: 1, height: TIME_CONTROL_HEIGHT, justifyContent: 'center' },
   compact: { height: 32 },
   dateButtonContent: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10 },

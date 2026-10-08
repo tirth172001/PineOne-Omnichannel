@@ -266,13 +266,14 @@ const styles = StyleSheet.create({
   },
   panel: { overflow: 'hidden' },
   panelContent: { position: 'absolute', left: 0, right: 0, bottom: 0 },
-  panelTitle: { fontFamily: Fonts.semiBold, fontSize: 12, lineHeight: 16, letterSpacing: 1, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
+  panelTitle: { fontFamily: Fonts.semiBold, fontSize: 12, lineHeight: 16, letterSpacing: 1, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 12 },
   // Same side padding as the bar's row, so the grid's columns sit over its items.
   gridRow: { flexDirection: 'row', paddingHorizontal: 8 },
   gridItem: { width: `${100 / OVERFLOW_COLUMNS}%`, borderRadius: ITEM_RADIUS },
   // Separators run edge to edge across the bar.
-  divider: { height: 1, marginTop: 4 },
-  titleDivider: { marginTop: 0, marginBottom: 4 },
+  // Room above the modules and between them and the bar's own items.
+  divider: { height: 1, marginTop: 16 },
+  titleDivider: { marginTop: 0, marginBottom: 12 },
   row: { flexDirection: 'row', justifyContent: 'center', paddingHorizontal: 8 },
   item: { flex: 1, borderRadius: ITEM_RADIUS },
   itemContent: { alignItems: 'center', gap: 4, paddingTop: 6, paddingBottom: 10 },
