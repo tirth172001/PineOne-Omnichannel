@@ -15,6 +15,9 @@ import { ThumbsDownIcon } from 'phosphor-react-native/src/icons/ThumbsDown';
 import { UploadSimpleIcon } from 'phosphor-react-native/src/icons/UploadSimple';
 import { LinkBreakIcon } from 'phosphor-react-native/src/icons/LinkBreak';
 import { MoonIcon } from 'phosphor-react-native/src/icons/Moon';
+import { FilesIcon } from 'phosphor-react-native/src/icons/Files';
+import { TextAlignLeftIcon } from 'phosphor-react-native/src/icons/TextAlignLeft';
+import { PowerIcon } from 'phosphor-react-native/src/icons/Power';
 import { CaretUpDownIcon } from 'phosphor-react-native/src/icons/CaretUpDown';
 import { SunIcon } from 'phosphor-react-native/src/icons/Sun';
 import { PaletteIcon } from 'phosphor-react-native/src/icons/Palette';
@@ -158,6 +161,9 @@ const ICONS = {
   'path': PathIcon,
   'handshake': HandshakeIcon,
   'moon': MoonIcon,
+  'files': FilesIcon,
+  'text-align-left': TextAlignLeftIcon,
+  'power': PowerIcon,
   'caret-up-down': CaretUpDownIcon,
   'sun': SunIcon,
   'palette': PaletteIcon,

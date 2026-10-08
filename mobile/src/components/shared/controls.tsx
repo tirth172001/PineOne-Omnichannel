@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { Button, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { Button, Text, useTheme } from 'react-native-paper';
 
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 
-import { PANEL_INNER_RADIUS, PanelSheet } from './panel-sheet';
-import { SelectionMark } from './selection-mark';
+import { PanelSheet, SheetRow, SheetSection } from './panel-sheet';
 
 /** Sheet handle, title row and padding around the option list. */
 const SHEET_CHROME = 120;
-const OPTION_HEIGHT = 52;
+const OPTION_HEIGHT = 53;
 
 // The thumb sits 2dp inside the track.
 const TRACK_PADDING = 2;
@@ -127,7 +126,6 @@ export function FilterMenuButton<T extends string>({
   title?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const theme = useTheme();
   const { height: windowHeight } = useWindowDimensions();
   const selected = options.find((option) => option.value === value);
   // Fit the options, up to the panel's usual 86% of the screen (then the list scrolls).
@@ -144,30 +142,21 @@ export function FilterMenuButton<T extends string>({
       />
       <PanelSheet visible={open} onDismiss={() => setOpen(false)} title={title ?? accessibilityLabel} height={sheetHeight}>
         <View style={styles.options}>
-          {options.map((option) => {
-            const checked = option.value === value;
-            return (
-              <TouchableRipple
+          <SheetSection>
+            {options.map((option, index) => (
+              <SheetRow
                 key={option.value}
+                first={index === 0}
+                title={option.label}
+                role="radio"
+                selected={option.value === value}
                 onPress={() => {
                   setOpen(false);
                   onValueChange(option.value);
                 }}
-                borderless
-                accessibilityRole="radio"
-                aria-checked={checked}
-                accessibilityState={{ checked }}
-                accessibilityLabel={option.label}
-                style={[styles.option, checked && { backgroundColor: theme.colors.secondaryContainer }]}>
-                <View style={styles.optionContent}>
-                  <Text variant="bodyLarge" style={styles.optionLabel}>
-                    {option.label}
-                  </Text>
-                  <SelectionMark type="radio" checked={checked} />
-                </View>
-              </TouchableRipple>
-            );
-          })}
+              />
+            ))}
+          </SheetSection>
         </View>
       </PanelSheet>
     </>
@@ -228,10 +217,7 @@ export function OutlinedActionButton({
 }
 
 const styles = StyleSheet.create({
-  options: { padding: 16, paddingTop: 8, gap: 4 },
-  option: { borderRadius: PANEL_INNER_RADIUS },
-  optionContent: { flexDirection: 'row', alignItems: 'center', minHeight: 48, paddingLeft: 12 },
-  optionLabel: { flex: 1 },
+  options: { padding: 16 },
   track: { flexDirection: 'row', alignSelf: 'flex-start', flexShrink: 1, padding: TRACK_PADDING },
   // Full width of its container. (A flex-basis would become a height inside a column.)
   trackGrow: { alignSelf: 'stretch', width: '100%' },

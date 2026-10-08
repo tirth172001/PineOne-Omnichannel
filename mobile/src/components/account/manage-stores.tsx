@@ -9,9 +9,8 @@ import { CopyableValue } from '@/components/shared/copyable-value';
 import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DETAIL_FOOTER_BUTTON_RADIUS, DetailScreen } from '@/components/shared/detail-screen';
 import { FormField, FormTextInput, SelectField } from '@/components/shared/form-fields';
-import { ListingCard } from '@/components/listing-hero/listing-card';
+import { ListingCard, ListingRows } from '@/components/listing-hero/listing-card';
 import { useListDates } from '@/components/listing-hero/time-scope';
-import { DayGroupedList, dayTotals, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
 import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
@@ -106,23 +105,20 @@ export function ManageStores() {
         }
         right={<ActiveBadge active={store.status === 'Active'} />}
       />
-      {/* Plain text: the row is itself a button, so no nested copy button (copy from the store's detail). */}
+      {/* Key details only: Store ID, merchant ID and when it was added are on the store's page. */}
       <Text variant="bodySmall" style={muted}>
-        Store ID {store.storeId}
-      </Text>
-      <Text variant="bodySmall" style={muted}>
-        {terminalsLinkedCount(store.storeId)} terminals · {usersInvitedForStore(store.storeId, roster)} users · Created {store.createdOnDate}, {store.createdOnTime}
+        {terminalsLinkedCount(store.storeId)} devices · {usersInvitedForStore(store.storeId, roster)} users
       </Text>
     </ListRow>
   );
 
   if (LISTING_HERO_LAYOUT) {
-    // The listing format (constants/experiments.ts): search, filters and the store's own dates in one card, stores by the day they were added.
+    // The listing format (constants/experiments.ts): search, filters and the store's own dates in one card, stores A–Z (not grouped).
     const shown = created.inRange.filter((store) => {
       if (status !== 'all' && store.status.toLowerCase() !== status) return false;
       return !query || `${store.name} ${store.storeId} ${store.merchantId}`.toLowerCase().includes(query);
     });
-    const loaded = sortNewestFirst(shown, (store) => displayTimestamp(store.createdOnDate, store.createdOnTime)).slice(0, lazy.count);
+    const loaded = [...shown].sort((a, b) => a.name.localeCompare(b.name)).slice(0, lazy.count);
     const noun = { one: 'store', other: 'stores' };
     return (
       <TabScreen tab="stores">
@@ -147,14 +143,10 @@ export function ManageStores() {
           ]}
           totals={{ all: created.inRange.length, shown: shown.length }}
           noun={noun}>
-          <DayGroupedList
-            flat
-            groups={groupByDay(loaded, (store) => store.createdOnDate)}
-            totals={dayTotals(shown, (store) => store.createdOnDate)}
-            noun={noun}
-            empty={created.inRange.length ? 'No stores match. Try clearing the search or filters.' : 'No stores added in these dates.'}
-            renderRow={renderStore}
-          />
+          {/* Not grouped: the stores share a city and a status, so no grouping would tell them apart. */}
+          <ListingRows empty={created.inRange.length ? 'No stores match. Try clearing the search or filters.' : 'No stores added in these dates.'}>
+            {loaded.map(renderStore)}
+          </ListingRows>
           <LazyListFooter lazy={lazy} total={shown.length} noun="stores" />
         </ListingCard>
       </TabScreen>

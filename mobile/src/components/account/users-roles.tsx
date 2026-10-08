@@ -3,18 +3,17 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Icon, Text, useTheme } from 'react-native-paper';
 
-import { Tabs } from '@/components/material3/tabs';
+import { useShellTabs } from '@/components/shell-tabs';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { OutlinedActionButton } from '@/components/shared/controls';
 import { DetailScreen } from '@/components/shared/detail-screen';
 import { FormField, FormTextInput } from '@/components/shared/form-fields';
 import { ListingCard, ListingRows } from '@/components/listing-hero/listing-card';
 import { useListDates } from '@/components/listing-hero/time-scope';
-import { DayGroupedList, dayTotals, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
-import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
-import { RowActionsMenu, type RowAction } from '@/components/shared/row-actions';
+import { PANEL_INNER_RADIUS, PanelSection, PanelSheet, SHEET_BUTTON, SheetRow, SheetSection } from '@/components/shared/panel-sheet';
+import { type RowAction } from '@/components/shared/row-actions';
 import { TabScreen } from '@/components/tab-screen';
 import { LISTING_HERO_LAYOUT } from '@/constants/experiments';
 import { Shape } from '@/constants/shape';
@@ -33,6 +32,7 @@ import {
   updateUser,
   useUserManagement,
 } from '@/data/user-management';
+import { STORE_RECORDS } from '@/data/stores';
 import { parseDisplayDate } from '@/data/transactions';
 import type { RosterEntry } from '@/data/user-roster';
 import { useToast } from '@/hooks/use-toast';
@@ -208,7 +208,7 @@ function UserFormSheet({
 }
 
 /** A role's granted permissions by channel, with Clone and (custom roles) Edit (web: ViewRolePermissionsSheet). */
-function ViewRoleSheet({ role, onDismiss }: { role: ManagedRole | null; onDismiss: () => void }) {
+function ViewRoleSheet({ role, onDismiss, onDelete }: { role: ManagedRole | null; onDismiss: () => void; onDelete: (role: ManagedRole) => void }) {
   const theme = useTheme();
   const permissions = role ? permissionsForRole(role) : [];
   const sections = [
@@ -227,23 +227,47 @@ function ViewRoleSheet({ role, onDismiss }: { role: ManagedRole | null; onDismis
       title={role?.name ?? ''}
       footer={
         role ? (
-          <View style={styles.sheetFooter}>
+          <View style={styles.sheetActions}>
+            {role.roleType === 'custom' ? (
+              <Button mode="contained" icon="pencil-simple" onPress={() => openForm({ roleId: role.id })} {...SHEET_BUTTON}>
+                Edit this role
+              </Button>
+            ) : null}
             <Button
-              mode="outlined"
+              mode={role.roleType === 'custom' ? 'outlined' : 'contained'}
               icon="copy"
               onPress={() => openForm({ cloneId: role.id })}
-              textColor={theme.colors.onSurface}
-              style={[styles.panelButton, { borderColor: theme.colors.outlineVariant }]}>
+              textColor={role.roleType === 'custom' ? theme.colors.onSurface : undefined}
+              {...SHEET_BUTTON}
+              style={[SHEET_BUTTON.style, role.roleType === 'custom' && { borderColor: theme.colors.outlineVariant }]}>
               Create new role from this
             </Button>
             {role.roleType === 'custom' ? (
-              <Button mode="contained" icon="pencil-simple" onPress={() => openForm({ roleId: role.id })} style={styles.panelButton}>
-                Edit this role
+              <Button
+                mode="outlined"
+                icon="trash"
+                onPress={() => {
+                  onDismiss();
+                  setTimeout(() => onDelete(role), 250);
+                }}
+                textColor={theme.colors.error}
+                {...SHEET_BUTTON}
+                style={[SHEET_BUTTON.style, { borderColor: theme.colors.outlineVariant }]}>
+                Delete role
               </Button>
             ) : null}
           </View>
         ) : undefined
       }>
+      {role ? (
+        <PanelSection label="About">
+          <Text variant="bodyMedium">{role.description}</Text>
+          <View style={styles.badges}>
+            <RoleTypeChip roleType={role.roleType} />
+            <AccessScopeBadge scope={computeAccessScope(role.permissionKeys)} />
+          </View>
+        </PanelSection>
+      ) : null}
       {sections.length === 0 ? (
         <PanelSection last>
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -280,6 +304,7 @@ function UsersTab({ onEdit, onConfirm }: { onEdit: (entry: RosterEntry) => void;
   const [status, setStatus] = useState('all');
   const [role, setRole] = useState('all');
   const lazy = useLazyList();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const muted = { color: theme.colors.onSurfaceVariant };
 
   const listed = roster.filter((entry) => entry.status !== 'Pending');
@@ -326,48 +351,45 @@ function UsersTab({ onEdit, onConfirm }: { onEdit: (entry: RosterEntry) => void;
             },
           ];
 
+  // Four things per person — who, how to reach them, their role, whether they're in; the rest is in their sheet.
   const renderUser = (row: RosterEntry) => {
-    const permissionKeys = roleCatalog.find((entry) => entry.name === row.role)?.permissionKeys ?? [];
     const dim = row.status === 'Deactivated' ? styles.dim : null;
     return (
-      <ListRow key={row.id} accessibilityLabel={`${row.name}, ${row.role}, ${row.status}`}>
-        <ListRowLine
-          left={
-            <View style={dim}>
-              <Text variant="bodyMedium" style={styles.medium}>
-                {row.name}
-              </Text>
-              <Text variant="bodySmall" style={muted}>
-                {row.email}
-              </Text>
-            </View>
-          }
-          right={<RowActionsMenu accessibilityLabel={`Actions for ${row.name}`} actions={actionsFor(row)} />}
-        />
+      <ListRow key={row.id} onPress={() => setSelectedId(row.id)} accessibilityLabel={`${row.name}, ${row.role}, ${row.status}. Open details`}>
+        <View style={dim}>
+          <Text variant="bodyMedium" numberOfLines={1} style={styles.medium}>
+            {row.name}
+          </Text>
+          <Text variant="bodySmall" numberOfLines={1} style={muted}>
+            {row.email}
+          </Text>
+        </View>
         <View style={[styles.badges, dim]}>
           <RoleBadge role={row.role} />
-          <AccessScopeBadge scope={computeAccessScope(permissionKeys)} />
+          <UserStatusBadge status={row.status} />
         </View>
-        <ListRowLine
-          left={
-            <Text variant="bodySmall" style={muted}>
-              Invited on {row.addedOnDate}, {row.addedOnTime}
-            </Text>
-          }
-          right={<UserStatusBadge status={row.status} />}
-        />
       </ListRow>
     );
   };
+  const selectedUser = roster.find((entry) => entry.id === selectedId) ?? null;
+  const userSheet = (
+    <UserSheet
+      entry={selectedUser}
+      permissionKeys={roleCatalog.find((entry) => entry.name === selectedUser?.role)?.permissionKeys ?? []}
+      actions={selectedUser ? actionsFor(selectedUser) : []}
+      onDismiss={() => setSelectedId(null)}
+    />
+  );
 
   if (LISTING_HERO_LAYOUT) {
-    // The listing format (constants/experiments.ts): one card for search, filters and dates; people by the day they were invited.
+    // The listing format (constants/experiments.ts): one card for search, filters and dates; people A–Z, not grouped.
     const shown = invited.inRange.filter((row) => {
       if (status !== 'all' && row.status !== status) return false;
       if (role !== 'all' && row.role !== role) return false;
       return !query || `${row.name} ${row.email}`.toLowerCase().includes(query);
     });
-    const shownLoaded = sortNewestFirst(shown, (row) => displayTimestamp(row.addedOnDate, row.addedOnTime)).slice(0, lazy.count);
+    // Not grouped (user decision): everyone once, A–Z; the stores someone works in are in their sheet.
+    const shownLoaded = [...shown].sort((x, y) => x.name.localeCompare(y.name)).slice(0, lazy.count);
     const invitedCount = invited.inRange.filter((row) => row.status === 'Invited').length;
     const noun = { one: 'user', other: 'users' };
     return (
@@ -390,15 +412,11 @@ function UsersTab({ onEdit, onConfirm }: { onEdit: (entry: RosterEntry) => void;
         ]}
         totals={{ all: invited.inRange.length, shown: shown.length }}
         noun={noun}>
-        <DayGroupedList
-          flat
-          groups={groupByDay(shownLoaded, (row) => row.addedOnDate)}
-          totals={dayTotals(shown, (row) => row.addedOnDate)}
-          noun={noun}
-          empty={invited.inRange.length ? 'No users match. Try clearing the search or filters.' : 'No users invited in these dates.'}
-          renderRow={renderUser}
-        />
+        <ListingRows empty={invited.inRange.length ? 'No users match. Try clearing the search or filters.' : 'No users invited in these dates.'}>
+          {shownLoaded.map(renderUser)}
+        </ListingRows>
         <LazyListFooter lazy={lazy} total={shown.length} noun="users" />
+        {userSheet}
       </ListingCard>
     );
   }
@@ -427,7 +445,97 @@ function UsersTab({ onEdit, onConfirm }: { onEdit: (entry: RosterEntry) => void;
         {loaded.map(renderUser)}
       </ListCard>
       <LazyListFooter lazy={lazy} total={rows.length} noun="users" />
+      {userSheet}
     </>
+  );
+}
+
+const storeNameOf = (storeId: string) => STORE_RECORDS.find((store) => store.storeId === storeId)?.name ?? storeId;
+
+/**
+ * A person's details (opened from their row), in the app's sheet format: who
+ * they are and how to reach them, their role and what it lets them do, the
+ * stores they work in, when they were added and their status — with what can
+ * be done about them pinned at the bottom (the first, main action filled).
+ */
+function UserSheet({
+  entry,
+  permissionKeys,
+  actions,
+  onDismiss,
+}: {
+  entry: RosterEntry | null;
+  permissionKeys: string[];
+  actions: RowAction[];
+  onDismiss: () => void;
+}) {
+  const theme = useTheme();
+  // Keeps the last person while the sheet slides away, so it doesn't blank mid-animation.
+  const [shown, setShown] = useState<RosterEntry | null>(entry);
+  const [shownActions, setShownActions] = useState(actions);
+  if (entry && entry !== shown) {
+    setShown(entry);
+    setShownActions(actions);
+  }
+  const current = entry ?? shown;
+  if (!current) return null;
+  const list = entry ? actions : shownActions;
+  const stores = current.storeIds?.length ? current.storeIds.map(storeNameOf).join(', ') : 'All stores';
+  const run = (action: RowAction) => {
+    // The sheet steps aside first: the action may open its own sheet or dialog.
+    onDismiss();
+    setTimeout(action.onPress, 250);
+  };
+
+  return (
+    <PanelSheet
+      visible={entry !== null}
+      onDismiss={onDismiss}
+      title={current.name}
+      height={600}
+      footer={
+        list.length ? (
+          <View style={styles.sheetActions}>
+            {list.map((action, index) => {
+              const destructive = action.icon === 'trash';
+              return index === 0 && !destructive ? (
+                <Button key={action.label} mode="contained" icon={action.icon} onPress={() => run(action)} {...SHEET_BUTTON}>
+                  {action.label}
+                </Button>
+              ) : (
+                <Button
+                  key={action.label}
+                  mode="outlined"
+                  icon={action.icon}
+                  onPress={() => run(action)}
+                  textColor={destructive ? theme.colors.error : theme.colors.onSurface}
+                  {...SHEET_BUTTON}
+                  style={[SHEET_BUTTON.style, { borderColor: theme.colors.outlineVariant }]}>
+                  {action.label}
+                </Button>
+              );
+            })}
+          </View>
+        ) : undefined
+      }>
+      <View style={styles.sheetBody}>
+        <View style={styles.badges}>
+          <RoleBadge role={current.role} />
+          <AccessScopeBadge scope={computeAccessScope(permissionKeys)} />
+          <UserStatusBadge status={current.status} />
+        </View>
+        <SheetSection label="Details">
+          <SheetRow first icon="envelope-simple" title={current.email} description="Email" />
+          {current.phone ? <SheetRow icon="phone" title={`+91 ${current.phone}`} description="Mobile" /> : null}
+          <SheetRow icon="storefront" title={stores} description={current.storeIds?.length ? 'Works in' : 'Works across'} />
+          <SheetRow
+            icon="calendar-blank"
+            title={`${current.addedOnDate}, ${current.addedOnTime}`}
+            description={current.status === 'Invited' ? 'Invited on' : 'Added on'}
+          />
+        </SheetSection>
+      </View>
+    </PanelSheet>
   );
 }
 
@@ -438,41 +546,23 @@ function RolesTab({ onView, onDelete }: { onView: (role: ManagedRole) => void; o
   const query = search.trim().toLowerCase();
   const roles = roleCatalog.filter((role) => !query || `${role.name} ${role.description}`.toLowerCase().includes(query));
 
-  const renderRole = (role: ManagedRole) => {
-    const actions: RowAction[] = [
-      { label: 'Create role from this', icon: 'copy', onPress: () => router.push({ pathname: '/users/role', params: { cloneId: role.id } }) },
-      ...(role.roleType === 'custom'
-        ? [
-            { label: 'Edit role details', icon: 'pencil-simple', onPress: () => router.push({ pathname: '/users/role', params: { roleId: role.id } }) },
-            { label: 'Delete role', icon: 'trash', onPress: () => onDelete(role) },
-          ]
-        : []),
-    ];
-    return (
-      <ListRow key={role.id} onPress={() => onView(role)} accessibilityLabel={`${role.name} role`}>
-        <ListRowLine
-          left={
-            <>
-              <Text variant="bodyMedium" style={styles.medium}>
-                {role.name}
-              </Text>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                {role.description}
-              </Text>
-            </>
-          }
-          right={<RowActionsMenu accessibilityLabel={`Actions for ${role.name}`} actions={actions} />}
-        />
-        <View style={styles.badges}>
-          <RoleTypeChip roleType={role.roleType} />
-          <AccessScopeBadge scope={computeAccessScope(role.permissionKeys)} />
-        </View>
+  // What the role is, what it's for, and who has it; its permissions and actions are in its sheet.
+  const renderRole = (role: ManagedRole) => (
+    <ListRow key={role.id} onPress={() => onView(role)} accessibilityLabel={`${role.name} role. Open details`}>
+      <Text variant="bodyMedium" numberOfLines={1} style={styles.medium}>
+        {role.name}
+      </Text>
+      <Text variant="bodySmall" numberOfLines={1} style={{ color: theme.colors.onSurfaceVariant }}>
+        {role.description}
+      </Text>
+      <View style={[styles.badges, styles.roleMeta]}>
+        <RoleTypeChip roleType={role.roleType} />
         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-          {assignedUserCount(role.name, roster)} user(s) assigned
+          {assignedUserCount(role.name, roster)} {assignedUserCount(role.name, roster) === 1 ? 'user' : 'users'}
         </Text>
-      </ListRow>
-    );
-  };
+      </View>
+    </ListRow>
+  );
 
   if (LISTING_HERO_LAYOUT) {
     // Roles have no dates or filters: the same card, search only, rows ungrouped.
@@ -511,6 +601,8 @@ export function UsersRoles({ openInvite = false }: { openInvite?: boolean }) {
   const toast = useToast();
   const { roleCatalog } = useUserManagement();
   const [tab, setTab] = useState('users');
+  // Docked under the header (as Reports' tabs), so no gap above them.
+  useShellTabs({ tabs: TABS, activeKey: tab, onChange: setTab });
   const [formTarget, setFormTarget] = useState<{ entry: RosterEntry | null } | null>(openInvite ? { entry: null } : null);
   const [viewRole, setViewRole] = useState<ManagedRole | null>(null);
   const [confirm, setConfirm] = useState<ConfirmTarget | null>(null);
@@ -566,9 +658,6 @@ export function UsersRoles({ openInvite = false }: { openInvite?: boolean }) {
         { label: 'Add new role', icon: 'shield', onPress: () => router.push('/users/role') },
       ]}
       actionsMenu={{ label: 'Add', icon: 'plus' }}>
-      <View style={styles.tabs}>
-        <Tabs tabs={TABS} activeKey={tab} onChange={setTab} variant="secondary" />
-      </View>
       {tab === 'users' ? (
         <UsersTab onEdit={(entry) => setFormTarget({ entry })} onConfirm={setConfirm} />
       ) : (
@@ -581,7 +670,7 @@ export function UsersRoles({ openInvite = false }: { openInvite?: boolean }) {
         entry={formTarget?.entry ?? null}
         onDone={(message) => toast(message)}
       />
-      <ViewRoleSheet role={viewRole} onDismiss={() => setViewRole(null)} />
+      <ViewRoleSheet role={viewRole} onDismiss={() => setViewRole(null)} onDelete={requestDeleteRole} />
       <ConfirmDialog
         visible={confirm !== null}
         onDismiss={() => setConfirm(null)}
@@ -694,6 +783,9 @@ const styles = StyleSheet.create({
   tabs: { marginHorizontal: -16, marginVertical: -8 },
   inline: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  sheetBody: { padding: 16, gap: 16 },
+  sheetActions: { gap: 8 },
+  roleMeta: { alignItems: 'center', marginTop: 4 },
   banner: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, padding: 12, borderRadius: Shape.max },
   grid: { flexDirection: 'row', gap: 12 },
   half: { flex: 1 },

@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { cloneElement, type ReactNode, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Chip, Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
@@ -8,7 +8,7 @@ import { Fonts } from '@/constants/theme';
 
 import { DateRangeFields, type DateRangePreset, type DateRangeValue, makeDateRangeValue } from './date-range-filter';
 import { countSelection, type MoreFilterCategory, type MoreFilterSelection } from './more-filters';
-import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from './panel-sheet';
+import { PANEL_INNER_RADIUS, PanelSection, PanelSheet, SHEET_BUTTON } from './panel-sheet';
 
 /**
  * One of a listing's filters, all of which sit behind its single Filters
@@ -185,16 +185,12 @@ export function FiltersButton({ filters, height }: { filters: ListingFilter[]; h
             <Button mode="text" onPress={() => apply(filters.map(defaultOf))} style={styles.footerButton}>
               Clear all
             </Button>
-            <Button mode="contained" onPress={() => apply(drafts)} style={styles.footerButton}>
+            <Button mode="contained" onPress={() => apply(drafts)} {...SHEET_BUTTON} style={[SHEET_BUTTON.style, styles.apply]}>
               Apply
             </Button>
           </View>
         }>
-        {sections.map((section, index) => (
-          <PanelSection key={section.key} last={index === sections.length - 1}>
-            {section}
-          </PanelSection>
-        ))}
+        {sections.map((section, index) => cloneElement(section, { last: index === sections.length - 1 }))}
       </PanelSheet>
     </>
   );
@@ -237,14 +233,12 @@ function FiltersTrigger({ count, height = 36, onPress }: { count: number; height
   );
 }
 
-function FilterSection({ title, children }: { title: string; children: ReactNode }) {
+/** One filter: its name as the uppercase label over a white card of choices (the channel switcher's format). */
+function FilterSection({ title, last = false, children }: { title: string; last?: boolean; children: ReactNode }) {
   return (
-    <View style={styles.section}>
-      <Text variant="titleMedium" style={styles.sectionTitle}>
-        {title}
-      </Text>
+    <PanelSection label={title} last={last}>
       {children}
-    </View>
+    </PanelSection>
   );
 }
 
@@ -283,4 +277,5 @@ const styles = StyleSheet.create({
   chip: { borderRadius: PANEL_INNER_RADIUS },
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   footerButton: { borderRadius: PANEL_INNER_RADIUS },
+  apply: { flex: 1, marginLeft: 12 },
 });

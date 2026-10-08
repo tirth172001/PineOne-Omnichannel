@@ -41,7 +41,8 @@ type NavigationBarProps = {
 
 // While expanded a light dark tint reaches up from the bar, dimming the page just enough that the white panel stands apart.
 const EXPANDED_FADE_HEIGHT = 320;
-const OVERFLOW_COLUMNS = 4;
+// Five to a row, lined up with the bar's own five items below.
+const OVERFLOW_COLUMNS = 5;
 // M3 emphasized easing: quick to start, long gentle settle.
 const EXPAND_EASING = Easing.bezier(0.2, 0, 0, 1);
 
@@ -55,7 +56,7 @@ const EXPAND_EASING = Easing.bezier(0.2, 0, 0, 1);
  * the gesture bar.
  *
  * With `overflow`, the last item is an expand button: the bar grows upward in
- * place to show the overflow destinations under a title, four to a row, drawn
+ * place to show the overflow destinations under a title, five to a row, drawn
  * exactly like the bar's own items.
  */
 export function NavigationBar({ destinations, activeKey, onChange, overflow, onRestingHeightChange, respectSafeArea = true }: NavigationBarProps) {
@@ -266,7 +267,8 @@ const styles = StyleSheet.create({
   panel: { overflow: 'hidden' },
   panelContent: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   panelTitle: { fontFamily: Fonts.semiBold, fontSize: 12, lineHeight: 16, letterSpacing: 1, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
-  gridRow: { flexDirection: 'row', paddingHorizontal: 6 },
+  // Same side padding as the bar's row, so the grid's columns sit over its items.
+  gridRow: { flexDirection: 'row', paddingHorizontal: 8 },
   gridItem: { width: `${100 / OVERFLOW_COLUMNS}%`, borderRadius: ITEM_RADIUS },
   // Separators run edge to edge across the bar.
   divider: { height: 1, marginTop: 4 },

@@ -45,7 +45,6 @@ const MODULE_TABS = [
   { key: 'reports', href: '/reports', label: 'Reports', icon: 'file', focusedIcon: 'file-fill', scoped: true },
   { key: 'terminal-devices', href: '/terminal-devices', label: 'In-store devices', slotLabel: 'Devices', icon: 'cash-register', focusedIcon: 'cash-register-fill' },
   { key: 'payment-links', href: '/payment-links', label: 'Payment links', icon: 'link-simple', focusedIcon: 'link-simple-fill' },
-  { key: 'checkout', href: '/checkout', label: 'Checkout', icon: 'palette', focusedIcon: 'palette-fill' },
   { key: 'stores', href: '/stores', label: 'Stores', title: 'Manage stores', icon: 'storefront', focusedIcon: 'storefront-fill' },
   { key: 'users', href: '/users', label: 'Users', title: 'Users & roles', icon: 'users', focusedIcon: 'users-fill' },
   { key: 'support', href: '/support', label: 'Support', icon: 'chat-centered-text', focusedIcon: 'chat-centered-text-fill' },
@@ -323,7 +322,8 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
           onChange={navigateTo}
           overflow={{
             title: OVERFLOW_TITLE,
-            destinations: [...MODULE_TABS],
+            // Five to a row, so the grid takes the bar's short labels too (e.g. Devices).
+            destinations: MODULE_TABS.map((module: TabItem) => ({ ...module, label: module.slotLabel ?? module.label })),
             expanded: modulesOpen,
             onExpandedChange: setModulesOpen,
             onCollapsed: onModulesCollapsed,

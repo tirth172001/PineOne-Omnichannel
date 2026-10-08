@@ -1,7 +1,8 @@
+import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { Button, IconButton, Text, useTheme } from 'react-native-paper';
 
 import { AnswerHero, HERO_OVERLAP } from '@/components/listing-hero/answer-hero';
 import { ListingCard } from '@/components/listing-hero/listing-card';
@@ -12,9 +13,11 @@ import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar, 
 import { type MoreFilterSelection } from '@/components/shared/more-filters';
 import { DayGroupedList, dayTotals, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
-import { RowActionsMenu } from '@/components/shared/row-actions';
+import { PANEL_PADDING, PanelSheet, SHEET_BUTTON, SheetRow, SheetSection } from '@/components/shared/panel-sheet';
+import { DotStatusBadge } from '@/components/shared/status';
 import { TabScreen } from '@/components/tab-screen';
 import { LISTING_HERO_LAYOUT } from '@/constants/experiments';
+import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { CURRENT_USER } from '@/data/businesses';
 import { parseDisplayDate } from '@/data/transactions';
@@ -31,6 +34,8 @@ import {
   toggleDeviceStatus,
 } from '@/data/terminal-devices';
 import { useToast } from '@/hooks/use-toast';
+
+import { TerminalImage } from './terminal-image';
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All status' },
@@ -85,6 +90,7 @@ export function TerminalDevices() {
   const [moreFilters, setMoreFilters] = useState<MoreFilterSelection>({});
   const [deviceStatus, setDeviceStatus] = useState<'all' | 'Active' | 'Inactive'>('all');
   const lazy = useLazyList();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   // The devices list keeps its own dates (installed on); the hero's count is live.
   const installed = useListDates(rows, (row) => parseDisplayDate(row.installationDate, row.installationTime || '12:00 PM'), {
     subject: 'devices installed',
@@ -132,42 +138,44 @@ export function TerminalDevices() {
     toast(`${newRow.model} added`);
   };
 
+  // Four things per device — what it is, where, whether it's working, how it's set up; the rest is in its sheet.
   const renderRow = (row: TerminalDeviceRow) => (
-    <ListRow key={row.id} accessibilityLabel={`${row.model}, ${row.hardwareId}, ${row.mode}`}>
-      <ListRowLine
-        left={
-          <>
-            <Text variant="bodyMedium" style={styles.medium}>
-              {row.model}
-            </Text>
-            <Text variant="bodySmall" style={muted}>
-              {row.hardwareId} · {row.posId}
-            </Text>
-          </>
-        }
-        right={
-          <RowActionsMenu
-            accessibilityLabel={`Actions for ${row.model}`}
-            actions={[
-              { label: `Change mode to ${row.mode === 'Standalone' ? 'Integrated' : 'Standalone'}`, onPress: () => changeMode(row) },
-              { label: row.status === 'Active' ? 'Deactivate device' : 'Reactivate device', onPress: () => toggleStatus(row) },
-            ]}
-          />
-        }
-      />
-      <ListRowLine
-        left={
-          <>
-            <Text variant="bodySmall">{row.storeName}</Text>
-            <Text variant="bodySmall" style={muted} numberOfLines={1}>
-              Installed {row.installationDate}
-              {row.installationTime ? `, ${row.installationTime}` : ''}
-            </Text>
-          </>
-        }
-        right={<ModePill mode={row.mode} />}
-      />
+    <ListRow
+      key={row.id}
+      onPress={() => setSelectedId(row.id)}
+      accessibilityLabel={`${row.model}, ${row.storeName}, ${row.status}, ${row.mode}. Open details`}>
+      <View style={styles.deviceRow}>
+        <View style={[styles.deviceTile, { backgroundColor: theme.colors.surfaceVariant }]}>
+          <TerminalImage size={40} inactive={row.status === 'Inactive'} />
+        </View>
+        <View style={styles.deviceText}>
+          <Text variant="bodyMedium" numberOfLines={1} style={styles.medium}>
+            {row.model}
+          </Text>
+          {/* The store is the group's heading, so the row names the device instead. */}
+          <Text variant="bodySmall" numberOfLines={1} style={muted}>
+            {row.posId}
+          </Text>
+          <View style={styles.deviceTags}>
+            <DotStatusBadge label={row.status} tone={row.status === 'Active' ? 'success' : 'neutral'} radius={LIST_ROW_INNER_RADIUS} />
+            <ModePill mode={row.mode} />
+          </View>
+        </View>
+      </View>
     </ListRow>
+  );
+  const selected = rows.find((row) => row.id === selectedId) ?? null;
+  const deviceSheet = (
+    <DeviceSheet
+      device={selected}
+      onDismiss={() => setSelectedId(null)}
+      onChangeMode={(device) => {
+        changeMode(device);
+      }}
+      onToggleStatus={(device) => {
+        toggleStatus(device);
+      }}
+    />
   );
 
   if (LISTING_HERO_LAYOUT) {
@@ -182,7 +190,10 @@ export function TerminalDevices() {
       if (models.length && !models.includes(row.model)) return false;
       return !query || `${row.model} ${row.hardwareId} ${row.posId} ${row.storeName}`.toLowerCase().includes(query);
     });
-    const heroLoaded = sortNewestFirst(heroFiltered, (row) => displayTimestamp(row.installationDate, row.installationTime)).slice(0, lazy.count);
+    // Grouped by store (A–Z), newest installation first within each.
+    const heroLoaded = sortNewestFirst(heroFiltered, (row) => displayTimestamp(row.installationDate, row.installationTime))
+      .sort((a, b) => a.storeName.localeCompare(b.storeName))
+      .slice(0, lazy.count);
     return (
       <TabScreen tab="terminal-devices" actions={[{ label: 'Add new device', shortLabel: 'Add device', icon: 'plus', onPress: addDevice }]}>
         <View style={styles.heroContainer}>
@@ -252,8 +263,8 @@ export function TerminalDevices() {
             noun={{ one: 'device', other: 'devices' }}>
             <DayGroupedList
               flat
-              groups={groupByDay(heroLoaded, (row) => row.installationDate)}
-              totals={dayTotals(heroFiltered, (row) => row.installationDate)}
+              groups={groupByDay(heroLoaded, (row) => row.storeName)}
+              totals={dayTotals(heroFiltered, (row) => row.storeName)}
               noun={{ one: 'device', other: 'devices' }}
               empty={installed.inRange.length ? 'No devices match. Try clearing the search or filters.' : 'No devices installed in these dates.'}
               renderRow={renderRow}
@@ -261,6 +272,7 @@ export function TerminalDevices() {
             <LazyListFooter lazy={lazy} total={heroFiltered.length} noun="devices" />
           </ListingCard>
         </View>
+        {deviceSheet}
       </TabScreen>
     );
   }
@@ -298,7 +310,93 @@ export function TerminalDevices() {
         {loaded.map(renderRow)}
       </ListCard>
       <LazyListFooter lazy={lazy} total={filtered.length} noun="devices" />
+      {deviceSheet}
     </TabScreen>
+  );
+}
+
+/**
+ * A device's details and actions (opened from its row), in the app's sheet
+ * format: the device on the sheet's grey with its status and mode, its
+ * details card (IDs, store, installation), then its two actions — change
+ * mode (recorded in the audit log) and deactivate / reactivate.
+ */
+function DeviceSheet({
+  device,
+  onDismiss,
+  onChangeMode,
+  onToggleStatus,
+}: {
+  device: TerminalDeviceRow | null;
+  onDismiss: () => void;
+  onChangeMode: (device: TerminalDeviceRow) => void;
+  onToggleStatus: (device: TerminalDeviceRow) => void;
+}) {
+  const theme = useTheme();
+  const toast = useToast();
+  // Keeps the last device while the sheet slides away, so it doesn't blank mid-animation.
+  const [shown, setShown] = useState<TerminalDeviceRow | null>(device);
+  if (device && device !== shown) setShown(device);
+  const current = device ?? shown;
+  if (!current) return null;
+  const nextMode: DeviceMode = current.mode === 'Standalone' ? 'Integrated' : 'Standalone';
+  const active = current.status === 'Active';
+  const copy = (label: string, value: string) => {
+    Clipboard.setStringAsync(value).catch(() => {});
+    toast(`${label} copied`);
+  };
+  const copyButton = (label: string, value: string) => (
+    <IconButton icon="copy" size={16} onPress={() => copy(label, value)} accessibilityLabel={`Copy ${label}`} style={styles.copy} />
+  );
+
+  return (
+    <PanelSheet
+      visible={device !== null}
+      onDismiss={onDismiss}
+      title={current.model}
+      height={640}
+      footer={
+        <View style={styles.sheetActions}>
+          <Button mode="contained" icon="arrows-left-right" onPress={() => onChangeMode(current)} {...SHEET_BUTTON}>
+            Change mode to {nextMode}
+          </Button>
+          <Button
+            mode="outlined"
+            icon={active ? 'power' : 'arrow-counter-clockwise'}
+            onPress={() => onToggleStatus(current)}
+            textColor={active ? theme.colors.error : theme.colors.onSurface}
+            {...SHEET_BUTTON}
+            style={[SHEET_BUTTON.style, { borderColor: theme.colors.outlineVariant }]}>
+            {active ? 'Deactivate device' : 'Reactivate device'}
+          </Button>
+        </View>
+      }>
+      <View style={styles.sheetBody}>
+        <View style={styles.sheetHero}>
+          <TerminalImage size={96} inactive={!active} />
+          <View style={styles.deviceTags}>
+            <DotStatusBadge label={current.status} tone={active ? 'success' : 'neutral'} radius={LIST_ROW_INNER_RADIUS} />
+            <ModePill mode={current.mode} />
+          </View>
+        </View>
+        <SheetSection label="Details">
+          <SheetRow first icon="hard-drives" title={current.hardwareId} description="Hardware ID" trailing={copyButton('Hardware ID', current.hardwareId)} />
+          <SheetRow icon="cash-register" title={current.posId} description="POS ID" trailing={copyButton('POS ID', current.posId)} />
+          <SheetRow icon="storefront" title={current.storeName} description={current.storeAddress} />
+          <SheetRow
+            icon="calendar-blank"
+            title={`${current.installationDate}${current.installationTime ? `, ${current.installationTime}` : ''}`}
+            description="Installed"
+          />
+        </SheetSection>
+        <Text style={[styles.sheetNote, { color: theme.colors.onSurfaceVariant }]}>
+          {current.mode === 'Integrated'
+            ? 'Integrated: payments start from your billing system and come to this device.'
+            : 'Standalone: payments are entered on this device directly.'}{' '}
+          Mode changes are recorded in the audit log.
+        </Text>
+      </View>
+    </PanelSheet>
   );
 }
 
@@ -422,5 +520,14 @@ const styles = StyleSheet.create({
   heroContainer: { gap: 16 },
   // The container's gap plus the hero's open foot.
   overHero: { marginTop: -(16 + HERO_OVERLAP) },
+  deviceRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  deviceTile: { width: 52, height: 60, borderRadius: Shape.small, alignItems: 'center', justifyContent: 'center' },
+  deviceText: { flex: 1, minWidth: 0, gap: 2 },
+  deviceTags: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  sheetBody: { padding: PANEL_PADDING, gap: 16 },
+  sheetHero: { alignItems: 'center', gap: 10, paddingVertical: 8 },
+  sheetNote: { fontFamily: Fonts.regular, fontSize: 12, lineHeight: 16, paddingHorizontal: 4 },
+  sheetActions: { gap: 8 },
+  copy: { margin: 0, marginRight: 8 },
   modeChange: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 2 },
 });

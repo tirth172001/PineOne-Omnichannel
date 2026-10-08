@@ -11,8 +11,7 @@ import { DateTimeField, type DateTimeValue, FormField, FormTextInput } from '@/c
 import { DayGroupedList, dayTotals, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
 import { LIST_ROW_INNER_RADIUS, ListCard, ListingToolbar, ListRow, ListRowLine, selectFilter } from '@/components/shared/listing';
-import { PANEL_INNER_RADIUS, PanelSection, PanelSheet } from '@/components/shared/panel-sheet';
-import { RowActionsMenu } from '@/components/shared/row-actions';
+import { PANEL_INNER_RADIUS, PanelSection, PanelSheet, SHEET_BUTTON, SheetRow, SheetSection } from '@/components/shared/panel-sheet';
 import { StatusPill } from '@/components/shared/status';
 import { TabScreen } from '@/components/tab-screen';
 import { Shape } from '@/constants/shape';
@@ -183,6 +182,7 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
   const toast = useToast();
   const presets = useMemo(() => getDefaultDateRangePresets(), []);
   const [rows, setRows] = useState<PaymentLinkRow[]>(PAYMENT_LINK_ROWS);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchField, setSearchField] = useState<PaymentLinkSearchField>('paymentId');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | PaymentLinkStatus>('all');
@@ -230,49 +230,50 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
       customerMobile: row.customerMobile,
     });
 
+  // Four things per link — how much, what for, which link and when, where it stands; the rest is in its sheet.
   const renderRow = (row: PaymentLinkRow) => (
-    <ListRow key={row.id} accessibilityLabel={`Payment link ${row.paymentLink}, ${row.amount}, ${row.status}`}>
+    <ListRow
+      key={row.id}
+      onPress={() => setSelectedId(row.id)}
+      accessibilityLabel={`${row.amount}, ${row.description}, payment link ${row.paymentLink}, ${row.status}. Open details`}>
       <ListRowLine
         left={
           <>
-            <Text variant="bodyMedium" style={styles.medium}>
-              {row.paymentLink}
+            <Text variant="titleMedium" style={styles.amount}>
+              {row.amount}
             </Text>
-            <Text variant="bodySmall" style={muted}>
-              {row.amount} · Invoice {row.invoiceNumber}
+            <Text variant="bodySmall" numberOfLines={1}>
+              {row.description === '-' ? 'No description' : row.description}
+            </Text>
+            <Text variant="bodySmall" numberOfLines={1} style={muted}>
+              {row.paymentLink} · {row.createdTime}
             </Text>
           </>
-        }
-        right={
-          <RowActionsMenu
-            accessibilityLabel={`Actions for ${row.paymentLink}`}
-            actions={[
-              {
-                label: 'Copy link',
-                icon: 'copy',
-                onPress: () => {
-                  void Clipboard.setStringAsync(row.paymentLink);
-                  toast('Payment link copied');
-                },
-              },
-              { label: 'Duplicate link', onPress: () => duplicate(row) },
-            ]}
-          />
-        }
-      />
-      <Text variant="bodySmall">{row.description}</Text>
-      <ListRowLine
-        left={
-          <Text variant="bodySmall" style={muted}>
-            Created {row.createdDate}, {row.createdTime}
-            {'\n'}
-            Expires {row.expiryDate}
-            {row.expiryTime ? `, ${row.expiryTime}` : ''}
-          </Text>
         }
         right={<StatusPill label={row.status} tone={paymentLinkTone(row.status)} radius={LIST_ROW_INNER_RADIUS} />}
       />
     </ListRow>
+  );
+  const copyLink = (row: PaymentLinkRow) => {
+    void Clipboard.setStringAsync(row.paymentLink);
+    toast('Payment link copied');
+  };
+  const cancelLink = (row: PaymentLinkRow) => {
+    setRows((current) => current.map((item) => (item.id === row.id ? { ...item, status: 'Cancelled' } : item)));
+    toast(`Payment link ${row.paymentLink} cancelled`);
+  };
+  const selectedLink = rows.find((row) => row.id === selectedId) ?? null;
+  const linkSheet = (
+    <PaymentLinkSheet
+      link={selectedLink}
+      onDismiss={() => setSelectedId(null)}
+      onCopy={copyLink}
+      onDuplicate={(row) => {
+        setSelectedId(null);
+        setTimeout(() => duplicate(row), 250);
+      }}
+      onCancel={cancelLink}
+    />
   );
 
   // The listing hero experiment (constants/experiments.ts): the answer, then the records.
@@ -387,6 +388,7 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
           </ListingCard>
         </View>
         <CreatePaymentLinkSheet visible={createOpen} onDismiss={() => setCreateOpen(false)} onCreate={create} initialValues={createSeed} />
+      {linkSheet}
       </TabScreen>
     );
   }
@@ -445,13 +447,107 @@ export function PaymentLinks({ startCreating = false }: { startCreating?: boolea
       {showEmptyState ? null : <LazyListFooter lazy={lazy} total={filtered.length} noun="payment links" />}
 
       <CreatePaymentLinkSheet visible={createOpen} onDismiss={() => setCreateOpen(false)} onCreate={create} initialValues={createSeed} />
+      {linkSheet}
     </TabScreen>
+  );
+}
+
+/**
+ * A payment link's details (opened from its row), in the app's sheet format:
+ * the amount and where it stands, the link and invoice, who it's for, when it
+ * was made and when it lapses — with what can be done with it pinned at the
+ * bottom: an open link can be copied (the main action), duplicated or
+ * cancelled; a settled one only duplicated.
+ */
+function PaymentLinkSheet({
+  link,
+  onDismiss,
+  onCopy,
+  onDuplicate,
+  onCancel,
+}: {
+  link: PaymentLinkRow | null;
+  onDismiss: () => void;
+  onCopy: (link: PaymentLinkRow) => void;
+  onDuplicate: (link: PaymentLinkRow) => void;
+  onCancel: (link: PaymentLinkRow) => void;
+}) {
+  const theme = useTheme();
+  // Keeps the last link while the sheet slides away, so it doesn't blank mid-animation.
+  const [shown, setShown] = useState<PaymentLinkRow | null>(link);
+  if (link && link !== shown) setShown(link);
+  const current = link ?? shown;
+  if (!current) return null;
+  const open = current.status === 'Created';
+  const outlined = { ...SHEET_BUTTON, style: [SHEET_BUTTON.style, { borderColor: theme.colors.outlineVariant }] };
+
+  return (
+    <PanelSheet
+      visible={link !== null}
+      onDismiss={onDismiss}
+      title={`Payment link ${current.paymentLink}`}
+      height={open ? 680 : 600}
+      footer={
+        <View style={styles.sheetActions}>
+          {open ? (
+            <Button mode="contained" icon="copy" onPress={() => onCopy(current)} {...SHEET_BUTTON}>
+              Copy link
+            </Button>
+          ) : null}
+          <Button
+            mode={open ? 'outlined' : 'contained'}
+            icon="files"
+            onPress={() => onDuplicate(current)}
+            textColor={open ? theme.colors.onSurface : undefined}
+            {...(open ? outlined : SHEET_BUTTON)}>
+            Duplicate link
+          </Button>
+          {open ? (
+            <Button mode="outlined" icon="x-circle" onPress={() => onCancel(current)} textColor={theme.colors.error} {...outlined}>
+              Cancel link
+            </Button>
+          ) : null}
+        </View>
+      }>
+      <View style={styles.sheetBody}>
+        <View style={styles.sheetHero}>
+          <Text style={styles.sheetAmount}>{current.amount}</Text>
+          {/* The pill sizes itself to the start of its row; centred here under the amount. */}
+          <View style={styles.sheetPill}>
+            <StatusPill label={current.status} tone={paymentLinkTone(current.status)} radius={LIST_ROW_INNER_RADIUS} />
+          </View>
+        </View>
+        <SheetSection label="Details">
+          <SheetRow first icon="link-simple" title={current.paymentLink} description="Payment link" />
+          <SheetRow icon="text-align-left" title={current.description === '-' ? 'No description' : current.description} description="Description" />
+          <SheetRow icon="receipt" title={current.invoiceNumber === '-' ? 'None' : current.invoiceNumber} description="Invoice number" />
+        </SheetSection>
+        <SheetSection label="Customer">
+          <SheetRow first icon="envelope-simple" title={current.customerEmail || 'Not given'} description="Email" />
+          <SheetRow icon="phone" title={current.customerMobile ? `+91 ${current.customerMobile}` : 'Not given'} description="Mobile" />
+        </SheetSection>
+        <SheetSection label="Dates">
+          <SheetRow first icon="calendar-blank" title={`${current.createdDate}, ${current.createdTime}`} description="Created" />
+          <SheetRow
+            icon="clock"
+            title={`${current.expiryDate}${current.expiryTime ? `, ${current.expiryTime}` : ''}`}
+            description={current.status === 'Expired' ? 'Expired' : 'Expires'}
+          />
+        </SheetSection>
+      </View>
+    </PanelSheet>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   medium: { fontFamily: Fonts.medium },
+  amount: { fontFamily: Fonts.semiBold, fontVariant: ['tabular-nums'] },
+  sheetBody: { padding: 16, gap: 16 },
+  sheetHero: { alignItems: 'center', gap: 8, paddingVertical: 8 },
+  sheetAmount: { fontFamily: Fonts.semiBold, fontSize: 28, lineHeight: 34, fontVariant: ['tabular-nums'] },
+  sheetActions: { gap: 8 },
+  sheetPill: { flexDirection: 'row', justifyContent: 'center' },
   semiBold: { fontFamily: Fonts.semiBold },
   center: { textAlign: 'center' },
   empty: { alignItems: 'center', gap: 8, padding: 32, borderWidth: 1, borderRadius: Shape.max },

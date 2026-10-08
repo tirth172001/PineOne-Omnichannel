@@ -2,13 +2,13 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Image } from 'expo-image';
 import { type ReactNode, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Card, Divider, Icon, Switch, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { Button, Card, Divider, Icon, Switch, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { Tabs } from '@/components/material3/tabs';
 import { SearchField } from '@/components/search-field';
 import { FormTextInput } from '@/components/shared/form-fields';
-import { PANEL_INNER_RADIUS, PanelSheet } from '@/components/shared/panel-sheet';
-import { TabScreen } from '@/components/tab-screen';
+import { PANEL_INNER_RADIUS, PanelSheet, SheetRow, SheetSection } from '@/components/shared/panel-sheet';
+import { DetailScreen, DETAIL_FOOTER_BUTTON_RADIUS } from '@/components/shared/detail-screen';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { DEFAULT_CHECKOUT_COLOR, PAYMODE_CARDS, type PaymodeCard } from '@/data/checkout';
@@ -393,22 +393,27 @@ function PaymodeDetailSheet({ card, onDismiss }: { card: PaymodeCard | null; onD
       <View style={styles.sheetBody}>
         <SearchField value={search} onChangeText={setSearch} placeholder="Search" radius={PANEL_INNER_RADIUS} />
         <ScrollView style={styles.flex}>
-          {items.map((item, index) => (
-            <View key={item.name}>
-              {index > 0 ? <Divider /> : null}
-              <View style={styles.detailRow}>
-                <Text variant="bodyMedium">{item.name}</Text>
-                {item.active ? (
-                  <View style={styles.row}>
-                    <Icon source="check-circle-fill" size={16} color={SUCCESS} />
-                    <Text variant="labelMedium" style={{ color: SUCCESS }}>
-                      Active
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-            </View>
-          ))}
+          {items.length ? (
+            <SheetSection>
+              {items.map((item, index) => (
+                <SheetRow
+                  key={item.name}
+                  first={index === 0}
+                  title={item.name}
+                  trailing={
+                    item.active ? (
+                      <View style={[styles.row, styles.activeTag]}>
+                        <Icon source="check-circle-fill" size={16} color={SUCCESS} />
+                        <Text variant="labelMedium" style={{ color: SUCCESS }}>
+                          Active
+                        </Text>
+                      </View>
+                    ) : null
+                  }
+                />
+              ))}
+            </SheetSection>
+          ) : null}
           {items.length === 0 ? (
             <Text variant="bodyMedium" style={[styles.centerText, styles.noResults, { color: theme.colors.onSurfaceVariant }]}>
               No results found
@@ -516,23 +521,25 @@ export function Checkout() {
   const [dirty, setDirty] = useState(false);
 
   return (
-    <TabScreen
-      tab="checkout"
-      // Save shows once the customisation has unsaved changes.
-      actions={
-        tab === 'customisation' && dirty
-          ? [
-              {
-                label: 'Save details',
-                shortLabel: 'Save',
-                icon: 'check',
-                onPress: () => {
-                  toast('Checkout settings saved');
-                  setDirty(false);
-                },
-              },
-            ]
-          : []
+    // Opened from the profile (not a module tab): an inner page with Back, Save in its footer once edited.
+    <DetailScreen
+      title="Checkout"
+      subtitle="Branding, express checkout and payment modes for your online checkout"
+      fallbackHref="/"
+      footer={
+        tab === 'customisation' && dirty ? (
+          <Button
+            mode="contained"
+            icon="check"
+            onPress={() => {
+              toast('Checkout settings saved');
+              setDirty(false);
+            }}
+            contentStyle={styles.saveContent}
+            style={styles.save}>
+            Save details
+          </Button>
+        ) : undefined
       }>
       <View style={styles.tabs}>
         <Tabs tabs={TABS} activeKey={tab} onChange={setTab} variant="secondary" />
@@ -548,11 +555,13 @@ export function Checkout() {
       ) : (
         <PaymodesTab />
       )}
-    </TabScreen>
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  save: { flex: 1, borderRadius: DETAIL_FOOTER_BUTTON_RADIUS },
+  saveContent: { height: 48 },
   flex: { flex: 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' },
@@ -622,6 +631,7 @@ const styles = StyleSheet.create({
   mcCircle: { position: 'absolute', width: 12, height: 12, borderRadius: 6, left: 4 },
   mcRight: { left: 9, opacity: 0.85 },
   sheetBody: { flex: 1, paddingHorizontal: 16, paddingTop: 16, gap: 12 },
+  activeTag: { paddingRight: 12 },
   detailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
   noResults: { paddingVertical: 24 },
 });

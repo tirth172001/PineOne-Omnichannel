@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Checkbox, Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { Button, Text, useTheme } from 'react-native-paper';
 
 import { SearchField } from '@/components/search-field';
 import { Fonts } from '@/constants/theme';
 
-import { PANEL_INNER_RADIUS, PANEL_PADDING, PanelSheet } from './panel-sheet';
+import { PANEL_INNER_RADIUS, PANEL_PADDING, PanelSheet, SHEET_BUTTON, SheetRow, SheetSection } from './panel-sheet';
 
 export type ChecklistItem = { id: string; title: string; subtitle?: string; icon?: string };
 
@@ -87,15 +87,15 @@ export function ChecklistSheet({
               onApply(draft);
               onDismiss();
             }}
-            style={{ borderRadius: INNER_RADIUS }}>
+            {...SHEET_BUTTON}>
             Apply
           </Button>
         </View>
       }>
       <View style={styles.body}>
         <View style={styles.headingRow}>
-          <Text variant="titleMedium" style={styles.heading}>
-            {heading}
+          <Text accessibilityRole="header" style={[styles.heading, { color: theme.colors.onSurfaceVariant }]}>
+            {heading.toUpperCase()}
           </Text>
           <Button
             mode="text"
@@ -115,37 +115,20 @@ export function ChecklistSheet({
               No matches for “{search}”.
             </Text>
           ) : (
-            filtered.map((item) => {
-              const checked = draft.includes(item.id);
-              return (
-                <TouchableRipple
+            <SheetSection>
+              {filtered.map((item, index) => (
+                <SheetRow
                   key={item.id}
+                  first={index === 0}
+                  icon={item.icon}
+                  title={item.title}
+                  description={item.subtitle}
+                  role="checkbox"
+                  selected={draft.includes(item.id)}
                   onPress={() => toggle(item.id)}
-                  accessibilityRole="checkbox"
-                  aria-checked={checked}
-                  accessibilityLabel={item.subtitle ? `${item.title}, ${item.subtitle}` : item.title}
-                  borderless
-                  style={[styles.row, { borderColor: checked ? theme.colors.primary : theme.colors.outlineVariant }]}>
-                  <View style={[styles.rowContent, item.subtitle ? styles.rowTop : null]}>
-                    {item.icon ? <Icon source={item.icon} size={20} color={theme.colors.onSurfaceVariant} /> : null}
-                    <View style={styles.rowText}>
-                      <Text variant="bodyMedium">{item.title}</Text>
-                      {item.subtitle ? (
-                        <Text
-                          variant="bodyMedium"
-                          numberOfLines={1}
-                          style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
-                          {item.subtitle}
-                        </Text>
-                      ) : null}
-                    </View>
-                    <View pointerEvents="none">
-                      <Checkbox status={checked ? 'checked' : 'unchecked'} />
-                    </View>
-                  </View>
-                </TouchableRipple>
-              );
-            })
+                />
+              ))}
+            </SheetSection>
           )}
         </ScrollView>
       </View>
@@ -156,16 +139,12 @@ export function ChecklistSheet({
 const styles = StyleSheet.create({
   body: { flex: 1, padding: SHEET_PADDING, gap: 16 },
   headingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  heading: { fontFamily: Fonts.semiBold, flexShrink: 1 },
+  // The uppercase label over a sheet's card, as in the channel switcher.
+  heading: { fontFamily: Fonts.medium, fontSize: 12, lineHeight: 16, letterSpacing: 0.6, paddingHorizontal: 4, flexShrink: 1 },
   textButton: { margin: 0, borderRadius: INNER_RADIUS },
   textButtonLabel: { fontSize: 12, marginVertical: 4, marginHorizontal: 6 },
   list: { flex: 1 },
-  listContent: { gap: 8 },
+  listContent: { paddingBottom: 8 },
   empty: { textAlign: 'center', paddingVertical: 32 },
-  row: { borderWidth: 1, borderRadius: INNER_RADIUS },
-  rowContent: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10 },
-  rowTop: { alignItems: 'flex-start' },
-  rowText: { flex: 1 },
-  subtitle: { fontFamily: Fonts.regular },
   footerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
 });

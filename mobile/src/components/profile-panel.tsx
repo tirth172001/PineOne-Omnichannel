@@ -117,6 +117,17 @@ export function ProfilePanel({
       }))
     ),
   ];
+  // Checkout configuration lives here too (not in More), after the payment settings.
+  rows.splice(rows.findIndex((row) => row.key === 'online-payments') + 1, 0, {
+    key: 'checkout',
+    icon: 'palette',
+    title: 'Checkout',
+    onPress: () => {
+      markReturnToProfile();
+      onDismiss();
+      router.push('/checkout');
+    },
+  });
 
   return (
     <>
