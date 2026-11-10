@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useRef } from "react"
+import { Children, createContext, useContext } from "react"
 import { cn } from "@/lib/utils"
 
 // Ticket 09 (.scratch/onboarding-experience-v2/issues/09-establish-substep-motion-pattern.md):
@@ -19,24 +19,23 @@ import { cn } from "@/lib/utils"
 // same way — worth the tradeoff of losing the old JS-driven exit fade (fields now just disappear
 // on sub-step change instead of fading out) since that's a minor polish loss against a bug that
 // could leave the page blank indefinitely.
-const StaggerIndexContext = createContext<{ next: () => number } | null>(null)
+const StaggerIndexContext = createContext(0)
 
 export function StaggerFields({ children, className }: { children: React.ReactNode; className?: string }) {
-  const indexRef = useRef(0)
-  indexRef.current = 0
   return (
-    <StaggerIndexContext.Provider value={{ next: () => indexRef.current++ }}>
-      <div className={className}>{children}</div>
-    </StaggerIndexContext.Provider>
+    <div className={className}>
+      {Children.map(children, (child, index) => (
+        <StaggerIndexContext.Provider value={index}>{child}</StaggerIndexContext.Provider>
+      ))}
+    </div>
   )
 }
 
 export function StaggerField({ children, className }: { children: React.ReactNode; className?: string }) {
-  const ctx = useContext(StaggerIndexContext)
-  const index = ctx ? ctx.next() : 0
+  const index = useContext(StaggerIndexContext)
   return (
     <div
-      className={cn("animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards duration-300 ease-out", className)}
+      className={cn("animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards duration-300 ease-out motion-reduce:animate-none", className)}
       style={{ animationDelay: `${50 + index * 60}ms` }}
     >
       {children}

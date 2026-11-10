@@ -1,0 +1,691 @@
+{
+  "destination": {
+    "fileKey": "8pTOs0aNOMdEPACHnzfrcz",
+    "anchorPage": "9:19055",
+    "pageId": "21560:166",
+    "pageName": "Progressive onboarding \u00b7 Web",
+    "output": "Editable design screens",
+    "status": "imported",
+    "url": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz/PineOne---Omni-channel?node-id=21560-166"
+  },
+  "entry": "http://localhost:3000/onboarding-demo",
+  "onlineAppliesTo": [
+    "checkout",
+    "payment-links"
+  ],
+  "layout": {
+    "frameWidth": 1440,
+    "minimumFrameHeight": 900,
+    "columns": 4,
+    "gap": 120,
+    "preserveExistingNodes": true
+  },
+  "screenCount": 52,
+  "screens": [
+    {
+      "id": "phone",
+      "section": "01 \u00b7 Account and discovery",
+      "name": "Enter mobile number",
+      "route": "http://localhost:3000/onboarding-demo",
+      "state": "Fresh signup; sample number only",
+      "component": "components/onboarding/signup-shell.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21567:695",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21567-695"
+    },
+    {
+      "id": "signup-otp",
+      "section": "01 \u00b7 Account and discovery",
+      "name": "Verify mobile OTP",
+      "route": "http://localhost:3000/onboarding-demo/verify-phone?phone=9876543210",
+      "state": "Demo code 123456",
+      "component": "components/onboarding/signup-shell.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21567:1637",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21567-1637"
+    },
+    {
+      "id": "password",
+      "section": "01 \u00b7 Account and discovery",
+      "name": "Create password",
+      "route": "http://localhost:3000/onboarding-demo/set-password",
+      "state": "Demo-only password; no credential stored",
+      "component": "components/onboarding/signup-shell.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21567:2079",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21567-2079"
+    },
+    {
+      "id": "overview-new",
+      "section": "01 \u00b7 Account and discovery",
+      "name": "First Overview",
+      "route": "http://localhost:3000/onboarding-demo/home",
+      "state": "No products activated; Overview and Products only",
+      "component": "components/getting-started/getting-started-home.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21567:2570",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21567-2570"
+    },
+    {
+      "id": "intro-in-store",
+      "section": "01 \u00b7 Account and discovery",
+      "name": "In-store: education and upfront device selection",
+      "route": "http://localhost:3000/onboarding-demo/products/in-store",
+      "state": "journey.stage=intro; In-store includes model, buy/rent plan and quantities",
+      "component": "components/getting-started/product-intro.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21567:3095",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21567-3095"
+    },
+    {
+      "id": "intro-payment-links",
+      "section": "01 \u00b7 Account and discovery",
+      "name": "Payment links: education",
+      "route": "http://localhost:3000/onboarding-demo/products/payment-links",
+      "state": "journey.stage=intro; In-store includes model, buy/rent plan and quantities",
+      "component": "components/getting-started/product-intro.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21567:3732",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21567-3732"
+    },
+    {
+      "id": "intro-checkout",
+      "section": "01 \u00b7 Account and discovery",
+      "name": "Checkout: education",
+      "route": "http://localhost:3000/onboarding-demo/products/checkout",
+      "state": "journey.stage=intro; In-store includes model, buy/rent plan and quantities",
+      "component": "components/getting-started/product-intro.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21567:3937",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21567-3937"
+    },
+    {
+      "id": "device-selection",
+      "section": "01 \u00b7 Account and discovery",
+      "name": "In-store: device, plan and quantity",
+      "route": "http://localhost:3000/onboarding-demo/products/in-store",
+      "state": "Device model, plan and quantity sheet",
+      "component": "components/getting-started/",
+      "referenceNode": null,
+      "frameNodeId": "21567:4142",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21567-4142"
+    },
+    {
+      "id": "pan",
+      "section": "02 \u00b7 Online onboarding (both products)",
+      "name": "PAN verification",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "journey.stage=setup; step=0; previous steps complete",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:15200",
+      "frameNodeId": "21564:166",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21564-166"
+    },
+    {
+      "id": "gst",
+      "section": "02 \u00b7 Online onboarding (both products)",
+      "name": "GST & registered address",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "journey.stage=setup; step=1; previous steps complete",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:23159",
+      "frameNodeId": "21564:1905",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21564-1905"
+    },
+    {
+      "id": "website",
+      "section": "02 \u00b7 Online onboarding (both products)",
+      "name": "Website and app",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "journey.stage=setup; step=2; previous steps complete",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "552:27894",
+      "frameNodeId": "21564:2864",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21564-2864"
+    },
+    {
+      "id": "documents",
+      "section": "02 \u00b7 Online onboarding (both products)",
+      "name": "Business documents",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "journey.stage=setup; step=3; previous steps complete",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "551:25380",
+      "frameNodeId": "21565:238",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-238"
+    },
+    {
+      "id": "bank",
+      "section": "02 \u00b7 Online onboarding (both products)",
+      "name": "Banking details",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "journey.stage=setup; step=4; previous steps complete",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "610:9599",
+      "frameNodeId": "21565:1703",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-1703"
+    },
+    {
+      "id": "owners",
+      "section": "02 \u00b7 Online onboarding (both products)",
+      "name": "Beneficial-owner declaration",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "journey.stage=setup; step=5; previous steps complete",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:15397",
+      "frameNodeId": "21565:3210",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-3210"
+    },
+    {
+      "id": "signatory",
+      "section": "02 \u00b7 Online onboarding (both products)",
+      "name": "Authorised signatory",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "journey.stage=setup; step=6; previous steps complete",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:16330",
+      "frameNodeId": "21565:3683",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-3683"
+    },
+    {
+      "id": "political-exposure",
+      "section": "02 \u00b7 Online onboarding (both products)",
+      "name": "Political exposure",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "journey.stage=setup; step=7; previous steps complete",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:16372",
+      "frameNodeId": "21565:4970",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-4970"
+    },
+    {
+      "id": "identity",
+      "section": "02 \u00b7 Online onboarding (both products)",
+      "name": "DigiLocker identity",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "journey.stage=setup; step=8; previous steps complete",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:16392",
+      "frameNodeId": "21565:5447",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-5447"
+    },
+    {
+      "id": "video-kyc",
+      "section": "02 \u00b7 Online onboarding (both products)",
+      "name": "Video KYC preparation",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "journey.stage=setup; step=9; previous steps complete",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:15437",
+      "frameNodeId": "21565:6039",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-6039"
+    },
+    {
+      "id": "review",
+      "section": "02 \u00b7 Online onboarding (both products)",
+      "name": "Review saved details",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "journey.stage=setup; step=10; previous steps complete",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:16018",
+      "frameNodeId": "21565:6400",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-6400"
+    },
+    {
+      "id": "agreement",
+      "section": "02 \u00b7 Online onboarding (both products)",
+      "name": "Sign agreement",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "journey.stage=setup; step=11; previous steps complete",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:16044",
+      "frameNodeId": "21565:7144",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-7144"
+    },
+    {
+      "id": "submitted",
+      "section": "02 \u00b7 Online onboarding (both products)",
+      "name": "KYC submitted",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "step=12; submittedAt present; no progress rail",
+      "component": "components/getting-started/online/review-and-sign.tsx",
+      "referenceNode": "610:8625",
+      "frameNodeId": "21565:7743",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-7743"
+    },
+    {
+      "id": "pan-fetched",
+      "section": "03 \u00b7 Online branch states",
+      "name": "PAN fetched and linked mobile",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "step=0; PAN fetched; phone not yet verified",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:15724",
+      "frameNodeId": "21565:8038",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-8038"
+    },
+    {
+      "id": "pan-otp",
+      "section": "03 \u00b7 Online branch states",
+      "name": "PAN-linked mobile OTP",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "step=0; Phone OTP sent; 6-slot input",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:22640",
+      "frameNodeId": "21565:9324",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-9324"
+    },
+    {
+      "id": "pan-verified",
+      "section": "03 \u00b7 Online branch states",
+      "name": "PAN and mobile verified",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "step=0; PAN and phone verified",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:22883",
+      "frameNodeId": "21565:10655",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-10655"
+    },
+    {
+      "id": "gst-manual",
+      "section": "03 \u00b7 Online branch states",
+      "name": "Manual GSTIN fetch",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "step=1; Manual GST selected and fetched",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:23596",
+      "frameNodeId": "21565:11825",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-11825"
+    },
+    {
+      "id": "bank-cheque",
+      "section": "03 \u00b7 Online branch states",
+      "name": "Cancelled-cheque upload",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "step=4; bankMethod=cheque",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "610:9789",
+      "frameNodeId": "21565:12668",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-12668"
+    },
+    {
+      "id": "owners-list",
+      "section": "03 \u00b7 Online branch states",
+      "name": "Beneficial-owner list",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "step=5; hasOwners=yes; ownersView=list",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:15515",
+      "frameNodeId": "21565:13284",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-13284"
+    },
+    {
+      "id": "owner-sheet",
+      "section": "03 \u00b7 Online branch states",
+      "name": "Add or edit owner sheet",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "step=5; Owner sheet open with PAN/name/percentage",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:15533",
+      "frameNodeId": "21565:14145",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-14145"
+    },
+    {
+      "id": "identity-otp",
+      "section": "03 \u00b7 Online branch states",
+      "name": "DigiLocker demo OTP",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "step=8; Identity OTP dialog open",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:16392",
+      "frameNodeId": "21565:15929",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-15929"
+    },
+    {
+      "id": "video-session",
+      "section": "03 \u00b7 Online branch states",
+      "name": "Simulated Video KYC window",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "step=9; Video session dialog open",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:15458",
+      "frameNodeId": "21565:16686",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-16686"
+    },
+    {
+      "id": "agreement-accepted",
+      "section": "03 \u00b7 Online branch states",
+      "name": "Agreement accepted",
+      "route": "http://localhost:3000/onboarding-demo/setup/checkout",
+      "state": "step=11; agreementAccepted=true",
+      "component": "components/getting-started/online/online-onboarding.tsx",
+      "referenceNode": "501:16070",
+      "frameNodeId": "21565:17174",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21565-17174"
+    },
+    {
+      "id": "terminal-delivery",
+      "section": "04 \u00b7 In-store onboarding and delivery",
+      "name": "Delivery details",
+      "route": "http://localhost:3000/onboarding-demo/setup/in-store",
+      "state": "setup step=1; selected cart",
+      "component": "components/getting-started/product-setup.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21568:801",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21568-801"
+    },
+    {
+      "id": "terminal-business",
+      "section": "04 \u00b7 In-store onboarding and delivery",
+      "name": "Business details",
+      "route": "http://localhost:3000/onboarding-demo/setup/in-store",
+      "state": "setup step=2",
+      "component": "components/getting-started/product-setup.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21568:3250",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21568-3250"
+    },
+    {
+      "id": "terminal-bank",
+      "section": "04 \u00b7 In-store onboarding and delivery",
+      "name": "Settlement account",
+      "route": "http://localhost:3000/onboarding-demo/setup/in-store",
+      "state": "setup step=3",
+      "component": "components/getting-started/product-setup.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21568:5048",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21568-5048"
+    },
+    {
+      "id": "terminal-review",
+      "section": "04 \u00b7 In-store onboarding and delivery",
+      "name": "Review terminal order",
+      "route": "http://localhost:3000/onboarding-demo/setup/in-store",
+      "state": "setup step=4",
+      "component": "components/getting-started/product-setup.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21568:6244",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21568-6244"
+    },
+    {
+      "id": "terminal-payment",
+      "section": "04 \u00b7 In-store onboarding and delivery",
+      "name": "Pay for terminals",
+      "route": "http://localhost:3000/onboarding-demo/setup/in-store",
+      "state": "stage=payment",
+      "component": "components/getting-started/terminal-journey.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21568:6849",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21568-6849"
+    },
+    {
+      "id": "order-placed",
+      "section": "04 \u00b7 In-store onboarding and delivery",
+      "name": "Order placed",
+      "route": "http://localhost:3000/onboarding-demo/setup/in-store",
+      "state": "stage=shipping; status=placed",
+      "component": "components/getting-started/terminal-journey.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21568:7395",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21568-7395"
+    },
+    {
+      "id": "order-shipped",
+      "section": "04 \u00b7 In-store onboarding and delivery",
+      "name": "Order tracking: shipped",
+      "route": "http://localhost:3000/onboarding-demo/setup/in-store",
+      "state": "stage=shipping; status=shipped",
+      "component": "components/getting-started/terminal-journey.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21568:7931",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21568-7931"
+    },
+    {
+      "id": "order-delivered",
+      "section": "04 \u00b7 In-store onboarding and delivery",
+      "name": "Order delivered",
+      "route": "http://localhost:3000/onboarding-demo/setup/in-store",
+      "state": "stage=install; status=delivered",
+      "component": "components/getting-started/terminal-journey.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21568:8467",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21568-8467"
+    },
+    {
+      "id": "terminal-guide",
+      "section": "04 \u00b7 In-store onboarding and delivery",
+      "name": "Terminal setup guide",
+      "route": "http://localhost:3000/onboarding-demo/setup/in-store",
+      "state": "stage=install; checklist incomplete",
+      "component": "components/getting-started/terminal-journey.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21568:9003",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21568-9003"
+    },
+    {
+      "id": "terminal-ready",
+      "section": "04 \u00b7 In-store onboarding and delivery",
+      "name": "Terminal installation complete",
+      "route": "http://localhost:3000/onboarding-demo/setup/in-store",
+      "state": "stage=install; checklist complete",
+      "component": "components/getting-started/terminal-journey.tsx",
+      "referenceNode": null,
+      "frameNodeId": "21568:9544",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21568-9544"
+    },
+    {
+      "id": "overview-resume",
+      "section": "05 \u00b7 Resume, activation and product homes",
+      "name": "Overview with Continue banner",
+      "route": "http://localhost:3000/onboarding-demo/home",
+      "state": "unfinished journey; latest saved step",
+      "component": "components/getting-started/",
+      "referenceNode": null,
+      "frameNodeId": "21569:1035",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21569-1035"
+    },
+    {
+      "id": "activation",
+      "section": "05 \u00b7 Resume, activation and product homes",
+      "name": "Product activation introduction",
+      "route": "http://localhost:3000/onboarding-demo/home",
+      "state": "pendingIntroduction=current product",
+      "component": "components/getting-started/",
+      "referenceNode": null,
+      "frameNodeId": "21569:1914",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21569-1914"
+    },
+    {
+      "id": "overview-live",
+      "section": "05 \u00b7 Resume, activation and product homes",
+      "name": "Overview after first activation",
+      "route": "http://localhost:3000/onboarding-demo/home",
+      "state": "Payments and Settlement visible; other tools hidden",
+      "component": "components/getting-started/",
+      "referenceNode": null,
+      "frameNodeId": "21569:2970",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21569-2970"
+    },
+    {
+      "id": "in-store-live",
+      "section": "05 \u00b7 Resume, activation and product homes",
+      "name": "In-store: terminal and order context",
+      "route": "http://localhost:3000/onboarding-demo/products/in-store",
+      "state": "In-store live",
+      "component": "components/getting-started/",
+      "referenceNode": null,
+      "frameNodeId": "21569:3520",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21569-3520"
+    },
+    {
+      "id": "links-live",
+      "section": "05 \u00b7 Resume, activation and product homes",
+      "name": "Payment links: empty and first-link creation",
+      "route": "http://localhost:3000/onboarding-demo/products/payment-links",
+      "state": "Payment links live; create a demo link",
+      "component": "components/getting-started/",
+      "referenceNode": null,
+      "frameNodeId": "21569:3696",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21569-3696"
+    },
+    {
+      "id": "checkout-live",
+      "section": "05 \u00b7 Resume, activation and product homes",
+      "name": "Checkout: integration and API keys",
+      "route": "http://localhost:3000/onboarding-demo/products/checkout",
+      "state": "Checkout live; optional API-key dialog",
+      "component": "components/getting-started/",
+      "referenceNode": null,
+      "frameNodeId": "21569:4753",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21569-4753"
+    },
+    {
+      "id": "payments",
+      "section": "05 \u00b7 Resume, activation and product homes",
+      "name": "Payments with product context",
+      "route": "http://localhost:3000/onboarding-demo/payments",
+      "state": "Activated sources only",
+      "component": "components/getting-started/",
+      "referenceNode": null,
+      "frameNodeId": "21569:4922",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21569-4922"
+    },
+    {
+      "id": "settlements",
+      "section": "05 \u00b7 Resume, activation and product homes",
+      "name": "Settlement with product context",
+      "route": "http://localhost:3000/onboarding-demo/settlements",
+      "state": "Activated sources only",
+      "component": "components/getting-started/",
+      "referenceNode": null,
+      "frameNodeId": "21569:4969",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21569-4969"
+    },
+    {
+      "id": "more-tools",
+      "section": "05 \u00b7 Resume, activation and product homes",
+      "name": "Progressively reveal more tools",
+      "route": "http://localhost:3000/onboarding-demo/home",
+      "state": "Add more tools enables Refunds, Disputes, Reports",
+      "component": "components/getting-started/",
+      "referenceNode": null,
+      "frameNodeId": "21569:5016",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21569-5016"
+    },
+    {
+      "id": "links-created",
+      "section": "05 \u00b7 Resume, activation and product homes",
+      "name": "Payment links: created demo link",
+      "route": "http://localhost:3000/onboarding-demo/products/payment-links",
+      "state": "Created sample link and copy action",
+      "component": "components/getting-started/",
+      "referenceNode": null,
+      "frameNodeId": "21569:5453",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21569-5453"
+    },
+    {
+      "id": "checkout-keys",
+      "section": "05 \u00b7 Resume, activation and product homes",
+      "name": "Checkout: API keys",
+      "route": "http://localhost:3000/onboarding-demo/products/checkout",
+      "state": "API-key dialog",
+      "component": "components/getting-started/",
+      "referenceNode": null,
+      "frameNodeId": "21569:5962",
+      "figmaUrl": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz?node-id=21569-5962"
+    }
+  ],
+  "edges": [
+    {
+      "from": "phone",
+      "to": "signup-otp"
+    },
+    {
+      "from": "signup-otp",
+      "to": "password"
+    },
+    {
+      "from": "password",
+      "to": "overview-new"
+    },
+    {
+      "from": "overview-new",
+      "to": [
+        "intro-in-store",
+        "intro-payment-links",
+        "intro-checkout"
+      ]
+    },
+    {
+      "from": [
+        "intro-payment-links",
+        "intro-checkout"
+      ],
+      "to": "pan"
+    },
+    {
+      "from": "pan",
+      "to": "gst"
+    },
+    {
+      "from": "gst",
+      "to": "website"
+    },
+    {
+      "from": "website",
+      "to": "documents"
+    },
+    {
+      "from": "documents",
+      "to": "bank"
+    },
+    {
+      "from": "bank",
+      "to": "owners"
+    },
+    {
+      "from": "owners",
+      "to": "signatory"
+    },
+    {
+      "from": "signatory",
+      "to": "political-exposure"
+    },
+    {
+      "from": "political-exposure",
+      "to": "identity"
+    },
+    {
+      "from": "identity",
+      "to": "video-kyc"
+    },
+    {
+      "from": "video-kyc",
+      "to": "review"
+    },
+    {
+      "from": "review",
+      "to": "agreement"
+    },
+    {
+      "from": "agreement",
+      "to": "submitted"
+    },
+    {
+      "from": "submitted",
+      "to": "activation"
+    },
+    {
+      "from": "activation",
+      "to": "overview-live"
+    },
+    {
+      "from": "intro-in-store",
+      "to": "terminal-delivery"
+    },
+    {
+      "from": "overview-resume",
+      "to": "last saved product step"
+    }
+  ]
+}

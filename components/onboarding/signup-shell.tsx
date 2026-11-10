@@ -1,13 +1,14 @@
 "use client"
 
 import { AnimatePresence, motion } from "framer-motion"
-import { usePathname } from "next/navigation"
+import { useJourneyPathname as usePathname } from "@/components/getting-started/navigation"
 import { AuthVisualPanel } from "./auth-visual-panel"
 import { BackButton } from "./back-button"
 import { OnboardingPreview } from "./onboarding-preview"
 import { SEQUENCE } from "./onboarding-sequence"
 import { OnboardingTopBar } from "./onboarding-top-bar"
 import { useSignupPosition } from "./signup-sequence"
+import { useIsOnboardingDemo } from "@/components/getting-started/navigation"
 
 // Every signup transition is a "sub-step" move in onboarding-rail-shell's sense — there's no
 // macro-boundary crossing here — so, per ticket 09
@@ -33,6 +34,7 @@ const fade = {
 export function SignupShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const position = useSignupPosition()
+  const inDemo = useIsOnboardingDemo()
 
   return (
     <div className="min-h-screen bg-sidebar p-2">
@@ -40,7 +42,7 @@ export function SignupShell({ children }: { children: React.ReactNode }) {
         <section className="relative flex h-full flex-col overflow-y-auto rounded-md bg-background p-6 sm:p-10">
           <OnboardingTopBar className="left-6 right-6 top-6 sm:left-10 sm:right-10 sm:top-10" />
           <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col pt-24 sm:pt-28">
-            <BackButton className="mb-4 inline-flex w-fit items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground" />
+            {!(inDemo && pathname === "/signup/phone") ? <BackButton className="mb-4 inline-flex w-fit items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground" /> : null}
             {position ? (
               <div className="mb-8">
                 <div className="h-1 w-full overflow-hidden rounded-full bg-muted">

@@ -1,0 +1,279 @@
+{
+  "fileKey": "8pTOs0aNOMdEPACHnzfrcz",
+  "pageId": "21560:166",
+  "pageName": "Progressive onboarding · Web",
+  "url": "https://www.figma.com/design/8pTOs0aNOMdEPACHnzfrcz/PineOne---Omni-channel?node-id=21560-166",
+  "output": "Editable design screens",
+  "status": "complete",
+  "layout": "Online and In-store share SetupFrame",
+  "frames": [
+    {
+      "id": "phone",
+      "nodeId": "21567:695",
+      "name": "Enter mobile number"
+    },
+    {
+      "id": "signup-otp",
+      "nodeId": "21567:1637",
+      "name": "Verify mobile OTP"
+    },
+    {
+      "id": "password",
+      "nodeId": "21567:2079",
+      "name": "Create password"
+    },
+    {
+      "id": "overview-new",
+      "nodeId": "21567:2570",
+      "name": "First Overview"
+    },
+    {
+      "id": "intro-in-store",
+      "nodeId": "21567:3095",
+      "name": "In-store: education and upfront device selection"
+    },
+    {
+      "id": "intro-payment-links",
+      "nodeId": "21567:3732",
+      "name": "Payment links: education"
+    },
+    {
+      "id": "intro-checkout",
+      "nodeId": "21567:3937",
+      "name": "Checkout: education"
+    },
+    {
+      "id": "device-selection",
+      "nodeId": "21567:4142",
+      "name": "In-store: device, plan and quantity"
+    },
+    {
+      "id": "pan",
+      "nodeId": "21564:166",
+      "name": "PAN verification"
+    },
+    {
+      "id": "gst",
+      "nodeId": "21564:1905",
+      "name": "GST & registered address"
+    },
+    {
+      "id": "website",
+      "nodeId": "21564:2864",
+      "name": "Website and app"
+    },
+    {
+      "id": "documents",
+      "nodeId": "21565:238",
+      "name": "Business documents"
+    },
+    {
+      "id": "bank",
+      "nodeId": "21565:1703",
+      "name": "Banking details"
+    },
+    {
+      "id": "owners",
+      "nodeId": "21565:3210",
+      "name": "Beneficial-owner declaration"
+    },
+    {
+      "id": "signatory",
+      "nodeId": "21565:3683",
+      "name": "Authorised signatory"
+    },
+    {
+      "id": "political-exposure",
+      "nodeId": "21565:4970",
+      "name": "Political exposure"
+    },
+    {
+      "id": "identity",
+      "nodeId": "21565:5447",
+      "name": "DigiLocker identity"
+    },
+    {
+      "id": "video-kyc",
+      "nodeId": "21565:6039",
+      "name": "Video KYC preparation"
+    },
+    {
+      "id": "review",
+      "nodeId": "21565:6400",
+      "name": "Review saved details"
+    },
+    {
+      "id": "agreement",
+      "nodeId": "21565:7144",
+      "name": "Sign agreement"
+    },
+    {
+      "id": "submitted",
+      "nodeId": "21565:7743",
+      "name": "KYC submitted"
+    },
+    {
+      "id": "pan-fetched",
+      "nodeId": "21565:8038",
+      "name": "PAN fetched and linked mobile"
+    },
+    {
+      "id": "pan-otp",
+      "nodeId": "21565:9324",
+      "name": "PAN-linked mobile OTP"
+    },
+    {
+      "id": "pan-verified",
+      "nodeId": "21565:10655",
+      "name": "PAN and mobile verified"
+    },
+    {
+      "id": "gst-manual",
+      "nodeId": "21565:11825",
+      "name": "Manual GSTIN fetch"
+    },
+    {
+      "id": "bank-cheque",
+      "nodeId": "21565:12668",
+      "name": "Cancelled-cheque upload"
+    },
+    {
+      "id": "owners-list",
+      "nodeId": "21565:13284",
+      "name": "Beneficial-owner list"
+    },
+    {
+      "id": "owner-sheet",
+      "nodeId": "21565:14145",
+      "name": "Add or edit owner sheet"
+    },
+    {
+      "id": "identity-otp",
+      "nodeId": "21565:15929",
+      "name": "DigiLocker demo OTP"
+    },
+    {
+      "id": "video-session",
+      "nodeId": "21565:16686",
+      "name": "Simulated Video KYC window"
+    },
+    {
+      "id": "agreement-accepted",
+      "nodeId": "21565:17174",
+      "name": "Agreement accepted"
+    },
+    {
+      "id": "terminal-delivery",
+      "nodeId": "21568:801",
+      "name": "Delivery details"
+    },
+    {
+      "id": "terminal-business",
+      "nodeId": "21568:3250",
+      "name": "Business details"
+    },
+    {
+      "id": "terminal-bank",
+      "nodeId": "21568:5048",
+      "name": "Settlement account"
+    },
+    {
+      "id": "terminal-review",
+      "nodeId": "21568:6244",
+      "name": "Review terminal order"
+    },
+    {
+      "id": "terminal-payment",
+      "nodeId": "21568:6849",
+      "name": "Pay for terminals"
+    },
+    {
+      "id": "order-placed",
+      "nodeId": "21568:7395",
+      "name": "Order placed"
+    },
+    {
+      "id": "order-shipped",
+      "nodeId": "21568:7931",
+      "name": "Order tracking: shipped"
+    },
+    {
+      "id": "order-delivered",
+      "nodeId": "21568:8467",
+      "name": "Order delivered"
+    },
+    {
+      "id": "terminal-guide",
+      "nodeId": "21568:9003",
+      "name": "Terminal setup guide"
+    },
+    {
+      "id": "terminal-ready",
+      "nodeId": "21568:9544",
+      "name": "Terminal installation complete"
+    },
+    {
+      "id": "overview-resume",
+      "nodeId": "21569:1035",
+      "name": "Overview with Continue banner"
+    },
+    {
+      "id": "activation",
+      "nodeId": "21569:1914",
+      "name": "Product activation introduction"
+    },
+    {
+      "id": "overview-live",
+      "nodeId": "21569:2970",
+      "name": "Overview after first activation"
+    },
+    {
+      "id": "in-store-live",
+      "nodeId": "21569:3520",
+      "name": "In-store: terminal and order context"
+    },
+    {
+      "id": "links-live",
+      "nodeId": "21569:3696",
+      "name": "Payment links: empty and first-link creation"
+    },
+    {
+      "id": "checkout-live",
+      "nodeId": "21569:4753",
+      "name": "Checkout: integration and API keys"
+    },
+    {
+      "id": "payments",
+      "nodeId": "21569:4922",
+      "name": "Payments with product context"
+    },
+    {
+      "id": "settlements",
+      "nodeId": "21569:4969",
+      "name": "Settlement with product context"
+    },
+    {
+      "id": "more-tools",
+      "nodeId": "21569:5016",
+      "name": "Progressively reveal more tools"
+    },
+    {
+      "id": "links-created",
+      "nodeId": "21569:5453",
+      "name": "Payment links: created demo link"
+    },
+    {
+      "id": "checkout-keys",
+      "nodeId": "21569:5962",
+      "name": "Checkout: API keys"
+    }
+  ],
+  "fontFallback": "Inter Display unavailable in Figma MCP; editable text uses Inter",
+  "checks": {
+    "screenCount": 52,
+    "editableText": 1667,
+    "componentInstances": 269,
+    "unintendedOverflow": 0,
+    "regressionTestsPassed": 28
+  }
+}

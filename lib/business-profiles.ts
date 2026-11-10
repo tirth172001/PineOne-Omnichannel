@@ -8,7 +8,8 @@
  * the Manage users & roles screens use, so the two stay in sync).
  */
 
-import { useEffect, useState } from "react"
+import { useSyncExternalStore } from "react"
+import { isOnboardingDemoPath, onboardingStorageKey, resolveBusinessProfileId } from "./onboarding-environment.js"
 import {
   computeAccessScope,
   OFFLINE_ROLE_PERMISSIONS,
@@ -28,6 +29,14 @@ export type BusinessProfile = {
 }
 
 export const BUSINESS_PROFILES: BusinessProfile[] = [
+  {
+    id: "new-merchant",
+    businessName: "Your new business",
+    stage: "Just signed up",
+    roleLabel: "Owner",
+    description: "Signed up with phone, OTP and password. Nothing set up yet — the platform opens up as each product goes live.",
+    permissionKeys: unionKeys(OFFLINE_ROLE_PERMISSIONS.Admin, ONLINE_ROLE_PERMISSIONS.Owner),
+  },
   {
     id: "online-startup",
     businessName: "Zenith Sportswear",
@@ -86,32 +95,29 @@ export function getBusinessProfile(id: string | null | undefined): BusinessProfi
 
 export function readActiveBusinessProfile(): BusinessProfile {
   if (typeof window === "undefined") return getBusinessProfile(DEFAULT_BUSINESS_PROFILE_ID)
-  return getBusinessProfile(window.localStorage.getItem(BUSINESS_PROFILE_STORAGE_KEY))
+  const demo = isOnboardingDemoPath(window.location.pathname)
+  return getBusinessProfile(resolveBusinessProfileId(window.localStorage.getItem(onboardingStorageKey(BUSINESS_PROFILE_STORAGE_KEY)), demo))
 }
 
 export function writeActiveBusinessProfile(id: string) {
   if (typeof window === "undefined") return
-  window.localStorage.setItem(BUSINESS_PROFILE_STORAGE_KEY, id)
+  window.localStorage.setItem(onboardingStorageKey(BUSINESS_PROFILE_STORAGE_KEY), id)
   window.dispatchEvent(new Event(BUSINESS_PROFILE_CHANGED_EVENT))
 }
 
 /** Subscribes to profile switches made anywhere (this tab or another) so any
  *  component can stay in sync without prop drilling. */
 export function useActiveBusinessProfile(): BusinessProfile {
-  const [profile, setProfile] = useState<BusinessProfile>(readActiveBusinessProfile)
+  return useSyncExternalStore(subscribeProfile, readActiveBusinessProfile, () => getBusinessProfile(DEFAULT_BUSINESS_PROFILE_ID))
+}
 
-  useEffect(() => {
-    setProfile(readActiveBusinessProfile())
-    const sync = () => setProfile(readActiveBusinessProfile())
-    window.addEventListener(BUSINESS_PROFILE_CHANGED_EVENT, sync)
-    window.addEventListener("storage", sync)
-    return () => {
-      window.removeEventListener(BUSINESS_PROFILE_CHANGED_EVENT, sync)
-      window.removeEventListener("storage", sync)
-    }
-  }, [])
-
-  return profile
+function subscribeProfile(listener: () => void) {
+  window.addEventListener(BUSINESS_PROFILE_CHANGED_EVENT, listener)
+  window.addEventListener("storage", listener)
+  return () => {
+    window.removeEventListener(BUSINESS_PROFILE_CHANGED_EVENT, listener)
+    window.removeEventListener("storage", listener)
+  }
 }
 
 export function businessProfileHasAnyPermission(profile: BusinessProfile, permissionKeys: string[]) {

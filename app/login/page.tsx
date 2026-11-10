@@ -1,7 +1,7 @@
 "use client"
 
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { JourneyLink as Link } from "@/components/getting-started/navigation"
+import { useJourneyRouter as useRouter } from "@/components/getting-started/navigation"
 import { type FormEvent, useEffect, useMemo, useState } from "react"
 import { CaretDownIcon, DotsThreeIcon, MoonIcon, SignOutIcon, SunIcon } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
@@ -24,6 +24,7 @@ import {
 } from "@/lib/language-settings"
 import { clearDummyAuthSession, readDummyAuthSession, writeDummyAuthSession } from "@/lib/dummy-auth"
 import { setThemeWithTransition } from "@/lib/theme-transition"
+import { useIsOnboardingDemo } from "@/components/getting-started/navigation"
 
 const imgLine = "https://www.figma.com/api/mcp/asset/1c3d4486-78bf-42f4-bc1e-1a5ece78800e"
 const imgVector3 = "https://www.figma.com/api/mcp/asset/7964ee79-a0f1-4c95-b33b-37968f22bfb5"
@@ -63,6 +64,7 @@ function normalizedEmail(identifier: string) {
 
 export default function LoginPage() {
   const router = useRouter()
+  const inDemo = useIsOnboardingDemo()
   const { resolvedTheme, setTheme } = useTheme()
 
   const [identifier, setIdentifier] = useState("")
@@ -202,7 +204,7 @@ export default function LoginPage() {
                 <h1 className="text-2xl font-semibold leading-8 text-card-foreground">Login to your account</h1>
                 <p className="text-sm font-medium leading-5 text-muted-foreground">
                   Don’t have an account?{" "}
-                  <Link href="/signup/email" className="text-primary underline underline-offset-2">
+                  <Link href={inDemo ? "/signup/phone" : "/signup/email"} className="text-primary underline underline-offset-2">
                     Sign up
                   </Link>
                 </p>

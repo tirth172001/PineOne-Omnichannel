@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState, type CSSProperties, type ComponentType, type ReactNode } from "react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { JourneyLink as Link } from "@/components/getting-started/navigation"
+import { useJourneyPathname as usePathname, useJourneyRouter as useRouter } from "@/components/getting-started/navigation"
 import {
   ArrowCounterClockwiseIcon,
   CaretUpDownIcon,
@@ -49,8 +49,23 @@ import {
   writeActiveBusinessProfile,
 } from "@/lib/business-profiles"
 import { clearDummyAuthSession, readDummyAuthSession } from "@/lib/dummy-auth"
+import {
+  type GettingStartedState,
+  liveProducts,
+  markSectionSeen,
+  NEW_MERCHANT_PROFILE_ID,
+  PRODUCT_IDS,
+  resetGettingStarted,
+  useGettingStarted,
+  visibleSectionIds,
+  useGettingStartedHydrated,
+} from "@/lib/getting-started"
+import { PRODUCTS, UNLOCKED_SECTIONS, productJourneyHref } from "@/components/getting-started/catalog"
+import { ActivationIntroduction } from "@/components/getting-started/activation-intro"
+import { NewMerchantActivityGate } from "@/components/getting-started/activity-page"
 import { setThemeWithTransition } from "@/lib/theme-transition"
 import { cn } from "@/lib/utils"
+import { useIsOnboardingDemo } from "@/components/getting-started/navigation"
 
 type PlatformPanel = "manage-stores" | "manage-users"
 
@@ -62,6 +77,50 @@ type ShellNavItem = {
   label: string
   href: string
   icon: ComponentType<{ className?: string }>
+  trailing?: ReactNode
+}
+
+function NavTag({ tone, children }: { tone: "new" | "live" | "progress"; children?: ReactNode }) {
+  if (tone === "new") {
+    return <span className="ml-auto rounded-full bg-primary/10 px-1.5 py-px text-[10px] font-semibold text-primary">New</span>
+  }
+  return (
+    <span className="ml-auto flex items-center gap-1 text-[11px] text-sidebar-foreground/60">
+      <span className={cn("h-1.5 w-1.5 rounded-full", tone === "live" ? "bg-success" : "bg-warning")} />
+      {children}
+    </span>
+  )
+}
+
+/**
+ * A merchant who has just signed up gets a short menu: Overview and the three
+ * products. Payments, Settlement and the rest join once something is live,
+ * tagged New until opened, so the menu grows with what they actually use.
+ */
+function newMerchantNavGroups(state: GettingStartedState): Array<{ label?: string; items: ShellNavItem[] }> {
+  const live = liveProducts(state).length > 0
+  const unlocked: ShellNavItem[] = live
+    ? UNLOCKED_SECTIONS.filter((section) => visibleSectionIds(state).includes(section.id)).map((section) => ({
+        label: section.label,
+        href: section.href,
+        icon: section.icon,
+        trailing: state.seenSections.includes(section.id) ? undefined : <NavTag tone="new" />,
+      }))
+    : []
+  const products: ShellNavItem[] = PRODUCT_IDS.map((id) => {
+    const { stage, step } = state.journeys[id]
+    return {
+      label: PRODUCTS[id].shortName,
+      href: productJourneyHref(id, stage, step),
+      icon: PRODUCTS[id].icon,
+      trailing:
+        stage === "live" ? <NavTag tone="live">Live</NavTag> : stage === "intro" ? undefined : <NavTag tone="progress">Setting up</NavTag>,
+    }
+  })
+  return [
+    { items: [{ label: "Overview", href: "/", icon: HouseIcon }, ...unlocked] },
+    { label: "Products", items: products },
+  ]
 }
 
 const navGroups: Array<{ label?: string; items: ShellNavItem[] }> = [
@@ -104,6 +163,7 @@ function BusinessProfileSwitcherDialog({
   onOpenChange: (open: boolean) => void
   activeProfileId: string
 }) {
+  const inDemo = useIsOnboardingDemo()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -114,7 +174,7 @@ function BusinessProfileSwitcherDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
-          {BUSINESS_PROFILES.map((profile) => {
+          {BUSINESS_PROFILES.filter((profile) => inDemo || profile.id !== NEW_MERCHANT_PROFILE_ID).map((profile) => {
             const active = profile.id === activeProfileId
             return (
               <button
@@ -156,6 +216,7 @@ function AccountMenu({ onLogout }: { onLogout: () => void }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [switcherOpen, setSwitcherOpen] = useState(false)
   const activeProfile = useActiveBusinessProfile()
+  const inDemo = useIsOnboardingDemo()
 
   useEffect(() => {
     setMounted(true)
@@ -196,7 +257,7 @@ function AccountMenu({ onLogout }: { onLogout: () => void }) {
               <p className="truncate text-xs text-muted-foreground">{activeProfile.stage}</p>
             </div>
           </div>
-          <Button
+          {!inDemo ? <Button
             type="button"
             variant="outline"
             size="sm"
@@ -207,7 +268,7 @@ function AccountMenu({ onLogout }: { onLogout: () => void }) {
             }}
           >
             Switch business
-          </Button>
+          </Button> : null}
 
           <DropdownMenuSeparator className="my-2" />
 
@@ -222,6 +283,13 @@ function AccountMenu({ onLogout }: { onLogout: () => void }) {
             {isDark ? <SunIcon className="mr-2 h-3.5 w-3.5" /> : <MoonIcon className="mr-2 h-3.5 w-3.5" />}
             Dark mode
           </DropdownMenuItem>
+
+          {activeProfile.id === NEW_MERCHANT_PROFILE_ID ? (
+            <DropdownMenuItem onSelect={() => resetGettingStarted()}>
+              <ArrowCounterClockwiseIcon className="mr-2 h-3.5 w-3.5" />
+              Restart onboarding (demo)
+            </DropdownMenuItem>
+          ) : null}
 
           <DropdownMenuSeparator className="my-2" />
 
@@ -251,6 +319,19 @@ function SidebarNav({
   onLogout: () => void
 }) {
   const pathname = usePathname()
+  const profile = useActiveBusinessProfile()
+  const gettingStarted = useGettingStarted()
+  const isNewMerchant = profile.id === NEW_MERCHANT_PROFILE_ID
+  const groups = isNewMerchant ? newMerchantNavGroups(gettingStarted) : navGroups
+
+  // Opening an unlocked section clears its New tag.
+  useEffect(() => {
+    if (!isNewMerchant) return
+    const section = UNLOCKED_SECTIONS.find((item) => visibleSectionIds(gettingStarted).includes(item.id) && (pathname === item.href || pathname.startsWith(`${item.href}/`)))
+    if (section && liveProducts(gettingStarted).length > 0 && !gettingStarted.seenSections.includes(section.id)) {
+      markSectionSeen(section.id)
+    }
+  }, [isNewMerchant, pathname, gettingStarted])
 
   const isHrefActive = (href: string) => {
     if (activePanel) return false
@@ -269,7 +350,7 @@ function SidebarNav({
       </div>
 
       <nav className="min-h-0 flex-1 overflow-y-auto bg-sidebar px-2 py-2">
-        {navGroups.map((group, groupIndex) => (
+        {groups.map((group, groupIndex) => (
           <div key={`${group.label ?? "core"}-${groupIndex}`} className={cn(groupIndex > 0 && "mt-6")}>
             {group.label ? (
               <p className="mb-1 px-2 text-xs font-medium text-muted-foreground/90">{group.label}</p>
@@ -293,6 +374,7 @@ function SidebarNav({
                   >
                     <Icon className="h-3.5 w-3.5 shrink-0" />
                     <span className="truncate">{item.label}</span>
+                    {item.trailing}
                   </Link>
                 )
               })}
@@ -300,7 +382,7 @@ function SidebarNav({
           </div>
         ))}
 
-        <div className="mt-6">
+        {!isNewMerchant ? <div className="mt-6">
           <p className="mb-1 px-2 text-xs font-medium text-muted-foreground/90">Other</p>
           <div className="space-y-1">
             <button
@@ -359,7 +441,7 @@ function SidebarNav({
               <span className="truncate">Account settings</span>
             </Link>
           </div>
-        </div>
+        </div> : null}
       </nav>
 
       <div className="shrink-0 space-y-1 bg-sidebar px-2 py-2">
@@ -383,11 +465,24 @@ function PlatformPanelContent({ panel }: { panel: PlatformPanel }) {
 export function TransactionsPlatformShell({ children }: TransactionsPlatformShellProps) {
   const router = useRouter()
   const [activePanel, setActivePanel] = useState<PlatformPanel | null>(null)
+  const hydrated = useGettingStartedHydrated()
+  const profile = useActiveBusinessProfile()
+  const inDemo = useIsOnboardingDemo()
+  const [demoAuthenticated, setDemoAuthenticated] = useState(false)
+
+  useEffect(() => {
+    if (!inDemo) return
+    const authenticated = Boolean(readDummyAuthSession())
+    setDemoAuthenticated(authenticated)
+    if (!authenticated) router.replace("/signup/phone")
+  }, [inDemo, router])
 
   function logout() {
     clearDummyAuthSession()
-    router.replace("/")
+    router.replace("/login")
   }
+
+  if (!hydrated || (inDemo && !demoAuthenticated)) return <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground" role="status">Loading your workspace…</div>
 
   return (
     <NavVisibilityProvider>
@@ -402,16 +497,17 @@ export function TransactionsPlatformShell({ children }: TransactionsPlatformShel
             <div className="flex h-[calc(100vh-16px)] flex-col overflow-hidden rounded-md bg-background">
               <div className="relative min-w-0 flex-1 overflow-hidden bg-background">
                 <ScrollArea className="h-full">
-                  {activePanel ? (
+                  {activePanel && profile.id !== NEW_MERCHANT_PROFILE_ID ? (
                     <PlatformPanelContent panel={activePanel} />
                   ) : (
-                    <main className="min-h-full">{children}</main>
+                    <main className="min-h-full"><NewMerchantActivityGate>{children}</NewMerchantActivityGate></main>
                   )}
                 </ScrollArea>
               </div>
             </div>
           </div>
         </div>
+        {profile.id === NEW_MERCHANT_PROFILE_ID ? <ActivationIntroduction /> : null}
       </div>
     </NavVisibilityProvider>
   )

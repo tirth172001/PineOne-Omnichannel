@@ -7,7 +7,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useJourneyRouter as useRouter } from "@/components/getting-started/navigation"
 import { CaretDownIcon, DotsThreeIcon, SignOutIcon } from "@phosphor-icons/react/ssr"
 import { useTheme } from "next-themes"
 import {

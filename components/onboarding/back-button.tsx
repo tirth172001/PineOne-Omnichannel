@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useJourneyRouter as useRouter } from "@/components/getting-started/navigation"
 import { ArrowLeftIcon } from "@phosphor-icons/react"
 
 // Ticket 08 (.scratch/onboarding-experience-v2/issues/08-add-back-navigation.md): a single

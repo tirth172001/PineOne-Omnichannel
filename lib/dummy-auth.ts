@@ -9,7 +9,7 @@ export type DummyAuthSession = {
 
 export function readDummyAuthSession(): DummyAuthSession | null {
   if (typeof window === "undefined") return null
-  const raw = window.localStorage.getItem(DUMMY_AUTH_STORAGE_KEY)
+  const raw = window.localStorage.getItem(onboardingStorageKey(DUMMY_AUTH_STORAGE_KEY))
   if (!raw) return null
 
   try {
@@ -28,15 +28,17 @@ export function readDummyAuthSession(): DummyAuthSession | null {
 
 export function writeDummyAuthSession(session: DummyAuthSession) {
   if (typeof window === "undefined") return
-  window.localStorage.setItem(DUMMY_AUTH_STORAGE_KEY, JSON.stringify(session))
+  window.localStorage.setItem(onboardingStorageKey(DUMMY_AUTH_STORAGE_KEY), JSON.stringify(session))
 }
 
 export function clearDummyAuthSession() {
   if (typeof window === "undefined") return
-  window.localStorage.removeItem(DUMMY_AUTH_STORAGE_KEY)
+  window.localStorage.removeItem(onboardingStorageKey(DUMMY_AUTH_STORAGE_KEY))
 }
 
 export function isDummyAuthenticated() {
   return Boolean(readDummyAuthSession())
 }
+
+import { onboardingStorageKey } from "./onboarding-environment.js"
 
