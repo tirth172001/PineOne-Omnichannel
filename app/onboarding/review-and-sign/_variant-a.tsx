@@ -4,7 +4,7 @@ import { useState } from "react"
 import { CheckCircleIcon, PencilSimpleIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { agreementParagraphs, reviewGroups } from "./_review-data"
+import { agreementParagraphs, reviewGroups } from "@/app/onboarding/(rail)/review-and-sign/_review-data"
 
 type Screen = "review" | "sign" | "success"
 

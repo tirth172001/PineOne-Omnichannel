@@ -4,7 +4,7 @@ import { useState } from "react"
 import { IdentificationCardIcon, PlusIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { AddOwnerSheet } from "./_add-owner-sheet"
+import { AddOwnerSheet } from "@/app/onboarding/(rail)/business-owners/_add-owner-sheet"
 import { colorForIndex, initials, type Owner } from "./_owner"
 
 // Variant B — owners shown as a card grid on the left; preview is a roster of physical
@@ -106,7 +106,7 @@ export function VariantB() {
         )}
       </div>
 
-      <AddOwnerSheet open={sheetOpen} onOpenChange={setSheetOpen} onAdd={(owner) => setOwners((current) => [...current, owner])} />
+      <AddOwnerSheet open={sheetOpen} onOpenChange={setSheetOpen} existingPeople={owners} onAdd={(owner) => setOwners((current) => [...current, owner])} />
     </div>
   )
 }

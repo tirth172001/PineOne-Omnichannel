@@ -5,7 +5,7 @@ import { CheckCircleIcon, CircleIcon, EyeIcon, EyeglassesIcon, SunIcon } from "@
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
-import { CameraStage } from "./_camera-stage"
+import { CameraStage } from "@/app/onboarding/(rail)/face-authentication/_camera-stage"
 import { signatoryName } from "./_mock"
 
 type Screen = "confirm" | "checklist" | "capture" | "success"

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { PlusIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { AddSignatorySheet } from "./_add-signatory-sheet"
+import { AddSignatorySheet } from "@/app/onboarding/(rail)/authorised-signatory/_add-signatory-sheet"
 import { initials, ownerCandidates, type Signatory } from "./_signatory"
 
 // Variant C — a fast, compact chip row for selection; preview is an ID/lanyard-badge mockup

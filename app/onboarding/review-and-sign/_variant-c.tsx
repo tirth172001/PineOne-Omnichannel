@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import { agreementParagraphs, reviewGroups } from "./_review-data"
+import { agreementParagraphs, reviewGroups } from "@/app/onboarding/(rail)/review-and-sign/_review-data"
 
 // Variant C — review sections as tabs (not one long scroll); signing happens in a modal
 // overlay rather than a separate full-width screen, ending in a toast instead of a success

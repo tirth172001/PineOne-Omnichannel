@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
-import { categoryGroups, findCategory } from "./_categories"
+import { categoryGroups, findCategory } from "@/app/onboarding/(rail)/business-basics/_categories"
 
 // Variant B — category picked via a browsable side-panel (not inline search), and the preview
 // is two separate real-world artifacts (a storefront tag, a courier shipping label) instead

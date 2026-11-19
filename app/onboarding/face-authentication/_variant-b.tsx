@@ -4,7 +4,7 @@ import { useState } from "react"
 import { CheckCircleIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { CameraStage } from "./_camera-stage"
+import { CameraStage } from "@/app/onboarding/(rail)/face-authentication/_camera-stage"
 import { signatoryName } from "./_mock"
 
 type Stage = "idle" | "lighting" | "glasses" | "blink" | "success"

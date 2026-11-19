@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
-import { categoryGroups, findCategory } from "./_categories"
+import { categoryGroups, findCategory } from "@/app/onboarding/(rail)/business-basics/_categories"
 
 const popular = ["cafe", "restaurant", "grocery", "salon"]
 

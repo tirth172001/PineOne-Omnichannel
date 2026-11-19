@@ -4,7 +4,7 @@ import { useState } from "react"
 import { CaretDownIcon, PenNibIcon, PlusIcon, SealCheckIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { AddSignatorySheet } from "./_add-signatory-sheet"
+import { AddSignatorySheet } from "@/app/onboarding/(rail)/authorised-signatory/_add-signatory-sheet"
 import { initials, ownerCandidates, type Signatory } from "./_signatory"
 
 const verifiedFields = [

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { AddOwnerSheet } from "./_add-owner-sheet"
+import { AddOwnerSheet } from "@/app/onboarding/(rail)/business-owners/_add-owner-sheet"
 import { colorForIndex, initials, type Owner } from "./_owner"
 
 // Variant C — owner rows carry an inline ownership progress bar; preview is an org-chart
@@ -126,7 +126,7 @@ export function VariantC() {
         </div>
       </div>
 
-      <AddOwnerSheet open={sheetOpen} onOpenChange={setSheetOpen} onAdd={(owner) => setOwners((current) => [...current, owner])} />
+      <AddOwnerSheet open={sheetOpen} onOpenChange={setSheetOpen} existingPeople={owners} onAdd={(owner) => setOwners((current) => [...current, owner])} />
     </div>
   )
 }
