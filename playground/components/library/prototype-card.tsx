@@ -15,12 +15,12 @@ export function cardTarget(prototype: Prototype) {
   return ext?.embed === "none" && ext.url ? { href: ext.url, external: true } : { href: `/prototypes/${prototype.slug}`, external: false };
 }
 
-export function PrototypeCard({ prototype, variantOfTitle }: { prototype: Prototype; variantOfTitle?: string }) {
+export function PrototypeCard({ prototype, variantOfTitle, delay }: { prototype: Prototype; variantOfTitle?: string; delay?: number }) {
   const { meta } = prototype;
   const target = cardTarget(prototype);
   const body: ReactNode = (
     <>
-      <Thumbnail prototype={prototype} />
+      <Thumbnail prototype={prototype} delay={delay} />
       <div className="flex flex-col gap-1 p-4">
         <div className="flex items-center gap-2">
           <h4 className="truncate font-medium">{meta.title}</h4>

@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils";
  * (desktop frame or phone frame; see `PreviewComposition` and `lib/preview.ts`).
  * Static images only: never a live iframe, one booted app per card crashes mobile browsers.
  */
-export function Thumbnail({ prototype, className }: { prototype: Prototype; className?: string }) {
+/** `delay` staggers the reveal of neighbouring cards (ms). */
+export function Thumbnail({ prototype, className, delay }: { prototype: Prototype; className?: string; delay?: number }) {
   if (!prototype.assets.thumbnails) {
     return (
       <div className={cn("flex aspect-[16/10] items-center justify-center bg-muted text-sm text-muted-foreground", className)}>
@@ -24,6 +25,7 @@ export function Thumbnail({ prototype, className }: { prototype: Prototype; clas
     <PreviewComposition
       kind={previewKind(prototype.meta)}
       src={src}
+      delay={delay}
       low={`/thumbnails/${prototype.slug}-low.webp?v=${version}`}
       placeholder={(placeholders as Record<string, string>)[prototype.slug]}
       style={PREVIEW_STYLE}

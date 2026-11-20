@@ -11,7 +11,7 @@ import { plural } from "./format";
  * A folder on the home page, Finder icon-view style: the folder (with the newest few things inside
  * peeking out: screenshots for prototype folders, pages for Docs), its name, and how many items.
  */
-export function FolderCard({ folder, prototypes, docs }: { folder: Folder; prototypes: Prototype[]; docs: DocSummary[] }) {
+export function FolderCard({ folder, prototypes, docs, delay = 0 }: { folder: Folder; prototypes: Prototype[]; docs: DocSummary[]; delay?: number }) {
   const isDocs = folder.id === "docs";
   const count = isDocs ? plural(docs.length, "doc") : plural(prototypes.length, "item");
   const sheets = isDocs
@@ -19,7 +19,7 @@ export function FolderCard({ folder, prototypes, docs }: { folder: Folder; proto
     : prototypes
         .filter((p) => p.assets.thumbnails)
         .slice(0, 3)
-        .map((p) => <ShotSheet key={p.slug} prototype={p} />);
+        .map((p, i) => <ShotSheet key={p.slug} prototype={p} delay={delay + i * 60} />);
   return (
     <Link
       href={`/folders/${folder.id}`}
@@ -36,9 +36,9 @@ export function FolderCard({ folder, prototypes, docs }: { folder: Folder; proto
   );
 }
 
-function ShotSheet({ prototype }: { prototype: Prototype }) {
+function ShotSheet({ prototype, delay }: { prototype: Prototype; delay: number }) {
   const v = Date.parse(prototype.meta.updatedAt);
-  return <FadeImage src={`/thumbnails/${prototype.slug}-sheet.webp?v=${v}`} low={`/thumbnails/${prototype.slug}-low.webp?v=${v}`} placeholder={(placeholders as Record<string, string>)[prototype.slug]} />;
+  return <FadeImage src={`/thumbnails/${prototype.slug}-sheet.webp?v=${v}`} low={`/thumbnails/${prototype.slug}-low.webp?v=${v}`} placeholder={(placeholders as Record<string, string>)[prototype.slug]} delay={delay} />;
 }
 
 function FileSheet({ title }: { title: string }) {

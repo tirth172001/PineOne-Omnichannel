@@ -22,8 +22,8 @@ export function LibraryHome({ prototypes, docs }: { prototypes: Prototype[]; doc
         <SearchResults hits={hits} titles={titles} />
       ) : (
         <div className="grid grid-cols-3 gap-x-2 gap-y-5 sm:grid-cols-4 lg:grid-cols-6">
-          {FOLDERS.map((folder) => (
-            <FolderCard key={folder.id} folder={folder} prototypes={prototypes.filter((p) => p.meta.folder === folder.id)} docs={docs} />
+          {FOLDERS.map((folder, i) => (
+            <FolderCard key={folder.id} delay={i * 70} folder={folder} prototypes={prototypes.filter((p) => p.meta.folder === folder.id)} docs={docs} />
           ))}
         </div>
       )}

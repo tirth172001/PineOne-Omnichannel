@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 export function PreviewComposition({
   kind,
   src,
+  delay,
   low,
   placeholder,
   style,
@@ -25,6 +26,8 @@ export function PreviewComposition({
   kind: PreviewKind;
   /** The light-theme screenshot. */
   src: string;
+  /** Staggers this card's reveal (ms). */
+  delay?: number;
   /** A low-quality version, the middle step of progressive loading. */
   low?: string;
   /** A tiny blurred version, shown until the screenshot has loaded. */
@@ -33,7 +36,7 @@ export function PreviewComposition({
   className?: string;
 }) {
   const shadow = style.shadow && "shadow-[0_8px_30px_-6px_rgb(0_0_0/0.25)]";
-  const shot = <FadeImage src={src} low={low} placeholder={placeholder} />;
+  const shot = <FadeImage src={src} low={low} placeholder={placeholder} delay={delay} />;
 
   return (
     <div className={cn("relative aspect-[16/10] overflow-hidden bg-muted @container", className)}>
