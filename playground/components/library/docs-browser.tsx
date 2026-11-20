@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PageTitle } from "@/components/page-title";
+import { HeroBanner } from "@/components/hero-banner/hero-banner";
+import type { HeroPattern } from "@/components/hero-banner/pattern";
 import { TAG_GROUPS } from "@/lib/doc-tags";
 import type { DocSummary } from "@/lib/docs";
 import { DocTile } from "./doc-tile";
@@ -14,7 +15,7 @@ import { TagBar } from "./tag-bar";
  * The Docs folder: search (full text, ranked, with the matching passage) and tags
  * (channel and persona) on top, then every doc as a file with its page preview (A–Z, or ranked while searching).
  */
-export function DocsBrowser({ docs, title }: { docs: DocSummary[]; title: string }) {
+export function DocsBrowser({ docs, title, hero }: { docs: DocSummary[]; title: string; hero: HeroPattern }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   // Several tags narrow the list: a doc has to carry every selected tag.
@@ -28,12 +29,7 @@ export function DocsBrowser({ docs, title }: { docs: DocSummary[]; title: string
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-baseline justify-between gap-4">
-        <PageTitle>{title}</PageTitle>
-        <p className="shrink-0 text-sm text-muted-foreground tabular-nums" aria-live="polite">
-          {plural(hits.length, "doc")}
-        </p>
-      </div>
+      <HeroBanner title={title} pattern={hero} meta={<span aria-live="polite">{plural(hits.length, "doc")}</span>} />
       <div className="flex flex-col gap-3">
         <SearchBox value={query} onChange={setQuery} label="Search docs" />
         <TagBar groups={groups} selected={selected} onToggle={toggle} />

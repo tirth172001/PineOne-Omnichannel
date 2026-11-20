@@ -5,9 +5,10 @@ import { DocContentsInline, DocContentsRail } from "@/components/library/doc-con
 import { formatDocDate } from "@/components/library/format";
 import { Markdown } from "@/components/library/markdown";
 import { PageHeader } from "@/components/page-header";
-import { PageTitle } from "@/components/page-title";
+import { HeroBanner } from "@/components/hero-banner/hero-banner";
 import { Badge } from "@/components/ui/badge";
 import { getAllDocs, getDoc } from "@/lib/docs";
+import { docHero } from "@/lib/heroes";
 import { buildGlossary, documentNames } from "@/lib/references";
 
 export const dynamicParams = false;
@@ -30,14 +31,15 @@ export default async function DocPage({ params }: PageProps<"/docs/[slug]">) {
   return (
     <div className="flex min-h-dvh flex-col">
       <PageHeader crumbs={[{ label: "Playground", href: "/" }, { label: "Docs", href: "/folders/docs" }, { label: meta.title }]} back={{ href: "/folders/docs", label: "Docs" }} width="max-w-6xl sm:px-6" />
-      <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-24 sm:px-6 lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-16 lg:pt-10">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6">
+        <HeroBanner eyebrow={meta.kind} title={meta.title} pattern={docHero(doc.slug)} className="sm:min-h-64" />
+      </div>
+      <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-24 sm:px-6 lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-16 lg:pt-10">
         <aside className="hidden lg:block">
           <DocContentsRail headings={headings} />
         </aside>
         <main className="mx-auto w-full max-w-[44rem] lg:mx-0">
           <header className="flex flex-col gap-4 border-b border-border pb-8">
-            <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">{meta.kind}</p>
-            <PageTitle>{meta.title}</PageTitle>
             <p className="text-lg leading-relaxed text-pretty text-muted-foreground">{meta.description}</p>
             <p className="text-sm text-muted-foreground">
               {formatDocDate(meta.date)} · {minutes} min read

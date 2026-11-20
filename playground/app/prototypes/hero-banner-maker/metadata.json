@@ -1,0 +1,12 @@
+{
+  "title": "Hero banner maker",
+  "description": "Design the dithered pixel backgrounds behind the playground's page banners: Pine seal, rings, waves or grain, with lime and seal-red accent sprinkles. Copy the result into lib/heroes.ts.",
+  "tags": ["banner", "dither", "pixel", "generator"],
+  "folder": "design-system",
+  "surface": "web",
+  "group": "Playground",
+  "createdAt": "2026-11-20",
+  "updatedAt": "2026-11-20T11:24:41.000Z",
+  "hidden": false,
+  "public": false
+}

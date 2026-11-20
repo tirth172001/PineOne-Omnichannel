@@ -1,0 +1,44 @@
+"use client";
+
+import { type ReactNode, useRef } from "react";
+import { PageTitle } from "@/components/page-title";
+import { cn } from "@/lib/utils";
+import { HeroCanvas } from "./hero-canvas";
+import type { HeroPattern } from "./pattern";
+
+/**
+ * The banner at the top of every playground page: a dithered background (see `pattern.ts`,
+ * designed in the Hero banner maker prototype) with the page title centred on it.
+ * The page's content starts below.
+ */
+export function HeroBanner({
+  title,
+  pattern,
+  eyebrow,
+  meta,
+  action,
+  className,
+}: {
+  title: ReactNode;
+  pattern: HeroPattern;
+  /** Small uppercase line above the title. */
+  eyebrow?: ReactNode;
+  /** Quiet line below the title (a count, a date). */
+  meta?: ReactNode;
+  /** Pinned to the top-right corner (e.g. the theme toggle on home). */
+  action?: ReactNode;
+  className?: string;
+}) {
+  const titleRef = useRef<HTMLDivElement>(null);
+  return (
+    <section className={cn("relative isolate flex min-h-44 items-center justify-center overflow-hidden rounded-2xl bg-muted/60 px-6 py-12 sm:min-h-56", className)}>
+      <HeroCanvas pattern={pattern} clearRef={titleRef} className="-z-10" />
+      <div ref={titleRef} className="flex max-w-xl flex-col items-center gap-2 text-center">
+        {eyebrow && <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">{eyebrow}</p>}
+        <PageTitle>{title}</PageTitle>
+        {meta && <div className="text-sm text-muted-foreground tabular-nums">{meta}</div>}
+      </div>
+      {action && <div className="absolute top-1.5 right-1.5">{action}</div>}
+    </section>
+  );
+}

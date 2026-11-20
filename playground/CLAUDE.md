@@ -11,6 +11,7 @@ All commands below run from `playground/`, not the repo root. The repo root is a
 | Home: folders + one search across all of them | `app/page.tsx`, `components/library/` (pure logic in `search.ts`) |
 | Folders (the list, order and names) | `lib/folders.ts` (mirror the ids in `scripts/registry.mjs`), pages at `app/folders/[folder]/` |
 | Research docs | `docs/*.md` (Markdown + front matter), read by `lib/docs.ts`, listed with search + tags by `components/library/docs-browser.tsx`, shown at `app/docs/[slug]/` with contents and cross-reference hover cards (`lib/references.ts`). Guide and index: `docs/README.md` |
+| Page hero banners | `components/hero-banner/` (`HeroBanner`: dithered pixel background on a canvas, title centred; pure generator in `pattern.ts`). Each page's pattern lives in `lib/heroes.ts`; design new ones in the **Hero banner maker** prototype and paste the copied object there. Accent colours are the `--hero-lime` / `--hero-seal` tokens. |
 | Inner-page header | `components/page-header.tsx`: back + breadcrumbs in the content column; once scrolled, only a floating Back pill stays. Pass `width` to match the page's column. |
 | Prototypes | `app/prototypes/<slug>/` (one folder each) |
 | Collaborator guide (humans) | `README.md` |
