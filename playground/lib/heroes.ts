@@ -21,14 +21,14 @@ export const HOME_HERO: HeroPattern = {
 };
 
 export const FOLDER_HEROES: Record<FolderId, HeroPattern> = {
-  docs: { ...DEFAULT_PATTERN, shape: "veins", cell: 5, scale: 1, density: 0.6, focusX: 0.85, accent: 1, seed: 21 },
-  "design-system": { ...DEFAULT_PATTERN, shape: "spiral", pixel: "dot", cell: 6, scale: 0.9, density: 0.75, focusX: 0.85, focusY: 0.5, accent: 1, seed: 4 },
-  "pine-one": { ...DEFAULT_PATTERN, shape: "imprint", cell: 5, scale: 1, density: 0.7, focusX: 0.82, focusY: 0.5, palette: "lime", accent: 1, seed: 33 },
+  docs: { ...DEFAULT_PATTERN, shape: "veins", cell: 5, scale: 1.1, density: 0.5, focusX: 0.85, accent: 1, seed: 21 },
+  "design-system": { ...DEFAULT_PATTERN, shape: "spiral", pixel: "dot", cell: 4, scale: 1, density: 0.6, focusX: 0.86, focusY: 0.5, accent: 1, seed: 4 },
+  "pine-one": { ...DEFAULT_PATTERN, shape: "topo", pixel: "dot", cell: 6, scale: 1.4, density: 0.6, focusX: 0.82, accent: 0.3, gradient: 0.45, seed: 33 },
   "pine-one-app": { ...DEFAULT_PATTERN, shape: "stomata", cell: 5, scale: 1, density: 0.7, focusX: 0.85, accent: 1, seed: 8 },
   "pine-omni": { ...DEFAULT_PATTERN, shape: "osmosis", pixel: "dot", cell: 6, scale: 1, density: 0.8, focusX: 0.5, focusY: 0.72, accent: 1, gradient: 0.35, seed: 61 },
-  "pine-omni-app": { ...DEFAULT_PATTERN, shape: "rays", pixel: "rounded", cell: 6, scale: 1, density: 0.75, focusX: 0.3, palette: "pine", accent: 1, seed: 17 },
-  agents: { ...DEFAULT_PATTERN, shape: "palisade", cell: 5, scale: 1, density: 0.7, focusX: 0.15, accent: 1, seed: 2 },
-  onboarding: { ...DEFAULT_PATTERN, shape: "flow", pixel: "dash", cell: 7, scale: 1.2, density: 0.7, focusX: 0.15, palette: "pine", accent: 0.9, seed: 45 },
+  "pine-omni-app": { ...DEFAULT_PATTERN, shape: "grana", pixel: "rounded", cell: 5, scale: 1.1, density: 0.7, focusX: 0.3, palette: "pine", accent: 1, gradient: 0.45, seed: 17 },
+  agents: { ...DEFAULT_PATTERN, shape: "mycelium", pixel: "dot", cell: 5, scale: 1, density: 0.65, focusX: 0.15, accent: 0.35, gradient: 0.5, seed: 2 },
+  onboarding: { ...DEFAULT_PATTERN, shape: "xylem", pixel: "rounded", cell: 5, scale: 1, density: 0.7, focusX: 0.15, palette: "pine", accent: 0.8, gradient: 0.45, seed: 45 },
 };
 
 function slugSeed(slug: string) {
@@ -51,7 +51,7 @@ export function docHero(slug: string): HeroPattern {
     focusX: 0.8 + ((h >> 5) % 3) * 0.05,
     focusY: 0.3 + ((h >> 3) % 5) * 0.1,
     density: 0.65,
-    accent: 0.9,
+    accent: 0.4,
     palette: h % 4 === 0 ? "pine" : "lime",
     seed: (h % 997) + 1,
   };

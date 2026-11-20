@@ -14,6 +14,9 @@ import { PINE_LABS_CENTRE, PINE_LABS_HEIGHT, pineLabsDistance } from "./pine-log
  * - `veins`: the leaf's reticulate vein network, major veins over a fine mesh; stretches of major veins in the accent.
  * - `palisade`: columns of elongated mesophyll cells lined with chloroplasts; some chloroplasts glow.
  * - `cells`: rounded plant cells, a chloroplast in each.
+ * - `grana`: thylakoid stacks (where photosynthesis happens), linked by thin lamellae; a few stacks in the accent.
+ * - `xylem`: vertical water vessels with spiral thickening; stretches of a few vessels in the accent.
+ * - `mycelium`: fine branching fungal threads; runs of the main threads in the accent.
  * Nature flows:
  * - `osmosis`: a membrane across the banner, dense particles on one side, a few slipping through.
  * - `flow`: meandering stream lines, one current in the accent.
@@ -21,7 +24,7 @@ import { PINE_LABS_CENTRE, PINE_LABS_HEIGHT, pineLabsDistance } from "./pine-log
  * - `spiral`: sunflower phyllotaxis filling the banner; one family of spiral arms in the accent.
  * - `topo`: contour lines of rolling terrain. `drift`: diagonal streaks, like light through needles.
  */
-export const SHAPES = ["echo", "imprint", "stomata", "veins", "palisade", "cells", "osmosis", "flow", "rays", "spiral", "topo", "drift"] as const;
+export const SHAPES = ["echo", "imprint", "stomata", "veins", "palisade", "cells", "grana", "xylem", "mycelium", "osmosis", "flow", "rays", "spiral", "topo", "drift"] as const;
 export const DITHERS = ["bayer", "noise", "halftone"] as const;
 /** Line pixels (plus, ring, dash, needle, mark) read best from a pixel size of about 8. `mark` is a tiny Pine Labs corner. */
 export const PIXELS = ["rounded", "square", "dot", "diamond", "plus", "ring", "dash", "needle", "mark"] as const;
@@ -205,9 +208,10 @@ function field(p: HeroPattern, x: number, y: number, fx: number, fy: number, ste
       // Reticulate venation: major veins (large Voronoi walls) over a fine mesh of minor veins.
       const g1 = s * 0.42;
       const big = voronoi(x / g1 + fbm(x * 2, y * 2, p.seed) * 0.25, y / g1, p.seed);
-      if (big.d2 - big.d1 < (step / g1) * 1.3) return { value: 0.7, edge: noise(x * 2.5, y * 2.5, p.seed + 60) < 0.3, line: true };
+      if (big.d2 - big.d1 < (step / g1) * 1.3) return { value: 0.7, edge: noise(x * 2.5, y * 2.5, p.seed + 60) < 0.2, line: true };
       const g2 = g1 / 3.2;
       const small = voronoi(x / g2, y / g2, p.seed + 50);
+      if (fbm(x * 1.5, y * 1.5, p.seed + 70) > 0.5) return EMPTY;
       return small.d2 - small.d1 < (step / g2) * 0.8 ? { value: 0.35, edge: false, line: true } : EMPTY;
     }
     case "palisade": {
@@ -236,6 +240,61 @@ function field(p: HeroPattern, x: number, y: number, fx: number, fy: number, ste
       const st = step / g;
       if (d2 - d1 < st * 0.9) return { value: 0.55, edge: false, line: true };
       if (d1 < st * 0.7) return { value: 0.6, edge: hash(near[0], near[1], p.seed + 7) < 0.12, line: true };
+      return EMPTY;
+    }
+    case "grana": {
+      // Thylakoid stacks: a few short discs stacked in each grid tile, some linked sideways by a lamella.
+      const T = s * 0.24;
+      const col = Math.floor(x / T);
+      const row = Math.floor(y / T);
+      if (hash(col, row, p.seed) > 0.4) return EMPTY;
+      const u = x / T - col;
+      const v = y / T - row;
+      const cx = 0.5 + (hash(col, row, p.seed + 1) - 0.5) * 0.3;
+      const n = 3 + Math.floor(hash(col, row, p.seed + 2) * 3);
+      const st = step / T;
+      const gap = st * 2.2;
+      const lit = hash(col, row, p.seed + 3) < 0.1;
+      for (let k = 0; k < n; k++) {
+        const dy = 0.5 + (k - (n - 1) / 2) * gap;
+        const half = 0.26 * (1 - Math.abs(k - (n - 1) / 2) * 0.1);
+        if (Math.abs(v - dy) < st * 0.5 && Math.abs(u - cx) < half) return { value: 0.85, edge: lit, line: true };
+      }
+      if (Math.abs(v - 0.5) < st * 0.45 && u > cx + 0.26 && hash(col, row, p.seed + 4) < 0.4) return { value: 0.4, edge: false, line: true };
+      return EMPTY;
+    }
+    case "xylem": {
+      // Water vessels: pairs of vertical walls with diagonal bands of spiral thickening between them.
+      const W = s * 0.2;
+      const col = Math.floor(x / W);
+      if (hash(col, 0, p.seed) > 0.4) return EMPTY;
+      const centre = (col + 0.5 + (hash(col, 1, p.seed) - 0.5) * 0.3) * W + Math.sin(y * 3 + col) * step * 0.6;
+      const half = W * (0.16 + hash(col, 2, p.seed) * 0.08);
+      const dx = x - centre;
+      const lit = hash(col, 3, p.seed) < 0.3;
+      if (Math.abs(Math.abs(dx) - half) < step * 0.5) return { value: 0.8, edge: lit && noise(y * 3, col, p.seed) < 0.45, line: true };
+      if (Math.abs(dx) < half - step) {
+        const band = (y + dx * 0.7) / (s * 0.045);
+        if (Math.abs(band - Math.round(band)) * s * 0.045 < step * 0.45) return { value: 0.45, edge: false, line: true };
+      }
+      return EMPTY;
+    }
+    case "mycelium": {
+      // Fungal threads: the zero contour of one noise field (main threads) and, on one side of it, of a finer
+      // one (branches). Distances use the field's gradient, so threads stay one pixel wide.
+      const thread = (fq: number, sd: number) => {
+        const f = (ax: number, ay: number) => fbm((ax * fq) / s, (ay * fq) / s, sd) - 0.5;
+        const n = f(x, y);
+        const gx = (f(x + step, y) - n) / step;
+        const gy = (f(x, y + step) - n) / step;
+        return { n, d: Math.abs(n) / (Math.hypot(gx, gy) + 1e-6) };
+      };
+      const main = thread(1.6, p.seed);
+      if (main.d < step * 0.55) return { value: 0.85, edge: true, line: true };
+      if (main.n > 0) {
+        const branch = thread(3.4, p.seed + 20);
+        if (branch.d < step * 0.5) return { value: 0.45, edge: false, line: true };
+      }
       return EMPTY;
     }
     case "osmosis": {
@@ -271,7 +330,7 @@ function field(p: HeroPattern, x: number, y: number, fx: number, fy: number, ste
     case "spiral": {
       // Sunflower seeds at the golden angle, centred on the focus and large enough to fill the banner;
       // the seeds of one spiral family (every 13th) carry the accent.
-      const c = s * 0.085;
+      const c = s * 0.075;
       const r = Math.hypot(x - fx, y - fy);
       const n = (r / c) ** 2;
       const lo = Math.max(1, Math.floor(n - 2 * (r / c) - 4));
@@ -279,17 +338,21 @@ function field(p: HeroPattern, x: number, y: number, fx: number, fy: number, ste
       for (let i = lo; i <= hi; i++) {
         const ri = c * Math.sqrt(i);
         const th = i * 2.399963 + p.seed;
-        if (Math.hypot(x - fx - ri * Math.cos(th), y - fy - ri * Math.sin(th)) < Math.max(step * 0.6, c * 0.42)) {
-          return { value: 0.6, edge: i % 13 === 0, line: true };
+        if (Math.hypot(x - fx - ri * Math.cos(th), y - fy - ri * Math.sin(th)) < Math.max(step * 0.6, c * 0.4)) {
+          return { value: 0.9, edge: i % 21 === 0, line: true };
         }
       }
       return EMPTY;
     }
     case "topo": {
-      // Contour lines of rolling terrain; one contour level in the accent.
-      const n = fbm((x * 1.4) / s + 11, (y * 1.4) / s, p.seed) * 9;
-      const line = Math.abs(n - Math.round(n));
-      return line < 0.09 ? { value: 0.6, edge: Math.round(n) === 5, line: true } : EMPTY;
+      // Contour lines of rolling terrain, kept one pixel wide by dividing by the slope (no blobs where it
+      // flattens); runs of one contour level in the accent.
+      const f = (ax: number, ay: number) => fbm((ax * 1.4) / s + 11, (ay * 1.4) / s, p.seed) * 9;
+      const n = f(x, y);
+      const slope = Math.hypot(f(x + step, y) - n, f(x, y + step) - n) / step + 1e-6;
+      const k = Math.round(n);
+      if (Math.abs(n - k) / slope >= step * 0.55) return EMPTY;
+      return { value: 0.6, edge: k === 5, line: true };
     }
     case "drift": {
       // Diagonal streaks across the banner, each column with its own length and fade.
