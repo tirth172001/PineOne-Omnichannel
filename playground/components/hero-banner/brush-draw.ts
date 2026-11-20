@@ -67,9 +67,64 @@ function smoothLine(ctx: CanvasRenderingContext2D, pts: [number, number][]) {
 }
 
 /**
+ * The dry end of a stroke (as in a flat bristle brush running out of paint): bristle-wide lines that each lift
+ * off at their own point (so the end feathers instead of stopping square) and skip where the paint catches
+ * on the paper grain, more often the further they go.
+ */
+function dryTail(
+  ctx: CanvasRenderingContext2D,
+  left: [number, number][],
+  right: [number, number][],
+  solid: number,
+  width: number,
+  bristles: number,
+  colour: string,
+  opacity: number,
+  r: () => number
+) {
+  const n = Math.max(4, bristles * 2);
+  const last = left.length - 1;
+  ctx.strokeStyle = colour;
+  ctx.lineCap = "butt";
+  ctx.lineWidth = (width / n) * 1.15;
+  for (let b = 0; b < n; b++) {
+    const t = (b + 0.5) / n;
+    const end = solid + (last - solid) * (0.35 + r() * 0.65);
+    const at = (i: number): [number, number] => {
+      const i0 = Math.floor(i);
+      const i1 = Math.min(last, i0 + 1);
+      const f = i - i0;
+      const lx = left[i0][0] + (left[i1][0] - left[i0][0]) * f;
+      const ly = left[i0][1] + (left[i1][1] - left[i0][1]) * f;
+      const rx = right[i0][0] + (right[i1][0] - right[i0][0]) * f;
+      const ry = right[i0][1] + (right[i1][1] - right[i0][1]) * f;
+      return [rx + (lx - rx) * t, ry + (ly - ry) * t];
+    };
+    ctx.globalAlpha = opacity * (0.75 + r() * 0.25);
+    ctx.beginPath();
+    let drawing = false;
+    // Small steps so breaks are fine-grained; skip chance grows towards the bristle's end.
+    for (let i = solid; i <= end; i += 0.25) {
+      const dry = (i - solid) / Math.max(0.01, end - solid);
+      const [x, y] = at(i);
+      const skip = r() < dry * 0.55;
+      if (skip) {
+        drawing = false;
+        continue;
+      }
+      if (!drawing) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+      drawing = true;
+    }
+    ctx.stroke();
+  }
+  ctx.lineCap = "round";
+}
+
+/**
  * One stroke of thick paint (impasto):
  * 1. a soft cast shadow below-right of the lump;
- * 2. the lump itself, opaque, round where the brush lands and thinning towards a dry tail;
+ * 2. the lump itself, opaque, round where the brush lands; then a dry, feathered, broken tail (`dryTail`);
  * 3. bristle ridges raked along it: a dark groove with a lit crest beside it;
  * 4. a lit edge on the side facing the light and a shaded edge on the other side.
  */
@@ -79,17 +134,24 @@ function paintStroke(ctx: CanvasRenderingContext2D, s: Stroke, p: BrushPattern, 
   const relief = p.relief;
   const lift = Math.max(0.8, Math.min(3, s.width * 0.12)) * (0.4 + relief);
 
+  // The brush is full for the first part of the stroke (solid, opaque paint), then runs dry: from `solid`
+  // on, the bristles lift off one by one and the paint breaks into streaks (see `dryTail`).
+  const solid = Math.max(2, Math.round((s.points.length - 1) * (0.5 + r() * 0.2)));
+  const bodyL = left.slice(0, solid + 1);
+  const bodyR = right.slice(0, solid + 1);
+
   if (relief > 0) {
     ctx.fillStyle = SHADOW;
     ctx.globalAlpha = 0.16 * relief;
-    fillRibbon(ctx, left, right, lift, lift);
+    fillRibbon(ctx, bodyL, bodyR, lift, lift);
     ctx.globalAlpha = 0.1 * relief;
-    fillRibbon(ctx, left, right, lift * 1.8, lift * 1.8);
+    fillRibbon(ctx, bodyL, bodyR, lift * 1.8, lift * 1.8);
   }
 
   ctx.fillStyle = body;
   ctx.globalAlpha = opacity;
-  fillRibbon(ctx, left, right);
+  fillRibbon(ctx, bodyL, bodyR);
+  dryTail(ctx, left, right, solid, s.width, p.bristles, body, opacity, r);
   // The blob where the brush first touched: a round lump of paint at the start.
   const [sx, sy] = s.points[0];
   const r0 = Math.hypot(left[0][0] - right[0][0], left[0][1] - right[0][1]) / 2;

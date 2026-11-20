@@ -1,6 +1,6 @@
 {
   "title": "Brush banner maker",
-  "description": "Paint page banners with long impressionist brush strokes that trace plant micro-structures: leaf veins, cell walls, stomata, xylem, palisade cells, fungal threads, a sunflower spiral. Bristle texture, paper grain, clusters of accent colour. Copy the result into lib/heroes.ts.",
+  "description": "Paint page banners with thick oil-paint strokes that trace plant micro-structures (cells, growth rings, fern fronds, pollen, grana, xylem, fungal threads, a sunflower spiral): raised paint with ridges and shadow, feathered dry-brush ends, clusters of accent colour. Copy the result into lib/heroes.ts.",
   "tags": [
     "banner",
     "brush",
@@ -15,7 +15,7 @@
   "surface": "web",
   "group": "Playground",
   "createdAt": "2026-11-20",
-  "updatedAt": "2026-11-20T15:20:06.000Z",
+  "updatedAt": "2026-11-20T16:11:19.000Z",
   "hidden": false,
   "public": false
 }

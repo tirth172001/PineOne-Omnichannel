@@ -15,15 +15,16 @@ controls (useControls, localStorage) ──► toBrush() (sanitizeBrush) ──�
 
 ## Frontend
 - **Plant structure** (each a scalar field whose lines the strokes follow; `along()` in `brush.ts` measures distance to a line with the field's slope, so lines keep their width, and gives the direction along it):
-  - `veins`: large warped Voronoi walls (major veins) over a fine mesh (minor veins);
   - `cells`: Voronoi cell walls with a chloroplast dab in each cell;
-  - `stomata`: wavy (jigsaw) cell walls with oval pores in some cells;
+  - `rings`: wobbly concentric growth rings around the focus;
+  - `fronds`: wavy stems with leaflets angled off both sides;
+  - `pollen`: round grains painted round and round;
+  - `grana`: stacks of short discs linked by thin lamellae;
   - `xylem`: vertical vessel walls with diagonal spiral-thickening bands;
-  - `palisade`: outlines of staggered tall rounded cells;
   - `mycelium`: noise-contour threads with finer branches;
   - `spiral`: golden-angle seeds and logarithmic spiral arms around the focus.
 - **Strokes:** start on the structure and follow it in 14 steps, stopping when they leave it, so long strokes trace walls and veins. Structure size, stroke length (up to 200px), width, density and how far strokes wander off the structure.
-- **Texture:** bristles per stroke; each bristle has its own opacity, thickness and length, curves smoothly, and fades over its second half as the paint runs dry. Paper grain; 1–3 layers (soft underpainting following the structure's direction, the structure, small highlights).
+- **Texture (impasto + dry brush):** each stroke is an opaque lump of paint, round where the brush lands, with raked bristle ridges, a lit edge and a shaded edge (light from the top left) and a soft cast shadow (**Relief** sets how raised it looks). After 50–70% of its length the brush runs dry: bristle-wide lines lift off one by one (feathered end) and break up more and more, like paint catching on paper grain (after the flat-brush behaviour in bizar.ro/experiments/brushes). Paper grain underneath; 1–3 layers.
 - **Colour:** muted ink in two neutrals (`--foreground`, `--muted-foreground`). Accents in `--hero-lime` / `--hero-pine` (or both) only on the structure's highlights (pores, chloroplasts, stretches of major veins…) and only where a low-frequency patch allows, so they cluster instead of scattering.
 - **Legibility:** the same blurred erase mask as pixel banners fades strokes behind the title.
 - Deterministic: a seeded generator, so the same settings always paint the same banner. Redraws on resize and theme change.
