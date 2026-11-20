@@ -1,12 +1,14 @@
+import { PreviewComposition } from "@/components/preview/preview-composition";
+import { PREVIEW_STYLE, previewKind } from "@/lib/preview";
 import type { Prototype } from "@/lib/prototypes";
 import { cn } from "@/lib/utils";
 
 /**
- * Static light + dark screenshots, swapped with CSS (`dark:`) so there is no flash on load.
- * Never replace this with a live iframe: one booted app per card crashes mobile browsers.
+ * The card picture: the prototype's light screenshot composed the same way for every card
+ * (desktop frame or phone frame; see `PreviewComposition` and `lib/preview.ts`).
+ * Static images only: never a live iframe, one booted app per card crashes mobile browsers.
  */
 export function Thumbnail({ prototype, className }: { prototype: Prototype; className?: string }) {
-  const version = Date.parse(prototype.meta.updatedAt);
   if (!prototype.assets.thumbnails) {
     return (
       <div className={cn("flex aspect-[16/10] items-center justify-center bg-muted text-sm text-muted-foreground", className)}>
@@ -14,13 +16,14 @@ export function Thumbnail({ prototype, className }: { prototype: Prototype; clas
       </div>
     );
   }
-  const src = (mode: "light" | "dark") => `/thumbnails/${prototype.slug}-${mode}.png?v=${version}`;
+  const version = Date.parse(prototype.meta.updatedAt);
+  const src = `/thumbnails/${prototype.slug}-light.png?v=${version}`;
   return (
-    <div className={cn("aspect-[16/10] overflow-hidden bg-muted", className)}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src("light")} alt="" loading="lazy" decoding="async" className="size-full object-cover object-top dark:hidden" />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src("dark")} alt="" loading="lazy" decoding="async" className="hidden size-full object-cover object-top dark:block" />
-    </div>
+    <PreviewComposition
+      kind={previewKind(prototype.meta)}
+      src={src}
+      style={PREVIEW_STYLE}
+      className={className}
+    />
   );
 }

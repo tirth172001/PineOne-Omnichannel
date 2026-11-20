@@ -23,7 +23,7 @@ All commands below run from `playground/`, not the repo root. The repo root is a
 | Control panels | `components/controls/` (schema → panel, persistence, Reset, Randomize) |
 | Embeds of separately deployed apps | `components/embeds/` (`PhoneFrame`, `ExternalApp`) |
 | Storage helpers | `lib/storage.ts` |
-| Thumbnails / OG capture | `scripts/capture.mjs` → `public/thumbnails/`, `public/og/` |
+| Thumbnails / OG capture | `scripts/capture.mjs` → `public/thumbnails/` (light, app screen only), `public/og/`; cards compose them via `components/preview/` + `lib/preview.ts` |
 
 This is **Next.js 16** with React 19, Tailwind v4 and shadcn/ui (radix-nova, every component installed in `components/ui/`). APIs differ from older versions: `params`/`searchParams` are Promises, middleware is `proxy.ts`, and there are global `PageProps<"/route">` / `LayoutProps` types. When unsure, read `node_modules/next/dist/docs/` first.
 
@@ -209,7 +209,7 @@ Every prototype has `HOW_IT_WORKS.md`, kept current on every change, with these 
 - Validate what you load (see `sanitize` in `components/controls/schema.ts`). Old data must never crash a prototype.
 
 ### Thumbnails
-- Gallery cards show **static** light and dark PNGs swapped with CSS. Never put a live iframe or a running prototype in a card; it crashes mobile browsers as the gallery grows.
+- Gallery cards show one **static** light-theme screenshot of the app itself (`public/thumbnails/<slug>-light.png`: desktop 1440×900 saved at half size, mobile 390×844), composed the same way for every card by `components/preview/preview-composition.tsx`: desktop in a centred frame, mobile in a phone frame, same bezel and rounded top corners, plain background. The style lives in `lib/preview.ts` (tune it in the Card preview maker prototype). Never put a live iframe or a running prototype in a card; it crashes mobile browsers as the gallery grows.
 - A new prototype, or any visual change → `npm run thumbnails -- <slug>` in the **same commit**.
 - A global style change (globals.css, `components/ui`, layouts) → `npm run thumbnails` to regenerate all of them.
 - Other modes: `npm run thumbnails -- a b` (several), `-- --missing` (only those without thumbnails), `-- --skip-build` (reuse the current build), `-- --og <slug>` (force OG capture).
@@ -256,3 +256,4 @@ Every prototype has `HOW_IT_WORKS.md`, kept current on every change, with these 
 - **Theme-dependent attributes wait for mount.** The theme toggle's `aria-label` read the saved theme during render, so light-mode visitors got a hydration warning ("1 Issue" in dev). Anything derived from `useTheme()` (labels included, not just icons) renders only after mount.
 - **New CSS variables need a dev restart.** Tokens added to `globals.css` (e.g. `--folder-*`) came through empty until `next dev` was restarted with a clean `.next`.
 - **OG URLs must be absolute.** Next resolves `og:image` against `metadataBase` but not `og:video`, so the video URL is built with `SITE_URL` in `app/p/[slug]/page.tsx`.
+- **Dead external deployments capture as 404 pages.** On Nov 20 `pine-one-onboarding-variants.vercel.app` returned 404, so the ten `pine-one-web-variants-*` captures were error pages. Look at every capture before committing and delete broken ones (the card falls back to "No preview yet"); tell the owner the deployment is down.

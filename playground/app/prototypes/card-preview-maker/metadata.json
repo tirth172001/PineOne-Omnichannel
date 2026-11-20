@@ -1,0 +1,17 @@
+{
+  "title": "Card preview maker",
+  "description": "Tune how every gallery card composes its screenshot: desktop apps in a browser window, mobile apps in a phone, always the light screenshot on a plain background. Copy the style into lib/preview.ts.",
+  "tags": [
+    "thumbnail",
+    "preview",
+    "card",
+    "composition"
+  ],
+  "folder": "design-system",
+  "surface": "web",
+  "group": "Playground",
+  "createdAt": "2026-11-20",
+  "updatedAt": "2026-11-20T12:13:26.000Z",
+  "hidden": false,
+  "public": false
+}

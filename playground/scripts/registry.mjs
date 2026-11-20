@@ -54,7 +54,7 @@ function readPrototypes() {
       errors.push(`${slug}: external.seedLocalStorage must map keys to strings`);
     entries.push({
       slug,
-      thumbnails: exists(`thumbnails/${slug}-light.png`) && exists(`thumbnails/${slug}-dark.png`),
+      thumbnails: exists(`thumbnails/${slug}-light.png`),
       ogImage: exists(`og/${slug}.png`),
       ogVideo: exists(`og/${slug}.mp4`) ? "mp4" : exists(`og/${slug}.webm`) ? "webm" : null,
       variantOf: meta.variantOf,

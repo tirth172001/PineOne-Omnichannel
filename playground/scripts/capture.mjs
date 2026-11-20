@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-// Captures light + dark gallery thumbnails (640×400) for prototypes, plus og:image / og:video for public ones.
+// Captures a light-theme screenshot of each prototype's app screen, plus og:image / og:video for public ones.
+// Gallery cards compose these the same way every time (browser window for desktop, phone for mobile; see
+// components/preview and lib/preview.ts), so the screenshot is just the app: desktop 1440×900, mobile 390×844.
 //
 //   npm run thumbnails                     # every prototype
 //   npm run thumbnails -- my-proto other   # just these
@@ -39,7 +41,7 @@ function loadPrototypes() {
 }
 
 function hasThumbs(slug) {
-  return ["light", "dark"].every((m) => fs.existsSync(path.join(thumbsDir, `${slug}-${m}.png`)));
+  return fs.existsSync(path.join(thumbsDir, `${slug}-light.png`));
 }
 
 async function waitForServer() {
@@ -83,21 +85,29 @@ async function settle(page) {
   await page.waitForTimeout(2000); // let canvases, iframes and entry animations run
 }
 
+const isMobile = (meta) => meta.surface === "mobile" || meta.external?.embed === "phone";
+
+/** The app itself: external apps at their own URL (phone apps too, not their playground frame), others at their page. */
 function targetUrl({ slug, meta }) {
-  return meta.external?.embed === "none" && meta.external.url ? meta.external.url : `${BASE}/prototypes/${slug}`;
+  return meta.external?.url ? meta.external.url : `${BASE}/prototypes/${slug}`;
 }
 
 async function captureThumbnails(browser, proto) {
-  for (const mode of ["light", "dark"]) {
-    // Render a desktop layout scaled down to a 640×400 file. External desktop apps get a wider viewport.
+  const mobile = isMobile(proto.meta);
+  // Desktop: 1440×900 saved at half size (720×450). Mobile: a 390×844 phone screen at 1×.
+  const viewport = mobile ? { width: 390, height: 844 } : { width: 1440, height: 900 };
+  // Cards always show the light theme, so only light is captured.
+  for (const mode of ["light"]) {
     const url = targetUrl(proto);
-    const external = !url.startsWith(BASE);
-    const width = external ? 1440 : 1280;
-    const viewport = { width, height: width * (400 / 640) };
-    const context = await newContext(browser, mode, { viewport, deviceScaleFactor: 640 / width });
+    const context = await newContext(browser, mode, {
+      viewport,
+      deviceScaleFactor: mobile ? 1 : 0.5,
+      isMobile: mobile,
+      hasTouch: mobile,
+    });
     const seed = proto.meta.external?.seedLocalStorage;
     if (seed && proto.meta.external.url) {
-      // Only on the external app's own origin (also inside a PhoneFrame iframe), before its scripts run.
+      // Only on the external app's own origin, before its scripts run.
       await context.addInitScript(
         ({ origin, entries }) => {
           if (location.origin !== origin) return;
@@ -112,7 +122,7 @@ async function captureThumbnails(browser, proto) {
     const file = path.join(thumbsDir, `${proto.slug}-${mode}.png`);
     await page.screenshot({ path: file });
     await context.close();
-    console.log(`  ✓ thumbnails/${proto.slug}-${mode}.png`);
+    console.log(`  ✓ thumbnails/${proto.slug}-${mode}.png (${mobile ? "mobile" : "desktop"})`);
   }
 }
 
