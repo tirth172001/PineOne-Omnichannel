@@ -4,24 +4,16 @@ import { useTheme } from "next-themes";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { type BannerPattern, isBrush } from "./brush";
-import { drawBrush } from "./brush-draw";
+import { drawBrush, readColours } from "./brush-draw";
 import { type ClearBox, type HeroPattern, type HeroPixel, renderCells } from "./pattern";
+import type { PaintTexture } from "./texture";
 
 /** Ink is a tint of the foreground; tone sets how strong. Kept low so the banner stays muted. */
 const INK_MIN = 0.08;
 const INK_RANGE = 0.24;
 
-function readColors(el: HTMLElement) {
-  const style = getComputedStyle(el);
-  return {
-    ink: style.getPropertyValue("--foreground").trim(),
-    muted: style.getPropertyValue("--muted-foreground").trim(),
-    // The banner's own background (bg-muted), for mixing opaque paint colours.
-    base: style.getPropertyValue("--muted").trim(),
-    lime: style.getPropertyValue("--hero-lime").trim(),
-    pine: style.getPropertyValue("--hero-pine").trim(),
-  };
-}
+/** Colours for both kinds of banner (see `readColours`). */
+const readColors = readColours;
 
 /** One pixel, `d` across, centred in its cell. Line pixels use the fill colour as their stroke. */
 function drawPixel(ctx: CanvasRenderingContext2D, kind: HeroPixel, cx: number, cy: number, d: number) {
@@ -112,11 +104,23 @@ function drawPixels(ctx: CanvasRenderingContext2D, p: HeroPattern, width: number
  * The dithered background, drawn on a transparent canvas filling its parent.
  * `clearRef` (normally the title) gets a quiet area around it, wherever it wraps to.
  */
-export function HeroCanvas({ pattern, clearRef, className }: { pattern: BannerPattern; clearRef?: RefObject<HTMLElement | null>; className?: string }) {
+export function HeroCanvas({
+  pattern,
+  texture,
+  clearRef,
+  className,
+}: {
+  pattern: BannerPattern;
+  /** Paint texture for brush banners; defaults to the shared PAINT_TEXTURE (the Paint texture maker overrides it). */
+  texture?: PaintTexture;
+  clearRef?: RefObject<HTMLElement | null>;
+  className?: string;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { resolvedTheme } = useTheme();
   const [drawn, setDrawn] = useState(false);
   const key = JSON.stringify(pattern);
+  const textureKey = JSON.stringify(texture ?? null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -144,7 +148,7 @@ export function HeroCanvas({ pattern, clearRef, className }: { pattern: BannerPa
       }
 
       const colours = readColors(canvas);
-      if (isBrush(p)) drawBrush(ctx, p, width, height, colours);
+      if (isBrush(p)) drawBrush(ctx, p, width, height, colours, (JSON.parse(textureKey) as PaintTexture | null) ?? undefined);
       else drawPixels(ctx, p, width, height, box, colours);
       ctx.globalAlpha = 1;
 
@@ -169,7 +173,7 @@ export function HeroCanvas({ pattern, clearRef, className }: { pattern: BannerPa
     observer.observe(host);
     if (clearRef?.current) observer.observe(clearRef.current);
     return () => observer.disconnect();
-  }, [key, resolvedTheme, clearRef]);
+  }, [key, textureKey, resolvedTheme, clearRef]);
 
   return (
     <canvas

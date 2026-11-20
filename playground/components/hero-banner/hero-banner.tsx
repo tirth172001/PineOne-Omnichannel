@@ -5,6 +5,7 @@ import { PageTitle } from "@/components/page-title";
 import { cn } from "@/lib/utils";
 import { HeroCanvas } from "./hero-canvas";
 import type { BannerPattern } from "./brush";
+import type { PaintTexture } from "./texture";
 
 /**
  * The banner at the top of every playground page: a dithered background (see `pattern.ts`,
@@ -14,6 +15,7 @@ import type { BannerPattern } from "./brush";
 export function HeroBanner({
   title,
   pattern,
+  texture,
   eyebrow,
   meta,
   action,
@@ -22,6 +24,8 @@ export function HeroBanner({
 }: {
   title: ReactNode;
   pattern: BannerPattern;
+  /** Paint texture override for brush banners (the Paint texture maker previews with it). */
+  texture?: PaintTexture;
   /** Small uppercase line above the title. */
   eyebrow?: ReactNode;
   /** Quiet line below the title (a count, a date). */
@@ -41,7 +45,7 @@ export function HeroBanner({
         className
       )}
     >
-      <HeroCanvas pattern={pattern} clearRef={titleRef} className="-z-10" />
+      <HeroCanvas pattern={pattern} texture={texture} clearRef={titleRef} className="-z-10" />
       <div ref={titleRef} className={cn("flex max-w-xl flex-col gap-2", align === "center" ? "items-center text-center" : "items-start text-left")}>
         {eyebrow && <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">{eyebrow}</p>}
         <PageTitle>{title}</PageTitle>

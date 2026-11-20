@@ -1,0 +1,12 @@
+{
+  "title": "Paint texture maker",
+  "description": "Tune how the oil paint in every brush banner looks: colour streaks, wet gloss, grooves, a raised lip, and a dry end that breaks into specks and canvas flecks. Copy the result into lib/paint-texture.ts.",
+  "tags": ["paint", "texture", "impasto", "oil", "brush", "banner"],
+  "folder": "design-system",
+  "surface": "web",
+  "group": "Playground",
+  "createdAt": "2026-11-20",
+  "updatedAt": "2026-11-20T16:17:16.000Z",
+  "hidden": false,
+  "public": false
+}
