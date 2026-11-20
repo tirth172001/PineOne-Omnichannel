@@ -13,6 +13,12 @@ import { buildGlossary, documentNames } from "@/lib/references";
 
 export const dynamicParams = false;
 
+/**
+ * One column width for the header, banner and body, so the banner spans exactly the content:
+ * the 44rem article below lg; the 13rem contents rail + 4rem gap + 44rem article from lg (plus 1.5rem padding each side).
+ */
+const DOC_COLUMN = "mx-auto w-full max-w-[47rem] px-4 sm:px-6 lg:max-w-[64rem]";
+
 export function generateStaticParams() {
   return getAllDocs().map((d) => ({ slug: d.slug }));
 }
@@ -30,15 +36,15 @@ export default async function DocPage({ params }: PageProps<"/docs/[slug]">) {
   const references = { glossary: buildGlossary(all), names: documentNames(all), slug: doc.slug };
   return (
     <div className="flex min-h-dvh flex-col">
-      <PageHeader crumbs={[{ label: "Playground", href: "/" }, { label: "Docs", href: "/folders/docs" }, { label: meta.title }]} back={{ href: "/folders/docs", label: "Docs" }} width="max-w-6xl sm:px-6" />
-      <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6">
+      <PageHeader crumbs={[{ label: "Playground", href: "/" }, { label: "Docs", href: "/folders/docs" }, { label: meta.title }]} back={{ href: "/folders/docs", label: "Docs" }} width="max-w-[47rem] sm:px-6 lg:max-w-[64rem]" />
+      <div className={`${DOC_COLUMN} pt-6`}>
         <HeroBanner align="start" eyebrow={meta.kind} title={meta.title} pattern={docHero(doc.slug)} className="sm:min-h-64" />
       </div>
-      <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-24 sm:px-6 lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-16 lg:pt-10">
+      <div className={`${DOC_COLUMN} pt-8 pb-24 lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-16 lg:pt-10`}>
         <aside className="hidden lg:block">
           <DocContentsRail headings={headings} />
         </aside>
-        <main className="mx-auto w-full max-w-[44rem] lg:mx-0">
+        <main className="w-full min-w-0">
           <header className="flex flex-col gap-4 border-b border-border pb-8">
             <p className="text-lg leading-relaxed text-pretty text-muted-foreground">{meta.description}</p>
             <p className="text-sm text-muted-foreground">

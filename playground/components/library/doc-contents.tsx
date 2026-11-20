@@ -64,14 +64,14 @@ function List({ items, active, onPick }: { items: ReturnType<typeof visible>; ac
   );
 }
 
-/** Desktop: sticky "On this page" column that follows the reader. */
+/** Desktop: sticky "On this page" column that follows the reader. Sticks below the floating Back pill (top-20), never under it. */
 export function DocContentsRail({ headings }: { headings: DocHeading[] }) {
   const items = visible(headings);
   const ids = useMemo(() => visible(headings).map((h) => h.id), [headings]);
   const active = useActive(ids);
   if (items.length < 2) return null;
   return (
-    <nav aria-label="On this page" className="sticky top-6 max-h-[calc(100dvh-3rem)] overflow-y-auto pb-6">
+    <nav aria-label="On this page" className="sticky top-20 max-h-[calc(100dvh-6rem)] overflow-y-auto pb-6">
       <p className="mb-3 text-xs font-semibold tracking-wider text-muted-foreground uppercase">On this page</p>
       <List items={items} active={active} />
     </nav>
