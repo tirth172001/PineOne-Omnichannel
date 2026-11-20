@@ -23,6 +23,7 @@ The owner gives you a file (Word, PDF, Google Doc export, notes). Then:
 1. Convert it to Markdown in `playground/docs/<kebab-case-name>.md`.
    - Keep the content and structure: headings, lists, tables and quotes.
    - Don't summarise or reword findings.
+   - Write the body as bullets, not paragraphs (owner request, Nov 20): one sentence per bullet, a short bold label where a paragraph had one ("**Proposal:** …"), journeys as numbered steps, sentences kept word for word. Headings, tables and the header details stay as they are.
    - Drop images unless they carry information. If one does, describe it in a line.
    - Leave out personal data such as merchant phone numbers or emails. Business names and cities are fine unless the owner says otherwise.
 2. Start it with front matter:
