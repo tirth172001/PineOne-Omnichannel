@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { type BannerPattern, isBrush } from "./brush";
 import { drawBrush, readColours } from "./brush-draw";
 import { isNature } from "./nature";
-import { drawNature } from "./nature-draw";
+import { drawNature, natureGlow } from "./nature-draw";
 import { type ClearBox, type HeroPattern, type HeroPixel, renderCells } from "./pattern";
 import type { PaintTexture } from "./texture";
 
@@ -157,7 +157,9 @@ export function HeroCanvas({
 
       // Legibility: erase pixels behind the text through a blurred mask, so the pattern fades smoothly
       // to the plain card colour wherever there's text (a gradient, not a hard box).
-      if (box && p.clear > 0) {
+      // Nature banners: a glow in the banner's own palette behind the text, so it merges with the painting.
+      if (box && isNature(p)) natureGlow(ctx, p, resolvedTheme === "dark", box, height);
+      else if (box && p.clear > 0) {
         const pad = Math.max(24, Math.min(height * 0.2, 56));
         ctx.save();
         ctx.globalCompositeOperation = "destination-out";

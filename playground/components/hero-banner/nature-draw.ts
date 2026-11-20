@@ -47,18 +47,6 @@ function dab(ctx: Ctx, pts: Pt[], width: number, colour: string, streak: string,
   line(leftLit ? right : left, pal.dark(0.35 * texture), Math.max(0.5, width * 0.1));
 }
 
-/** Follows a direction field from (x, y) for `steps` steps of `len`, returning the path. */
-function trace(x: number, y: number, steps: number, len: number, angle: (x: number, y: number) => number): Pt[] {
-  const pts: Pt[] = [[x, y]];
-  for (let s = 0; s < steps; s++) {
-    const a = angle(x, y);
-    x += Math.cos(a) * len;
-    y += Math.sin(a) * len;
-    pts.push([x, y]);
-  }
-  return pts;
-}
-
 type Vortex = { x: number; y: number; r: number; spin: number; bright: boolean };
 
 /** A few vortices: one at the focus, the rest spread out; some have a bright, moon-like core. */
@@ -93,359 +81,291 @@ function swirlField(vs: Vortex[], drift: number, seed: number, h: number) {
   };
 }
 
-/** Swirl: dense layers of short impasto strokes following several vortices, lighter towards bright cores. */
-function paintSwirl(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: NaturePalette, rand: () => number) {
-  ctx.fillStyle = pal.tone(2);
+// ——— Every pattern is painted with brush strokes ———
+// Each pattern is a field: at any point, which tone to paint, which way the brush runs, and which shape the
+// point belongs to (strokes stop at a shape's edge, so leaves, petals and cells stay crisp but painted).
+
+type Sample = { t: number; a: number; id: number; glow?: number; c?: string };
+type Field = (x: number, y: number) => Sample;
+type Brush = { width: number; len: [number, number] };
+
+function hashN(x: number, y: number, seed: number) {
+  let h = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(seed + 1, 2147483647);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+
+/** Follows the field from (x, y) while it stays on the same shape; keeps heading the same way (lines are ambiguous by half a turn). */
+function traceField(x: number, y: number, steps: number, len: number, field: Field, id: number): Pt[] {
+  const pts: Pt[] = [[x, y]];
+  let dir = field(x, y).a;
+  for (let s = 0; s < steps; s++) {
+    const f = field(x, y);
+    if (f.id !== id) break;
+    let a = f.a;
+    if (Math.cos(a - dir) < 0) a += Math.PI;
+    dir = a;
+    x += Math.cos(a) * len;
+    y += Math.sin(a) * len;
+    pts.push([x, y]);
+  }
+  if (pts.length < 2) pts.push([x + Math.cos(dir) * len, y + Math.sin(dir) * len]);
+  return pts;
+}
+
+/** Paints a field with three layers of impasto dabs: a broad underpainting, the main strokes, then small highlights. */
+function paintField(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: NaturePalette, rand: () => number, field: Field, brush: Brush, ground: number) {
+  ctx.fillStyle = pal.tone(ground);
   ctx.fillRect(0, 0, w, h);
-  const vs = vortices(p, w, h, rand, p.scale);
-  const field = swirlField(vs, -0.2, p.seed, h);
-  const value = (x: number, y: number) => {
-    let v = 0.25 + 0.5 * fbm(x / (h * 0.8), y / (h * 0.8), p.seed + 3);
-    for (const c of vs) if (c.bright) v += 0.6 * Math.exp(-((Math.hypot(x - c.x, y - c.y) / (c.r * 0.45)) ** 2));
-    return Math.min(1, v);
-  };
-  for (const [pass, wide] of [[0, 1.6], [1, 1], [2, 0.7]] as const) {
-    const sw = Math.max(3, 8 * p.scale * wide);
-    const gap = (sw * 0.9) / (0.4 + p.density * 0.6);
+  for (const [pass, wide] of [
+    [0, 1.7],
+    [1, 1],
+    [2, 0.6],
+  ] as const) {
+    const sw = Math.max(2.5, brush.width * (0.6 + 0.4 * p.scale) * wide);
+    const gap = (sw * 0.85) / (0.45 + p.density * 0.55);
     for (let gy = -gap; gy < h + gap; gy += gap) {
       for (let gx = -gap; gx < w + gap; gx += gap) {
-        if (pass === 2 && rand() > 0.5) continue;
-        const x = gx + (rand() - 0.5) * gap * 1.6;
-        const y = gy + (rand() - 0.5) * gap * 1.6;
-        const v = value(x, y);
-        const idx = Math.max(0, Math.min(5, v * 5 + (rand() - 0.5) * 1.6 + (pass - 1) * 0.5));
-        // Accents gather in the bright cores (like the moons in the references), not scattered.
-        const accent = pal.accents.length > 0 && v > 0.62 && rand() < (v - 0.55) * (pass === 2 ? 1.4 : 0.8);
-        const colour = accent ? pal.accents[Math.floor(rand() * pal.accents.length)] : pal.tone(idx);
-        const pts = trace(x, y, 8, (sw * (4.5 + rand() * 3)) / 8, field);
-        dab(ctx, pts, sw * (0.8 + rand() * 0.4), colour, pal.tone(idx + (rand() < 0.5 ? -1 : 1), 0.7), pal, p.texture);
+        if (pass === 2 && rand() > 0.55) continue;
+        const x = gx + (rand() - 0.5) * gap * 1.5;
+        const y = gy + (rand() - 0.5) * gap * 1.5;
+        const s = field(x, y);
+        const t = s.t + (rand() - 0.5) * 0.9 + (pass - 1) * 0.25;
+        const accent = !s.c && s.glow && pal.accents.length > 0 && rand() < s.glow;
+        const colour = s.c && rand() < 0.85 ? s.c : accent ? pal.accents[Math.floor(rand() * pal.accents.length)] : pal.tone(t);
+        const streak = s.c || accent ? pal.light(0.35) : pal.tone(t + (rand() < 0.5 ? -1 : 1), 0.7);
+        const steps = 6;
+        const len = (sw * (brush.len[0] + rand() * (brush.len[1] - brush.len[0]))) / steps;
+        dab(ctx, traceField(x, y, steps, len, field, s.id), sw * (0.8 + rand() * 0.4), colour, streak, pal, p.texture);
       }
     }
   }
 }
 
-/** Ginkgo: rows of fan-shaped leaves opening upwards, each row overlapping the bases of the row above. */
-function paintGinkgo(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: NaturePalette, rand: () => number) {
-  ctx.fillStyle = pal.tone(0);
-  ctx.fillRect(0, 0, w, h);
+/** Swirl: vortices, lighter towards bright cores where the accents gather. */
+function swirlFieldOf(p: NaturePattern, w: number, h: number, rand: () => number): Field {
+  const vs = vortices(p, w, h, rand, p.scale);
+  const angle = swirlField(vs, -0.2, p.seed, h);
+  return (x, y) => {
+    let v = 0.25 + 0.5 * fbm(x / (h * 0.8), y / (h * 0.8), p.seed + 3);
+    for (const c of vs) if (c.bright) v += 0.6 * Math.exp(-((Math.hypot(x - c.x, y - c.y) / (c.r * 0.45)) ** 2));
+    v = Math.min(1, v);
+    return { t: v * 5, a: angle(x, y), id: 0, glow: v > 0.62 ? (v - 0.55) * 1.1 : 0 };
+  };
+}
+
+/** Ginkgo: rows of fan leaves opening upwards (lower rows on top). Strokes radiate from each stem, painting the veins. */
+function ginkgoFieldOf(p: NaturePattern, w: number, h: number): Field {
   const R = h * 0.26 * p.scale;
   const dx = R * 1.18;
   const dy = R * (0.62 - 0.12 * p.density);
+  const y0 = -R * 0.2;
   const spread = 0.98;
-  let row = 0;
-  for (let cy = -R * 0.2; cy < h + R * 1.2; cy += dy, row++) {
-    for (let cx = -dx + (row % 2) * dx * 0.5; cx < w + dx; cx += dx) {
-      const x = cx + (rand() - 0.5) * R * 0.12;
-      const y = cy + (rand() - 0.5) * R * 0.08;
-      const r = R * (0.92 + rand() * 0.14);
-      const tilt = (rand() - 0.5) * 0.12;
-      const shade = 1 + rand() * 3;
-      const a0 = -Math.PI / 2 - spread + tilt;
-      const a1 = -Math.PI / 2 + spread + tilt;
-      const edge: Pt[] = [];
-      const steps = 36;
-      for (let i = 0; i <= steps; i++) {
-        const a = a0 + ((a1 - a0) * i) / steps;
-        const t = i / steps;
-        // A wavy outer edge with the ginkgo's notch in the middle.
-        const notch = 1 - 0.16 * Math.exp(-(((t - 0.5) / 0.03) ** 2));
-        const rr = r * notch * (1 + 0.025 * Math.sin(i * 1.9 + x));
-        edge.push([x + Math.cos(a) * rr, y + Math.sin(a) * rr]);
-      }
-      ctx.save();
-      ctx.shadowColor = pal.dark(0.5);
-      ctx.shadowBlur = R * 0.12;
-      ctx.shadowOffsetY = R * 0.04;
-      const g = ctx.createRadialGradient(x, y, r * 0.05, x, y, r);
-      g.addColorStop(0, pal.tone(shade - 1));
-      g.addColorStop(0.7, pal.tone(shade));
-      g.addColorStop(1, pal.tone(shade + 0.6));
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      for (const [ex, ey] of edge) ctx.lineTo(ex, ey);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-      if (p.texture > 0) {
-        // Fine veins fanning out from the stem, and the notch's split.
-        ctx.lineWidth = Math.max(0.4, R * 0.008);
-        for (let i = 0; i <= steps; i += 1.5) {
-          const [ex, ey] = edge[Math.min(steps, Math.round(i))];
-          ctx.strokeStyle = i % 3 < 1.5 ? pal.dark(0.1 * p.texture) : pal.light(0.1 * p.texture);
-          ctx.beginPath();
-          ctx.moveTo(x + (ex - x) * 0.12, y + (ey - y) * 0.12);
-          ctx.lineTo(ex, ey);
-          ctx.stroke();
-        }
-        const [nx, ny] = edge[steps / 2];
-        ctx.strokeStyle = pal.dark(0.45 * p.texture);
-        ctx.lineWidth = Math.max(0.6, R * 0.015);
-        ctx.beginPath();
-        ctx.moveTo(nx, ny);
-        ctx.lineTo(x + (nx - x) * 0.72, y + (ny - y) * 0.72);
-        ctx.stroke();
-        ctx.strokeStyle = pal.light(0.25 * p.texture);
-        ctx.beginPath();
-        edge.forEach(([ex, ey], i) => (i ? ctx.lineTo(ex, ey) : ctx.moveTo(ex, ey)));
-        ctx.stroke();
-      }
-    }
-  }
-}
-
-/** Cells: rows of rectangular plant cells with thick walls between rows and chloroplasts clustered inside. */
-function paintCells(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: NaturePalette, rand: () => number) {
-  ctx.fillStyle = pal.tone(5);
-  ctx.fillRect(0, 0, w, h);
-  const rh = h * 0.3 * p.scale;
-  const rows: number[] = [];
-  for (let y = -rh * 0.4; y < h + rh; y += rh * (0.9 + rand() * 0.2)) rows.push(y);
-  const wave = (x: number, y0: number) => y0 + Math.sin(x / (rh * 1.7) + y0) * rh * 0.05;
-  for (let r = 0; r < rows.length - 1; r++) {
-    const top = rows[r];
-    const bottom = rows[r + 1];
-    let x = -rand() * rh;
-    while (x < w + rh) {
-      const cw = rh * (1.1 + rand() * 1.1);
-      const x0 = x;
-      const x1 = x + cw;
-      // A pale wash inside the cell, then chloroplasts crowding towards the walls.
-      ctx.fillStyle = pal.tone(4, 0.55);
-      ctx.fillRect(x0 + 2, wave(x0, top) + 3, cw - 4, bottom - top - 6);
-      const n = Math.round(p.density * cw * (bottom - top) / (rh * rh) * 26);
-      for (let k = 0; k < n; k++) {
-        const near = rand() < 0.75;
-        const cx = x0 + 4 + rand() * (cw - 8);
-        const cy = near ? (rand() < 0.5 ? top + 6 + rand() * rh * 0.2 : bottom - 6 - rand() * rh * 0.2) : top + 6 + rand() * (bottom - top - 12);
-        const rr = rh * (0.045 + rand() * 0.05);
-        const soft = rand() < 0.3;
-        ctx.fillStyle = pal.tone(1 + rand() * 2, soft ? 0.35 : 0.8);
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, rr * (soft ? 1.4 : 1), rr * (soft ? 1.2 : 0.8), rand() * Math.PI, 0, Math.PI * 2);
-        ctx.fill();
-        if (!soft && p.texture > 0) {
-          ctx.strokeStyle = pal.dark(0.4 * p.texture);
-          ctx.lineWidth = Math.max(0.5, rr * 0.15);
-          ctx.stroke();
-          ctx.fillStyle = pal.light(0.35 * p.texture);
-          ctx.beginPath();
-          ctx.arc(cx - rr * 0.3, cy - rr * 0.25, rr * 0.25, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-      // Thin wall between neighbouring cells, slightly slanted.
-      ctx.strokeStyle = pal.tone(1, 0.75);
-      ctx.lineWidth = Math.max(1, rh * 0.012);
-      ctx.beginPath();
-      ctx.moveTo(x1, wave(x1, top));
-      ctx.lineTo(x1 + (rand() - 0.5) * rh * 0.2, wave(x1, bottom));
-      ctx.stroke();
-      x = x1;
-    }
-  }
-  // Thick walls between the rows, blurred a little like an out-of-focus layer.
-  for (const y0 of rows) {
-    for (const [lw, a] of [[rh * 0.12, 0.25], [rh * 0.06, 0.5], [rh * 0.025, 0.9]] as const) {
-      ctx.strokeStyle = pal.tone(0, a);
-      ctx.lineWidth = Math.max(1, lw);
-      ctx.beginPath();
-      for (let x = 0; x <= w; x += 8) {
-        const y = wave(x, y0);
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    }
-  }
-}
-
-/** Silk: soft blended bands (layered translucent strokes, so it blurs without canvas filters) and a fine ripple. */
-function paintSilk(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: NaturePalette, rand: () => number) {
-  // A pale ground with deeper folds; in dark mode a deep ground with lighter folds, so the bands always show.
-  ctx.fillStyle = pal.tone(pal.dim ? 1 : 4);
-  ctx.fillRect(0, 0, w, h);
-  const band = (offset: number, colour: (a: number) => string, thick: number) => {
-    const path = () => {
-      ctx.beginPath();
-      for (let x = -40; x <= w + 40; x += 12) {
-        const y = offset + (x / w) * h * -0.6 + Math.sin(x / (h * 1.2 * p.scale) + offset) * h * 0.18;
-        if (x === -40) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
+  const leaf = (j: number, i: number) => {
+    const off = -dx + (((j % 2) + 2) % 2) * dx * 0.5;
+    return {
+      cx: off + i * dx + (hashN(i, j, p.seed) - 0.5) * R * 0.12,
+      cy: y0 + j * dy + (hashN(i, j, p.seed + 1) - 0.5) * R * 0.08,
+      r: R * (0.92 + hashN(i, j, p.seed + 2) * 0.14),
+      tilt: (hashN(i, j, p.seed + 3) - 0.5) * 0.12,
+      shade: 1 + hashN(i, j, p.seed + 4) * 3,
+      off,
     };
-    for (let k = 24; k >= 1; k--) {
-      path();
-      ctx.strokeStyle = colour(0.05);
-      ctx.lineWidth = thick * (k / 24) ** 0.8;
-      ctx.lineCap = "round";
-      ctx.stroke();
-    }
   };
-  const count = 6 + Math.round(p.density * 4);
-  for (let i = 0; i < count; i++) {
-    const off = -h * 0.4 + ((i + rand() * 0.6) / count) * h * 2;
-    const pick = rand();
-    const t = pal.dim ? (pick < 0.5 ? 3 + rand() * 2 : rand()) : pick < 0.5 ? rand() * 1.6 : 4 + rand();
-    const colour = pick > 0.85 && pal.accents.length ? (a: number) => pal.light(a * 1.6) : (a: number) => pal.tone(t, a * 1.8);
-    band(off, colour, h * (0.35 + rand() * 0.5) * p.scale);
-  }
-  if (p.texture > 0) {
-    // Fine ripples running with the folds.
-    const n = Math.round(((w * h) / 45) * p.texture);
-    ctx.lineWidth = 0.6;
-    for (let k = 0; k < n; k++) {
-      const x = rand() * w;
-      const y = rand() * h;
-      const a = -0.55 + (noise(x / h, y / h, p.seed) - 0.5) * 0.8;
-      const len = 3 + rand() * 4;
-      ctx.strokeStyle = rand() < 0.5 ? pal.dark(0.07) : pal.light(0.12);
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.quadraticCurveTo(x + Math.cos(a) * len * 0.5 - Math.sin(a) * 1.2, y + Math.sin(a) * len * 0.5 + Math.cos(a) * 1.2, x + Math.cos(a) * len, y + Math.sin(a) * len);
-      ctx.stroke();
-    }
-    // A few long sheen lines along the folds.
-    for (let k = 0; k < 4; k++) {
-      const off = rand() * h * 1.6 - h * 0.3;
-      ctx.strokeStyle = pal.light(0.3 * p.texture);
-      ctx.lineWidth = 1 + rand() * 1.5;
-      ctx.beginPath();
-      for (let x = -20; x <= w + 20; x += 10) {
-        const y = off + (x / w) * h * -0.6 + Math.sin(x / (h * 1.2 * p.scale) + off) * h * 0.18;
-        if (x === -20) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+  return (x, y) => {
+    const jHi = Math.floor((y + R * 1.05 - y0) / dy);
+    const jLo = Math.ceil((y - y0) / dy) - 1;
+    for (let j = jHi; j >= jLo; j--) {
+      const off = -dx + (((j % 2) + 2) % 2) * dx * 0.5;
+      const ic = Math.round((x - off) / dx);
+      for (const i of [ic + 1, ic, ic - 1]) {
+        const L = leaf(j, i);
+        const ddx = x - L.cx;
+        const ddy = y - L.cy;
+        const d = Math.hypot(ddx, ddy);
+        if (d > L.r * 1.03) continue;
+        const rel = Math.atan2(ddy, ddx) - L.tilt + Math.PI / 2;
+        if (Math.abs(rel) > spread) continue;
+        const tt = (rel + spread) / (2 * spread);
+        const notch = 1 - 0.16 * Math.exp(-(((tt - 0.5) / 0.03) ** 2));
+        if (d > L.r * notch * (1 + 0.025 * Math.sin(tt * 70))) continue;
+        const k = d / L.r;
+        let t = L.shade - 1.2 + 1.5 * k;
+        // The rim is painted along the edge (smooth fan outline); the rest radiates from the stem (veins).
+        const rim = k > 0.84;
+        if (rim) t += 0.5;
+        if (Math.abs(tt - 0.5) < 0.012 && k > 0.72) t = 0.2;
+        return { t, a: Math.atan2(ddy, ddx) + (rim ? Math.PI / 2 : 0), id: j * 1000 + i + (rim ? 0.5 : 0) };
       }
-      ctx.stroke();
     }
-  }
+    return { t: 0.2, a: noise(x / R, y / R, p.seed) * Math.PI * 2, id: -1 };
+  };
 }
 
-/** Bloom: overlapping flowers with layered petals, on a deep ground. */
-function paintBloom(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: NaturePalette, rand: () => number) {
-  ctx.fillStyle = pal.tone(1);
-  ctx.fillRect(0, 0, w, h);
+/** Cells: rows of cells; strokes run along the walls, across the pale insides, and round each chloroplast. */
+function cellsFieldOf(p: NaturePattern, w: number, h: number): Field {
+  const rh = h * 0.3 * p.scale;
+  const y0 = -rh * 0.4;
+  const wallY = (k: number, x: number) => y0 + k * rh + Math.sin(x / (rh * 1.7) + k) * rh * 0.05;
+  const cw = rh * 1.6;
+  const g = rh * 0.17;
+  return (x, y) => {
+    let k = Math.floor((y - y0) / rh);
+    if (y < wallY(k, x)) k--;
+    else if (y >= wallY(k + 1, x)) k++;
+    const top = wallY(k, x);
+    const bot = wallY(k + 1, x);
+    const v = (y - top) / (bot - top);
+    const dW = Math.min(y - top, bot - y);
+    if (dW < rh * 0.05) return { t: 0.15 + (dW / (rh * 0.05)) * 0.7, a: 0, id: -1 - k };
+    const u = (x + k * cw * 0.37 + (v - 0.5) * rh * 0.08) / cw;
+    const c = Math.floor(u);
+    if (Math.min(u - c, 1 - (u - c)) * cw < rh * 0.02) return { t: 1, a: Math.PI / 2, id: -500 - k };
+    const gi = Math.floor(x / g);
+    const gj = Math.floor(y / g);
+    for (let di = -1; di <= 1; di++) {
+      for (let dj = -1; dj <= 1; dj++) {
+        const a = gi + di;
+        const b = gj + dj;
+        const cx = (a + 0.5 + (hashN(a, b, p.seed) - 0.5) * 0.8) * g;
+        const cy = (b + 0.5 + (hashN(a, b, p.seed + 1) - 0.5) * 0.8) * g;
+        const cv = Math.min(1, Math.max(0, (cy - top) / (bot - top)));
+        const near = 1 - Math.min(cv, 1 - cv) * 2;
+        if (hashN(a, b, p.seed + 2) > (0.15 + 0.65 * near) * (0.5 + p.density * 0.6)) continue;
+        const rr = g * (0.3 + hashN(a, b, p.seed + 3) * 0.2);
+        const d = Math.hypot(x - cx, y - cy);
+        if (d < rr) return { t: d > rr * 0.72 ? 1 : 2 + (d / rr) * 0.8, a: Math.atan2(y - cy, x - cx) + Math.PI / 2, id: 1e6 + a * 1000 + b };
+      }
+    }
+    return { t: 4.5 + (noise(x / (rh * 0.4), y / (rh * 0.4), p.seed) - 0.5) * 0.8, a: (noise(x / rh, y / rh, p.seed + 5) - 0.5) * 0.5, id: k * 1000 + c };
+  };
+}
+
+/** Bloom: overlapping flowers; strokes radiate along each petal, darker between petals, a dotted centre. */
+function bloomFieldOf(p: NaturePattern, w: number, h: number, pal: NaturePalette): Field {
   const S = h * 0.42 * p.scale;
-  const spots: [number, number][] = [];
-  for (let y = -S * 0.3; y < h + S * 0.5; y += S * (0.95 - p.density * 0.25)) {
-    for (let x = -S * 0.3; x < w + S * 0.5; x += S * (0.95 - p.density * 0.25)) spots.push([x + (rand() - 0.5) * S * 0.6, y + (rand() - 0.5) * S * 0.6]);
-  }
-  spots.sort(() => rand() - 0.5);
-  for (const [x, y] of spots) {
-    const r = S * (0.42 + rand() * 0.3);
-    const petals = 5 + Math.floor(rand() * 5);
-    const turn = rand() * Math.PI;
-    const useAccent = pal.accents.length > 0 && rand() < 0.45;
-    const accent = useAccent ? pal.accents[Math.floor(rand() * pal.accents.length)] : null;
-    const base = 2.5 + rand() * 2.5;
-    // Two rings of petals: outer, then a smaller inner ring turned half a petal.
-    for (const [ring, rr] of [[0, 1], [1, 0.62]] as const) {
-      for (let k = 0; k < petals; k++) {
-        const a = turn + ((k + ring * 0.5) / petals) * Math.PI * 2;
-        const len = r * rr * (0.9 + rand() * 0.2);
-        const wid = len * (0.42 + 2.2 / petals) * 0.5;
-        const tipX = x + Math.cos(a) * len;
-        const tipY = y + Math.sin(a) * len;
-        const nx = -Math.sin(a);
-        const ny = Math.cos(a);
-        ctx.save();
-        ctx.shadowColor = pal.dark(0.35);
-        ctx.shadowBlur = r * 0.12;
-        const g = ctx.createLinearGradient(x, y, tipX, tipY);
-        g.addColorStop(0, pal.tone(base - 1.5 + ring));
-        g.addColorStop(1, accent ?? pal.tone(base + ring * 0.5));
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.bezierCurveTo(x + Math.cos(a) * len * 0.4 + nx * wid, y + Math.sin(a) * len * 0.4 + ny * wid, tipX + nx * wid * 0.6, tipY + ny * wid * 0.6, tipX, tipY);
-        ctx.bezierCurveTo(tipX - nx * wid * 0.6, tipY - ny * wid * 0.6, x + Math.cos(a) * len * 0.4 - nx * wid, y + Math.sin(a) * len * 0.4 - ny * wid, x, y);
-        ctx.fill();
-        ctx.restore();
-        if (p.texture > 0) {
-          ctx.strokeStyle = pal.dark(0.15 * p.texture);
-          ctx.lineWidth = Math.max(0.5, r * 0.01);
-          for (const off of [-0.35, 0, 0.35]) {
-            ctx.beginPath();
-            ctx.moveTo(x + Math.cos(a) * len * 0.15, y + Math.sin(a) * len * 0.15);
-            ctx.lineTo(tipX - Math.cos(a) * len * 0.1 + nx * wid * off, tipY - Math.sin(a) * len * 0.1 + ny * wid * off);
-            ctx.stroke();
-          }
-        }
+  const sp = S * (0.95 - 0.25 * p.density);
+  const flower = (fi: number, fj: number) => {
+    const acc = pal.accents.length > 0 && hashN(fi, fj, p.seed + 8) < 0.45;
+    return {
+      cx: (fi + 0.5 + (hashN(fi, fj, p.seed) - 0.5) * 0.6) * sp - S * 0.3,
+      cy: (fj + 0.5 + (hashN(fi, fj, p.seed + 1) - 0.5) * 0.6) * sp - S * 0.3,
+      r: S * (0.42 + hashN(fi, fj, p.seed + 2) * 0.3),
+      n: 5 + Math.floor(hashN(fi, fj, p.seed + 3) * 5),
+      turn: hashN(fi, fj, p.seed + 4) * Math.PI,
+      order: hashN(fi, fj, p.seed + 5),
+      base: 2.5 + hashN(fi, fj, p.seed + 6) * 2.5,
+      c: acc ? pal.accents[Math.floor(hashN(fi, fj, p.seed + 7) * pal.accents.length)] : undefined,
+      id: fi * 1000 + fj,
+    };
+  };
+  return (x, y) => {
+    const gi = Math.floor((x + S * 0.3) / sp);
+    const gj = Math.floor((y + S * 0.3) / sp);
+    let best: { F: ReturnType<typeof flower>; d: number; th: number; dx: number; dy: number } | null = null;
+    for (let di = -2; di <= 2; di++) {
+      for (let dj = -2; dj <= 2; dj++) {
+        const F = flower(gi + di, gj + dj);
+        const dx = x - F.cx;
+        const dy = y - F.cy;
+        const d = Math.hypot(dx, dy);
+        if (d > F.r) continue;
+        const th = Math.atan2(dy, dx) - F.turn;
+        if (d > F.r * (0.55 + 0.45 * Math.abs(Math.cos((F.n * th) / 2)) ** 0.5)) continue;
+        if (!best || F.order > best.F.order) best = { F, d, th, dx, dy };
       }
     }
-    // The flower's centre: a cluster of small dots.
-    for (let k = 0; k < 14; k++) {
-      const a = rand() * Math.PI * 2;
-      const d = rand() * r * 0.14;
-      ctx.fillStyle = k % 3 ? pal.tone(0, 0.85) : pal.light(0.8);
-      ctx.beginPath();
-      ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, r * (0.025 + rand() * 0.02), 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
+    if (!best) return { t: 0.8 + (noise(x / S, y / S, p.seed) - 0.5) * 0.8, a: noise(x / S, y / S, p.seed + 3) * Math.PI * 2, id: -1 };
+    const { F, d, th, dx, dy } = best;
+    const k = d / F.r;
+    if (k < 0.14) return { t: 0.4, a: Math.atan2(dy, dx) + Math.PI / 2, id: F.id + 0.5, c: hashN(Math.round(x), Math.round(y), 3) < 0.35 ? pal.light(0.9) : undefined };
+    let t = F.base - 1.4 + 1.8 * k;
+    if (Math.abs(Math.cos((F.n * th) / 2)) < 0.12 && k > 0.2) t -= 1.2;
+    return { t, a: Math.atan2(dy, dx), id: F.id, c: F.c && k > 0.38 ? F.c : undefined };
+  };
 }
 
-/** Etching: dry-brush swirls in a dark tone over a pale ground, with a woven texture across everything. */
-function paintEtching(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: NaturePalette, rand: () => number) {
-  // Light ground with dark marks; in dark mode, a deep ground with pale marks.
-  ctx.fillStyle = pal.tone(pal.dim ? 1 : 5);
-  ctx.fillRect(0, 0, w, h);
+/** Silk: long strokes along the folds; bands of light and deep tone from a soft noise across them; sheen on the ridges. */
+function silkFieldOf(p: NaturePattern, w: number, h: number): Field {
+  const per = h * 1.2 * p.scale;
+  const curve = (x: number) => (x / w) * h * -0.6 + Math.sin(x / per) * h * 0.18;
+  const slope = (x: number) => (-0.6 * h) / w + (Math.cos(x / per) * h * 0.18) / per;
+  return (x, y) => {
+    const q = y - curve(x);
+    const v = fbm(q / (h * 0.45 * p.scale) + 3, x / (w * 1.5), p.seed);
+    const s = Math.min(1, Math.max(0, (v - 0.3) / 0.4));
+    return { t: 0.4 + 4.6 * s * s * (3 - 2 * s), a: Math.atan(slope(x)), id: 0, glow: Math.abs(v - 0.62) < 0.012 ? 0.7 : 0 };
+  };
+}
+
+/**
+ * Etching: dark and pale bands that wrap round a few vortices (contours of a stream function), brushed along
+ * the bands; pale ground with dark bands, inverted in dark mode.
+ */
+function etchingFieldOf(p: NaturePattern, w: number, h: number, pal: NaturePalette, rand: () => number): Field {
   const vs = vortices(p, w, h, rand, p.scale * 1.3);
-  const field = swirlField(vs, 0.3, p.seed, h * 1.4);
-  const value = (x: number, y: number) => fbm(x / (h * 0.7 * p.scale), y / (h * 0.7 * p.scale), p.seed + 5);
-  const lines = Math.round(((w * h) / 26) * p.density);
-  ctx.lineCap = "round";
-  for (let k = 0; k < lines; k++) {
-    const x = rand() * w;
-    const y = rand() * h;
-    const v = value(x, y);
-    // Darker regions get far more marks: the shapes come from where the brush pressed.
-    if (rand() > (v - 0.36) * 3) continue;
-    const pts = trace(x, y, 12, 5 + rand() * 5, field);
-    const mark = pal.dim ? 4 + rand() : rand() < 0.7 ? 0 : 1;
-    const width = 1.6 + rand() * 3.6;
-    // A dry brush: three bristles side by side, each skipping on its own.
-    for (const off of [-0.33, 0, 0.33]) {
-      ctx.strokeStyle = pal.tone(mark, 0.3 + rand() * 0.45);
-      ctx.lineWidth = width * 0.3;
-      ctx.beginPath();
-      let on = true;
-      pts.forEach(([px, py], i) => {
-        const [qx, qy] = pts[Math.min(pts.length - 1, i + 1)];
-        const len = Math.hypot(qx - px, qy - py) || 1;
-        const ox = (-(qy - py) / len) * width * off;
-        const oy = ((qx - px) / len) * width * off;
-        if (rand() < 0.12) on = !on;
-        if (i === 0 || !on) ctx.moveTo(px + ox, py + oy);
-        else ctx.lineTo(px + ox, py + oy);
-      });
-      ctx.stroke();
-    }
-  }
-  if (p.texture > 0) {
-    // Woven texture: broken horizontal threads, light and dark.
-    for (let y = 0; y < h; y += 2) {
-      ctx.setLineDash([2 + rand() * 6, 1 + rand() * 5]);
-      ctx.strokeStyle = y % 4 ? pal.light(0.18 * p.texture) : pal.dark(0.08 * p.texture);
-      ctx.lineWidth = 0.8;
-      ctx.beginPath();
-      ctx.moveTo(-rand() * 8, y + 0.5);
-      ctx.lineTo(w, y + 0.5);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
+  const psi = (x: number, y: number) => {
+    let v = (y * Math.cos(0.3) - x * Math.sin(0.3)) / h + (fbm(x / h, y / h, p.seed + 5) - 0.5) * 0.5;
+    for (const c of vs) v += c.spin * Math.exp(-((Math.hypot(x - c.x, y - c.y) / c.r) ** 2)) * 1.4 * (c.r / h);
+    return v;
+  };
+  const bands = 7 / p.scale;
+  return (x, y) => {
+    const v0 = psi(x, y);
+    const gx = psi(x + 1, y) - v0;
+    const gy = psi(x, y + 1) - v0;
+    const n = v0 * bands;
+    const f = n - Math.floor(n);
+    const dark = f < 0.45;
+    const light = pal.dim ? 4.6 : 4.9;
+    const deep = pal.dim ? 0.6 : 0.3;
+    const edge = f < 0.05 || (f > 0.4 && f < 0.5);
+    return { t: (dark !== pal.dim ? deep : light) + (edge ? (dark !== pal.dim ? 0.8 : -0.8) : 0), a: Math.atan2(gy, gx) + Math.PI / 2, id: dark ? 1 : 0 };
+  };
+}
+
+const PATTERNS: Record<NaturePattern["pattern"], { brush: Brush; ground: number; field: (p: NaturePattern, w: number, h: number, pal: NaturePalette, rand: () => number) => Field }> = {
+  swirl: { brush: { width: 8, len: [4.5, 7.5] }, ground: 2, field: (p, w, h, _pal, rand) => swirlFieldOf(p, w, h, rand) },
+  ginkgo: { brush: { width: 4.5, len: [2.2, 3.8] }, ground: 0, field: (p, w, h) => ginkgoFieldOf(p, w, h) },
+  cells: { brush: { width: 4, len: [2, 3.5] }, ground: 4, field: (p, w, h) => cellsFieldOf(p, w, h) },
+  silk: { brush: { width: 6, len: [8, 12] }, ground: 3, field: (p, w, h) => silkFieldOf(p, w, h) },
+  bloom: { brush: { width: 5, len: [2.5, 4] }, ground: 1, field: (p, w, h, pal) => bloomFieldOf(p, w, h, pal) },
+  etching: { brush: { width: 3.5, len: [5, 8] }, ground: 3, field: (p, w, h, pal, rand) => etchingFieldOf(p, w, h, pal, rand) },
+};
+
+/**
+ * A soft glow in the banner's own palette behind the text (its palest tone in light mode, its deepest in dark
+ * mode), built from layered rounded shapes so it blends into the painting in every browser.
+ */
+export function natureGlow(ctx: Ctx, p: NaturePattern, dim: boolean, box: { x: number; y: number; width: number; height: number }, height: number) {
+  if (p.clear <= 0) return;
+  const pal = naturePalette(p.colour, p.harmony, dim);
+  const colour = (a: number) => pal.tone(dim ? 0 : 5, a);
+  // Tight to the text: strongest right behind it, gone within a short distance, so the pattern shows fully
+  // everywhere else.
+  const pad = Math.max(20, Math.min(height * 0.16, 44));
+  const layers = 12;
+  for (let k = layers; k >= 0; k--) {
+    const f = k / layers;
+    const grow = pad * f;
+    // Layers stack towards the centre: about 80% cover right behind the words, nothing past the edge.
+    ctx.fillStyle = colour(p.clear * 0.26 * (1 - f) ** 1.3);
+    ctx.beginPath();
+    ctx.roundRect(box.x - grow * 1.4, box.y - grow * 0.6, box.width + grow * 2.8, box.height + grow * 1.2, grow + 10);
+    ctx.fill();
   }
 }
 
-const PAINTERS = { swirl: paintSwirl, ginkgo: paintGinkgo, cells: paintCells, silk: paintSilk, bloom: paintBloom, etching: paintEtching };
-
-/** Paints a nature pattern over the whole banner. `dim` = dark theme (deeper tones). */
+/** Paints a nature pattern over the whole banner, entirely in brush strokes. `dim` = dark theme (deeper tones). */
 export function drawNature(ctx: Ctx, p: NaturePattern, width: number, height: number, dim: boolean) {
   const pal = naturePalette(p.colour, p.harmony, dim);
+  const rand = rng(p.seed * 7919 + 13);
+  const def = PATTERNS[p.pattern];
   ctx.save();
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
-  PAINTERS[p.pattern](ctx, p, width, height, pal, rng(p.seed * 7919 + 13));
+  paintField(ctx, p, width, height, pal, rand, def.field(p, width, height, pal, rand), def.brush, def.ground);
   ctx.restore();
   ctx.globalAlpha = 1;
 }

@@ -14,15 +14,15 @@ controls (useControls) ──► toNature() (sanitizeNature) ──► HeroBanne
 ```
 
 ## Frontend
-- **Pattern:**
-  - `swirl`: three layers of short impasto dabs (tapered, a streak of a neighbouring tone, a lit ridge and a shaded edge) following a field of vortices; one vortex at the focus, some with bright cores.
-  - `ginkgo`: rows of fan leaves opening upwards, each row overlapping the stems of the row above; radial gradient, fine veins, the middle notch, a soft shadow.
-  - `cells`: rows of cells with thick, slightly blurred walls between rows, thin slanted walls between cells, a pale wash, and chloroplasts crowding the walls (some sharp with a rim and glint, some soft and out of focus).
-  - `silk`: soft bands built from layered translucent strokes (no canvas filters, so it works in every browser), fine ripples and a few sheen lines.
-  - `bloom`: overlapping flowers, two rings of petals with a gradient and veins, a dotted centre.
-  - `etching`: dry-brush marks along a vortex field, denser where a noise field is darker, over a woven texture.
+- **Everything is brush strokes.** Each pattern is a field: for any point, the tone to paint, the brush direction, and which shape it belongs to (strokes stop at a shape's edge, so leaves, petals and cells stay crisp). `paintField` covers the banner in three layers of impasto dabs (broad underpainting, main strokes, small highlights); each dab is tapered, carries a streak of a neighbouring tone, a lit ridge and a shaded edge.
+  - `swirl`: strokes follow several vortices, lighter towards bright cores where cream accents gather.
+  - `ginkgo`: rows of fan leaves; strokes radiate from each stem (the veins), the rim is painted along the edge, the middle notch in deep tone.
+  - `cells`: rows of cells; strokes run along the thick row walls and thin cell walls, softly across the pale insides, and round each chloroplast (crowding the walls).
+  - `silk`: long strokes along the folds; light and deep bands from a soft noise across them; sheen accents on the ridges.
+  - `bloom`: overlapping flowers; strokes radiate along each petal, deeper between petals, a dotted centre; some flowers in the accent.
+  - `etching`: dark and pale bands that wrap round vortices (contours of a stream function), brushed along the bands; inverted in dark mode.
 - **Colour:** the base colour's hue with its chroma capped low (soft, natural); six tones dark to light, deeper in dark mode. Accents: `mono`, `cream` (warm highlights) or `blush` (cream + soft pink). Curated bases: sage, moss, leaf, sky, slate, lilac, clay, bark.
-- **Size, density, texture, focus, seed;** the title area fades to the card background (shared with the other banner kinds).
+- **Size, density, texture, focus, seed.** Behind the title, `natureGlow` lays a glow in the banner's own palette (palest tone in light mode, deepest in dark), about 80% cover right behind the words and fading to nothing a short way out, so the text sits on the painting instead of a grey patch and the pattern shows fully elsewhere.
 - Preview at column width and phone width (from `sm`); controls persist per browser; Randomize and Reset from the shared panel.
 
 ## Key Dependencies
