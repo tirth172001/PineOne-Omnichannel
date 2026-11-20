@@ -1,83 +1,172 @@
-import { type BrushPattern, brushStrokes, rng } from "./brush";
+import { type BrushPattern, brushStrokes, rng, type Stroke } from "./brush";
 
-/** Theme colours read off the canvas (CSS colour strings). */
-export type BrushColours = { ink: string; muted: string; lime: string; pine: string };
-
-/** Paint alpha per bristle: low, so overlapping bristles build up texture and the palette stays muted. */
-const INK_ALPHA = 0.08;
-const INK_RANGE = 0.2;
+/** Theme colours read off the canvas (CSS colour strings). `base` is the banner's own background. */
+export type BrushColours = { ink: string; muted: string; lime: string; pine: string; base: string };
 
 /**
- * Paints brush strokes. Each stroke is a bundle of thin bristle lines offset across its width:
- * every bristle gets its own opacity, thickness and length (dry, ragged ends) and fades along its length
- * as the paint runs out, so even long strokes keep their texture.
- * A faint paper grain goes underneath.
+ * Lighting, not palette: the paint is lit from the top left. Shadows are black and highlights white at low
+ * opacity in both themes (that's how light behaves on a raised surface), so they aren't theme tokens.
  */
-export function drawBrush(ctx: CanvasRenderingContext2D, p: BrushPattern, width: number, height: number, c: BrushColours) {
-  const rand = rng(p.seed * 31 + 5);
+const SHADOW = "rgb(0 0 0)";
+const LIGHT = "rgb(255 255 255)";
+const LIGHT_DIR: [number, number] = [-Math.SQRT1_2, -Math.SQRT1_2];
 
-  if (p.grain > 0) {
-    ctx.fillStyle = c.ink;
-    const dots = Math.round(((width * height) / 90) * p.grain);
-    for (let i = 0; i < dots; i++) {
-      ctx.globalAlpha = 0.015 + rand() * 0.035;
-      const s = rand() < 0.15 ? 1.6 : 1;
-      ctx.fillRect(rand() * width, rand() * height, s, s);
-    }
-  }
-
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  const colourOf = [c.ink, c.muted, c.lime, c.pine];
-  for (const stroke of brushStrokes(p, width, height)) {
-    const r = rng(stroke.seed);
-    const pts = stroke.points;
-    const n = Math.max(2, p.bristles);
-    const accent = stroke.colour >= 2;
-    ctx.strokeStyle = colourOf[stroke.colour];
-    for (let b = 0; b < n; b++) {
-      const across = (b / (n - 1) - 0.5) * stroke.width + (r() - 0.5) * stroke.width * 0.15;
-      // Dry brush: each bristle runs 65–100% of the stroke and may start a little late.
-      const start = r() < 0.3 ? 1 : 0;
-      const end = Math.max(start + 2, Math.round((pts.length - 1) * (0.65 + r() * 0.35)));
-      const shifted = offsetPath(pts, start, end, across, r);
-      const alpha = (accent ? 0.45 + r() * 0.3 : INK_ALPHA + INK_RANGE * stroke.tone) * (0.55 + r() * 0.45);
-      // Thin bristles leave gaps between them, which is where the texture comes from.
-      ctx.lineWidth = Math.max(0.6, (stroke.width / n) * (0.55 + r() * 0.6));
-      // Paint loads at the start and runs dry towards the end: full strength for the first part,
-      // then fainter, so long strokes keep their texture all the way along.
-      const mid = Math.max(2, Math.round(shifted.length * (0.45 + r() * 0.2)));
-      ctx.globalAlpha = alpha;
-      smoothLine(ctx, shifted.slice(0, mid + 1));
-      ctx.globalAlpha = alpha * (0.35 + r() * 0.25);
-      smoothLine(ctx, shifted.slice(mid));
-    }
-  }
-  ctx.globalAlpha = 1;
+/**
+ * Opaque paint colours: the ink mixed into the banner background (so a "light" stroke is a muted grey, not a
+ * see-through ink), and the accents mixed the same way. Falls back to plain colours (drawn with opacity)
+ * where the browser's canvas doesn't understand `color-mix`.
+ */
+function palette(ctx: CanvasRenderingContext2D, c: BrushColours) {
+  const probe = "#010203";
+  ctx.fillStyle = probe;
+  ctx.fillStyle = `color-mix(in oklch, ${c.ink} 30%, ${c.base})`;
+  const mixes = ctx.fillStyle !== probe;
+  const mix = (colour: string, pct: number) => (mixes ? `color-mix(in oklch, ${colour} ${Math.round(Math.min(100, pct))}%, ${c.base})` : colour);
+  return { mixes, mix };
 }
 
-/** A bristle's path: the stroke's points from `start` to `end`, offset `across` its direction, with a little shake. */
-function offsetPath(pts: [number, number][], start: number, end: number, across: number, r: () => number): [number, number][] {
-  const out: [number, number][] = [];
-  for (let i = start; i <= Math.min(end, pts.length - 1); i++) {
+/** Edges of a ribbon around a centre line: a round blob where the brush lands, then thinning as the paint runs out. */
+function ribbon(pts: [number, number][], width: number, r: () => number) {
+  const left: [number, number][] = [];
+  const right: [number, number][] = [];
+  const normals: [number, number][] = [];
+  const n = pts.length;
+  const swell = 0.85 + r() * 0.3;
+  for (let i = 0; i < n; i++) {
     const [x0, y0] = pts[Math.max(0, i - 1)];
-    const [x1, y1] = pts[Math.min(pts.length - 1, i + 1)];
+    const [x1, y1] = pts[Math.min(n - 1, i + 1)];
     const len = Math.hypot(x1 - x0, y1 - y0) || 1;
-    const shake = (r() - 0.5) * 0.7;
-    out.push([pts[i][0] - ((y1 - y0) / len) * (across + shake), pts[i][1] + ((x1 - x0) / len) * (across + shake)]);
+    const nx = -(y1 - y0) / len;
+    const ny = (x1 - x0) / len;
+    const t = i / (n - 1);
+    const w = (width / 2) * swell * (t < 0.08 ? 0.75 + t * 3 : 1.05 - 0.6 * t ** 1.4) * (0.9 + r() * 0.2);
+    left.push([pts[i][0] + nx * w, pts[i][1] + ny * w]);
+    right.push([pts[i][0] - nx * w, pts[i][1] - ny * w]);
+    normals.push([nx, ny]);
   }
-  return out;
+  return { left, right, normals };
 }
 
-/** A smooth line through points (quadratic curves through the midpoints). */
+function fillRibbon(ctx: CanvasRenderingContext2D, left: [number, number][], right: [number, number][], dx = 0, dy = 0) {
+  ctx.beginPath();
+  ctx.moveTo(left[0][0] + dx, left[0][1] + dy);
+  for (const [x, y] of left) ctx.lineTo(x + dx, y + dy);
+  for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(right[i][0] + dx, right[i][1] + dy);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/** A smooth open line through points (quadratic curves through the midpoints). */
 function smoothLine(ctx: CanvasRenderingContext2D, pts: [number, number][]) {
   if (pts.length < 2) return;
   ctx.beginPath();
   ctx.moveTo(pts[0][0], pts[0][1]);
-  for (let i = 1; i < pts.length - 1; i++) {
-    ctx.quadraticCurveTo(pts[i][0], pts[i][1], (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2);
-  }
-  const last = pts[pts.length - 1];
-  ctx.lineTo(last[0], last[1]);
+  for (let i = 1; i < pts.length - 1; i++) ctx.quadraticCurveTo(pts[i][0], pts[i][1], (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2);
+  ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
   ctx.stroke();
+}
+
+/**
+ * One stroke of thick paint (impasto):
+ * 1. a soft cast shadow below-right of the lump;
+ * 2. the lump itself, opaque, round where the brush lands and thinning towards a dry tail;
+ * 3. bristle ridges raked along it: a dark groove with a lit crest beside it;
+ * 4. a lit edge on the side facing the light and a shaded edge on the other side.
+ */
+function paintStroke(ctx: CanvasRenderingContext2D, s: Stroke, p: BrushPattern, body: string, ridgeDark: string, opacity: number) {
+  const r = rng(s.seed);
+  const { left, right, normals } = ribbon(s.points, s.width, r);
+  const relief = p.relief;
+  const lift = Math.max(0.8, Math.min(3, s.width * 0.12)) * (0.4 + relief);
+
+  if (relief > 0) {
+    ctx.fillStyle = SHADOW;
+    ctx.globalAlpha = 0.16 * relief;
+    fillRibbon(ctx, left, right, lift, lift);
+    ctx.globalAlpha = 0.1 * relief;
+    fillRibbon(ctx, left, right, lift * 1.8, lift * 1.8);
+  }
+
+  ctx.fillStyle = body;
+  ctx.globalAlpha = opacity;
+  fillRibbon(ctx, left, right);
+  // The blob where the brush first touched: a round lump of paint at the start.
+  const [sx, sy] = s.points[0];
+  const r0 = Math.hypot(left[0][0] - right[0][0], left[0][1] - right[0][1]) / 2;
+  ctx.beginPath();
+  ctx.arc(sx, sy, r0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Ridges: grooves dragged by the bristles, each with a lit crest just beside it.
+  const ridges = Math.max(2, p.bristles);
+  ctx.lineCap = "round";
+  for (let b = 0; b < ridges; b++) {
+    const across = (b + 0.5) / ridges - 0.5 + (r() - 0.5) * 0.12;
+    const start = Math.floor(r() * 2);
+    const end = Math.max(start + 2, Math.round((s.points.length - 1) * (0.55 + r() * 0.45)));
+    const groove: [number, number][] = [];
+    const crest: [number, number][] = [];
+    for (let i = start; i <= Math.min(end, s.points.length - 1); i++) {
+      const [lx, ly] = left[i];
+      const [rx, ry] = right[i];
+      const t = 0.5 + across * 0.92;
+      const x = rx + (lx - rx) * t;
+      const y = ry + (ly - ry) * t;
+      const [nx, ny] = normals[i];
+      groove.push([x, y]);
+      crest.push([x + nx * 0.9, y + ny * 0.9]);
+    }
+    ctx.lineWidth = Math.max(0.6, (s.width / ridges) * 0.32);
+    ctx.strokeStyle = ridgeDark;
+    ctx.globalAlpha = (0.35 + r() * 0.3) * opacity;
+    smoothLine(ctx, groove);
+    if (relief > 0) {
+      ctx.lineWidth = Math.max(0.5, (s.width / ridges) * 0.22);
+      ctx.strokeStyle = LIGHT;
+      ctx.globalAlpha = (0.08 + r() * 0.1) * relief;
+      smoothLine(ctx, crest);
+    }
+  }
+
+  if (relief > 0) {
+    // The side whose normal points towards the light is lit; the other is in shade.
+    const mid = normals[Math.floor(normals.length / 2)];
+    const leftLit = mid[0] * LIGHT_DIR[0] + mid[1] * LIGHT_DIR[1] > 0;
+    ctx.lineWidth = Math.max(0.8, s.width * 0.09);
+    ctx.strokeStyle = LIGHT;
+    ctx.globalAlpha = 0.22 * relief;
+    smoothLine(ctx, leftLit ? left : right);
+    ctx.strokeStyle = SHADOW;
+    ctx.globalAlpha = 0.2 * relief;
+    smoothLine(ctx, leftLit ? right : left);
+  }
+  ctx.globalAlpha = 1;
+}
+
+/** Paints a brush pattern as thick, textured oil paint on a faint canvas grain. */
+export function drawBrush(ctx: CanvasRenderingContext2D, p: BrushPattern, width: number, height: number, c: BrushColours) {
+  const rand = rng(p.seed * 31 + 5);
+  const { mixes, mix } = palette(ctx, c);
+
+  if (p.grain > 0) {
+    // Canvas weave: a faint scatter of tiny dashes.
+    ctx.fillStyle = c.ink;
+    const dots = Math.round(((width * height) / 70) * p.grain);
+    for (let i = 0; i < dots; i++) {
+      ctx.globalAlpha = 0.015 + rand() * 0.03;
+      ctx.fillRect(rand() * width, rand() * height, rand() < 0.5 ? 1.6 : 1, 1);
+    }
+  }
+
+  ctx.lineJoin = "round";
+  for (const s of brushStrokes(p, width, height)) {
+    // Body: muted greys from the ink mixed into the background (more ink = more contrast); accents are the
+    // accent colour mixed the same way. Ridges are the same paint, a step stronger.
+    const inkPct = 12 + 40 * s.tone + (s.colour === 1 ? -6 : 0);
+    const body = s.colour === 2 ? mix(c.lime, 70 + 20 * s.tone) : s.colour === 3 ? mix(c.pine, 70 + 20 * s.tone) : mix(c.ink, inkPct);
+    const ridge = s.colour === 2 ? mix(c.lime, 100) : s.colour === 3 ? mix(c.pine, 100) : mix(c.ink, inkPct + 22);
+    const opacity = mixes ? 0.96 : s.colour >= 2 ? 0.8 : 0.12 + 0.3 * s.tone;
+    paintStroke(ctx, s, p, body, ridge, opacity);
+  }
+  ctx.globalAlpha = 1;
 }

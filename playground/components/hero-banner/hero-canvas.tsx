@@ -16,6 +16,8 @@ function readColors(el: HTMLElement) {
   return {
     ink: style.getPropertyValue("--foreground").trim(),
     muted: style.getPropertyValue("--muted-foreground").trim(),
+    // The banner's own background (bg-muted), for mixing opaque paint colours.
+    base: style.getPropertyValue("--muted").trim(),
     lime: style.getPropertyValue("--hero-lime").trim(),
     pine: style.getPropertyValue("--hero-pine").trim(),
   };
