@@ -1,4 +1,5 @@
 import { type BannerPattern, type BrushPattern, DEFAULT_BRUSH } from "@/components/hero-banner/brush";
+import { DEFAULT_NATURE, NATURE_COLOURS, type NaturePattern } from "@/components/hero-banner/nature";
 import { DEFAULT_PATTERN, type HeroPattern } from "@/components/hero-banner/pattern";
 import type { FolderId } from "@/lib/folders";
 
@@ -14,9 +15,9 @@ import type { FolderId } from "@/lib/folders";
  */
 const brush = (p: Partial<BrushPattern>): BrushPattern => ({ ...DEFAULT_BRUSH, ...p });
 
-export const HOME_HERO: BannerPattern = brush({ flow: "rings", focusX: 0.82, focusY: 0.55, palette: "both", seed: 11 });
+export const BRUSH_HOME_HERO: BannerPattern = brush({ flow: "rings", focusX: 0.82, focusY: 0.55, palette: "both", seed: 11 });
 
-export const FOLDER_HEROES: Record<FolderId, BannerPattern> = {
+export const BRUSH_FOLDER_HEROES: Record<FolderId, BannerPattern> = {
   docs: brush({ flow: "cells", focusX: 0.85, palette: "lime", seed: 21 }),
   "design-system": brush({ flow: "spiral", focusX: 0.84, focusY: 0.5, palette: "both", seed: 4 }),
   "pine-one": brush({ flow: "fronds", focusX: 0.82, palette: "pine", seed: 33 }),
@@ -27,8 +28,8 @@ export const FOLDER_HEROES: Record<FolderId, BannerPattern> = {
   onboarding: brush({ flow: "cells", scale: 1.6, focusX: 0.15, focusY: 0.6, palette: "pine", seed: 45 }),
 };
 
-/** Docs: a per-doc brush variation (flow, focus, accent from the slug), always focused right of the left-aligned title. */
-export function docHero(slug: string): BannerPattern {
+/** The brush version of the per-doc banner: a per-doc brush variation (flow, focus, accent from the slug), always focused right of the left-aligned title. */
+export function brushDocHero(slug: string): BannerPattern {
   const h = slugSeed(slug);
   const flows = ["cells", "rings", "fronds", "pollen", "grana", "xylem", "mycelium", "spiral"] as const;
   const palettes = ["lime", "pine", "both"] as const;
@@ -92,4 +93,38 @@ export function pixelDocHero(slug: string): HeroPattern {
     palette: h % 4 === 0 ? "pine" : "lime",
     seed: (h % 997) + 1,
   };
+}
+
+/**
+ * Live (since Nov 20, latest): nature patterns, full-coverage paintings after the owner's references, each page
+ * with its own pattern and soft base colour. Design one in the Nature pattern maker and paste it here.
+ * The brush (BRUSH_*) and pixel (PIXEL_*) designs above are kept to switch back.
+ */
+const nature = (p: Partial<NaturePattern>): NaturePattern => ({ ...DEFAULT_NATURE, ...p });
+
+export const HOME_HERO: BannerPattern = nature({ pattern: "swirl", colour: NATURE_COLOURS.sage, harmony: "cream", focusX: 0.8, seed: 7 });
+
+export const FOLDER_HEROES: Record<FolderId, BannerPattern> = {
+  docs: nature({ pattern: "etching", colour: NATURE_COLOURS.slate, harmony: "mono", seed: 21 }),
+  "design-system": nature({ pattern: "bloom", colour: NATURE_COLOURS.lilac, harmony: "blush", seed: 4 }),
+  "pine-one": nature({ pattern: "ginkgo", colour: NATURE_COLOURS.moss, harmony: "mono", seed: 33 }),
+  "pine-one-app": nature({ pattern: "cells", colour: NATURE_COLOURS.leaf, harmony: "mono", seed: 8 }),
+  "pine-omni": nature({ pattern: "silk", colour: NATURE_COLOURS.sage, harmony: "cream", seed: 61 }),
+  "pine-omni-app": nature({ pattern: "swirl", colour: NATURE_COLOURS.sky, harmony: "cream", focusX: 0.2, seed: 17 }),
+  agents: nature({ pattern: "etching", colour: NATURE_COLOURS.bark, harmony: "mono", focusX: 0.2, seed: 2 }),
+  onboarding: nature({ pattern: "bloom", colour: NATURE_COLOURS.clay, harmony: "cream", seed: 45 }),
+};
+
+/** Docs: a per-doc nature variation (pattern and colour from the slug), focused right of the left-aligned title. */
+export function docHero(slug: string): BannerPattern {
+  const h = slugSeed(slug);
+  const patterns = ["swirl", "ginkgo", "cells", "silk", "bloom", "etching"] as const;
+  const colours = Object.values(NATURE_COLOURS);
+  return nature({
+    pattern: patterns[h % patterns.length],
+    colour: colours[(h >> 3) % colours.length],
+    harmony: h % 3 === 0 ? "mono" : "cream",
+    focusX: 0.8 + ((h >> 5) % 3) * 0.05,
+    seed: (h % 997) + 1,
+  });
 }

@@ -2,6 +2,7 @@
 // micro-structures found in plants: cell walls, growth rings, fern fronds, pollen, grana, xylem, fungal threads
 // and sunflower spirals. Pure module: `brushStrokes` returns the strokes; `brush-draw.ts` paints them with bristle texture.
 
+import type { NaturePattern } from "./nature";
 import type { HeroPattern } from "./pattern";
 
 /**
@@ -391,8 +392,8 @@ export function sanitizeBrush(input: unknown): BrushPattern {
   };
 }
 
-/** Any banner background: a pixel pattern or a brush pattern (`kind: "brush"`). */
-export type BannerPattern = HeroPattern | BrushPattern;
+/** Any banner background: a pixel pattern, a brush pattern (`kind: "brush"`) or a nature pattern (`kind: "nature"`). */
+export type BannerPattern = HeroPattern | BrushPattern | NaturePattern;
 
 export function isBrush(p: BannerPattern): p is BrushPattern {
   return "kind" in p && p.kind === "brush";

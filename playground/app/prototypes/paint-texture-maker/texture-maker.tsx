@@ -2,7 +2,7 @@
 
 import { ControlPanel, ControlsLayout, useControls } from "@/components/controls";
 import { HeroBanner } from "@/components/hero-banner/hero-banner";
-import { HOME_HERO } from "@/lib/heroes";
+import { BRUSH_HOME_HERO } from "@/lib/heroes";
 import { controlsSchema, SLUG, toTexture } from "./data";
 import { SampleStroke } from "./sample-strokes";
 import { SnippetCard } from "./snippet-card";
@@ -22,7 +22,7 @@ export function TextureMaker() {
         </div>
         <section className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground">On a banner</p>
-          <HeroBanner title="Playground" pattern={HOME_HERO} texture={texture} />
+          <HeroBanner title="Playground" pattern={BRUSH_HOME_HERO} texture={texture} />
         </section>
         <SnippetCard texture={texture} />
       </div>

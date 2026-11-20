@@ -1,0 +1,12 @@
+{
+  "title": "Nature pattern maker",
+  "description": "Full-coverage painted banners from nature: impasto swirls, ginkgo leaves, plant cells, silk, flowers and dry-brush etching, in a soft palette built from one base colour. Copy the result into lib/heroes.ts.",
+  "tags": ["banner", "pattern", "nature", "painting", "van gogh", "ginkgo", "flowers", "palette"],
+  "folder": "design-system",
+  "surface": "web",
+  "group": "Playground",
+  "createdAt": "2026-11-20",
+  "updatedAt": "2026-11-20T16:27:22.000Z",
+  "hidden": false,
+  "public": false
+}

@@ -1,14 +1,14 @@
 import { defineControls } from "@/components/controls";
 import { BRUSH_ACCENTS, type BrushPattern, DEFAULT_BRUSH, FLOWS, sanitizeBrush } from "@/components/hero-banner/brush";
 import { FOLDERS } from "@/lib/folders";
-import { FOLDER_HEROES, HOME_HERO } from "@/lib/heroes";
+import { BRUSH_FOLDER_HEROES, BRUSH_HOME_HERO } from "@/lib/heroes";
 
 export const SLUG = "brush-banner-maker";
 
 /** Pages that carry a banner: the title to preview with, its live pattern, and where the copied pattern goes. */
 export const PAGES = [
-  { name: "Home", title: "Playground", pattern: HOME_HERO, target: "HOME_HERO" },
-  ...FOLDERS.map((f) => ({ name: f.title, title: f.title, pattern: FOLDER_HEROES[f.id], target: `FOLDER_HEROES["${f.id}"]` })),
+  { name: "Home", title: "Playground", pattern: BRUSH_HOME_HERO, target: "HOME_HERO" },
+  ...FOLDERS.map((f) => ({ name: f.title, title: f.title, pattern: BRUSH_FOLDER_HEROES[f.id], target: `FOLDER_HEROES["${f.id}"]` })),
 ] as const;
 
 const d = DEFAULT_BRUSH;

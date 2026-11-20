@@ -5,6 +5,8 @@ import { type RefObject, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { type BannerPattern, isBrush } from "./brush";
 import { drawBrush, readColours } from "./brush-draw";
+import { isNature } from "./nature";
+import { drawNature } from "./nature-draw";
 import { type ClearBox, type HeroPattern, type HeroPixel, renderCells } from "./pattern";
 import type { PaintTexture } from "./texture";
 
@@ -148,7 +150,8 @@ export function HeroCanvas({
       }
 
       const colours = readColors(canvas);
-      if (isBrush(p)) drawBrush(ctx, p, width, height, colours, (JSON.parse(textureKey) as PaintTexture | null) ?? undefined);
+      if (isNature(p)) drawNature(ctx, p, width, height, resolvedTheme === "dark");
+      else if (isBrush(p)) drawBrush(ctx, p, width, height, colours, (JSON.parse(textureKey) as PaintTexture | null) ?? undefined);
       else drawPixels(ctx, p, width, height, box, colours);
       ctx.globalAlpha = 1;
 
