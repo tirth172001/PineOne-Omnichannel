@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { FadeImage } from "@/components/preview/fade-image";
+import placeholders from "@/lib/thumbnail-placeholders.json";
 import type { DocSummary } from "@/lib/docs";
 import type { Folder } from "@/lib/folders";
 import type { Prototype } from "@/lib/prototypes";
@@ -36,8 +38,7 @@ export function FolderCard({ folder, prototypes, docs }: { folder: Folder; proto
 
 function ShotSheet({ prototype }: { prototype: Prototype }) {
   const v = Date.parse(prototype.meta.updatedAt);
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={`/thumbnails/${prototype.slug}-sheet.webp?v=${v}`} alt="" loading="lazy" decoding="async" className="size-full object-cover object-top" />;
+  return <FadeImage src={`/thumbnails/${prototype.slug}-sheet.webp?v=${v}`} placeholder={(placeholders as Record<string, string>)[prototype.slug]} />;
 }
 
 function FileSheet({ title }: { title: string }) {

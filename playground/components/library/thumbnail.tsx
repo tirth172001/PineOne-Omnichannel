@@ -1,5 +1,6 @@
 import { PreviewComposition } from "@/components/preview/preview-composition";
 import { PREVIEW_STYLE, previewKind } from "@/lib/preview";
+import placeholders from "@/lib/thumbnail-placeholders.json";
 import type { Prototype } from "@/lib/prototypes";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ export function Thumbnail({ prototype, className }: { prototype: Prototype; clas
     <PreviewComposition
       kind={previewKind(prototype.meta)}
       src={src}
+      placeholder={(placeholders as Record<string, string>)[prototype.slug]}
       style={PREVIEW_STYLE}
       className={className}
     />

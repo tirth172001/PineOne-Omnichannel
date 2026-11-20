@@ -1,6 +1,7 @@
 "use client";
 
 import type { PreviewKind, PreviewStyle } from "@/lib/preview";
+import { FadeImage } from "./fade-image";
 import { cn } from "@/lib/utils";
 
 /**
@@ -16,18 +17,20 @@ import { cn } from "@/lib/utils";
 export function PreviewComposition({
   kind,
   src,
+  placeholder,
   style,
   className,
 }: {
   kind: PreviewKind;
   /** The light-theme screenshot. */
   src: string;
+  /** A tiny blurred version, shown until the screenshot has loaded. */
+  placeholder?: string;
   style: PreviewStyle;
   className?: string;
 }) {
   const shadow = style.shadow && "shadow-[0_8px_30px_-6px_rgb(0_0_0/0.25)]";
-  // eslint-disable-next-line @next/next/no-img-element
-  const shot = <img src={src} alt="" loading="lazy" decoding="async" className="size-full object-cover object-top" />;
+  const shot = <FadeImage src={src} placeholder={placeholder} />;
 
   return (
     <div className={cn("relative aspect-[16/10] overflow-hidden bg-muted @container", className)}>

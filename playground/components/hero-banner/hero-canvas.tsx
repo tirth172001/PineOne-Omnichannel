@@ -5,8 +5,8 @@ import { type RefObject, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { type BannerPattern, isBrush } from "./brush";
 import { drawBrush, readColours } from "./brush-draw";
-import { isNature } from "./nature";
-import { drawNature } from "./nature-draw";
+import { isNature, naturePalette, type NaturePattern } from "./nature";
+import { paintNature, paintNatureLater } from "./nature-painter";
 import { type ClearBox, type HeroPattern, type HeroPixel, renderCells } from "./pattern";
 import type { PaintTexture } from "./texture";
 
@@ -129,18 +129,14 @@ export function HeroCanvas({
     const host = canvas?.parentElement;
     if (!canvas || !host) return;
     const p = JSON.parse(key) as BannerPattern;
+    let lastSize = "";
+    let job = 0;
+    let alive = true;
 
     const draw = () => {
       const { width, height } = host.getBoundingClientRect();
       if (!width || !height) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, width, height);
-
       let box: ClearBox | null = null;
       const target = clearRef?.current;
       if (target) {
@@ -148,11 +144,46 @@ export function HeroCanvas({
         const t = target.getBoundingClientRect();
         box = { x: t.left - h.left, y: t.top - h.top, width: t.width, height: t.height };
       }
+      // The observer fires for the banner and the title; only repaint when the size or text box really changed.
+      const size = [width, height, box?.x, box?.y, box?.width, box?.height].map((n) => Math.round(n ?? -1)).join(",");
+      if (size === lastSize) return;
+      lastSize = size;
+
+      // Nature banners are painted in the background (a worker), so the page never freezes; the finished
+      // picture is drawn in one step. The placeholder gradient shows meanwhile.
+      if (isNature(p)) {
+        const id = ++job;
+        const dim = resolvedTheme === "dark";
+        paintNature({ pattern: p, width, height, dpr, dim, box }).then((bitmap) => {
+          if (!alive || id !== job) {
+            bitmap?.close();
+            return;
+          }
+          canvas.width = Math.round(width * dpr);
+          canvas.height = Math.round(height * dpr);
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+          if (bitmap) {
+            ctx.drawImage(bitmap, 0, 0);
+            bitmap.close();
+            setDrawn(true);
+          } else {
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            paintNatureLater(ctx, p, width, height, dim, box, () => alive && id === job && setDrawn(true));
+          }
+        });
+        return;
+      }
+
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, width, height);
 
       const colours = readColors(canvas);
-      // Nature banners fade the pattern itself around the text (strokes thin out), so no overlay is needed.
-      if (isNature(p)) drawNature(ctx, p, width, height, resolvedTheme === "dark", box);
-      else if (isBrush(p)) drawBrush(ctx, p, width, height, colours, (JSON.parse(textureKey) as PaintTexture | null) ?? undefined);
+      if (isBrush(p)) drawBrush(ctx, p, width, height, colours, (JSON.parse(textureKey) as PaintTexture | null) ?? undefined);
       else drawPixels(ctx, p, width, height, box, colours);
       ctx.globalAlpha = 1;
 
@@ -176,11 +207,16 @@ export function HeroCanvas({
     const observer = new ResizeObserver(draw);
     observer.observe(host);
     if (clearRef?.current) observer.observe(clearRef.current);
-    return () => observer.disconnect();
+    return () => {
+      alive = false;
+      observer.disconnect();
+    };
   }, [key, textureKey, resolvedTheme, clearRef]);
 
   return (
-    <canvas
+    <>
+      {isNature(pattern) && <NaturePlaceholder pattern={pattern} />}
+      <canvas
       ref={canvasRef}
       aria-hidden
       className={cn(
@@ -188,6 +224,26 @@ export function HeroCanvas({
         drawn ? "opacity-100" : "opacity-0",
         className
       )}
-    />
+      />
+    </>
+  );
+}
+
+/**
+ * Shows instantly while the painting is made: a soft gradient in the banner's own palette (light and dark
+ * versions, swapped by the theme class so there's no flash). The palette is derived from the pattern's base
+ * colour (user data), so inline colours are expected here.
+ */
+function NaturePlaceholder({ pattern }: { pattern: NaturePattern }) {
+  const grad = (dim: boolean) => {
+    const pal = naturePalette(pattern.colour, pattern.harmony, dim);
+    const calm = pal.tone(dim ? 0.3 : 4.8);
+    return `radial-gradient(ellipse 45% 70% at 50% 50%, ${calm}, transparent 75%), linear-gradient(120deg, ${pal.tone(2)}, ${pal.tone(3.2)} 45%, ${pal.tone(1.6)})`;
+  };
+  return (
+    <>
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-20 dark:hidden" style={{ background: grad(false) }} />
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-20 hidden dark:block" style={{ background: grad(true) }} />
+    </>
   );
 }
