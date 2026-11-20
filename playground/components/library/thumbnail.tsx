@@ -17,7 +17,8 @@ export function Thumbnail({ prototype, className }: { prototype: Prototype; clas
     );
   }
   const version = Date.parse(prototype.meta.updatedAt);
-  const src = `/thumbnails/${prototype.slug}-light.png?v=${version}`;
+  // A small WebP made from the screenshot (scripts/optimize-thumbnails.mjs), not the full PNG.
+  const src = `/thumbnails/${prototype.slug}-card.webp?v=${version}`;
   return (
     <PreviewComposition
       kind={previewKind(prototype.meta)}

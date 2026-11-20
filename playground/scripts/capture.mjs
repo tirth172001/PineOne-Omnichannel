@@ -203,6 +203,8 @@ async function main() {
     stop();
     fs.rmSync(scratch, { recursive: true, force: true });
   }
+  // Small WebP versions for cards and folders (npm passes CLI args to the last command, so this runs here).
+  run("node", ["scripts/optimize-thumbnails.mjs", ...targets.map((t) => t.slug)]);
   run("node", ["scripts/registry.mjs"]);
   console.log("\nDone. Open the images and check them before committing.");
 }

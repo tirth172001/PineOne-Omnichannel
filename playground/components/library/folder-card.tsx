@@ -37,7 +37,7 @@ export function FolderCard({ folder, prototypes, docs }: { folder: Folder; proto
 function ShotSheet({ prototype }: { prototype: Prototype }) {
   const v = Date.parse(prototype.meta.updatedAt);
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={`/thumbnails/${prototype.slug}-light.png?v=${v}`} alt="" loading="lazy" decoding="async" className="size-full object-cover object-top" />;
+  return <img src={`/thumbnails/${prototype.slug}-sheet.webp?v=${v}`} alt="" loading="lazy" decoding="async" className="size-full object-cover object-top" />;
 }
 
 function FileSheet({ title }: { title: string }) {

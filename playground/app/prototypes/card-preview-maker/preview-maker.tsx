@@ -16,7 +16,7 @@ export function PreviewMaker({ samples }: { samples: Sample[] }) {
   const firstMobile = samples.find((s) => s.kind === "mobile");
   const [slug, setSlug] = useState(firstDesktop?.slug ?? samples[0]?.slug ?? "");
   const current = samples.find((s) => s.slug === slug) ?? samples[0];
-  const src = (s: Sample) => `/thumbnails/${s.slug}-light.png?v=${s.version}`;
+  const src = (s: Sample) => `/thumbnails/${s.slug}-card.webp?v=${s.version}`;
 
   if (!current) return <p className="p-6 text-sm text-muted-foreground">No screenshots yet. Run npm run thumbnails.</p>;
 
