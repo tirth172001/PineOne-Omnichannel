@@ -38,7 +38,7 @@ export function FolderCard({ folder, prototypes, docs }: { folder: Folder; proto
 
 function ShotSheet({ prototype }: { prototype: Prototype }) {
   const v = Date.parse(prototype.meta.updatedAt);
-  return <FadeImage src={`/thumbnails/${prototype.slug}-sheet.webp?v=${v}`} placeholder={(placeholders as Record<string, string>)[prototype.slug]} />;
+  return <FadeImage src={`/thumbnails/${prototype.slug}-sheet.webp?v=${v}`} low={`/thumbnails/${prototype.slug}-low.webp?v=${v}`} placeholder={(placeholders as Record<string, string>)[prototype.slug]} />;
 }
 
 function FileSheet({ title }: { title: string }) {

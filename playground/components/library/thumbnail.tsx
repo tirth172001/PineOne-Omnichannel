@@ -24,6 +24,7 @@ export function Thumbnail({ prototype, className }: { prototype: Prototype; clas
     <PreviewComposition
       kind={previewKind(prototype.meta)}
       src={src}
+      low={`/thumbnails/${prototype.slug}-low.webp?v=${version}`}
       placeholder={(placeholders as Record<string, string>)[prototype.slug]}
       style={PREVIEW_STYLE}
       className={className}

@@ -209,7 +209,7 @@ Every prototype has `HOW_IT_WORKS.md`, kept current on every change, with these 
 - Validate what you load (see `sanitize` in `components/controls/schema.ts`). Old data must never crash a prototype.
 
 ### Thumbnails
-- Cards and folders load small WebPs made from each screenshot (`<slug>-card.webp`, `<slug>-sheet.webp`, by `scripts/optimize-thumbnails.mjs`, which `npm run thumbnails` runs at the end; `npm run thumbnails:optimize` by hand). Commit them with the PNG. The registry only shows a preview when both WebPs exist.
+- Cards and folders load progressively: inlined blur (`lib/thumbnail-placeholders.json`) → `<slug>-low.webp` (~1 KB) → the full WebP, each crossfading in with less blur (`components/preview/fade-image.tsx`). The WebPs (`<slug>-card.webp`, `<slug>-sheet.webp`, `<slug>-low.webp`, by `scripts/optimize-thumbnails.mjs`, which `npm run thumbnails` runs at the end; `npm run thumbnails:optimize` by hand). Commit them with the PNG. The registry only shows a preview when both WebPs exist.
 - Gallery cards show one **static** light-theme screenshot of the app itself (`public/thumbnails/<slug>-light.png`: desktop 1440×900 saved at half size, mobile 390×844), composed the same way for every card by `components/preview/preview-composition.tsx`: desktop in a centred frame, mobile in a phone frame, same bezel and rounded top corners, plain background. The style lives in `lib/preview.ts` (tune it in the Card preview maker prototype). Never put a live iframe or a running prototype in a card; it crashes mobile browsers as the gallery grows.
 - A new prototype, or any visual change → `npm run thumbnails -- <slug>` in the **same commit**.
 - A global style change (globals.css, `components/ui`, layouts) → `npm run thumbnails` to regenerate all of them.

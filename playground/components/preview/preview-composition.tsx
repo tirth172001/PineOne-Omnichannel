@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 export function PreviewComposition({
   kind,
   src,
+  low,
   placeholder,
   style,
   className,
@@ -24,13 +25,15 @@ export function PreviewComposition({
   kind: PreviewKind;
   /** The light-theme screenshot. */
   src: string;
+  /** A low-quality version, the middle step of progressive loading. */
+  low?: string;
   /** A tiny blurred version, shown until the screenshot has loaded. */
   placeholder?: string;
   style: PreviewStyle;
   className?: string;
 }) {
   const shadow = style.shadow && "shadow-[0_8px_30px_-6px_rgb(0_0_0/0.25)]";
-  const shot = <FadeImage src={src} placeholder={placeholder} />;
+  const shot = <FadeImage src={src} low={low} placeholder={placeholder} />;
 
   return (
     <div className={cn("relative aspect-[16/10] overflow-hidden bg-muted @container", className)}>

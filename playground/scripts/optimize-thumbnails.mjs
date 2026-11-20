@@ -3,6 +3,7 @@
 // folders download a few KB instead of the full PNG:
 //   <slug>-card.webp    for the gallery card (desktop 640px wide, mobile 300px)
 //   <slug>-sheet.webp   for the folder icon on home (240px wide)
+//   <slug>-low.webp     a ~2 KB low-quality card image, the middle step of progressive loading
 //   lib/thumbnail-placeholders.json: a tiny blurred preview per slug, shown instantly while the WebP loads
 // They're static files behind the password gate like everything else (the Next image optimizer can't fetch
 // through the gate). Runs after `npm run thumbnails`; run by hand with `npm run thumbnails:optimize`.
@@ -27,6 +28,8 @@ for (const file of fs.readdirSync(dir).filter((f) => f.endsWith("-light.png"))) 
   const mobile = height > width;
   const outputs = [
     [`${slug}-card.webp`, mobile ? 300 : 640],
+    // The middle step of progressive loading: a quarter of the card's width, low quality, ~2 KB.
+    [`${slug}-low.webp`, mobile ? 90 : 160],
     [`${slug}-sheet.webp`, 240],
   ];
   for (const [name, w] of outputs) {
@@ -34,7 +37,7 @@ for (const file of fs.readdirSync(dir).filter((f) => f.endsWith("-light.png"))) 
     // Phone screens are tall; the folder sheet only shows the top, so crop it to the top part first.
     let img = sharp(src);
     if (name.endsWith("-sheet.webp")) img = img.extract({ left: 0, top: 0, width, height: Math.min(height, Math.round(width * 0.9)) });
-    await img.resize({ width: w, withoutEnlargement: true }).webp({ quality: 74, effort: 5 }).toFile(out);
+    await img.resize({ width: w, withoutEnlargement: true }).webp({ quality: name.endsWith("-low.webp") ? 45 : 74, effort: 5 }).toFile(out);
   }
   // ~20px wide, heavily compressed: a few hundred bytes as a data URL.
   const tiny = await sharp(src).resize({ width: mobile ? 12 : 24 }).webp({ quality: 40 }).toBuffer();

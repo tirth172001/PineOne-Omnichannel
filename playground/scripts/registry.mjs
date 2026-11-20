@@ -55,7 +55,7 @@ function readPrototypes() {
     entries.push({
       slug,
       // Cards and folders show the small WebPs made from the screenshot (scripts/optimize-thumbnails.mjs).
-      thumbnails: exists(`thumbnails/${slug}-card.webp`) && exists(`thumbnails/${slug}-sheet.webp`),
+      thumbnails: exists(`thumbnails/${slug}-card.webp`) && exists(`thumbnails/${slug}-sheet.webp`) && exists(`thumbnails/${slug}-low.webp`),
       ogImage: exists(`og/${slug}.png`),
       ogVideo: exists(`og/${slug}.mp4`) ? "mp4" : exists(`og/${slug}.webm`) ? "webm" : null,
       variantOf: meta.variantOf,
