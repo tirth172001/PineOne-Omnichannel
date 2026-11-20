@@ -9,7 +9,8 @@ const INK_RANGE = 0.2;
 
 /**
  * Paints brush strokes. Each stroke is a bundle of thin bristle lines offset across its width:
- * every bristle gets its own opacity, thickness and length (dry, ragged ends), so the stroke has texture.
+ * every bristle gets its own opacity, thickness and length (dry, ragged ends) and fades along its length
+ * as the paint runs out, so even long strokes keep their texture.
  * A faint paper grain goes underneath.
  */
 export function drawBrush(ctx: CanvasRenderingContext2D, p: BrushPattern, width: number, height: number, c: BrushColours) {
@@ -35,30 +36,48 @@ export function drawBrush(ctx: CanvasRenderingContext2D, p: BrushPattern, width:
     const accent = stroke.colour >= 2;
     ctx.strokeStyle = colourOf[stroke.colour];
     for (let b = 0; b < n; b++) {
-      const across = (n === 1 ? 0 : b / (n - 1) - 0.5) * stroke.width + (r() - 0.5) * stroke.width * 0.15;
-      // Dry brush: each bristle stops somewhere between 55% and 100% of the stroke and may start late.
-      const start = r() < 0.35 ? 1 : 0;
-      const end = Math.max(start + 1, Math.round((pts.length - 1) * (0.55 + r() * 0.45)));
-      ctx.globalAlpha = (accent ? 0.45 + r() * 0.3 : INK_ALPHA + INK_RANGE * stroke.tone) * (0.5 + r() * 0.5);
+      const across = (b / (n - 1) - 0.5) * stroke.width + (r() - 0.5) * stroke.width * 0.15;
+      // Dry brush: each bristle runs 65–100% of the stroke and may start a little late.
+      const start = r() < 0.3 ? 1 : 0;
+      const end = Math.max(start + 2, Math.round((pts.length - 1) * (0.65 + r() * 0.35)));
+      const shifted = offsetPath(pts, start, end, across, r);
+      const alpha = (accent ? 0.45 + r() * 0.3 : INK_ALPHA + INK_RANGE * stroke.tone) * (0.55 + r() * 0.45);
       // Thin bristles leave gaps between them, which is where the texture comes from.
       ctx.lineWidth = Math.max(0.6, (stroke.width / n) * (0.55 + r() * 0.6));
-      ctx.beginPath();
-      for (let i = start; i <= end; i++) {
-        const [x0, y0] = pts[Math.max(0, i - 1)];
-        const [x1, y1] = pts[Math.min(pts.length - 1, i + 1)];
-        const len = Math.hypot(x1 - x0, y1 - y0) || 1;
-        // Offset across the stroke (normal to its direction), with a little per-point shake.
-        const nx = -(y1 - y0) / len;
-        const ny = (x1 - x0) / len;
-        const shake = (r() - 0.5) * 0.8;
-        const [x, y] = pts[i];
-        const px = x + nx * (across + shake);
-        const py = y + ny * (across + shake);
-        if (i === start) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
-      ctx.stroke();
+      // Paint loads at the start and runs dry towards the end: full strength for the first part,
+      // then fainter, so long strokes keep their texture all the way along.
+      const mid = Math.max(2, Math.round(shifted.length * (0.45 + r() * 0.2)));
+      ctx.globalAlpha = alpha;
+      smoothLine(ctx, shifted.slice(0, mid + 1));
+      ctx.globalAlpha = alpha * (0.35 + r() * 0.25);
+      smoothLine(ctx, shifted.slice(mid));
     }
   }
   ctx.globalAlpha = 1;
+}
+
+/** A bristle's path: the stroke's points from `start` to `end`, offset `across` its direction, with a little shake. */
+function offsetPath(pts: [number, number][], start: number, end: number, across: number, r: () => number): [number, number][] {
+  const out: [number, number][] = [];
+  for (let i = start; i <= Math.min(end, pts.length - 1); i++) {
+    const [x0, y0] = pts[Math.max(0, i - 1)];
+    const [x1, y1] = pts[Math.min(pts.length - 1, i + 1)];
+    const len = Math.hypot(x1 - x0, y1 - y0) || 1;
+    const shake = (r() - 0.5) * 0.7;
+    out.push([pts[i][0] - ((y1 - y0) / len) * (across + shake), pts[i][1] + ((x1 - x0) / len) * (across + shake)]);
+  }
+  return out;
+}
+
+/** A smooth line through points (quadratic curves through the midpoints). */
+function smoothLine(ctx: CanvasRenderingContext2D, pts: [number, number][]) {
+  if (pts.length < 2) return;
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length - 1; i++) {
+    ctx.quadraticCurveTo(pts[i][0], pts[i][1], (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2);
+  }
+  const last = pts[pts.length - 1];
+  ctx.lineTo(last[0], last[1]);
+  ctx.stroke();
 }

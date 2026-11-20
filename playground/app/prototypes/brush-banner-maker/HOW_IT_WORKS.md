@@ -1,7 +1,7 @@
 # Brush banner maker
 
 ## What It Does
-Paints the banners at the top of the playground's pages with short impressionist brush strokes, in the manner of Monet's water and garden paintings: strokes follow a gentle flow, each made of thin bristle lines with dry, ragged ends, over a faint paper grain, in the playground's muted palette with patches of one or two accent colours. Copy the pattern into `lib/heroes.ts` and that page's banner is painted instead of pixelated.
+Paints the banners at the top of the playground's pages with long impressionist brush strokes (in the manner of Monet) that trace plant micro-structures as seen under a microscope: leaf veins, cell walls, stomata, xylem vessels, palisade cells, fungal threads and a sunflower spiral. Each stroke is a bundle of bristle lines that runs dry along its length, over a faint paper grain, in the playground's muted palette with clusters of lime / Pine green on the structure's highlights. Every page uses one (since Nov 20); copy a new one into `lib/heroes.ts`.
 
 ## Architecture
 ```
@@ -14,10 +14,17 @@ controls (useControls, localStorage) ──► toBrush() (sanitizeBrush) ──�
 ```
 
 ## Frontend
-- **Flow:** `water` (horizontal ripples, reflection bands, round lily-pad dabs), `meadow` (grass leaning up and right, denser lower down), `swirl` (circling the focus), `breeze` (a wandering current).
-- **Strokes:** length, width, density and wobble (how far a stroke bends away from the flow).
-- **Texture:** bristles per stroke (each bristle has its own opacity, thickness and length, so ends look dry), paper grain, and 1–3 layers (soft underpainting, main strokes, small highlights).
-- **Colour:** muted ink in two neutrals (`--foreground`, `--muted-foreground`), accents in `--hero-lime` / `--hero-pine` (or both) gathered in patches near the focus by low-frequency noise, never scattered.
+- **Plant structure** (each a scalar field whose lines the strokes follow; `along()` in `brush.ts` measures distance to a line with the field's slope, so lines keep their width, and gives the direction along it):
+  - `veins`: large warped Voronoi walls (major veins) over a fine mesh (minor veins);
+  - `cells`: Voronoi cell walls with a chloroplast dab in each cell;
+  - `stomata`: wavy (jigsaw) cell walls with oval pores in some cells;
+  - `xylem`: vertical vessel walls with diagonal spiral-thickening bands;
+  - `palisade`: outlines of staggered tall rounded cells;
+  - `mycelium`: noise-contour threads with finer branches;
+  - `spiral`: golden-angle seeds and logarithmic spiral arms around the focus.
+- **Strokes:** start on the structure and follow it in 14 steps, stopping when they leave it, so long strokes trace walls and veins. Structure size, stroke length (up to 200px), width, density and how far strokes wander off the structure.
+- **Texture:** bristles per stroke; each bristle has its own opacity, thickness and length, curves smoothly, and fades over its second half as the paint runs dry. Paper grain; 1–3 layers (soft underpainting following the structure's direction, the structure, small highlights).
+- **Colour:** muted ink in two neutrals (`--foreground`, `--muted-foreground`). Accents in `--hero-lime` / `--hero-pine` (or both) only on the structure's highlights (pores, chloroplasts, stretches of major veins…) and only where a low-frequency patch allows, so they cluster instead of scattering.
 - **Legibility:** the same blurred erase mask as pixel banners fades strokes behind the title.
 - Deterministic: a seeded generator, so the same settings always paint the same banner. Redraws on resize and theme change.
 - **Load … current banner** pulls the page's live brush pattern from `lib/heroes.ts` into the controls (every page uses brush strokes since Nov 20).

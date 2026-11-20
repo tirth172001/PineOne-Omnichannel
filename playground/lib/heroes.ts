@@ -7,28 +7,29 @@ import type { FolderId } from "@/lib/folders";
  * Hero banner maker or Brush banner maker prototype (Design system folder), press Copy, and paste the object
  * over the page's entry here.
  *
- * Live (since Nov 20): brush strokes everywhere (HOME_HERO, FOLDER_HEROES, docHero). Each page has its own flow,
- * focus and accent so pages stay distinguishable; all share the calm defaults from DEFAULT_BRUSH.
+ * Live (since Nov 20): brush strokes everywhere (HOME_HERO, FOLDER_HEROES, docHero), each painting a plant
+ * micro-structure (veins, cells, stomata, xylem, palisade, mycelium, sunflower spiral) with its own focus and
+ * accent so pages stay distinguishable; all share the calm defaults from DEFAULT_BRUSH.
  */
 const brush = (p: Partial<BrushPattern>): BrushPattern => ({ ...DEFAULT_BRUSH, ...p });
 
-export const HOME_HERO: BannerPattern = brush({ flow: "water", focusX: 0.8, focusY: 0.55, palette: "both", accent: 0.24, seed: 11 });
+export const HOME_HERO: BannerPattern = brush({ flow: "veins", focusX: 0.8, focusY: 0.55, palette: "both", seed: 11 });
 
 export const FOLDER_HEROES: Record<FolderId, BannerPattern> = {
-  docs: brush({ flow: "breeze", focusX: 0.85, palette: "lime", seed: 21 }),
-  "design-system": brush({ flow: "swirl", focusX: 0.84, focusY: 0.5, palette: "both", seed: 4 }),
-  "pine-one": brush({ flow: "meadow", focusX: 0.82, palette: "pine", seed: 33 }),
-  "pine-one-app": brush({ flow: "water", focusX: 0.85, focusY: 0.4, palette: "pine", seed: 8 }),
-  "pine-omni": brush({ flow: "breeze", focusX: 0.5, focusY: 0.6, palette: "both", seed: 61 }),
-  "pine-omni-app": brush({ flow: "swirl", focusX: 0.18, focusY: 0.55, palette: "lime", seed: 17 }),
-  agents: brush({ flow: "meadow", focusX: 0.15, palette: "lime", seed: 2 }),
-  onboarding: brush({ flow: "water", focusX: 0.15, focusY: 0.6, palette: "lime", seed: 45 }),
+  docs: brush({ flow: "cells", focusX: 0.85, palette: "lime", seed: 21 }),
+  "design-system": brush({ flow: "spiral", focusX: 0.84, focusY: 0.5, palette: "both", seed: 4 }),
+  "pine-one": brush({ flow: "veins", scale: 1.4, focusX: 0.82, palette: "pine", seed: 33 }),
+  "pine-one-app": brush({ flow: "stomata", density: 0.5, focusX: 0.85, focusY: 0.45, palette: "pine", seed: 8 }),
+  "pine-omni": brush({ flow: "cells", scale: 0.8, focusX: 0.5, focusY: 0.6, palette: "both", seed: 61 }),
+  "pine-omni-app": brush({ flow: "xylem", focusX: 0.2, focusY: 0.55, palette: "lime", seed: 17 }),
+  agents: brush({ flow: "mycelium", focusX: 0.15, palette: "lime", seed: 2 }),
+  onboarding: brush({ flow: "palisade", density: 0.38, focusX: 0.15, focusY: 0.6, palette: "lime", seed: 45 }),
 };
 
 /** Docs: a per-doc brush variation (flow, focus, accent from the slug), always focused right of the left-aligned title. */
 export function docHero(slug: string): BannerPattern {
   const h = slugSeed(slug);
-  const flows = ["water", "meadow", "swirl", "breeze"] as const;
+  const flows = ["veins", "cells", "stomata", "xylem", "palisade", "mycelium", "spiral"] as const;
   const palettes = ["lime", "pine", "both"] as const;
   return brush({
     flow: flows[h % flows.length],
