@@ -119,45 +119,63 @@ function traceField(x: number, y: number, steps: number, len: number, field: Fie
 export type FadeBox = { x: number; y: number; width: number; height: number };
 
 /**
- * How much the pattern fades at (x, y), 0–1: 1 behind the text, easing (smoothstep) to 0 at the edge of an
- * ellipse well past it. Shared by the strokes (they thin out) and the ground under them.
+ * How much the pattern fades at (x, y), 0–1 (times the fade strength): 1 at the text, easing (smoothstep) to 0.
+ * - radial: an oval round the text, its reach set by `fadeSize` (relative to the banner height);
+ * - linear: a full-height band; the fade eases out sideways from the text over `fadeSize` × the height.
  */
-function fadeAt(box: FadeBox | null, w: number, h: number, clear: number) {
+function fadeAt(box: FadeBox | null, w: number, h: number, p: NaturePattern) {
+  const clear = p.clear;
   if (!box || clear <= 0) return () => 0;
+  const ease = (t: number) => 1 - t * t * (3 - 2 * t);
+  if (p.fadeShape === "linear") {
+    const L = Math.max(8, h * p.fadeSize);
+    return (x: number) => {
+      const out = Math.max(0, box.x - x, x - (box.x + box.width));
+      return out >= L ? 0 : clear * ease(out / L);
+    };
+  }
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
-  const rx = box.width / 2 + Math.min(w * 0.2, h * 1.2);
-  const ry = box.height / 2 + h * 0.45;
-  const core = Math.min(0.6, Math.max(box.width / 2 / rx, box.height / 2 / ry) * 0.8);
+  const rx = box.width / 2 + Math.min(w * 0.2, h * 1.2) * p.fadeSize;
+  const ry = box.height / 2 + h * 0.45 * p.fadeSize;
+  // At least 40% of the radius is gradient, so even a small fade eases out instead of ending in an edge.
+  const core = Math.min(0.6, Math.max(box.width / 2 / rx, box.height / 2 / ry) * 0.9);
   return (x: number, y: number) => {
     const d = Math.hypot((x - cx) / rx, (y - cy) / ry);
     if (d >= 1) return 0;
-    const t = Math.max(0, (d - core) / (1 - core));
-    return clear * (1 - t * t * (3 - 2 * t));
+    return clear * ease(Math.max(0, (d - core) / (1 - core)));
   };
 }
 
 function paintField(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: NaturePalette, rand: () => number, field: Field, brush: Brush, ground: number, box: FadeBox | null) {
-  const fade = fadeAt(box, w, h, p.clear);
+  const fade = fadeAt(box, w, h, p);
   // The quiet tone the pattern fades towards: the banner's palest (light mode) or deepest (dark mode).
   const calm = pal.dim ? 0.3 : 4.8;
   ctx.fillStyle = pal.tone(ground);
   ctx.fillRect(0, 0, w, h);
   if (box && p.clear > 0) {
-    // The ground under the fading strokes eases into the calm tone too, so gaps between strokes match.
-    ctx.save();
-    ctx.translate(box.x + box.width / 2, box.y + box.height / 2);
-    ctx.scale(box.width / 2 + Math.min(w * 0.2, h * 1.2), box.height / 2 + h * 0.45);
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
-    for (let i = 0; i <= 10; i++) {
-      const t = i / 10;
-      g.addColorStop(t, pal.tone(calm, p.clear * (1 - t * t * (3 - 2 * t))));
+    // The ground under the fading strokes eases into the calm tone the same way, so gaps between strokes match.
+    const cy = box.y + box.height / 2;
+    if (p.fadeShape === "linear") {
+      const g = ctx.createLinearGradient(0, 0, w, 0);
+      for (let i = 0; i <= 40; i++) g.addColorStop(i / 40, pal.tone(calm, fade((i / 40) * w, cy)));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    } else {
+      const cx = box.x + box.width / 2;
+      const rx = box.width / 2 + Math.min(w * 0.2, h * 1.2) * p.fadeSize;
+      const ry = box.height / 2 + h * 0.45 * p.fadeSize;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(rx, ry);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+      for (let i = 0; i <= 20; i++) g.addColorStop(i / 20, pal.tone(calm, fade(cx + (i / 20) * rx, cy)));
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(0, 0, 1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     }
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(0, 0, 1, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
   }
   for (const [pass, wide] of [
     [0, 1.7],

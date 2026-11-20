@@ -102,7 +102,7 @@ export function pixelDocHero(slug: string): HeroPattern {
  */
 const nature = (p: Partial<NaturePattern>): NaturePattern => ({ ...DEFAULT_NATURE, ...p });
 
-export const HOME_HERO: BannerPattern = nature({ pattern: "swirl", colour: NATURE_COLOURS.sage, harmony: "cream", focusX: 0.8, seed: 7 });
+export const HOME_HERO: BannerPattern = nature({ pattern: "swirl", colour: NATURE_COLOURS.sage, harmony: "cream", focusX: 0.8, fadeSize: 1.2, seed: 7 });
 
 export const FOLDER_HEROES: Record<FolderId, BannerPattern> = {
   docs: nature({ pattern: "etching", colour: NATURE_COLOURS.slate, harmony: "mono", seed: 21 }),
@@ -124,6 +124,10 @@ export function docHero(slug: string): BannerPattern {
     pattern: patterns[h % patterns.length],
     colour: colours[(h >> 3) % colours.length],
     harmony: h % 3 === 0 ? "mono" : "cream",
+    // Titles are left-aligned: a linear fade, so the pattern grows in from the text towards the right.
+    fadeShape: "linear",
+    fadeSize: 1.3,
+    clear: 0.95,
     focusX: 0.8 + ((h >> 5) % 3) * 0.05,
     seed: (h % 997) + 1,
   });

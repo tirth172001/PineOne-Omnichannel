@@ -16,6 +16,9 @@ export const HARMONIES = ["mono", "cream", "blush"] as const;
 
 export type NatureKind = (typeof NATURE_KINDS)[number];
 export type Harmony = (typeof HARMONIES)[number];
+/** `radial`: an oval round the text. `linear`: a full-height band fading out sideways from the text. */
+export const FADE_SHAPES = ["radial", "linear"] as const;
+export type FadeShape = (typeof FADE_SHAPES)[number];
 
 export type NaturePattern = {
   kind: "nature";
@@ -32,8 +35,11 @@ export type NaturePattern = {
   /** Where swirls centre and the brightest part sits, 0–1 across and down. */
   focusX: number;
   focusY: number;
-  /** How strongly the text area is kept clear, 0–1. */
+  /** Fade: how strongly the pattern fades around the text, 0–1 (higher = more fading). */
   clear: number;
+  fadeShape: FadeShape;
+  /** Fade size: the radial fade's radius, or the linear fade's length, 0.3–2.5 (relative to the banner height). */
+  fadeSize: number;
   seed: number;
 };
 
@@ -48,6 +54,8 @@ export const DEFAULT_NATURE: NaturePattern = {
   focusX: 0.78,
   focusY: 0.5,
   clear: 0.9,
+  fadeShape: "radial",
+  fadeSize: 1,
   seed: 7,
 };
 
@@ -181,6 +189,8 @@ export function sanitizeNature(input: unknown): NaturePattern {
     focusX: num("focusX", 0, 1),
     focusY: num("focusY", 0, 1),
     clear: num("clear", 0, 1),
+    fadeShape: pick("fadeShape", FADE_SHAPES),
+    fadeSize: num("fadeSize", 0.3, 2.5),
     seed: Math.round(num("seed", 1, 999)),
   };
 }

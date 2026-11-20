@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { readStored, writeStored } from "@/lib/storage";
 import { type ControlSchema, type ControlValues, defaultValues, randomValues, sanitize } from "./schema";
 
@@ -10,17 +10,20 @@ import { type ControlSchema, type ControlValues, defaultValues, randomValues, sa
  */
 export function useControls<S extends ControlSchema>(namespace: string, schema: S) {
   const [values, setValues] = useState<ControlValues<S>>(() => defaultValues(schema));
-  const loaded = useRef(false);
+  // Saving starts only after a render that already has the loaded values. (A ref set in the load effect let
+  // the save effect in the same commit write the defaults over the stored values, and React's development
+  // double-run of effects then reloaded those defaults.)
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- storage is client-only, so it must load after mount
     setValues(sanitize(schema, readStored(namespace, "controls", null)));
-    loaded.current = true;
+    setReady(true);
   }, [namespace, schema]);
 
   useEffect(() => {
-    if (loaded.current) writeStored(namespace, "controls", values);
-  }, [namespace, values]);
+    if (ready) writeStored(namespace, "controls", values);
+  }, [namespace, values, ready]);
 
   const set = useCallback(<K extends keyof S>(key: K, value: ControlValues<S>[K]) => {
     setValues((prev) => ({ ...prev, [key]: value }));

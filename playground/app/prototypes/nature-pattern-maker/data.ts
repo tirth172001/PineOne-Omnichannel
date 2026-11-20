@@ -1,5 +1,5 @@
 import { defineControls } from "@/components/controls";
-import { DEFAULT_NATURE, HARMONIES, NATURE_KINDS, type NaturePattern, sanitizeNature } from "@/components/hero-banner/nature";
+import { DEFAULT_NATURE, FADE_SHAPES, HARMONIES, NATURE_KINDS, type NaturePattern, sanitizeNature } from "@/components/hero-banner/nature";
 import { FOLDERS } from "@/lib/folders";
 
 export const SLUG = "nature-pattern-maker";
@@ -21,7 +21,9 @@ export const controlsSchema = defineControls({
   texture: { type: "slider", label: "Texture", min: 0, max: 1, step: 0.05, default: d.texture },
   focusX: { type: "slider", label: "Focus across", min: 0, max: 1, step: 0.01, default: d.focusX },
   focusY: { type: "slider", label: "Focus down", min: 0, max: 1, step: 0.01, default: d.focusY },
-  clear: { type: "slider", label: "Clear behind title", min: 0, max: 1, step: 0.05, default: d.clear },
+  clear: { type: "slider", label: "Fade", min: 0, max: 1, step: 0.05, default: d.clear },
+  fadeShape: { type: "select", label: "Fade shape", options: FADE_SHAPES, default: d.fadeShape },
+  fadeSize: { type: "slider", label: "Fade size (radius / length)", min: 0.3, max: 2.5, step: 0.05, default: d.fadeSize },
   seed: { type: "slider", label: "Seed", min: 1, max: 999, step: 1, default: d.seed },
 });
 
