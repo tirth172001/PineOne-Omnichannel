@@ -115,9 +115,50 @@ function traceField(x: number, y: number, steps: number, len: number, field: Fie
 }
 
 /** Paints a field with three layers of impasto dabs: a broad underpainting, the main strokes, then small highlights. */
-function paintField(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: NaturePalette, rand: () => number, field: Field, brush: Brush, ground: number) {
+/** A text box to fade the pattern around. */
+export type FadeBox = { x: number; y: number; width: number; height: number };
+
+/**
+ * How much the pattern fades at (x, y), 0–1: 1 behind the text, easing (smoothstep) to 0 at the edge of an
+ * ellipse well past it. Shared by the strokes (they thin out) and the ground under them.
+ */
+function fadeAt(box: FadeBox | null, w: number, h: number, clear: number) {
+  if (!box || clear <= 0) return () => 0;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  const rx = box.width / 2 + Math.min(w * 0.2, h * 1.2);
+  const ry = box.height / 2 + h * 0.45;
+  const core = Math.min(0.6, Math.max(box.width / 2 / rx, box.height / 2 / ry) * 0.8);
+  return (x: number, y: number) => {
+    const d = Math.hypot((x - cx) / rx, (y - cy) / ry);
+    if (d >= 1) return 0;
+    const t = Math.max(0, (d - core) / (1 - core));
+    return clear * (1 - t * t * (3 - 2 * t));
+  };
+}
+
+function paintField(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: NaturePalette, rand: () => number, field: Field, brush: Brush, ground: number, box: FadeBox | null) {
+  const fade = fadeAt(box, w, h, p.clear);
+  // The quiet tone the pattern fades towards: the banner's palest (light mode) or deepest (dark mode).
+  const calm = pal.dim ? 0.3 : 4.8;
   ctx.fillStyle = pal.tone(ground);
   ctx.fillRect(0, 0, w, h);
+  if (box && p.clear > 0) {
+    // The ground under the fading strokes eases into the calm tone too, so gaps between strokes match.
+    ctx.save();
+    ctx.translate(box.x + box.width / 2, box.y + box.height / 2);
+    ctx.scale(box.width / 2 + Math.min(w * 0.2, h * 1.2), box.height / 2 + h * 0.45);
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+    for (let i = 0; i <= 10; i++) {
+      const t = i / 10;
+      g.addColorStop(t, pal.tone(calm, p.clear * (1 - t * t * (3 - 2 * t))));
+    }
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(0, 0, 1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
   for (const [pass, wide] of [
     [0, 1.7],
     [1, 1],
@@ -130,14 +171,17 @@ function paintField(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: Natur
         if (pass === 2 && rand() > 0.55) continue;
         const x = gx + (rand() - 0.5) * gap * 1.5;
         const y = gy + (rand() - 0.5) * gap * 1.5;
+        // Near the text the pattern thins out: fewer strokes, smaller, and their tone drawn towards the calm one.
+        const f = fade(x, y);
+        if (f > 0 && rand() < f ** 0.8 * 0.9) continue;
         const s = field(x, y);
-        const t = s.t + (rand() - 0.5) * 0.9 + (pass - 1) * 0.25;
-        const accent = !s.c && s.glow && pal.accents.length > 0 && rand() < s.glow;
-        const colour = s.c && rand() < 0.85 ? s.c : accent ? pal.accents[Math.floor(rand() * pal.accents.length)] : pal.tone(t);
+        const t = (s.t + (rand() - 0.5) * 0.9 + (pass - 1) * 0.25) * (1 - f) + calm * f;
+        const accent = !s.c && s.glow && pal.accents.length > 0 && rand() < s.glow * (1 - f);
+        const colour = s.c && f < 0.5 && rand() < 0.85 ? s.c : accent ? pal.accents[Math.floor(rand() * pal.accents.length)] : pal.tone(t);
         const streak = s.c || accent ? pal.light(0.35) : pal.tone(t + (rand() < 0.5 ? -1 : 1), 0.7);
         const steps = 6;
         const len = (sw * (brush.len[0] + rand() * (brush.len[1] - brush.len[0]))) / steps;
-        dab(ctx, traceField(x, y, steps, len, field, s.id), sw * (0.8 + rand() * 0.4), colour, streak, pal, p.texture);
+        dab(ctx, traceField(x, y, steps, len * (1 - 0.4 * f), field, s.id), sw * (0.8 + rand() * 0.4) * (1 - 0.45 * f), colour, streak, pal, p.texture * (1 - f));
       }
     }
   }
@@ -334,50 +378,15 @@ const PATTERNS: Record<NaturePattern["pattern"], { brush: Brush; ground: number;
   etching: { brush: { width: 3.5, len: [5, 8] }, ground: 3, field: (p, w, h, pal, rand) => etchingFieldOf(p, w, h, pal, rand) },
 };
 
-/**
- * Fades the painting behind the text with one smooth elliptical gradient in the banner's own colour (its
- * palest tone in light mode, deepest in dark mode): strongest behind the words, easing out (smoothstep) over a
- * wide area, so the pattern fades gradually into the title and shows fully elsewhere.
- */
-export function natureGlow(ctx: Ctx, p: NaturePattern, dim: boolean, box: { x: number; y: number; width: number; height: number }, height: number, width = Infinity) {
-  if (p.clear <= 0) return;
-  const pal = naturePalette(p.colour, p.harmony, dim);
-  const cx = box.x + box.width / 2;
-  const cy = box.y + box.height / 2;
-  // The ellipse reaches well past the text: wider than tall, like the title's shape.
-  const rx = box.width / 2 + Math.min(width * 0.18, height * 1.1);
-  const ry = box.height / 2 + height * 0.42;
-  const peak = 0.96 * p.clear;
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.scale(rx, ry);
-  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
-  // Flat-ish core behind the words, then a smoothstep fall-off to nothing at the ellipse's edge.
-  const core = Math.min(0.55, Math.max(box.width / 2 / rx, box.height / 2 / ry) * 0.85);
-  const stops = 12;
-  for (let i = 0; i <= stops; i++) {
-    const t = i / stops;
-    const r = core + (1 - core) * t;
-    const s = 1 - (t * t * (3 - 2 * t)) ** 1.15;
-    g.addColorStop(r, pal.tone(dim ? 0 : 5, peak * s));
-  }
-  g.addColorStop(0, pal.tone(dim ? 0 : 5, peak));
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.arc(0, 0, 1, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
 /** Paints a nature pattern over the whole banner, entirely in brush strokes. `dim` = dark theme (deeper tones). */
-export function drawNature(ctx: Ctx, p: NaturePattern, width: number, height: number, dim: boolean) {
+export function drawNature(ctx: Ctx, p: NaturePattern, width: number, height: number, dim: boolean, box: FadeBox | null = null) {
   const pal = naturePalette(p.colour, p.harmony, dim);
   const rand = rng(p.seed * 7919 + 13);
   const def = PATTERNS[p.pattern];
   ctx.save();
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
-  paintField(ctx, p, width, height, pal, rand, def.field(p, width, height, pal, rand), def.brush, def.ground);
+  paintField(ctx, p, width, height, pal, rand, def.field(p, width, height, pal, rand), def.brush, def.ground, box);
   ctx.restore();
   ctx.globalAlpha = 1;
 }
