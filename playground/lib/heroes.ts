@@ -126,7 +126,7 @@ export function docHero(slug: string): BannerPattern {
     harmony: h % 3 === 0 ? "mono" : "cream",
     // Titles are left-aligned: a linear fade, so the pattern grows in from the text towards the right.
     fadeShape: "linear",
-    fadeSize: 1.3,
+    fadeSize: 0.7,
     clear: 0.95,
     focusX: 0.8 + ((h >> 5) % 3) * 0.05,
     seed: (h % 997) + 1,

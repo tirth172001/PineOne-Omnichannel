@@ -118,33 +118,51 @@ function traceField(x: number, y: number, steps: number, len: number, field: Fie
 /** A text box to fade the pattern around. */
 export type FadeBox = { x: number; y: number; width: number; height: number };
 
+/** How far (x, y) is outside the text box: in both directions (radial) or sideways only (linear). */
+function outside(box: FadeBox, linear: boolean, x: number, y: number) {
+  const dx = Math.max(0, box.x - x, x - (box.x + box.width));
+  if (linear) return dx;
+  const dy = Math.max(0, box.y - y, y - (box.y + box.height));
+  return Math.hypot(dx, dy);
+}
+
+/** The fade's reach in px: `fadeSize` × half the banner height (radial), or × the banner height (linear). */
+function reach(p: NaturePattern, h: number) {
+  return Math.max(8, h * p.fadeSize * (p.fadeShape === "linear" ? 0.9 : 0.55));
+}
+
 /**
- * How much the pattern fades at (x, y), 0–1 (times the fade strength): 1 at the text, easing (smoothstep) to 0.
- * - radial: an oval round the text, its reach set by `fadeSize` (relative to the banner height);
- * - linear: a full-height band; the fade eases out sideways from the text over `fadeSize` × the height.
+ * How much the pattern fades at (x, y), 0–1: full strength at the text, then a soft bell curve
+ * (exp(−(d/R)²)) with distance from the text's edges. No flat core and no border, so it eases out smoothly.
  */
 function fadeAt(box: FadeBox | null, w: number, h: number, p: NaturePattern) {
-  const clear = p.clear;
-  if (!box || clear <= 0) return () => 0;
-  const ease = (t: number) => 1 - t * t * (3 - 2 * t);
-  if (p.fadeShape === "linear") {
-    const L = Math.max(8, h * p.fadeSize);
-    return (x: number) => {
-      const out = Math.max(0, box.x - x, x - (box.x + box.width));
-      return out >= L ? 0 : clear * ease(out / L);
-    };
+  if (!box || p.clear <= 0) return () => 0;
+  const R = reach(p, h);
+  const linear = p.fadeShape === "linear";
+  return (x: number, y: number) => p.clear * Math.exp(-((outside(box, linear, x, y) / R) ** 2));
+}
+
+/**
+ * The ground under the strokes eases into the calm tone along the same curve: many thin nested shapes (pills
+ * round the text, or full-height bands), each adding just enough so the stack follows the curve, so no rings show.
+ */
+function fadeGround(ctx: Ctx, p: NaturePattern, w: number, h: number, box: FadeBox, colour: (a: number) => string) {
+  const R = reach(p, h);
+  const linear = p.fadeShape === "linear";
+  const target = (r: number) => p.clear * 0.85 * Math.exp(-((r / R) ** 2));
+  const steps = 48;
+  const max = R * 2.6;
+  for (let i = steps; i >= 0; i--) {
+    const r = (max * i) / steps;
+    const outer = (max * (i + 1)) / steps;
+    const a = 1 - (1 - target(r)) / (1 - target(outer));
+    if (a <= 0.001) continue;
+    ctx.fillStyle = colour(a);
+    ctx.beginPath();
+    if (linear) ctx.rect(box.x - r, 0, box.width + r * 2, h);
+    else ctx.roundRect(box.x - r, box.y - r, box.width + r * 2, box.height + r * 2, r + box.height / 2);
+    ctx.fill();
   }
-  const cx = box.x + box.width / 2;
-  const cy = box.y + box.height / 2;
-  const rx = box.width / 2 + Math.min(w * 0.2, h * 1.2) * p.fadeSize;
-  const ry = box.height / 2 + h * 0.45 * p.fadeSize;
-  // At least 40% of the radius is gradient, so even a small fade eases out instead of ending in an edge.
-  const core = Math.min(0.6, Math.max(box.width / 2 / rx, box.height / 2 / ry) * 0.9);
-  return (x: number, y: number) => {
-    const d = Math.hypot((x - cx) / rx, (y - cy) / ry);
-    if (d >= 1) return 0;
-    return clear * ease(Math.max(0, (d - core) / (1 - core)));
-  };
 }
 
 function paintField(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: NaturePalette, rand: () => number, field: Field, brush: Brush, ground: number, box: FadeBox | null) {
@@ -153,30 +171,7 @@ function paintField(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: Natur
   const calm = pal.dim ? 0.3 : 4.8;
   ctx.fillStyle = pal.tone(ground);
   ctx.fillRect(0, 0, w, h);
-  if (box && p.clear > 0) {
-    // The ground under the fading strokes eases into the calm tone the same way, so gaps between strokes match.
-    const cy = box.y + box.height / 2;
-    if (p.fadeShape === "linear") {
-      const g = ctx.createLinearGradient(0, 0, w, 0);
-      for (let i = 0; i <= 40; i++) g.addColorStop(i / 40, pal.tone(calm, fade((i / 40) * w, cy)));
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
-    } else {
-      const cx = box.x + box.width / 2;
-      const rx = box.width / 2 + Math.min(w * 0.2, h * 1.2) * p.fadeSize;
-      const ry = box.height / 2 + h * 0.45 * p.fadeSize;
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.scale(rx, ry);
-      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
-      for (let i = 0; i <= 20; i++) g.addColorStop(i / 20, pal.tone(calm, fade(cx + (i / 20) * rx, cy)));
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(0, 0, 1, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-  }
+  if (box && p.clear > 0) fadeGround(ctx, p, w, h, box, (alpha) => pal.tone(calm, alpha));
   for (const [pass, wide] of [
     [0, 1.7],
     [1, 1],
@@ -191,7 +186,7 @@ function paintField(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: Natur
         const y = gy + (rand() - 0.5) * gap * 1.5;
         // Near the text the pattern thins out: fewer strokes, smaller, and their tone drawn towards the calm one.
         const f = fade(x, y);
-        if (f > 0 && rand() < f ** 0.8 * 0.9) continue;
+        if (f > 0 && rand() < f * f * 0.5) continue;
         const s = field(x, y);
         const t = (s.t + (rand() - 0.5) * 0.9 + (pass - 1) * 0.25) * (1 - f) + calm * f;
         const accent = !s.c && s.glow && pal.accents.length > 0 && rand() < s.glow * (1 - f);
@@ -199,7 +194,7 @@ function paintField(ctx: Ctx, p: NaturePattern, w: number, h: number, pal: Natur
         const streak = s.c || accent ? pal.light(0.35) : pal.tone(t + (rand() < 0.5 ? -1 : 1), 0.7);
         const steps = 6;
         const len = (sw * (brush.len[0] + rand() * (brush.len[1] - brush.len[0]))) / steps;
-        dab(ctx, traceField(x, y, steps, len * (1 - 0.4 * f), field, s.id), sw * (0.8 + rand() * 0.4) * (1 - 0.45 * f), colour, streak, pal, p.texture * (1 - f));
+        dab(ctx, traceField(x, y, steps, len * (1 - 0.25 * f), field, s.id), sw * (0.8 + rand() * 0.4) * (1 - 0.3 * f), colour, streak, pal, p.texture * (1 - f));
       }
     }
   }

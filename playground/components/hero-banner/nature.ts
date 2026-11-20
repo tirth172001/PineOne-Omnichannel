@@ -117,8 +117,11 @@ export function naturePalette(colour: string, harmony: Harmony, dim: boolean): N
   const chroma = (i: number) => c * (1 - 0.3 * Math.abs(i - 2.5) / 2.5);
   const hue = (i: number) => H + (i - 2.5) * 3;
   const tone = (i: number, alpha = 1) => {
-    const k = Math.max(0, Math.min(5, Math.round(i)));
-    return oklch(Ls[k], chroma(k), hue(k), alpha);
+    // Blends continuously between the six tones (no rounding), so fades and shading never step.
+    const k = Math.max(0, Math.min(5, i));
+    const lo = Math.floor(Math.min(4, k));
+    const f = k - lo;
+    return oklch(Ls[lo] + (Ls[lo + 1] - Ls[lo]) * f, chroma(k), hue(k), alpha);
   };
   const cream = oklch(dim ? 0.66 : 0.95, 0.04, 92);
   const blush = oklch(dim ? 0.56 : 0.83, 0.05, 22);
