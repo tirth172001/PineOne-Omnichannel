@@ -15,7 +15,7 @@ controls (useControls, localStorage) ──► toPattern() ──► HeroBanner 
 ```
 
 ## Frontend
-- **Preview as** picks the page (title and where the snippet goes). **Load … current banner** pulls that page's pattern from `lib/heroes.ts` into the controls, so you start from what's live.
+- **Preview as** picks the page (title and where the snippet goes). **Load … pixel design** pulls that page's saved pixel pattern (`PIXEL_*` in `lib/heroes.ts`) into the controls. Pages show brush strokes since Nov 20 (see the Brush banner maker); paste a pixel pattern over a page's entry to switch it back.
 - Pattern: shape, dither (Bayer 8×8, hash noise, or halftone; only area patterns like rays are dithered, line patterns are drawn whole), pixel style (rounded, square, dot, diamond, plus, ring, dash, needle, mark), pixel size, pattern size (the repeat: cell, line spacing, mark size), density, accent (how much of the highlight shows), accent colour, accent gradient, focus (the gradient’s bright point; also the mark’s position, the spiral centre, the rays’ source, the membrane height), how clear the text area stays, seed.
 - The Pine Labs mark is an exact polygon (`pine-logo.ts`, signed distance), so echoes and the imprint stay crisp at any size.
 - Text stays legible: the canvas erases pixels behind the title through a blurred mask (a gradient to the plain card colour), following the title's measured box as it wraps.

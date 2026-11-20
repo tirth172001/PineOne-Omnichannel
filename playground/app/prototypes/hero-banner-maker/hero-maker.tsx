@@ -21,7 +21,7 @@ export function HeroMaker() {
     <div className="flex flex-col gap-5">
       <ControlPanel controls={controls} />
       <Button variant="outline" className="h-11" onClick={loadPage}>
-        Load {page.name}&rsquo;s current banner
+        Load {page.name}&rsquo;s pixel design
       </Button>
     </div>
   );

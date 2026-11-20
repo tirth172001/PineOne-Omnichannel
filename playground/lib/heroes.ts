@@ -1,13 +1,46 @@
-import type { BannerPattern } from "@/components/hero-banner/brush";
+import { type BannerPattern, type BrushPattern, DEFAULT_BRUSH } from "@/components/hero-banner/brush";
 import { DEFAULT_PATTERN, type HeroPattern } from "@/components/hero-banner/pattern";
 import type { FolderId } from "@/lib/folders";
 
 /**
  * Each page's hero banner background: a pixel pattern or a brush pattern (`kind: "brush"`). Design one in the
- * Hero banner maker or Brush banner maker prototype
- * (Design system folder), press Copy, and paste the object over the page's entry here.
+ * Hero banner maker or Brush banner maker prototype (Design system folder), press Copy, and paste the object
+ * over the page's entry here.
+ *
+ * Live (since Nov 20): brush strokes everywhere (HOME_HERO, FOLDER_HEROES, docHero). Each page has its own flow,
+ * focus and accent so pages stay distinguishable; all share the calm defaults from DEFAULT_BRUSH.
  */
-export const HOME_HERO: HeroPattern = {
+const brush = (p: Partial<BrushPattern>): BrushPattern => ({ ...DEFAULT_BRUSH, ...p });
+
+export const HOME_HERO: BannerPattern = brush({ flow: "water", focusX: 0.8, focusY: 0.55, palette: "both", accent: 0.24, seed: 11 });
+
+export const FOLDER_HEROES: Record<FolderId, BannerPattern> = {
+  docs: brush({ flow: "breeze", focusX: 0.85, palette: "lime", seed: 21 }),
+  "design-system": brush({ flow: "swirl", focusX: 0.84, focusY: 0.5, palette: "both", seed: 4 }),
+  "pine-one": brush({ flow: "meadow", focusX: 0.82, palette: "pine", seed: 33 }),
+  "pine-one-app": brush({ flow: "water", focusX: 0.85, focusY: 0.4, palette: "pine", seed: 8 }),
+  "pine-omni": brush({ flow: "breeze", focusX: 0.5, focusY: 0.6, palette: "both", seed: 61 }),
+  "pine-omni-app": brush({ flow: "swirl", focusX: 0.18, focusY: 0.55, palette: "lime", seed: 17 }),
+  agents: brush({ flow: "meadow", focusX: 0.15, palette: "lime", seed: 2 }),
+  onboarding: brush({ flow: "water", focusX: 0.15, focusY: 0.6, palette: "lime", seed: 45 }),
+};
+
+/** Docs: a per-doc brush variation (flow, focus, accent from the slug), always focused right of the left-aligned title. */
+export function docHero(slug: string): BannerPattern {
+  const h = slugSeed(slug);
+  const flows = ["water", "meadow", "swirl", "breeze"] as const;
+  const palettes = ["lime", "pine", "both"] as const;
+  return brush({
+    flow: flows[h % flows.length],
+    focusX: 0.8 + ((h >> 5) % 3) * 0.05,
+    focusY: 0.35 + ((h >> 3) % 4) * 0.1,
+    palette: palettes[(h >> 2) % palettes.length],
+    seed: (h % 997) + 1,
+  });
+}
+
+/** The pixel designs (before brush strokes, Nov 20). Kept so any page can switch back: use one of these instead. */
+export const PIXEL_HOME_HERO: HeroPattern = {
   ...DEFAULT_PATTERN,
   shape: "echo",
   pixel: "rounded",
@@ -22,7 +55,7 @@ export const HOME_HERO: HeroPattern = {
   seed: 12,
 };
 
-export const FOLDER_HEROES: Record<FolderId, BannerPattern> = {
+export const PIXEL_FOLDER_HEROES: Record<FolderId, HeroPattern> = {
   docs: { ...DEFAULT_PATTERN, shape: "veins", cell: 5, scale: 1.1, density: 0.5, focusX: 0.85, accent: 1, seed: 21 },
   "design-system": { ...DEFAULT_PATTERN, shape: "spiral", pixel: "dot", cell: 4, scale: 1, density: 0.6, focusX: 0.86, focusY: 0.5, accent: 1, seed: 4 },
   "pine-one": { ...DEFAULT_PATTERN, shape: "topo", pixel: "dot", cell: 6, scale: 1.4, density: 0.6, focusX: 0.82, accent: 0.3, gradient: 0.45, seed: 33 },
@@ -39,8 +72,8 @@ function slugSeed(slug: string) {
   return Math.abs(h);
 }
 
-/** Docs get a quiet, per-doc variation (no logo, title left-aligned), so every page differs but none needs hand-tuning. */
-export function docHero(slug: string): HeroPattern {
+/** The pixel version of the per-doc banner. */
+export function pixelDocHero(slug: string): HeroPattern {
   const h = slugSeed(slug);
   const shapes = ["stomata", "veins", "palisade", "cells", "osmosis", "flow", "spiral", "topo"] as const;
   const pixels = ["rounded", "dot", "rounded", "square"] as const;

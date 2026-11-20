@@ -20,6 +20,7 @@ controls (useControls, localStorage) ──► toBrush() (sanitizeBrush) ──�
 - **Colour:** muted ink in two neutrals (`--foreground`, `--muted-foreground`), accents in `--hero-lime` / `--hero-pine` (or both) gathered in patches near the focus by low-frequency noise, never scattered.
 - **Legibility:** the same blurred erase mask as pixel banners fades strokes behind the title.
 - Deterministic: a seeded generator, so the same settings always paint the same banner. Redraws on resize and theme change.
+- **Load … current banner** pulls the page's live brush pattern from `lib/heroes.ts` into the controls (every page uses brush strokes since Nov 20).
 - Preview at the page column width and at phone width (from `sm`); controls persist per browser; Randomize and Reset from the shared panel.
 
 ## Key Dependencies
