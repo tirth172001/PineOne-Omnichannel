@@ -158,7 +158,7 @@ export function HeroCanvas({
       // Legibility: erase pixels behind the text through a blurred mask, so the pattern fades smoothly
       // to the plain card colour wherever there's text (a gradient, not a hard box).
       // Nature banners: a glow in the banner's own palette behind the text, so it merges with the painting.
-      if (box && isNature(p)) natureGlow(ctx, p, resolvedTheme === "dark", box, height);
+      if (box && isNature(p)) natureGlow(ctx, p, resolvedTheme === "dark", box, height, width);
       else if (box && p.clear > 0) {
         const pad = Math.max(24, Math.min(height * 0.2, 56));
         ctx.save();

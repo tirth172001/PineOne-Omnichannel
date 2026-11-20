@@ -335,26 +335,38 @@ const PATTERNS: Record<NaturePattern["pattern"], { brush: Brush; ground: number;
 };
 
 /**
- * A soft glow in the banner's own palette behind the text (its palest tone in light mode, its deepest in dark
- * mode), built from layered rounded shapes so it blends into the painting in every browser.
+ * Fades the painting behind the text with one smooth elliptical gradient in the banner's own colour (its
+ * palest tone in light mode, deepest in dark mode): strongest behind the words, easing out (smoothstep) over a
+ * wide area, so the pattern fades gradually into the title and shows fully elsewhere.
  */
-export function natureGlow(ctx: Ctx, p: NaturePattern, dim: boolean, box: { x: number; y: number; width: number; height: number }, height: number) {
+export function natureGlow(ctx: Ctx, p: NaturePattern, dim: boolean, box: { x: number; y: number; width: number; height: number }, height: number, width = Infinity) {
   if (p.clear <= 0) return;
   const pal = naturePalette(p.colour, p.harmony, dim);
-  const colour = (a: number) => pal.tone(dim ? 0 : 5, a);
-  // Tight to the text: strongest right behind it, gone within a short distance, so the pattern shows fully
-  // everywhere else.
-  const pad = Math.max(20, Math.min(height * 0.16, 44));
-  const layers = 12;
-  for (let k = layers; k >= 0; k--) {
-    const f = k / layers;
-    const grow = pad * f;
-    // Layers stack towards the centre: about 80% cover right behind the words, nothing past the edge.
-    ctx.fillStyle = colour(p.clear * 0.26 * (1 - f) ** 1.3);
-    ctx.beginPath();
-    ctx.roundRect(box.x - grow * 1.4, box.y - grow * 0.6, box.width + grow * 2.8, box.height + grow * 1.2, grow + 10);
-    ctx.fill();
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  // The ellipse reaches well past the text: wider than tall, like the title's shape.
+  const rx = box.width / 2 + Math.min(width * 0.18, height * 1.1);
+  const ry = box.height / 2 + height * 0.42;
+  const peak = 0.96 * p.clear;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(rx, ry);
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+  // Flat-ish core behind the words, then a smoothstep fall-off to nothing at the ellipse's edge.
+  const core = Math.min(0.55, Math.max(box.width / 2 / rx, box.height / 2 / ry) * 0.85);
+  const stops = 12;
+  for (let i = 0; i <= stops; i++) {
+    const t = i / stops;
+    const r = core + (1 - core) * t;
+    const s = 1 - (t * t * (3 - 2 * t)) ** 1.15;
+    g.addColorStop(r, pal.tone(dim ? 0 : 5, peak * s));
   }
+  g.addColorStop(0, pal.tone(dim ? 0 : 5, peak));
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(0, 0, 1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 /** Paints a nature pattern over the whole banner, entirely in brush strokes. `dim` = dark theme (deeper tones). */

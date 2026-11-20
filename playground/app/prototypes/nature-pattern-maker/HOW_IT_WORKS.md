@@ -22,7 +22,7 @@ controls (useControls) ──► toNature() (sanitizeNature) ──► HeroBanne
   - `bloom`: overlapping flowers; strokes radiate along each petal, deeper between petals, a dotted centre; some flowers in the accent.
   - `etching`: dark and pale bands that wrap round vortices (contours of a stream function), brushed along the bands; inverted in dark mode.
 - **Colour:** the base colour's hue with its chroma capped low (soft, natural); six tones dark to light, deeper in dark mode. Accents: `mono`, `cream` (warm highlights) or `blush` (cream + soft pink). Curated bases: sage, moss, leaf, sky, slate, lilac, clay, bark.
-- **Size, density, texture, focus, seed.** Behind the title, `natureGlow` lays a glow in the banner's own palette (palest tone in light mode, deepest in dark), about 80% cover right behind the words and fading to nothing a short way out, so the text sits on the painting instead of a grey patch and the pattern shows fully elsewhere.
+- **Size, density, texture, focus, seed.** Behind the title, `natureGlow` fades the painting with one smooth elliptical radial gradient in the banner's own colour (palest tone in light mode, deepest in dark): nearly solid behind the words, easing out with a smoothstep to nothing well past the text, so the pattern fades gradually into the title and shows fully elsewhere.
 - Preview at column width and phone width (from `sm`); controls persist per browser; Randomize and Reset from the shared panel.
 
 ## Key Dependencies
