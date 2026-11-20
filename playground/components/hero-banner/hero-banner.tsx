@@ -4,7 +4,7 @@ import { type ReactNode, useRef } from "react";
 import { PageTitle } from "@/components/page-title";
 import { cn } from "@/lib/utils";
 import { HeroCanvas } from "./hero-canvas";
-import type { HeroPattern } from "./pattern";
+import type { BannerPattern } from "./brush";
 
 /**
  * The banner at the top of every playground page: a dithered background (see `pattern.ts`,
@@ -21,7 +21,7 @@ export function HeroBanner({
   className,
 }: {
   title: ReactNode;
-  pattern: HeroPattern;
+  pattern: BannerPattern;
   /** Small uppercase line above the title. */
   eyebrow?: ReactNode;
   /** Quiet line below the title (a count, a date). */

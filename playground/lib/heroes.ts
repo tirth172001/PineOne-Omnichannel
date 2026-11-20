@@ -1,8 +1,10 @@
+import type { BannerPattern } from "@/components/hero-banner/brush";
 import { DEFAULT_PATTERN, type HeroPattern } from "@/components/hero-banner/pattern";
 import type { FolderId } from "@/lib/folders";
 
 /**
- * Each page's hero banner background. Design one in the Hero banner maker prototype
+ * Each page's hero banner background: a pixel pattern or a brush pattern (`kind: "brush"`). Design one in the
+ * Hero banner maker or Brush banner maker prototype
  * (Design system folder), press Copy, and paste the object over the page's entry here.
  */
 export const HOME_HERO: HeroPattern = {
@@ -20,7 +22,7 @@ export const HOME_HERO: HeroPattern = {
   seed: 12,
 };
 
-export const FOLDER_HEROES: Record<FolderId, HeroPattern> = {
+export const FOLDER_HEROES: Record<FolderId, BannerPattern> = {
   docs: { ...DEFAULT_PATTERN, shape: "veins", cell: 5, scale: 1.1, density: 0.5, focusX: 0.85, accent: 1, seed: 21 },
   "design-system": { ...DEFAULT_PATTERN, shape: "spiral", pixel: "dot", cell: 4, scale: 1, density: 0.6, focusX: 0.86, focusY: 0.5, accent: 1, seed: 4 },
   "pine-one": { ...DEFAULT_PATTERN, shape: "topo", pixel: "dot", cell: 6, scale: 1.4, density: 0.6, focusX: 0.82, accent: 0.3, gradient: 0.45, seed: 33 },

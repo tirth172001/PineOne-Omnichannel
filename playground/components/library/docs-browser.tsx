@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { HeroBanner } from "@/components/hero-banner/hero-banner";
-import type { HeroPattern } from "@/components/hero-banner/pattern";
+import type { BannerPattern } from "@/components/hero-banner/brush";
 import { TAG_GROUPS } from "@/lib/doc-tags";
 import type { DocSummary } from "@/lib/docs";
 import { DocTile } from "./doc-tile";
@@ -15,7 +15,7 @@ import { TagBar } from "./tag-bar";
  * The Docs folder: search (full text, ranked, with the matching passage) and tags
  * (channel and persona) on top, then every doc as a file with its page preview (A–Z, or ranked while searching).
  */
-export function DocsBrowser({ docs, title, hero }: { docs: DocSummary[]; title: string; hero: HeroPattern }) {
+export function DocsBrowser({ docs, title, hero }: { docs: DocSummary[]; title: string; hero: BannerPattern }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   // Several tags narrow the list: a doc has to carry every selected tag.

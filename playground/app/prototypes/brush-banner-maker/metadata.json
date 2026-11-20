@@ -1,0 +1,12 @@
+{
+  "title": "Brush banner maker",
+  "description": "Paint page banners with impressionist brush strokes: water, meadow, swirl or breeze flows, bristle texture, paper grain and patches of accent colour. Copy the result into lib/heroes.ts.",
+  "tags": ["banner", "brush", "painting", "monet", "impressionist", "generator"],
+  "folder": "design-system",
+  "surface": "web",
+  "group": "Playground",
+  "createdAt": "2026-11-20",
+  "updatedAt": "2026-11-20T14:45:44.000Z",
+  "hidden": false,
+  "public": false
+}
