@@ -17,6 +17,7 @@ export function HeroBanner({
   eyebrow,
   meta,
   action,
+  align = "center",
   className,
 }: {
   title: ReactNode;
@@ -27,13 +28,21 @@ export function HeroBanner({
   meta?: ReactNode;
   /** Pinned to the top-right corner (e.g. the theme toggle on home). */
   action?: ReactNode;
+  /** `start` left-aligns the title (doc pages); default centres it. */
+  align?: "center" | "start";
   className?: string;
 }) {
   const titleRef = useRef<HTMLDivElement>(null);
   return (
-    <section className={cn("relative isolate flex min-h-44 items-center justify-center overflow-hidden rounded-2xl bg-muted/60 px-6 py-12 sm:min-h-56", className)}>
+    <section
+      className={cn(
+        "relative isolate flex min-h-44 items-center overflow-hidden rounded-2xl bg-muted/60 px-6 py-12 sm:min-h-56",
+        align === "center" ? "justify-center" : "justify-start sm:px-10",
+        className
+      )}
+    >
       <HeroCanvas pattern={pattern} clearRef={titleRef} className="-z-10" />
-      <div ref={titleRef} className="flex max-w-xl flex-col items-center gap-2 text-center">
+      <div ref={titleRef} className={cn("flex max-w-xl flex-col gap-2", align === "center" ? "items-center text-center" : "items-start text-left")}>
         {eyebrow && <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">{eyebrow}</p>}
         <PageTitle>{title}</PageTitle>
         {meta && <div className="text-sm text-muted-foreground tabular-nums">{meta}</div>}

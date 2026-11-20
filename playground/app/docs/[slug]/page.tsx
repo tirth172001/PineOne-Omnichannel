@@ -32,7 +32,7 @@ export default async function DocPage({ params }: PageProps<"/docs/[slug]">) {
     <div className="flex min-h-dvh flex-col">
       <PageHeader crumbs={[{ label: "Playground", href: "/" }, { label: "Docs", href: "/folders/docs" }, { label: meta.title }]} back={{ href: "/folders/docs", label: "Docs" }} width="max-w-6xl sm:px-6" />
       <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6">
-        <HeroBanner eyebrow={meta.kind} title={meta.title} pattern={docHero(doc.slug)} className="sm:min-h-64" />
+        <HeroBanner align="start" eyebrow={meta.kind} title={meta.title} pattern={docHero(doc.slug)} className="sm:min-h-64" />
       </div>
       <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-24 sm:px-6 lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-16 lg:pt-10">
         <aside className="hidden lg:block">

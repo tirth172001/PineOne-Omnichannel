@@ -1,5 +1,5 @@
 import { defineControls } from "@/components/controls";
-import { ACCENTS, DITHERS, type HeroPattern, SHAPES, sanitizePattern } from "@/components/hero-banner/pattern";
+import { ACCENTS, DITHERS, PIXELS, type HeroPattern, SHAPES, sanitizePattern } from "@/components/hero-banner/pattern";
 import { FOLDERS } from "@/lib/folders";
 import { FOLDER_HEROES, HOME_HERO, docHero } from "@/lib/heroes";
 
@@ -20,13 +20,15 @@ export const controlsSchema = defineControls({
   page: { type: "select", label: "Preview as", options: PAGE_NAMES, default: "Home" },
   shape: { type: "select", label: "Shape", options: SHAPES, default: d.shape },
   dither: { type: "select", label: "Dither", options: DITHERS, default: d.dither },
+  pixel: { type: "select", label: "Pixel style", options: PIXELS, default: d.pixel },
   cell: { type: "slider", label: "Pixel size", min: 3, max: 16, step: 1, default: d.cell },
   scale: { type: "slider", label: "Shape size", min: 0.4, max: 3, step: 0.05, default: d.scale },
   density: { type: "slider", label: "Density", min: 0, max: 1, step: 0.05, default: d.density },
-  accent: { type: "slider", label: "Accent sprinkles", min: 0, max: 0.5, step: 0.01, default: d.accent },
+  accent: { type: "slider", label: "Accent on edge", min: 0, max: 1, step: 0.05, default: d.accent },
   palette: { type: "select", label: "Accent colour", options: ACCENTS, default: d.palette },
-  focusX: { type: "slider", label: "Focus across", min: 0, max: 1, step: 0.01, default: d.focusX },
-  focusY: { type: "slider", label: "Focus down", min: 0, max: 1, step: 0.01, default: d.focusY },
+  gradient: { type: "slider", label: "Accent gradient", min: 0, max: 1, step: 0.05, default: d.gradient },
+  focusX: { type: "slider", label: "Position across", min: 0, max: 1, step: 0.01, default: d.focusX },
+  focusY: { type: "slider", label: "Position down", min: 0, max: 1, step: 0.01, default: d.focusY },
   clear: { type: "slider", label: "Clear behind title", min: 0, max: 1, step: 0.05, default: d.clear },
   seed: { type: "slider", label: "Seed", min: 1, max: 999, step: 1, default: d.seed },
 });

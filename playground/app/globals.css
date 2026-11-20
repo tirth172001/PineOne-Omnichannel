@@ -28,7 +28,7 @@
   --color-folder-front: var(--folder-front);
   --color-folder-edge: var(--folder-edge);
   --color-hero-lime: var(--hero-lime);
-  --color-hero-seal: var(--hero-seal);
+  --color-hero-pine: var(--hero-pine);
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
@@ -60,9 +60,9 @@
   --folder-back: oklch(0.77 0.17 128);
   --folder-front: oklch(0.87 0.16 125);
   --folder-edge: oklch(0.94 0.1 122);
-  /* Hero banner accent sprinkles (components/hero-banner): Pine lime and the seal's red-brown. */
+  /* Hero banner accents (components/hero-banner): Pine lime and the Pine Labs logo green (#003323). */
   --hero-lime: oklch(0.74 0.18 128);
-  --hero-seal: oklch(0.46 0.12 32);
+  --hero-pine: oklch(0.29 0.06 167);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -102,7 +102,7 @@
   --folder-front: oklch(0.65 0.16 129);
   --folder-edge: oklch(0.77 0.17 128);
   --hero-lime: oklch(0.8 0.18 127);
-  --hero-seal: oklch(0.64 0.14 34);
+  --hero-pine: oklch(0.66 0.1 167);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
