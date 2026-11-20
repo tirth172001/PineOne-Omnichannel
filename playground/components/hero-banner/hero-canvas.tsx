@@ -3,8 +3,7 @@
 import { useTheme } from "next-themes";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { getLogoSampler } from "./logo-sampler";
-import { type ClearBox, type HeroPattern, type HeroPixel, LOGO_SHAPES, type LogoShape, renderCells } from "./pattern";
+import { type ClearBox, type HeroPattern, type HeroPixel, renderCells } from "./pattern";
 
 /** Ink is a tint of the foreground; tone sets how strong. Kept low so the banner stays muted. */
 const INK_MIN = 0.08;
@@ -108,8 +107,7 @@ export function HeroCanvas({ pattern, clearRef, className }: { pattern: HeroPatt
 
       const { ink, lime, pine } = readColors(canvas);
       const accent = p.palette === "pine" ? pine : lime;
-      const logo = (LOGO_SHAPES as readonly string[]).includes(p.shape) ? getLogoSampler(p.shape as LogoShape) : null;
-      const cells = renderCells(p, width, height, logo, box);
+      const cells = renderCells(p, width, height, box);
       const size = Math.max(2, p.cell);
       // Pixels leave a hairline gap and shrink a little where the tone is light; accents are full size.
       const full = size >= 5 ? size - 1 : size;
@@ -137,6 +135,20 @@ export function HeroCanvas({ pattern, clearRef, className }: { pattern: HeroPatt
         }
       }
       ctx.globalAlpha = 1;
+
+      // Legibility: erase pixels behind the text through a blurred mask, so the pattern fades smoothly
+      // to the plain card colour wherever there's text (a gradient, not a hard box).
+      if (box && p.clear > 0) {
+        const pad = Math.max(24, Math.min(height * 0.2, 56));
+        ctx.save();
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.filter = `blur(${Math.round(pad * 0.6)}px)`;
+        ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(1, p.clear)})`;
+        ctx.beginPath();
+        ctx.roundRect(box.x - pad * 0.5, box.y - pad * 0.5, box.width + pad, box.height + pad, pad);
+        ctx.fill();
+        ctx.restore();
+      }
       setDrawn(true);
     };
 

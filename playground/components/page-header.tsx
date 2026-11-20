@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 export type Crumb = { label: string; href?: string };
 
-const SCROLL_THRESHOLD = 56;
+export const SCROLL_THRESHOLD = 56;
 
 function subscribe(callback: () => void) {
   window.addEventListener("scroll", callback, { passive: true });
@@ -25,7 +25,7 @@ function subscribe(callback: () => void) {
 }
 
 /** True once the page has scrolled past the header. False on the server. */
-function useScrolledPast(threshold: number) {
+export function useScrolledPast(threshold: number) {
   return useSyncExternalStore(
     subscribe,
     () => window.scrollY > threshold,
@@ -38,7 +38,18 @@ function useScrolledPast(threshold: number) {
  * At the top: back, the breadcrumb trail and the theme toggle. Once the page scrolls,
  * only a floating Back pill stays, with a background and shadow so it reads as a way out.
  */
-export function PageHeader({ crumbs, back, width = "max-w-2xl" }: { crumbs: Crumb[]; back: { href: string; label: string }; width?: string }) {
+export function PageHeader({
+  crumbs,
+  back,
+  width = "max-w-2xl",
+  floatingClassName,
+}: {
+  crumbs: Crumb[];
+  back: { href: string; label: string };
+  width?: string;
+  /** Extra classes on the floating Back pill's layer, e.g. `lg:hidden` when a page shows Back in its own sticky rail. */
+  floatingClassName?: string;
+}) {
   const scrolled = useScrolledPast(SCROLL_THRESHOLD);
   return (
     <>
@@ -75,7 +86,8 @@ export function PageHeader({ crumbs, back, width = "max-w-2xl" }: { crumbs: Crum
       <div
         className={cn(
           "pointer-events-none fixed inset-x-0 top-0 z-40 transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none",
-          scrolled ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
+          scrolled ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0",
+          floatingClassName
         )}
       >
         <div className={cn("mx-auto w-full px-4 pt-[max(0.75rem,env(safe-area-inset-top))]", width)}>

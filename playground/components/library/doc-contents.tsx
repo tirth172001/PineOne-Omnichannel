@@ -1,7 +1,10 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { SCROLL_THRESHOLD, useScrolledPast } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
 import type { DocHeading } from "@/lib/docs";
 import { cn } from "@/lib/utils";
 
@@ -64,17 +67,37 @@ function List({ items, active, onPick }: { items: ReturnType<typeof visible>; ac
   );
 }
 
-/** Desktop: sticky "On this page" column that follows the reader. Sticks below the floating Back pill (top-20), never under it. */
-export function DocContentsRail({ headings }: { headings: DocHeading[] }) {
+/**
+ * Desktop: sticky "On this page" column that follows the reader. Once the page scrolls, Back appears at the
+ * top of this column (the page hides its floating Back pill from lg), so the two can never overlap.
+ */
+export function DocContentsRail({ headings, back }: { headings: DocHeading[]; back: { href: string; label: string } }) {
+  const scrolled = useScrolledPast(SCROLL_THRESHOLD);
   const items = visible(headings);
   const ids = useMemo(() => visible(headings).map((h) => h.id), [headings]);
   const active = useActive(ids);
-  if (items.length < 2) return null;
   return (
-    <nav aria-label="On this page" className="sticky top-20 max-h-[calc(100dvh-6rem)] overflow-y-auto pb-6">
-      <p className="mb-3 text-xs font-semibold tracking-wider text-muted-foreground uppercase">On this page</p>
-      <List items={items} active={active} />
-    </nav>
+    <div className="sticky top-3 flex max-h-[calc(100dvh-1.5rem)] flex-col gap-4">
+      <Button
+        asChild
+        variant="outline"
+        className={cn(
+          "h-11 w-fit shrink-0 rounded-full pr-4 pl-3 transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none",
+          scrolled ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0"
+        )}
+      >
+        <Link href={back.href} tabIndex={scrolled ? 0 : -1} aria-hidden={!scrolled}>
+          <ArrowLeft />
+          {back.label}
+        </Link>
+      </Button>
+      {items.length >= 2 && (
+        <nav aria-label="On this page" className="min-h-0 overflow-y-auto pb-6">
+          <p className="mb-3 text-xs font-semibold tracking-wider text-muted-foreground uppercase">On this page</p>
+          <List items={items} active={active} />
+        </nav>
+      )}
+    </div>
   );
 }
 

@@ -38,7 +38,7 @@ export function DocsBrowser({ docs, title, hero }: { docs: DocSummary[]; title: 
       {hits.length === 0 ? (
         <p className="py-16 text-center text-sm text-muted-foreground">Nothing matches.</p>
       ) : (
-        <div className="grid grid-cols-3 gap-x-2 gap-y-6 sm:grid-cols-4">
+        <div className="grid grid-cols-3 gap-x-2 gap-y-6 sm:grid-cols-4 lg:grid-cols-6">
           {list.map(({ doc }) => (
             <DocTile key={doc.slug} doc={doc} />
           ))}

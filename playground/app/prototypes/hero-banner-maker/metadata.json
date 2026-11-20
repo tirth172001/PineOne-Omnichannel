@@ -1,17 +1,18 @@
 {
   "title": "Hero banner maker",
-  "description": "Design the calm pixel backgrounds behind the playground's page banners: the Pine Labs mark, topographic lines, orbits, a bloom or drifting streaks, in muted ink with a soft gradient into one accent (Pine lime or Pine Labs green). Copy the result into lib/heroes.ts.",
+  "description": "Design the calm pixel patterns behind the playground's page banners: the Pine Labs mark as rippling echoes or imprinted in living cells, leaf microscopy (stomata, veins, palisade cells) and nature flows (osmosis, streams, sunlight, sunflower spirals), in muted ink with a soft gradient into one accent. Copy the result into lib/heroes.ts.",
   "tags": [
     "banner",
     "dither",
     "pixel",
-    "generator"
+    "generator",
+    "nature"
   ],
   "folder": "design-system",
   "surface": "web",
   "group": "Playground",
   "createdAt": "2026-11-20",
-  "updatedAt": "2026-11-20T11:41:09.000Z",
+  "updatedAt": "2026-11-20T12:00:30.000Z",
   "hidden": false,
   "public": false
 }

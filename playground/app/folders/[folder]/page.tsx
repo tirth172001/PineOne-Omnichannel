@@ -7,6 +7,7 @@ import { HeroBanner } from "@/components/hero-banner/hero-banner";
 import { getDocSummaries } from "@/lib/docs";
 import { FOLDERS, getFolder } from "@/lib/folders";
 import { FOLDER_HEROES } from "@/lib/heroes";
+import { PAGE_COLUMN, PAGE_HEADER_WIDTH } from "@/lib/page-width";
 import { getAllPrototypes } from "@/lib/prototypes";
 
 export const dynamicParams = false;
@@ -27,8 +28,8 @@ export default async function FolderPage({ params }: PageProps<"/folders/[folder
   const docs = folder.id === "docs" ? getDocSummaries() : [];
   return (
     <div className="flex min-h-dvh flex-col">
-      <PageHeader crumbs={[{ label: "Playground", href: "/" }, { label: folder.title }]} back={{ href: "/", label: "Playground" }} />
-      <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pt-6 pb-16">
+      <PageHeader crumbs={[{ label: "Playground", href: "/" }, { label: folder.title }]} back={{ href: "/", label: "Playground" }} width={PAGE_HEADER_WIDTH} />
+      <main className={`${PAGE_COLUMN} flex flex-col gap-6 pt-6 pb-16`}>
         {folder.id === "docs" ? (
           <DocsBrowser docs={docs} title={folder.title} hero={FOLDER_HEROES.docs} />
         ) : (

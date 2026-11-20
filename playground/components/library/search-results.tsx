@@ -20,7 +20,7 @@ export function SearchResults({ hits, titles }: { hits: FolderHits[]; titles: Ma
             </div>
           )}
           {prototypes.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {prototypes.map((p) => (
                 <PrototypeCard key={p.slug} prototype={p} variantOfTitle={p.meta.variantOf ? titles.get(p.meta.variantOf) : undefined} />
               ))}

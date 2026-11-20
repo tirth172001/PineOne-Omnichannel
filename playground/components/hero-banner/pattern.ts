@@ -1,9 +1,27 @@
-// Hero banner backgrounds: a grid of pixel cells, dithered from a shape field, with accent highlights.
-// Pure module (no DOM, no React): `renderCells` turns a pattern + size into cells the canvas draws.
+// Hero banner backgrounds: a pattern of pixel cells spanning the whole banner, in muted ink with a soft
+// gradient into one accent colour. Pure module (no DOM, no React): `renderCells` turns a pattern + size into
+// cells the canvas draws.
 
-/** `pinelabs` = the Pine Labs outlined mark in a pixel cloud. */
-export const SHAPES = ["pinelabs", "topo", "orbits", "bloom", "drift", "rings", "waves", "grain", "slope"] as const;
-export const LOGO_SHAPES = ["pinelabs"] as const;
+import { PINE_LABS_CENTRE, PINE_LABS_HEIGHT, pineLabsDistance } from "./pine-logo";
+
+/**
+ * Every shape is a pattern across the banner, not a single motif.
+ * Pine Labs:
+ * - `echo`: the mark's outline (accent) rippling outward across the banner, like rings on water.
+ * - `imprint`: a field of plant cells; the cells inside the mark light up, so the logo emerges from the pattern.
+ * Inside a leaf, under the microscope:
+ * - `stomata`: jigsaw-shaped epidermis cells with pores (paired guard cells); some pores in the accent.
+ * - `veins`: the leaf's reticulate vein network, major veins over a fine mesh; stretches of major veins in the accent.
+ * - `palisade`: columns of elongated mesophyll cells lined with chloroplasts; some chloroplasts glow.
+ * - `cells`: rounded plant cells, a chloroplast in each.
+ * Nature flows:
+ * - `osmosis`: a membrane across the banner, dense particles on one side, a few slipping through.
+ * - `flow`: meandering stream lines, one current in the accent.
+ * - `rays`: sunlight fanning down across the banner in soft shafts (photosynthesis).
+ * - `spiral`: sunflower phyllotaxis filling the banner; one family of spiral arms in the accent.
+ * - `topo`: contour lines of rolling terrain. `drift`: diagonal streaks, like light through needles.
+ */
+export const SHAPES = ["echo", "imprint", "stomata", "veins", "palisade", "cells", "osmosis", "flow", "rays", "spiral", "topo", "drift"] as const;
 export const DITHERS = ["bayer", "noise", "halftone"] as const;
 /** Line pixels (plus, ring, dash, needle, mark) read best from a pixel size of about 8. `mark` is a tiny Pine Labs corner. */
 export const PIXELS = ["rounded", "square", "dot", "diamond", "plus", "ring", "dash", "needle", "mark"] as const;
@@ -11,7 +29,6 @@ export const PIXELS = ["rounded", "square", "dot", "diamond", "plus", "ring", "d
 export const ACCENTS = ["lime", "pine"] as const;
 
 export type HeroShape = (typeof SHAPES)[number];
-export type LogoShape = (typeof LOGO_SHAPES)[number];
 export type HeroDither = (typeof DITHERS)[number];
 export type HeroPixel = (typeof PIXELS)[number];
 export type HeroAccent = (typeof ACCENTS)[number];
@@ -24,51 +41,44 @@ export type HeroPattern = {
   pixel: HeroPixel;
   /** Cell size in CSS px. */
   cell: number;
-  /** Shape size, relative to the banner height. */
+  /** Size of the pattern's repeat (a mark, leaf, cell, line spacing), relative to the banner height. */
   scale: number;
   /** Overall ink, 0–1. */
   density: number;
-  /**
-   * How much of the shape's edge is traced in the accent colour, 0–1.
-   * Accents run in short segments along the logo outline (or a contour of other shapes), never as confetti.
-   */
+  /** How much of the pattern's highlight (chosen outlines, a current, spiral arms…) shows in the accent, 0–1. */
   accent: number;
   palette: HeroAccent;
   /** How far muted pixels blend toward the accent colour near the focus, 0–1 (a soft colour gradient). */
   gradient: number;
-  /** Where the shape sits, 0–1 across and down. */
+  /** The gradient's bright point (and the spiral's centre, the rays' source), 0–1 across and down. */
   focusX: number;
   focusY: number;
-  /** How strongly the area behind the title is kept clear, 0–1. */
+  /** How strongly the text area is kept clear, 0–1. */
   clear: number;
   seed: number;
 };
 
 export const DEFAULT_PATTERN: HeroPattern = {
-  shape: "rings",
+  shape: "cells",
   dither: "bayer",
   pixel: "rounded",
-  cell: 7,
-  scale: 1.4,
-  density: 0.5,
-  accent: 0.35,
+  cell: 6,
+  scale: 1,
+  density: 0.7,
+  accent: 0.8,
   palette: "lime",
   gradient: 0.45,
   focusX: 0.8,
   focusY: 0.5,
-  clear: 0.85,
+  clear: 1,
   seed: 7,
 };
 
 /** A box (in banner px) to keep clear, normally the title. */
 export type ClearBox = { x: number; y: number; width: number; height: number };
 
-/** Ink tone 0–1 (drawn as a tint of the foreground); accent cells are drawn in the accent colour. */
 /** `tint` (0–1) is how far a muted pixel blends toward the accent colour. */
 export type Cell = { x: number; y: number; tone: number; accent: boolean; tint: number };
-
-/** Samples a logo: u, v in 0–1 across the logo's square, returns coverage 0–1. */
-export type LogoSampler = (u: number, v: number) => number;
 
 const BAYER_8 = [
   0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26, 12, 44, 4, 36, 14, 46, 6, 38, 60, 28, 52, 20, 62, 30, 54, 22, 3, 35, 11, 43, 1, 33, 9, 41, 51, 19, 59, 27, 49,
@@ -106,91 +116,193 @@ function fbm(x: number, y: number, seed: number) {
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 
-/** Shape value 0–1 plus `edge`: true on the logo outline or near the shape's main contour. */
+/** Shape value 0–1; `edge` = part of the accent highlight; `line` = drawn whole rather than dithered. */
 type Sample = { value: number; edge: boolean; line?: boolean };
+const EMPTY: Sample = { value: 0, edge: false };
 
-/** Logo coverage at banner point (px, py), logo `s` banner-heights tall, centred on the focus. */
-function coverage(logo: LogoSampler | null, px: number, py: number, s: number) {
-  const u = px / s + 0.5;
-  const v = py / s + 0.5;
-  return logo && u >= 0 && u <= 1 && v >= 0 && v <= 1 ? logo(u, v) : 0;
+/** Nearest and second-nearest jittered grid points (Voronoi), in grid units. */
+function voronoi(gx: number, gy: number, seed: number) {
+  const ix = Math.floor(gx);
+  const iy = Math.floor(gy);
+  let d1 = 9;
+  let d2 = 9;
+  let near: [number, number] = [0, 0];
+  let at: [number, number] = [0, 0];
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const cx = ix + dx + 0.15 + hash(ix + dx, iy + dy, seed) * 0.7;
+      const cy = iy + dy + 0.15 + hash(ix + dx, iy + dy, seed + 1) * 0.7;
+      const d = Math.hypot(gx - cx, gy - cy);
+      if (d < d1) {
+        d2 = d1;
+        d1 = d;
+        near = [ix + dx, iy + dy];
+        at = [cx, cy];
+      } else if (d < d2) d2 = d;
+    }
+  }
+  return { d1, d2, near, at };
+}
+
+/** Pine Labs mark centred on the focus, `size` banner-heights tall: signed distance in banner units. */
+function markDistance(x: number, y: number, fx: number, fy: number, size: number) {
+  const k = PINE_LABS_HEIGHT / size;
+  return pineLabsDistance((x - fx) * k + PINE_LABS_CENTRE[0], (y - fy) * k + PINE_LABS_CENTRE[1]) / k;
 }
 
 /**
- * Shape field at a point. `px`, `py` are in banner-height units (0 at the focus), so shapes keep their
- * proportions on any width; `step` is one cell in the same units (for edge detection).
+ * Pattern value at a point. `x`, `y` are in banner-height units from the banner's top-left, `fx`, `fy` the
+ * focus in the same units, and `step` one cell, so line widths stay one or two pixels at any size.
  */
-function field(p: HeroPattern, px: number, py: number, step: number, logo: LogoSampler | null): Sample {
-  const r = Math.hypot(px, py);
+function field(p: HeroPattern, x: number, y: number, fx: number, fy: number, step: number): Sample {
   const s = p.scale;
   switch (p.shape) {
-    case "pinelabs": {
-      // The Pine Labs outline as a solid pixel line (the accent's track), its inside left empty,
-      // in a pixel cloud that fades out from it.
-      const c = coverage(logo, px, py, s);
-      if (c > 0.75) return { value: 1, edge: true, line: true };
-      if (c > 0.25) return { value: 0, edge: false };
-      const grain = fbm(px * 3 + 40, py * 3, p.seed);
-      return { value: clamp01(Math.exp(-((r / (s * 1.05)) ** 2)) * 0.6 + (grain - 0.55) * 0.2), edge: false };
+    case "echo": {
+      // The mark's outline in the accent, then its offsets rippling outward (rounding off as they go),
+      // fading with distance; one inner offset keeps the outline's double stroke.
+      const d = markDistance(x, y, fx, fy, s * 0.7);
+      if (Math.abs(d) < step * 0.55) return { value: 1, edge: true, line: true };
+      if (d < 0) return Math.abs(d + s * 0.05) < step * 0.5 ? { value: 0.5, edge: false, line: true } : EMPTY;
+      const gap = s * 0.075 * (1 + d / (s * 1.2));
+      const k = d / gap;
+      if (Math.abs(k - Math.round(k)) * gap >= step * 0.5) return EMPTY;
+      return { value: 0.85 * Math.exp(-d / (s * 2)) + 0.2, edge: false, line: true };
+    }
+    case "imprint": {
+      // Plant cells everywhere; inside the mark the walls carry the accent and every cell has a chloroplast,
+      // so the logo appears only as a change in the living pattern.
+      const inMark = markDistance(x, y, fx, fy, s * 0.85) < 0;
+      const g = s * 0.05;
+      const { d1, d2 } = voronoi(x / g, y / g, p.seed);
+      const st = step / g;
+      if (d2 - d1 < st * 0.9) return { value: inMark ? 0.8 : 0.45, edge: inMark, line: true };
+      return EMPTY;
+    }
+    case "stomata": {
+      // Leaf epidermis: jigsaw pavement cells (warped Voronoi walls) with stomata, a pair of kidney-shaped
+      // guard cells round a slit pore, in some cells; a few pores carry the accent.
+      const g = s * 0.24;
+      const wx = x / g + Math.sin((y / g) * 5.5 + p.seed) * 0.09;
+      const wy = y / g + Math.sin((x / g) * 5.5 - p.seed) * 0.09;
+      const { d1, d2, near, at } = voronoi(wx, wy, p.seed);
+      const st = step / g;
+      const hasPore = hash(near[0], near[1], p.seed + 2) < 0.3;
+      if (hasPore) {
+        const a = hash(near[0], near[1], p.seed + 4) * Math.PI;
+        const ux = wx - at[0];
+        const uy = wy - at[1];
+        const lx = (ux * Math.cos(a) + uy * Math.sin(a)) / 0.24;
+        const ly = (-ux * Math.sin(a) + uy * Math.cos(a)) / 0.15;
+        const e = Math.hypot(lx, ly);
+        const lit = hash(near[0], near[1], p.seed + 6) < 0.35;
+        if (Math.abs(e - 1) < st * 5 * 0.5) return { value: 0.75, edge: lit, line: true };
+        if (e < 1 && Math.abs(ly) * 0.15 < st * 0.45 && Math.abs(lx) < 0.75) return { value: 0.6, edge: false, line: true };
+        if (e < 1.05) return EMPTY;
+      }
+      return d2 - d1 < st * 0.9 ? { value: 0.45, edge: false, line: true } : EMPTY;
+    }
+    case "veins": {
+      // Reticulate venation: major veins (large Voronoi walls) over a fine mesh of minor veins.
+      const g1 = s * 0.42;
+      const big = voronoi(x / g1 + fbm(x * 2, y * 2, p.seed) * 0.25, y / g1, p.seed);
+      if (big.d2 - big.d1 < (step / g1) * 1.3) return { value: 0.7, edge: noise(x * 2.5, y * 2.5, p.seed + 60) < 0.3, line: true };
+      const g2 = g1 / 3.2;
+      const small = voronoi(x / g2, y / g2, p.seed + 50);
+      return small.d2 - small.d1 < (step / g2) * 0.8 ? { value: 0.35, edge: false, line: true } : EMPTY;
+    }
+    case "palisade": {
+      // Palisade mesophyll: staggered columns of tall rounded cells, chloroplasts lining their walls.
+      const w = s * 0.16;
+      const h = s * 0.44;
+      const col = Math.floor(x / w);
+      const shift = (col % 2) * 0.5 + hash(col, 0, p.seed) * 0.3;
+      const row = Math.floor(y / h + shift);
+      const u = (x / w - col - 0.5) * 2;
+      const v = (y / h + shift - row - 0.5) * 2;
+      const sq = Math.pow(Math.pow(Math.abs(u) / 0.82, 4) + Math.pow(Math.abs(v) / 0.9, 4), 0.25);
+      const st = (step / w) * 2;
+      if (Math.abs(sq - 1) < st * 0.6) return { value: 0.65, edge: false, line: true };
+      if (sq < 0.86 && sq > 0.62) {
+        const k = Math.round((v + 1) * 4.5);
+        const dot = Math.abs((v + 1) * 4.5 - k) < 0.22 && hash(col * 31 + k, row, p.seed) < 0.75;
+        if (dot) return { value: 0.8, edge: hash(col, row, p.seed + 8) < 0.12, line: true };
+      }
+      return EMPTY;
+    }
+    case "cells": {
+      // Rounded plant cells with a chloroplast in each; a few chloroplasts glow.
+      const g = s * 0.2;
+      const { d1, d2, near } = voronoi(x / g, y / g, p.seed);
+      const st = step / g;
+      if (d2 - d1 < st * 0.9) return { value: 0.55, edge: false, line: true };
+      if (d1 < st * 0.7) return { value: 0.6, edge: hash(near[0], near[1], p.seed + 7) < 0.12, line: true };
+      return EMPTY;
+    }
+    case "osmosis": {
+      // A wavy membrane across the banner at the focus height; dense particles above thinning away from it,
+      // sparse below, and a few (accent) slipping through just under it.
+      const m = fy + Math.sin((x * 2.2) / s + p.seed) * 0.07 * s + (fbm(x * 1.5, 3, p.seed) - 0.5) * 0.12 * s;
+      const dy = y - m;
+      if (Math.abs(dy) < step * 0.9) return { value: 0.9, edge: noise(x * 3, 1, p.seed) < 0.3, line: true };
+      const roll = hash(Math.round(x / step), Math.round(y / step), p.seed + 31);
+      if (dy > 0 && dy < step * 4 && roll < 0.04) return { value: 1, edge: true, line: true };
+      const conc = dy < 0 ? 0.34 * Math.exp(-((-dy / (s * 0.4)) ** 2)) + 0.02 : 0.05 * Math.exp(-((dy / (s * 0.3)) ** 2));
+      return roll < conc ? { value: 0.6, edge: false, line: true } : EMPTY;
+    }
+    case "flow": {
+      // Meandering stream lines across the banner; every seventh line is a current in the accent.
+      const psi = y + Math.sin((x * 1.6) / s + p.seed) * 0.08 * s + (fbm((x * 0.9) / s, (y * 0.9) / s, p.seed) - 0.5) * 0.35 * s;
+      const spacing = s * 0.075;
+      const k = psi / spacing;
+      if (Math.abs(k - Math.round(k)) * spacing >= step * 0.5) return EMPTY;
+      return { value: 0.6, edge: Math.round(k) % 7 === 0, line: true };
+    }
+    case "rays": {
+      // Sunlight fanning down from above the focus across the whole banner, in soft dithered shafts;
+      // the brightest shafts carry the accent where they land.
+      const sx = x - fx;
+      const sy = y + 1.2;
+      const ang = Math.atan2(sx, sy);
+      const shaft = noise(ang * (10 / s) + 50, 2, p.seed);
+      if (shaft < 0.42) return EMPTY;
+      const strength = Math.min(1, (shaft - 0.42) * 2.2);
+      return { value: 0.4 + 0.6 * strength, edge: strength > 0.8 && y > 0.75 && hash(Math.round(x / step), Math.round(y / step), p.seed) < 0.35 };
+    }
+    case "spiral": {
+      // Sunflower seeds at the golden angle, centred on the focus and large enough to fill the banner;
+      // the seeds of one spiral family (every 13th) carry the accent.
+      const c = s * 0.085;
+      const r = Math.hypot(x - fx, y - fy);
+      const n = (r / c) ** 2;
+      const lo = Math.max(1, Math.floor(n - 2 * (r / c) - 4));
+      const hi = Math.ceil(n + 2 * (r / c) + 4);
+      for (let i = lo; i <= hi; i++) {
+        const ri = c * Math.sqrt(i);
+        const th = i * 2.399963 + p.seed;
+        if (Math.hypot(x - fx - ri * Math.cos(th), y - fy - ri * Math.sin(th)) < Math.max(step * 0.6, c * 0.42)) {
+          return { value: 0.6, edge: i % 13 === 0, line: true };
+        }
+      }
+      return EMPTY;
     }
     case "topo": {
-      // Contour lines of a slow noise field, like a topographic map; one contour carries the accent.
-      const n = fbm((px * 1.4) / s + 11, (py * 1.4) / s, p.seed) * 9;
+      // Contour lines of rolling terrain; one contour level in the accent.
+      const n = fbm((x * 1.4) / s + 11, (y * 1.4) / s, p.seed) * 9;
       const line = Math.abs(n - Math.round(n));
-      const fade = 0.35 + 0.65 * Math.exp(-((r / (s * 1.6)) ** 2));
-      return { value: line < 0.09 ? fade : 0, edge: line < 0.09 && Math.round(n) === 5, line: true };
-    }
-    case "orbits": {
-      // Tilted, dashed orbits around the focus; the third one carries the accent.
-      const a = 0.5;
-      const ox = px * Math.cos(a) + py * Math.sin(a);
-      const oy = (-px * Math.sin(a) + py * Math.cos(a)) * 2.1;
-      const rr = Math.hypot(ox, oy) / s;
-      const k = Math.round(rr / 0.16);
-      const onLine = k > 0 && Math.abs(rr - k * 0.16) < 0.022;
-      const dash = Math.sin(Math.atan2(oy, ox) * (6 + k * 3) + k + p.seed) > -0.35;
-      return { value: onLine && dash ? 0.3 + 0.7 * Math.exp(-((k / 5) ** 2)) : 0, edge: onLine && dash && k === 3, line: true };
-    }
-    case "bloom": {
-      // A seven-petal bloom: its outline in pixels, a faint dither inside, the outline's tips in accent.
-      const th = Math.atan2(py, px) + p.seed;
-      const edgeR = s * 0.42 * (0.62 + 0.38 * Math.abs(Math.cos(3.5 * th)));
-      const d = Math.abs(r - edgeR);
-      if (d < step * 1.1) return { value: 0.9, edge: Math.abs(Math.cos(3.5 * th)) > 0.85, line: true };
-      if (r < edgeR) return { value: 0.12 + 0.1 * (r / edgeR), edge: false };
-      return { value: Math.exp(-(((r - edgeR) / (s * 0.12)) ** 2)) * 0.25, edge: false };
+      return line < 0.09 ? { value: 0.6, edge: Math.round(n) === 5, line: true } : EMPTY;
     }
     case "drift": {
-      // Slow diagonal streaks, like light through pine needles; each column has its own length and fade.
-      const u = px * 0.92 - py * 0.4;
-      const v = px * 0.4 + py * 0.92;
+      // Diagonal streaks across the banner, each column with its own length and fade.
+      const u = x * 0.92 - y * 0.4;
+      const v = x * 0.4 + y * 0.92;
       const col = Math.floor(u / (step * 1.8));
-      const on = hash(col, 7, p.seed) < 0.38;
-      const start = hash(col, 3, p.seed) * 1.6 - 0.8;
+      if (hash(col, 7, p.seed) > 0.4) return EMPTY;
+      const start = hash(col, 3, p.seed) * 2 - 0.6;
       const len = (0.25 + hash(col, 5, p.seed) * 0.6) * s;
       const t = (v - start) / len;
-      const value = on && t > 0 && t < 1 ? Math.sin(t * Math.PI) * 0.9 : 0;
-      return { value, edge: value > 0.6 && hash(col, 9, p.seed) < 0.12, line: true };
-    }
-    case "rings": {
-      const wave = 0.5 + 0.5 * Math.cos((r / s) * Math.PI * 7 - p.seed);
-      const value = clamp01(wave * Math.exp(-((r / (s * 1.1)) ** 2)) + fbm(px * 2, py * 2, p.seed) * 0.15);
-      return { value, edge: wave > 0.985 };
-    }
-    case "waves": {
-      const y = py + Math.sin((px * 2.4) / s + p.seed) * 0.18 + (fbm(px * 0.8, py * 0.8, p.seed) - 0.5) * 0.4;
-      const band = 0.5 + 0.5 * Math.sin((y / s) * Math.PI * 6);
-      return { value: clamp01(band ** 2 * (0.35 + 0.65 * Math.exp(-((px / (s * 2.4)) ** 2)))), edge: band > 0.99 };
-    }
-    case "grain": {
-      const n = fbm((px * 2.6) / s, (py * 2.6) / s, p.seed);
-      return { value: clamp01((n - 0.3) * 1.6), edge: Math.abs(n - 0.62) < 0.012 };
-    }
-    case "slope": {
-      // A diagonal ramp from the focus, broken up by noise.
-      const t = (px * 0.7 + py * 0.3) / s;
-      const value = clamp01(1 - Math.abs(t) * 0.9 + (fbm(px * 3, py * 3, p.seed) - 0.5) * 0.5);
-      return { value, edge: Math.abs(value - 0.75) < 0.03 };
+      if (t <= 0 || t >= 1) return EMPTY;
+      const value = Math.sin(t * Math.PI) * 0.8;
+      return { value, edge: value > 0.55 && hash(col, 9, p.seed) < 0.12, line: true };
     }
   }
 }
@@ -206,15 +318,17 @@ function clearance(x: number, y: number, box: ClearBox | null, strength: number,
 
 /**
  * The cells to draw for a banner of `width` × `height` px.
- * Tone is how dark the ink is and how big the pixel is drawn.
+ * Tone is how dark the ink is and how big the pixel is drawn. A gentle gradient across the banner keeps it
+ * brightest near the focus and quieter far from it.
  */
-export function renderCells(p: HeroPattern, width: number, height: number, logo: LogoSampler | null, box: ClearBox | null): Cell[] {
+export function renderCells(p: HeroPattern, width: number, height: number, box: ClearBox | null): Cell[] {
   const cell = Math.max(2, p.cell);
   const cols = Math.ceil(width / cell);
   const rows = Math.ceil(height / cell);
   const cells: Cell[] = [];
-  const fx = p.focusX * width;
-  const fy = p.focusY * height;
+  const fx = (p.focusX * width) / height;
+  const fy = p.focusY;
+  const reach = Math.hypot(width, height) / height;
   const soft = Math.max(cell * 4, height * 0.16);
   const step = cell / height;
 
@@ -222,33 +336,31 @@ export function renderCells(p: HeroPattern, width: number, height: number, logo:
     for (let i = 0; i < cols; i++) {
       const cx = (i + 0.5) * cell;
       const cy = (j + 0.5) * cell;
-      const px = (cx - fx) / height;
-      const py = (cy - fy) / height;
-      const sample = field(p, px, py, step, logo);
+      const x = cx / height;
+      const y = cy / height;
+      const sample = field(p, x, y, fx, fy, step);
+      if (sample.value <= 0) continue;
       const keep = clearance(cx, cy, box, p.clear, soft);
+      const far = Math.min(1, Math.hypot(x - fx, y - fy) / (reach * 0.7));
 
-      // Accents trace the edge in short runs (low-frequency noise picks which stretches light up),
-      // and stay out of the title's clear area.
-      if (sample.edge && keep > 0.6 && noise((px * 5) / p.scale, (py * 5) / p.scale, p.seed + 303) < p.accent) {
+      if (sample.edge && keep > 0.6 && noise(x * 4, y * 4, p.seed + 303) < p.accent) {
         cells.push({ x: i * cell, y: j * cell, tone: 1, accent: true, tint: 1 });
         continue;
       }
 
-      const value = sample.value * p.density * keep;
+      const value = sample.value * p.density * keep * (1 - 0.55 * far);
       if (value <= 0.02) continue;
       // Lines are drawn whole (tone shows their strength); fields are dithered.
       const threshold = sample.line ? 0.06 : p.dither === "bayer" ? (BAYER_8[(j % 8) * 8 + (i % 8)] + 0.5) / 64 : p.dither === "noise" ? hash(i, j, p.seed + 101) : 0.15;
       if (value < threshold) continue;
-      // Gradient: strongest at the focus, fading out over about one shape size.
-      const tint = p.gradient * Math.exp(-((Math.hypot(px, py) / (p.scale * 0.9)) ** 2));
-      cells.push({ x: i * cell, y: j * cell, tone: clamp01(value), accent: false, tint });
+      cells.push({ x: i * cell, y: j * cell, tone: clamp01(value), accent: false, tint: p.gradient * (1 - far) ** 2 });
     }
   }
   return cells;
 }
 
 /** Old names from earlier saved patterns. */
-const RENAMED: Record<string, string> = { logo: "pinelabs", seal: "pinelabs" };
+const RENAMED: Record<string, string> = { logo: "echo", seal: "echo", pinelabs: "echo", leaf: "veins", leaves: "veins" };
 
 /** Keep a stored or pasted pattern valid: unknown keys dropped, numbers clamped, bad values defaulted. */
 export function sanitizePattern(input: unknown): HeroPattern {
