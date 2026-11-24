@@ -6,16 +6,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SETTINGS_GROUPS } from '@/components/account/account-settings';
 import { OrganisationLogo, OrganisationSwitcher } from '@/components/account/organisation-switcher';
+import { LanguageSheet } from '@/components/profile/language';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { CopyableValue } from '@/components/shared/copyable-value';
-import { PANEL_INNER_RADIUS, PANEL_PADDING, PanelSheet } from '@/components/shared/panel-sheet';
+import { PANEL_PADDING } from '@/components/shared/panel-sheet';
 import { OutlineTag, PILL_HEIGHT } from '@/components/shared/status';
 import { useAppColors } from '@/constants/app-colors';
-import { APP_PAGE_LAYOUT } from '@/constants/experiments';
+import { APP_PAGE_LAYOUT, SHOW_PAYMENT_LINKS } from '@/constants/experiments';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { BUSINESS_PROFILE_ROLES } from '@/data/business-profile';
 import { CURRENT_USER, ORGANISATIONS } from '@/data/businesses';
-import { markAllNotificationsRead, markNotificationRead, useNotifications } from '@/data/notifications';
+import { useNotifications } from '@/data/notifications';
+import { LANGUAGES, referralSummary, useProfile } from '@/data/profile';
 import { INITIAL_ROSTER } from '@/data/user-roster';
 import { VALUE_ADDED_SERVICES } from '@/data/value-added-services';
 import { useBusiness } from '@/hooks/use-business';
@@ -73,7 +76,8 @@ export function ProfilePanel({
   const toast = useToast();
   const appColors = useAppColors();
   const [switching, setSwitching] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [choosingLanguage, setChoosingLanguage] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const notifications = useNotifications();
   const organisation = business.organisation;
   const [progress] = useState(() => new Animated.Value(0));
@@ -110,7 +114,7 @@ export function ProfilePanel({
 
   // One list, as the reference: what needs a look first, then the settings pages.
   const rows: { key: string; icon: string; title: string; badge?: number; onPress: () => void }[] = [
-    { key: 'notifications', icon: 'bell', title: 'Notifications', badge: notifications.unread, onPress: () => setNotificationsOpen(true) },
+    { key: 'notifications', icon: 'bell', title: 'Notifications', badge: notifications.unread, onPress: () => profileNav.openPage('/notifications') },
     ...SETTINGS_GROUPS.flatMap((group) =>
       group.sections.filter((section) => !HIDDEN_SETTINGS.includes(section.key)).map((section) => ({
         key: section.key,
@@ -144,8 +148,10 @@ export function ProfilePanel({
                 initials={initials}
                 onDismiss={onDismiss}
                 onSwitch={() => setSwitching(true)}
-                onNotifications={() => setNotificationsOpen(true)}
+                onNotifications={() => profileNav.openPage('/notifications')}
+                onLanguage={() => setChoosingLanguage(true)}
                 unread={notifications.unread}
+                onLogout={() => setLoggingOut(true)}
                 // Slides in over the profile; its Back returns here (see profile-return).
                 openPage={profileNav.openPage}
               />
@@ -261,65 +267,27 @@ export function ProfilePanel({
       {/* Mounted after the page, so these sheets stack above it (Paper portals layer in mount order). */}
       {mounted ? (
         <>
-          <PanelSheet
-            visible={notificationsOpen}
-            onDismiss={() => setNotificationsOpen(false)}
-            title="Notifications"
-            grouped
-            height={520}
-            footer={
-              notifications.unread ? (
-                <Button
-                  mode="outlined"
-                  onPress={markAllNotificationsRead}
-                  textColor={theme.colors.onSurface}
-                  style={[styles.markAll, { borderColor: theme.colors.outlineVariant }]}>
-                  Mark all as read
-                </Button>
-              ) : undefined
-            }>
-            <View style={styles.sheetBody}>
-              <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-                {notifications.items.map((item, index) => {
-                  const unread = !notifications.isRead(item.id);
-                  return (
-                    <View key={item.id}>
-                      {index > 0 ? <View style={[styles.rowDivider, { backgroundColor: theme.colors.background }]} /> : null}
-                      <TouchableRipple
-                        onPress={() => {
-                          markNotificationRead(item.id);
-                          setNotificationsOpen(false);
-                          onDismiss();
-                          router.navigate(item.href);
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel={`${unread ? 'Unread. ' : ''}${item.title}. ${item.detail}. ${item.time}`}>
-                        <View style={[styles.notification, unread && { backgroundColor: appColors.highlight }]}>
-                          <Icon source={item.icon} size={20} color={theme.colors.onSurface} />
-                          <View style={styles.flex}>
-                            <Text numberOfLines={1} style={[styles.rowTitle, { color: theme.colors.onSurface }]}>
-                              {item.title}
-                            </Text>
-                            <Text numberOfLines={2} style={[styles.small, { color: theme.colors.onSurfaceVariant }]}>
-                              {item.detail}
-                            </Text>
-                            <Text style={[styles.small, styles.time, { color: theme.colors.onSurfaceVariant }]}>{item.time}</Text>
-                          </View>
-                          {unread ? <View style={[styles.unreadDot, { backgroundColor: theme.colors.error }]} /> : null}
-                        </View>
-                      </TouchableRipple>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-          </PanelSheet>
           <OrganisationSwitcher
             visible={switching}
             onDismiss={() => setSwitching(false)}
             organisations={ORGANISATIONS}
             currentId={organisation.id}
             onApply={business.switchOrganisation}
+          />
+          <LanguageSheet visible={choosingLanguage} onDismiss={() => setChoosingLanguage(false)} onUpdated={() => toast('Language has been updated')} />
+          <ConfirmDialog
+            visible={loggingOut}
+            onDismiss={() => setLoggingOut(false)}
+            title="Sign out"
+            description="Are you sure you want to sign out of this device?"
+            confirmLabel="Sign out"
+            destructive
+            onConfirm={() => {
+              // Out to the login flow; nothing to go back to.
+              setLoggingOut(false);
+              onDismiss();
+              router.replace('/login');
+            }}
           />
         </>
       ) : null}
@@ -378,7 +346,6 @@ const styles = StyleSheet.create({
   notification: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, paddingHorizontal: 16, paddingVertical: 14 },
   time: { marginTop: 2 },
   unreadDot: { width: 8, height: 8, borderRadius: 4, marginTop: 6 },
-  markAll: { borderRadius: PANEL_INNER_RADIUS },
   logout: { borderRadius: CARD_RADIUS },
   logoutContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52 },
 });
@@ -485,6 +452,8 @@ function AppProfileContent({
   onSwitch,
   onNotifications,
   unread,
+  onLogout,
+  onLanguage,
   openPage,
 }: {
   /** Passed in: the page renders in a portal, outside the business and toast providers. */
@@ -495,38 +464,44 @@ function AppProfileContent({
   onSwitch: () => void;
   onNotifications: () => void;
   unread: number;
+  /** Asks first (old app: "Are you sure you want to sign out of this device?"). */
+  onLogout: () => void;
+  /** Opens the language sheet (mounted after the page, so it stacks above it). */
+  onLanguage: () => void;
   openPage: (href: string) => void;
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const soon = (what: string) => () => toast(`${what} isn't in the prototype yet`);
+  const profile = useProfile();
+  const language = LANGUAGES.find((item) => item.code === profile.language);
+  const referrals = referralSummary(profile.referrals, profile.claimed);
   const canOpenBusiness = BUSINESS_PROFILE_ROLES.includes(CURRENT_USER.roleLabel);
   const groups: { title: string; rows: ProfileRow[] }[] = [
     {
       title: 'Rewards',
       rows: [
-        { key: 'prime', icon: 'crown', title: 'Prime membership', onPress: soon('Prime membership') },
-        { key: 'accept', icon: 'money', title: 'Accept payments', onPress: soon('Accept payments') },
-        { key: 'marketplace', icon: 'crown', title: 'Marketplace', onPress: soon('Marketplace') },
+        { key: 'prime', icon: 'crown', title: 'Prime membership', onPress: () => openPage('/prime') },
+        { key: 'accept', icon: 'money', title: 'Accept payments', onPress: () => openPage('/accept-payments') },
+        { key: 'marketplace', icon: 'shopping-cart', title: 'Marketplace', onPress: () => openPage('/marketplace') },
       ],
     },
     {
       title: 'Manage',
       rows: [
         { key: 'devices', icon: 'device-mobile', title: 'My devices', subtitle: '13,905 installed', onPress: () => openPage('/terminal-devices') },
-        { key: 'payment-links', icon: 'link-simple', title: 'Payment links', subtitle: 'Create and share links to get paid', onPress: () => openPage('/payment-links') },
+        ...(SHOW_PAYMENT_LINKS ? [{ key: 'payment-links', icon: 'link-simple', title: 'Payment links', subtitle: 'Create and share links to get paid', onPress: () => openPage('/payment-links') }] : []),
         { key: 'stores', icon: 'storefront', title: 'My stores', subtitle: `${organisation.shops.length.toLocaleString('en-IN')} registered`, onPress: () => openPage('/stores') },
         { key: 'users', icon: 'user-gear', title: 'Manage user roles & permissions', subtitle: '1,761 registered', onPress: () => openPage('/users') },
         { key: 'vas', icon: 'diamond', title: 'Value Added Services', subtitle: `${VALUE_ADDED_SERVICES.filter((service) => service.status === 'Enabled').length} of ${VALUE_ADDED_SERVICES.length} enabled`, tag: { label: 'NEW', tone: 'new' }, onPress: () => openPage('/value-added-services') },
-        { key: 'dues', icon: 'receipt', title: 'Pending dues', subtitle: 'Check your recent dues and pay', tag: { label: 'Check now', tone: 'neutral' }, onPress: () => openPage('/pending-dues') },
+        { key: 'dues', icon: 'receipt', title: 'Invoices', subtitle: 'Check your invoices and pay', tag: { label: 'Check now', tone: 'neutral' }, onPress: () => openPage('/invoices') },
       ],
     },
     {
       title: 'Preferences',
       rows: [
-        { key: 'security', icon: 'shield', title: 'Security & privacy', subtitle: 'Change password', onPress: () => openPage('/account-settings/credentials') },
+        { key: 'security', icon: 'shield', title: 'Security & privacy', subtitle: 'Change password', onPress: () => openPage('/security') },
         { key: 'notifications', icon: 'bell', title: 'Notifications', subtitle: 'Manage communication channels', badge: unread, onPress: onNotifications },
-        { key: 'language', icon: 'translate', title: 'Language', subtitle: 'English', onPress: soon('Language') },
+        { key: 'language', icon: 'translate', title: 'Language', subtitle: language?.label ?? 'English', onPress: onLanguage },
       ],
     },
   ];
@@ -538,7 +513,15 @@ function AppProfileContent({
       .map((section) => ({ key: section.key, icon: section.icon, title: section.title, onPress: () => openPage(`/account-settings/${section.key}`) })),
   ];
   const support: ProfileRow[] = [
-    { key: 'suggest', icon: 'question', title: 'Suggest & Report', subtitle: 'Report bugs, request a feature', onPress: () => openPage('/support') },
+    { key: 'suggest', icon: 'question', title: 'Suggest & Report', subtitle: 'Report bugs, request a feature', onPress: () => openPage('/suggest-report') },
+    {
+      key: 'referrals',
+      icon: 'gift',
+      title: 'Referrals',
+      subtitle: referrals.available > 0 ? `₹${referrals.available} ready to claim` : 'Track referrals',
+      tag: referrals.needsAction > 0 ? { label: `${referrals.needsAction} needs action`, tone: 'neutral' } : undefined,
+      onPress: () => openPage('/referrals'),
+    },
     { key: 'version', icon: 'seal-check', title: 'App is up to date', subtitle: 'v 4.5.0 (78)', onPress: () => toast('You have the latest version') },
   ];
   const muted = { color: theme.colors.onSurfaceVariant };
@@ -550,11 +533,7 @@ function AppProfileContent({
           <Icon source="arrow-left" size={20} color={theme.colors.onSurface} />
         </TouchableRipple>
         <TouchableRipple
-          onPress={() => {
-            // Out to the login flow; nothing to go back to.
-            onDismiss();
-            router.replace('/login');
-          }}
+          onPress={onLogout}
           borderless
           accessibilityRole="button"
           accessibilityLabel="Log out"
@@ -563,6 +542,8 @@ function AppProfileContent({
         </TouchableRipple>
       </View>
       <ScrollView contentContainerStyle={[appStyles.content, { paddingBottom: Math.max(16, insets.bottom) + 16 }]} showsVerticalScrollIndicator={false}>
+        {/* Who's signed in: opens Personal details (phone, email, address), as the old app's profile header did. */}
+        <TouchableRipple onPress={() => openPage('/personal-details')} borderless accessibilityRole="button" accessibilityLabel={`${CURRENT_USER.name}, ${CURRENT_USER.roleLabel}. Open personal details`} style={appStyles.identityTouch}>
         <View style={appStyles.identity}>
           <View style={[appStyles.avatar, { backgroundColor: theme.colors.primary }]}>
             <Text style={[appStyles.initials, { color: theme.colors.onPrimary }]}>{initials}</Text>
@@ -573,10 +554,14 @@ function AppProfileContent({
             </Text>
             <OutlineTag label={CURRENT_USER.roleLabel} radius={Shape.max} />
           </View>
-          <Text numberOfLines={1} style={[appStyles.body, muted]}>
-            {USER_EMAIL}
-          </Text>
+          <View style={appStyles.detailsLink}>
+            <Text numberOfLines={1} style={[appStyles.body, muted]}>
+              {profile.email}
+            </Text>
+            <Icon source="caret-right" size={14} color={theme.colors.onSurfaceVariant} />
+          </View>
         </View>
+        </TouchableRipple>
 
         {/* The business: Owners and Admins open its Business profile (where Switch now lives); other roles switch from here. */}
         {canOpenBusiness ? (
@@ -655,6 +640,10 @@ function AppProfileContent({
           <View style={[appStyles.legalDot, { backgroundColor: theme.colors.primary }]} />
           <Text onPress={() => toast("The terms aren't in the prototype yet")} style={[appStyles.legalLink, { color: theme.colors.primary }]}>
             Terms and Conditions
+          </Text>
+          <View style={[appStyles.legalDot, { backgroundColor: theme.colors.primary }]} />
+          <Text onPress={() => toast("The grievance policy isn't in the prototype yet")} style={[appStyles.legalLink, { color: theme.colors.primary }]}>
+            Grievance Policy
           </Text>
         </View>
       </ScrollView>
@@ -738,7 +727,9 @@ const appStyles = StyleSheet.create({
   logout: { height: 32, paddingHorizontal: 12, borderRadius: Shape.small, justifyContent: 'center' },
   logoutLabel: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 20 },
   content: { paddingHorizontal: 8, gap: 8 },
-  identity: { alignItems: 'center', gap: 8, paddingTop: 12, paddingBottom: 24 },
+  identityTouch: { borderRadius: Shape.max, marginBottom: 12 },
+  identity: { alignItems: 'center', gap: 8, paddingTop: 12, paddingBottom: 12 },
+  detailsLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   avatar: { width: 36, height: 36, borderRadius: Shape.small, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   initials: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 20 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, maxWidth: '100%' },
@@ -766,7 +757,7 @@ const appStyles = StyleSheet.create({
   track: { flexDirection: 'row', padding: 3, borderRadius: Shape.small },
   segment: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 30, borderRadius: Shape.small - 3 },
   segmentLabel: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 20 },
-  legal: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 24 },
+  legal: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8, paddingVertical: 24 },
   legalLink: { fontFamily: Fonts.medium, fontSize: 12, lineHeight: 16 },
   legalDot: { width: 3, height: 3, borderRadius: 1.5 },
 });

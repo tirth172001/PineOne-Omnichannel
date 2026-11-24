@@ -22,7 +22,10 @@ export function ActionBanner({
   actionLabel = 'Settle now',
   onPress,
   tone = 'accent',
+  icon,
 }: {
+  /** A Phosphor icon in place of the lightning mark (e.g. a gift for referrals). */
+  icon?: string;
   label?: string;
   actionLabel?: string;
   onPress?: () => void;
@@ -48,7 +51,7 @@ export function ActionBanner({
           </Defs>
           <Rect width={1} height={1} fill={`url(#${gradientId})`} />
         </Svg>
-        {danger ? <Icon source="warning-fill" size={24} color={dangerColor} /> : <Image source={LIGHTNING} style={styles.icon} />}
+        {danger ? <Icon source="warning-fill" size={24} color={dangerColor} /> : icon ? <Icon source={icon} size={24} color="#4f46e5" /> : <Image source={LIGHTNING} style={styles.icon} />}
         <Text style={[styles.label, { color: theme.colors.onSurface }]}>{label}</Text>
         <Text style={[styles.action, { color: danger ? dangerColor : theme.colors.primary }]}>{actionLabel}</Text>
       </View>

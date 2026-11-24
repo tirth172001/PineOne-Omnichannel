@@ -2,6 +2,24 @@ import type { Icon } from 'phosphor-react-native';
 import type { ComponentProps } from 'react';
 import type { PaperProvider } from 'react-native-paper';
 // Per-icon deep imports keep the bundle to the icons registered here, not all ~1,500.
+import { SmileyIcon } from 'phosphor-react-native/src/icons/Smiley';
+import { SmileySadIcon } from 'phosphor-react-native/src/icons/SmileySad';
+import { SmileyMehIcon } from 'phosphor-react-native/src/icons/SmileyMeh';
+import { SmileyWinkIcon } from 'phosphor-react-native/src/icons/SmileyWink';
+import { SmileyXEyesIcon } from 'phosphor-react-native/src/icons/SmileyXEyes';
+import { BugIcon } from 'phosphor-react-native/src/icons/Bug';
+import { LightbulbIcon } from 'phosphor-react-native/src/icons/Lightbulb';
+import { SpeakerHighIcon } from 'phosphor-react-native/src/icons/SpeakerHigh';
+import { GiftIcon } from 'phosphor-react-native/src/icons/Gift';
+import { TrophyIcon } from 'phosphor-react-native/src/icons/Trophy';
+import { FingerprintIcon } from 'phosphor-react-native/src/icons/Fingerprint';
+import { PasswordIcon } from 'phosphor-react-native/src/icons/Password';
+import { PaperclipIcon } from 'phosphor-react-native/src/icons/Paperclip';
+import { ArrowSquareOutIcon } from 'phosphor-react-native/src/icons/ArrowSquareOut';
+import { StarIcon } from 'phosphor-react-native/src/icons/Star';
+import { PackageIcon } from 'phosphor-react-native/src/icons/Package';
+import { MedalIcon } from 'phosphor-react-native/src/icons/Medal';
+import { ScrollIcon } from 'phosphor-react-native/src/icons/Scroll';
 import { ArrowCounterClockwiseIcon } from 'phosphor-react-native/src/icons/ArrowCounterClockwise';
 import { ArrowLeftIcon } from 'phosphor-react-native/src/icons/ArrowLeft';
 import { CrownIcon } from 'phosphor-react-native/src/icons/Crown';
@@ -102,6 +120,13 @@ import { MoneyWavyIcon } from 'phosphor-react-native/src/icons/MoneyWavy';
 import { PaperPlaneRightIcon } from 'phosphor-react-native/src/icons/PaperPlaneRight';
 import { PencilSimpleIcon } from 'phosphor-react-native/src/icons/PencilSimple';
 import { PlayIcon } from 'phosphor-react-native/src/icons/Play';
+import { ShuffleIcon } from 'phosphor-react-native/src/icons/Shuffle';
+import { HeadsetIcon } from 'phosphor-react-native/src/icons/Headset';
+import { TicketIcon } from 'phosphor-react-native/src/icons/Ticket';
+import { CpuIcon } from 'phosphor-react-native/src/icons/Cpu';
+import { ArrowBendDownRightIcon } from 'phosphor-react-native/src/icons/ArrowBendDownRight';
+import { PauseIcon } from 'phosphor-react-native/src/icons/Pause';
+import { SparkleIcon } from 'phosphor-react-native/src/icons/Sparkle';
 import { PlusIcon } from 'phosphor-react-native/src/icons/Plus';
 import { PrinterIcon } from 'phosphor-react-native/src/icons/Printer';
 import { QrCodeIcon } from 'phosphor-react-native/src/icons/QrCode';
@@ -162,6 +187,24 @@ import { XCircleIcon } from 'phosphor-react-native/src/icons/XCircle';
  * (phosphoricons.com). Add an entry here before using a new icon.
  */
 const ICONS = {
+  'smiley': SmileyIcon,
+  'smiley-sad': SmileySadIcon,
+  'smiley-meh': SmileyMehIcon,
+  'smiley-wink': SmileyWinkIcon,
+  'smiley-x-eyes': SmileyXEyesIcon,
+  'bug': BugIcon,
+  'lightbulb': LightbulbIcon,
+  'speaker-high': SpeakerHighIcon,
+  'gift': GiftIcon,
+  'trophy': TrophyIcon,
+  'fingerprint': FingerprintIcon,
+  'password': PasswordIcon,
+  'paperclip': PaperclipIcon,
+  'arrow-square-out': ArrowSquareOutIcon,
+  'star': StarIcon,
+  'package': PackageIcon,
+  'medal': MedalIcon,
+  'scroll': ScrollIcon,
   'arrows-left-right': ArrowsLeftRightIcon,
   'check-square': CheckSquareIcon,
   square: SquareIcon,
@@ -263,6 +306,13 @@ const ICONS = {
   'seal-check': SealCheckIcon,
   'clock-countdown': ClockCountdownIcon,
   plus: PlusIcon,
+  sparkle: SparkleIcon,
+  'shuffle': ShuffleIcon,
+  'headset': HeadsetIcon,
+  'ticket': TicketIcon,
+  'cpu': CpuIcon,
+  'arrow-bend-down-right': ArrowBendDownRightIcon,
+  'pause': PauseIcon,
   printer: PrinterIcon,
   'qr-code': QrCodeIcon,
   question: QuestionIcon,

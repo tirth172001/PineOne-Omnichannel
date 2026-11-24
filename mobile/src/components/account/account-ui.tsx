@@ -134,7 +134,7 @@ export function PickerField({ label, placeholder, onPress, accessibilityLabel }:
   );
 }
 
-const ROLE_GROUPS: { label: string; filter: (role: ManagedRole) => boolean }[] = [
+export const ROLE_GROUPS: { label: string; filter: (role: ManagedRole) => boolean }[] = [
   { label: 'Offline (in-store)', filter: (role) => role.system === 'offline' },
   { label: 'Online (payment gateway)', filter: (role) => role.system === 'online' },
   { label: 'Offline & online', filter: (role) => role.system === 'both' },

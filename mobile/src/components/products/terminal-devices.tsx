@@ -8,7 +8,7 @@ import { ListingCard } from '@/components/listing-hero/listing-card';
 import { useListDates } from '@/components/listing-hero/time-scope';
 import { getDefaultDateRangePresets, makeDateRangeValue } from '@/components/shared/date-range-filter';
 import { DetailScreen } from '@/components/shared/detail-screen';
-import { LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
+import { initialsOf, LIST_ROW_INNER_RADIUS, ListCard, ListRow, ListRowLine, ListingToolbar, selectFilter } from '@/components/shared/listing';
 import { type MoreFilterSelection } from '@/components/shared/more-filters';
 import { DayGroupedList, dayTotals, displayTimestamp, groupByDay, sortNewestFirst } from '@/components/shared/day-groups';
 import { LazyListFooter, useLazyList } from '@/components/shared/lazy-list';
@@ -20,6 +20,8 @@ import { LISTING_HERO_LAYOUT } from '@/constants/experiments';
 import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { CURRENT_USER } from '@/data/businesses';
+import { INITIAL_ROSTER } from '@/data/user-roster';
+import { useAppColors } from '@/constants/app-colors';
 import { parseDisplayDate } from '@/data/transactions';
 import {
   DEVICE_MODELS,
@@ -28,7 +30,6 @@ import {
   type DeviceAuditRow,
   getAuditRows,
   getDeviceRows,
-  getLinkedDevices,
   MONTHS,
   recordModeChange,
   type TerminalDeviceRow,
@@ -275,14 +276,14 @@ function useDeviceActions(setRows: Dispatch<SetStateAction<TerminalDeviceRow[]>>
   return { changeMode, toggleStatus };
 }
 
-// Sized to Figma's flyouts: the details down to the linked devices, then each of them.
+// Sized to Figma's flyouts: the device details, plus Changed by when opened from the Audit log.
 const DETAILS_HEIGHT = 391;
-const LINKED_SECTION_HEIGHT = 43;
-const LINKED_ROW_HEIGHT = 64;
+/** The Changed by section: its title row and the 64dp person card. */
+const CHANGED_BY_HEIGHT = 43 + 64;
 
 /**
  * A device's details and actions (Figma 7570:74628 / 7572:80411): what it is,
- * its mode and status, its IDs and store, and the devices linked to it.
+ * its mode and status, its IDs and store (and, from the Audit log, who changed it).
  * Disable device confirms first (7572:75733). Enable standalone applies at
  * once; enable integrated needs a ticket (7572:78888), so the mode stays as it
  * is until that's done.
@@ -292,11 +293,14 @@ export function DeviceSheet({
   onDismiss,
   onChangeMode,
   onToggleStatus,
+  change,
 }: {
   device: TerminalDeviceRow | null;
   onDismiss: () => void;
   onChangeMode: (device: TerminalDeviceRow) => void;
   onToggleStatus: (device: TerminalDeviceRow) => void;
+  /** Opened from the Audit log: the change this row records, called out above the device. */
+  change?: DeviceAuditRow | null;
 }) {
   const theme = useTheme();
   const toast = useToast();
@@ -307,7 +311,6 @@ export function DeviceSheet({
   const current = device ?? shown;
   if (!current) return null;
   const active = current.status === 'Active';
-  const linked = getLinkedDevices(current);
   const close = () => {
     setConfirming(null);
     onDismiss();
@@ -320,7 +323,7 @@ export function DeviceSheet({
         visible={device !== null && confirming === null}
         onDismiss={close}
         title="Device details"
-        height={DETAILS_HEIGHT + (linked.length ? LINKED_SECTION_HEIGHT + linked.length * LINKED_ROW_HEIGHT : 0)}
+        height={DETAILS_HEIGHT + (change ? CHANGED_BY_HEIGHT : 0)}
         footer={
           <View style={styles.sheetActions}>
             <View style={styles.sheetAction}>
@@ -339,7 +342,7 @@ export function DeviceSheet({
             </View>
           </View>
         }>
-        <SheetBlock gap={16} last={!linked.length}>
+        <SheetBlock gap={16} last={!change}>
           <View style={styles.sheetTop}>
             <View style={[styles.sheetPhoto, { borderColor: theme.colors.outlineVariant }]}>
               <TerminalPhoto size={40} inactive={!active} />
@@ -359,28 +362,7 @@ export function DeviceSheet({
             <InfoRow label="Store" value={current.storeName} narrow />
           </View>
         </SheetBlock>
-        {linked.length ? (
-          <SheetBlock gap={12} last>
-            <Text style={styles.linkedTitle}>Linked devices</Text>
-            <View style={styles.linkedList}>
-              {linked.map((row) => (
-                <View key={row.id} style={[styles.linkedRow, { backgroundColor: theme.colors.surfaceVariant }]}>
-                  <View style={[styles.linkedPhoto, { backgroundColor: theme.colors.surface }]}>
-                    <TerminalPhoto inactive={row.status === 'Inactive'} />
-                  </View>
-                  <View style={styles.flex}>
-                    <Text numberOfLines={1} style={styles.linkedName}>
-                      {row.model}
-                    </Text>
-                    <Text numberOfLines={1} style={[styles.linkedId, muted]}>
-                      {row.hardwareId}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </SheetBlock>
-        ) : null}
+        {change ? <ChangedBy change={change} /> : null}
       </PanelSheet>
 
       <ConfirmSheet
@@ -424,6 +406,42 @@ function ModeBadge({ mode }: { mode: DeviceMode }) {
       <Icon source={mode === 'Integrated' ? 'link-simple-horizontal' : 'device-mobile'} size={12} color={theme.colors.onSurface} />
       <Text style={styles.modeLabel}>{mode}</Text>
     </View>
+  );
+}
+
+/**
+ * Opened from the Audit log: who made the change, as the sheet's last
+ * section — their name, role and email, so the merchant can follow up.
+ */
+function ChangedBy({ change }: { change: DeviceAuditRow }) {
+  const theme = useTheme();
+  const appColors = useAppColors();
+  const email = INITIAL_ROSTER.find((entry) => entry.name === change.changedBy)?.email;
+  return (
+    <SheetBlock gap={12} last>
+      <Text style={styles.sectionTitle}>Changed by</Text>
+      <View
+        accessible
+        accessibilityLabel={`Changed by ${change.changedBy}, ${change.changedByRole}${email ? `, ${email}` : ''}`}
+        style={[styles.actorCard, { backgroundColor: theme.colors.surfaceVariant }]}>
+        <View style={[styles.actorAvatar, { backgroundColor: appColors.highlight }]}>
+          <Text style={[styles.actorInitials, { color: theme.colors.onSurface }]}>{initialsOf(change.changedBy)}</Text>
+        </View>
+        <View style={styles.flex}>
+          <View style={styles.actorNameRow}>
+            <Text numberOfLines={1} style={[styles.actorName, styles.actorNameText]}>
+              {change.changedBy}
+            </Text>
+            <OutlineTag label={change.changedByRole} radius={PILL_HEIGHT / 2} />
+          </View>
+          {email ? (
+            <Text numberOfLines={1} style={[styles.actorEmail, { color: theme.colors.onSurfaceVariant }]}>
+              {email}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+    </SheetBlock>
   );
 }
 
@@ -499,7 +517,7 @@ export function DeviceAuditLog() {
   const [rows] = useState(() => getAuditRows());
   const [devices, setDevices] = useState<TerminalDeviceRow[]>(() => getDeviceRows());
   const { changeMode, toggleStatus } = useDeviceActions(setDevices);
-  const [selectedHardwareId, setSelectedHardwareId] = useState<string | null>(null);
+  const [selectedChange, setSelectedChange] = useState<DeviceAuditRow | null>(null);
   const changed = useListDates(rows, (row) => parseDisplayDate(row.date, row.time), { subject: 'mode changes', presets: ['today', '7d', '30d', '90d'], initial: '30d' });
   const [search, setSearch] = useState('');
   const [store, setStore] = useState('all');
@@ -518,7 +536,7 @@ export function DeviceAuditLog() {
     <ListRow
       key={row.id}
       icon={<TerminalPhoto />}
-      onPress={() => setSelectedHardwareId(row.hardwareId)}
+      onPress={() => setSelectedChange(row)}
       accessibilityLabel={`${row.model}, ${row.hardwareId}, changed from ${row.previousMode} to ${row.finalMode} by ${row.changedBy} (${row.changedByRole}) at ${row.storeName}, ${row.date} ${row.time}`}>
       <ListRowLine
         left={
@@ -538,7 +556,13 @@ export function DeviceAuditLog() {
   );
 
   const deviceSheet = (
-    <DeviceSheet device={devices.find((row) => row.hardwareId === selectedHardwareId) ?? null} onDismiss={() => setSelectedHardwareId(null)} onChangeMode={changeMode} onToggleStatus={toggleStatus} />
+    <DeviceSheet
+      device={devices.find((row) => row.hardwareId === selectedChange?.hardwareId) ?? null}
+      change={selectedChange}
+      onDismiss={() => setSelectedChange(null)}
+      onChangeMode={changeMode}
+      onToggleStatus={toggleStatus}
+    />
   );
 
   if (LISTING_HERO_LAYOUT) {
@@ -618,15 +642,17 @@ const styles = StyleSheet.create({
   infoLabel: { flex: 1, fontFamily: Fonts.medium, fontSize: 12, lineHeight: 16 },
   infoValue: { fontFamily: Fonts.semiBold, fontSize: 12, lineHeight: 16, textAlign: 'right' },
   infoValueNarrow: { width: 130 },
-  linkedTitle: { fontFamily: Fonts.semiBold, fontSize: 14, lineHeight: 14 },
-  linkedList: { gap: 8 },
-  linkedRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, borderRadius: Shape.max },
-  linkedPhoto: { width: 36, height: 36, borderRadius: 4, overflow: 'hidden' },
-  linkedName: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 20 },
-  linkedId: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20 },
+  sectionTitle: { fontFamily: Fonts.semiBold, fontSize: 14, lineHeight: 14 },
   modeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 24, paddingLeft: 8, paddingRight: 12, borderRadius: 12, borderWidth: 1 },
   modeLabel: { fontFamily: Fonts.regular, fontSize: 12, lineHeight: 16 },
   sheetActions: { flexDirection: 'row', gap: 12 },
+  actorCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: Shape.small },
+  actorAvatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  actorInitials: { fontFamily: Fonts.semiBold, fontSize: 14, lineHeight: 20 },
+  actorNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  actorName: { fontFamily: Fonts.semiBold, fontSize: 14, lineHeight: 20 },
+  actorNameText: { flexShrink: 1 },
+  actorEmail: { fontFamily: Fonts.regular, fontSize: 12, lineHeight: 16, marginTop: 2 },
   sheetAction: { flex: 1 },
   confirmBody: { alignItems: 'center', gap: 16 },
   confirmTile: { padding: 8, borderRadius: Shape.small },

@@ -39,6 +39,8 @@ const NAV_SVG = {
   // No filled refunds or reports glyphs in the design yet: they keep the outline ones.
   refunds: navSvg(require('../../assets/images/nav/undo-outline.svg'), require('../../assets/images/nav/undo-outline.svg')),
   disputes: navSvg(require('../../assets/images/nav/judge-outline.svg'), require('../../assets/images/nav/judge-filled.svg')),
+  // The Guide mark (the playground's guide-logo), one glyph for both states.
+  guide: navSvg(require('../../assets/images/guide/guide-logo.svg'), require('../../assets/images/guide/guide-logo.svg')),
   reports: navSvg(require('../../assets/images/nav/document-text-outline.svg'), require('../../assets/images/nav/document-text-filled.svg')),
 };
 
@@ -52,7 +54,7 @@ const FIXED_TABS = [
 /**
  * Every other module, in the web sidebar's groups (Payments, Products, Other).
  * They live behind the bar's expand button; whichever was opened last takes
- * the bar's fourth slot (Support until then, as in the design).
+ * the bar's fourth slot (Guide until then).
  */
 const MODULE_TABS = [
   { key: 'refunds', href: '/refunds', label: 'Refunds', icon: 'arrow-u-up-left', focusedIcon: 'arrow-u-up-left-fill', svg: NAV_SVG.refunds, scoped: true },
@@ -62,18 +64,19 @@ const MODULE_TABS = [
   { key: 'payment-links', href: '/payment-links', label: 'Payment links', icon: 'link-simple', focusedIcon: 'link-simple-fill' },
   { key: 'stores', href: '/stores', label: 'Stores', title: 'Manage stores', icon: 'storefront', focusedIcon: 'storefront-fill' },
   { key: 'users', href: '/users', label: 'Users', title: 'Users & roles', icon: 'users', focusedIcon: 'users-fill' },
+  { key: 'guide', href: '/guide', label: 'Guide', icon: 'sparkle', focusedIcon: 'sparkle-fill', svg: NAV_SVG.guide },
   { key: 'support', href: '/support', label: 'Support', icon: 'chat-centered-text', focusedIcon: 'chat-centered-text-fill', svg: NAV_SVG.support },
 ] as const satisfies readonly TabItem[];
 
 const ALL_TABS: readonly TabItem[] = [...FIXED_TABS, ...MODULE_TABS];
 
 /**
- * The modules the bar offers: the selected one takes the fourth slot, and the
- * expanded More shows the other three (Refunds, Disputes, MDR reports while
- * Support is in the slot). The remaining modules keep their pages but aren't
+ * The modules the bar offers: the selected one takes the fourth slot (Guide by
+ * default), and the expanded More shows the others (Support, Refunds,
+ * Disputes, MDR reports while Guide is in the slot). The remaining modules keep their pages but aren't
  * in the bar.
  */
-const BAR_MODULES = ['refunds', 'disputes', 'reports', 'support'] as const satisfies readonly ModuleKey[];
+const BAR_MODULES = ['guide', 'support', 'refunds', 'disputes', 'reports'] as const satisfies readonly ModuleKey[];
 const inBar = (key: ModuleKey | undefined): key is (typeof BAR_MODULES)[number] => !!key && (BAR_MODULES as readonly string[]).includes(key);
 
 /** Modules the bar doesn't offer: reached from the profile, so their header leads with Back (see profile-return). */
@@ -88,7 +91,7 @@ const OVERFLOW_TITLE = 'More';
 const NavBarHeightContext = createContext<(height: number) => void>(() => {});
 
 /** The module in the navigation bar's fourth slot, shared by every tab's bar. */
-const ModuleSlotContext = createContext<{ slot: ModuleKey; setSlot: (key: ModuleKey) => void }>({ slot: 'support', setSlot: () => {} });
+const ModuleSlotContext = createContext<{ slot: ModuleKey; setSlot: (key: ModuleKey) => void }>({ slot: 'guide', setSlot: () => {} });
 
 function moduleAt(pathname: string) {
   return MODULE_TABS.find((item) => item.href === pathname)?.key;
@@ -163,7 +166,7 @@ function Shell() {
   });
   const [slot, setSlot] = useState<ModuleKey>(() => {
     const opened = moduleAt(pathname);
-    return inBar(opened) ? opened : 'support';
+    return inBar(opened) ? opened : 'guide';
   });
   // Opening a module by any route (e.g. an Overview quick action) also puts it in the slot.
   const [lastPathname, setLastPathname] = useState(pathname);
@@ -400,9 +403,9 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
         contextHighlight={scopeLine.highlight}
         // Overview ends with the profile (notifications are inside it); the other tabs show their page's own actions.
         trailing={tab === 'index' ? undefined : <HeaderActionsSlot store={headerActions} tinted />}
-        // Support's lime glow runs up behind the bar (Figma 7228:156447); the white comes in once the page scrolls.
+        // Support's (and Guide's) lime glow runs up behind the bar (Figma 7228:156447); the white comes in once the page scrolls.
         surfaceOpacity={
-          tab === 'support' && APP_PAGE_LAYOUT ? scrollY.interpolate({ inputRange: [0, 48], outputRange: [0, 1], extrapolate: 'clamp' }) : 1
+          (tab === 'support' || tab === 'guide') && APP_PAGE_LAYOUT ? scrollY.interpolate({ inputRange: [0, 48], outputRange: [0, 1], extrapolate: 'clamp' }) : 1
         }
       />
       {screenTabs ? (

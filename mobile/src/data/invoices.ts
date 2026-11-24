@@ -1,7 +1,7 @@
 /**
- * Pending dues: what the merchant owes Pine Labs (device rentals and service
+ * Invoices: what the merchant owes Pine Labs (device rentals and service
  * fees), billed as invoices with a due date, and their past payment attempts.
- * Amounts and dates follow the current app's Pending dues screens.
+ * Amounts and dates follow the current app's Pending dues (now Invoices) screens.
  */
 import { useSyncExternalStore } from 'react';
 
@@ -67,12 +67,21 @@ export const PAID_INVOICES: PaidInvoice[] = [
 export const dueDateOf = (due: Due) => parseDisplayDate(due.dueDate, '11:59 PM') ?? DUES_TODAY;
 
 /**
- * What's still owed and what's been paid, shared by Pending dues and its
+ * What's still owed and what's been paid, shared by Invoices and its
  * Invoices page, so paying on one shows on the other.
  */
-type DuesState = { dues: Due[]; payments: DuePayment[]; paid: PaidInvoice[] };
+type DuesState = {
+  dues: Due[];
+  payments: DuePayment[];
+  paid: PaidInvoice[];
+  /**
+   * Paid towards the balance by partial payments since it was last cleared.
+   * It lowers what's owed but marks no invoice paid: payments aren't matched to invoices.
+   */
+  credit: number;
+};
 
-let state: DuesState = { dues: DUES, payments: DUE_PAYMENTS, paid: PAID_INVOICES };
+let state: DuesState = { dues: DUES, payments: DUE_PAYMENTS, paid: PAID_INVOICES, credit: 0 };
 const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void) {
@@ -84,19 +93,47 @@ export function useDues() {
   return useSyncExternalStore(subscribe, () => state, () => state);
 }
 
+/** What's still owed: every unpaid invoice, less what partial payments have already covered. */
+export function outstandingOf({ dues, credit }: Pick<DuesState, 'dues' | 'credit'>) {
+  return Math.max(0, Math.round((dues.reduce((sum, due) => sum + due.amount, 0) - credit) * 100) / 100);
+}
+
 /**
- * Pays the whole outstanding balance in one payment, today: every unpaid
- * invoice is cleared and one payment for the total joins the history.
+ * Pays `amount` towards the balance, today, as one payment. Paying everything
+ * that's owed clears every unpaid invoice; less than that is a partial payment,
+ * which lowers the balance and leaves the invoices unpaid.
  */
-export function payAllDues() {
-  if (!state.dues.length) return;
-  const amount = state.dues.reduce((sum, due) => sum + due.amount, 0);
+export function payDues(amount: number) {
+  const owed = outstandingOf(state);
+  if (!state.dues.length || amount <= 0) return;
+  const paying = Math.min(amount, owed);
   const date = DUES_TODAY.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
-  state = {
-    dues: [],
-    payments: [{ id: `pay-${Date.now()}`, amount, date, time, method: 'UPI', status: 'Paid' }, ...state.payments],
-    paid: [...state.dues, ...state.paid],
-  };
+  const payment: DuePayment = { id: `pay-${Date.now()}`, amount: paying, date, time, method: 'UPI', status: 'Paid' };
+  const clears = paying >= owed;
+  state = clears
+    ? { dues: [], payments: [payment, ...state.payments], paid: [...state.dues, ...state.paid], credit: 0 }
+    : { ...state, payments: [payment, ...state.payments], credit: Math.round((state.credit + paying) * 100) / 100 };
   listeners.forEach((listener) => listener());
 }
+
+/** Pine Labs' GST rate on rentals and service fees; invoices are billed across states, so it's all IGST. */
+export const INVOICE_GST_RATE = 0.18;
+
+/** An invoice's lines for its preview: the charge before tax, then IGST, summing to the invoice amount. */
+export function invoiceLines(due: Due) {
+  const taxable = Math.round((due.amount / (1 + INVOICE_GST_RATE)) * 100) / 100;
+  const gst = Math.round((due.amount - taxable) * 100) / 100;
+  return {
+    items: [{ label: due.hasAnnexure ? 'Terminal rental (see annexure)' : 'Platform service fee', amount: taxable }],
+    gst,
+    total: due.amount,
+  };
+}
+
+/** The seller block on every invoice. */
+export const INVOICE_SELLER = {
+  name: 'Pine Labs Pvt. Ltd.',
+  address: 'Candor TechSpace, Sector 62, Noida, Uttar Pradesh 201309',
+  gstin: '09AAACP1234Q1Z8',
+};

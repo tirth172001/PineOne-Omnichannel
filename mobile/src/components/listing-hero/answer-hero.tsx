@@ -148,7 +148,7 @@ export function SummaryCard({
   line: string;
   note?: string;
   footer?: AnswerDetail;
-  /** Buttons in a footer under a rule, e.g. Invoices and Pay on Pending dues. */
+  /** Buttons in a footer under a rule, e.g. Invoices and Pay on the Invoices page. */
   actions?: ReactNode;
 }) {
   const theme = useTheme();

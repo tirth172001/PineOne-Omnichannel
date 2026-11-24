@@ -5,6 +5,7 @@ import { Text, TouchableRipple, useTheme } from 'react-native-paper';
 import { LocalSvg } from 'react-native-svg/css';
 
 import { useAppColors } from '@/constants/app-colors';
+import { SHOW_PAYMENT_LINKS } from '@/constants/experiments';
 import { Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
@@ -18,7 +19,7 @@ type QuickAction = {
   href?: () => Href;
 };
 
-const ACTIONS: QuickAction[] = [
+const ALL_ACTIONS: QuickAction[] = [
   { key: 'pine-ai', title: 'Pine AI', subtitle: 'Ask anything', tile: { art: require('../../../assets/images/overview/pine-ai.svg') }, href: () => '/support/chat' },
   {
     key: 'payment-links',
@@ -30,6 +31,8 @@ const ACTIONS: QuickAction[] = [
   // No UPI page yet.
   { key: 'upi', title: 'Manage UPI', subtitle: 'Your QR codes', tile: { icon: require('../../../assets/images/overview/manage-upi.svg'), tint: 'orange' } },
 ];
+
+const ACTIONS = ALL_ACTIONS.filter((action) => SHOW_PAYMENT_LINKS || action.key !== 'payment-links');
 
 /**
  * Overview's quick actions (Figma 6470:775): a sideways row of cards, each an

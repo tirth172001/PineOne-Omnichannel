@@ -53,3 +53,11 @@ export const LISTING_SAMPLE_LAYOUT = false;
  */
 export const APP_PAGE_LAYOUT = true;
 
+
+/**
+ * Payment links in the app. On (Nov 23, 2026). Off would hide the Payment links row in the profile, the
+ * Overview quick action and the card on the Payments sample; the page
+ * (app/payment-links.tsx, components/products/payment-links.tsx) and its data
+ * stay either way, so this switch alone shows or hides payment links.
+ */
+export const SHOW_PAYMENT_LINKS = true;

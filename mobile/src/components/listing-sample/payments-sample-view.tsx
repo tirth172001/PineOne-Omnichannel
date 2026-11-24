@@ -27,6 +27,7 @@ import { useShellTabs } from '@/components/shell-tabs';
 import { Fonts } from '@/constants/theme';
 import { formatCount, formatInr } from '@/data/common';
 import { disputeRecords } from '@/data/disputes';
+import { SHOW_PAYMENT_LINKS } from '@/constants/experiments';
 import { PAYMENT_LINK_ROWS } from '@/data/payment-links';
 import { refundRows } from '@/data/refunds';
 import { parseDisplayDate, transactionRows } from '@/data/transactions';
@@ -155,7 +156,7 @@ export function PaymentsSampleView() {
         {/* The main action, then where related money stands. */}
         <HeroGroup>
           <HeroActions
-            primary={{ label: 'Create payment link', icon: 'link-simple', onPress: () => router.push({ pathname: '/payment-links', params: { create: '1' } }) }}
+            primary={SHOW_PAYMENT_LINKS ? { label: 'Create payment link', icon: 'link-simple', onPress: () => router.push({ pathname: '/payment-links', params: { create: '1' } }) } : undefined}
             menu={[
               { label: 'Analytics', icon: 'chart-bar', onPress: () => router.push('/payments/transactions/analytics') },
               { label: 'Download filtered', icon: 'download-simple' },
@@ -177,13 +178,17 @@ export function PaymentsSampleView() {
                 status: disputesToAnswer ? `${disputesToAnswer} need a response` : 'None open',
                 onPress: () => router.push('/disputes'),
               },
-              {
-                key: 'links',
-                icon: 'link-simple',
-                title: 'Payment links',
-                status: linksOpen ? `${linksOpen} open` : 'None open',
-                onPress: () => router.push('/payment-links'),
-              },
+              ...(SHOW_PAYMENT_LINKS
+                ? [
+                    {
+                      key: 'links',
+                      icon: 'link-simple',
+                      title: 'Payment links',
+                      status: linksOpen ? `${linksOpen} open` : 'None open',
+                      onPress: () => router.push('/payment-links'),
+                    },
+                  ]
+                : []),
             ]}
           />
         </HeroGroup>
