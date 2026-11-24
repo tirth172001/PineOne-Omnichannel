@@ -10,6 +10,7 @@ export const FOLDERS = [
   { id: "pine-one-app", title: "Pine One app" },
   { id: "pine-omni", title: "Pine Omni" },
   { id: "pine-omni-app", title: "Pine Omni app" },
+  { id: "pine-labs-pg", title: "Pine Labs PG" },
   { id: "agents", title: "Agents" },
   { id: "onboarding", title: "Onboarding" },
 ] as const;

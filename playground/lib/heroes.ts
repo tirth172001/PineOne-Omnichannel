@@ -24,6 +24,7 @@ export const BRUSH_FOLDER_HEROES: Record<FolderId, BannerPattern> = {
   "pine-one-app": brush({ flow: "pollen", focusX: 0.85, focusY: 0.45, palette: "pine", seed: 8 }),
   "pine-omni": brush({ flow: "grana", focusX: 0.5, focusY: 0.6, palette: "both", seed: 61 }),
   "pine-omni-app": brush({ flow: "xylem", focusX: 0.2, focusY: 0.55, palette: "lime", seed: 17 }),
+  "pine-labs-pg": brush({ flow: "rings", focusX: 0.84, focusY: 0.45, palette: "pine", seed: 52 }),
   agents: brush({ flow: "mycelium", focusX: 0.15, palette: "lime", seed: 2 }),
   onboarding: brush({ flow: "cells", scale: 1.6, focusX: 0.15, focusY: 0.6, palette: "pine", seed: 45 }),
 };
@@ -65,6 +66,7 @@ export const PIXEL_FOLDER_HEROES: Record<FolderId, HeroPattern> = {
   "pine-one-app": { ...DEFAULT_PATTERN, shape: "stomata", cell: 5, scale: 1, density: 0.7, focusX: 0.85, accent: 1, seed: 8 },
   "pine-omni": { ...DEFAULT_PATTERN, shape: "osmosis", pixel: "dot", cell: 6, scale: 1, density: 0.8, focusX: 0.5, focusY: 0.72, accent: 1, gradient: 0.35, seed: 61 },
   "pine-omni-app": { ...DEFAULT_PATTERN, shape: "grana", pixel: "rounded", cell: 5, scale: 1.1, density: 0.7, focusX: 0.3, palette: "pine", accent: 1, gradient: 0.45, seed: 17 },
+  "pine-labs-pg": { ...DEFAULT_PATTERN, shape: "topo", pixel: "rounded", cell: 5, scale: 1.2, density: 0.65, focusX: 0.84, accent: 0.8, gradient: 0.4, seed: 52 },
   agents: { ...DEFAULT_PATTERN, shape: "mycelium", pixel: "dot", cell: 5, scale: 1, density: 0.65, focusX: 0.15, accent: 0.35, gradient: 0.5, seed: 2 },
   onboarding: { ...DEFAULT_PATTERN, shape: "xylem", pixel: "rounded", cell: 5, scale: 1, density: 0.7, focusX: 0.15, palette: "pine", accent: 0.8, gradient: 0.45, seed: 45 },
 };
@@ -111,6 +113,7 @@ export const FOLDER_HEROES: Record<FolderId, BannerPattern> = {
   "pine-one-app": nature({ pattern: "cells", colour: NATURE_COLOURS.leaf, harmony: "mono", seed: 8 }),
   "pine-omni": nature({ pattern: "silk", colour: NATURE_COLOURS.sage, harmony: "cream", seed: 61 }),
   "pine-omni-app": nature({ pattern: "swirl", colour: NATURE_COLOURS.sky, harmony: "cream", focusX: 0.2, seed: 17 }),
+  "pine-labs-pg": nature({ pattern: "ginkgo", colour: NATURE_COLOURS.sky, harmony: "mono", seed: 52 }),
   agents: nature({ pattern: "etching", colour: NATURE_COLOURS.bark, harmony: "mono", focusX: 0.2, seed: 2 }),
   onboarding: nature({ pattern: "bloom", colour: NATURE_COLOURS.clay, harmony: "cream", seed: 45 }),
 };

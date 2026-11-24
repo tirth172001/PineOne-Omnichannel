@@ -10,7 +10,7 @@ const prototypesDir = path.join(root, "app/prototypes");
 const outFile = path.join(root, "lib/prototype-registry.generated.ts");
 const REQUIRED = ["title", "description", "tags", "folder", "createdAt", "updatedAt", "hidden", "public"];
 // Keep in sync with lib/folders.ts (minus "docs", which holds documents, not prototypes).
-const FOLDERS = ["design-system", "pine-one", "pine-one-app", "pine-omni", "pine-omni-app", "agents", "onboarding"];
+const FOLDERS = ["design-system", "pine-one", "pine-one-app", "pine-omni", "pine-omni-app", "pine-labs-pg", "agents", "onboarding"];
 
 function exists(rel) {
   return fs.existsSync(path.join(root, "public", rel));
