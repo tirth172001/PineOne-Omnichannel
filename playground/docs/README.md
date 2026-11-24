@@ -78,3 +78,6 @@ Start with the **Omni platform design strategy** (goals G1–G5, principles, dec
 | [Settlements design document](pine-one-settlements-design.md) | Module design | 2026-10-05 | in-store, online, settlements, reconciliation |
 | [Stores design document](pine-one-stores-design.md) | Module design | 2026-10-05 | in-store, stores |
 | [Transactions design document](pine-one-transactions-design.md) | Module design | 2026-10-05 | in-store, online, transactions, payments |
+| [Recon Field Mapping Decisions](recon-field-mapping-decisions.md) | Module design | 2026-11-24 | in-store, online, reconciliation, field mapping, settlements |
+| [Recon Upload Validation Decisions](recon-upload-validation-decisions.md) | Module design | 2026-11-24 | in-store, online, reconciliation, upload validation, settlements |
+| [Recon Run Limits Decisions](recon-run-limits-decisions.md) | Module design | 2026-11-24 | in-store, online, reconciliation, run limits, upload validation |
