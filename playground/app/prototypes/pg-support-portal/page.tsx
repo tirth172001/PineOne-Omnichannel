@@ -1,9 +1,6 @@
+import { ExternalApp } from "@/components/embeds/external-app";
+import meta from "./metadata.json";
+
 export default function PgSupportPortalPage() {
-  return (
-    <iframe
-      src="/embeds/pg-support-portal/index.html"
-      title="Pine Labs PG Support portal"
-      className="h-[calc(100dvh-4rem)] min-h-[600px] w-full border-0"
-    />
-  );
+  return <ExternalApp meta={meta} />;
 }

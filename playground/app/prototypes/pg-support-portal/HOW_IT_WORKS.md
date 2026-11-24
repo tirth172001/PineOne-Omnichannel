@@ -5,14 +5,15 @@ Three support journeys for customers, new merchants and existing merchants, with
 
 ## Architecture
 ```text
-Gallery → iframe → static Vite application → local request adapters
-                                     → in-memory form and file state
+Gallery card → new tab → pine-labs-pg-support.vercel.app (public, Vite static build)
+                         → local request adapters → in-memory form and file state
 ```
 
 ## Frontend / API
 - Responsive React portal with keyboard accessible controls and per-topic drafts.
 - No external API, real authentication, ticket delivery or email integration.
-- Static snapshot preserves the original Pine Labs styling in an isolated frame.
+- Deployed separately and **public** (no playground password) at https://pine-labs-pg-support.vercel.app. The card opens it in a new tab (`external.embed: "none"`).
+- Hash-only navigation (`#main`, `#help/<faq>`), so no host rewrites are needed.
 - Public autofill data is fictional. No credentials or personal contact defaults are committed.
 
 ## Key Dependencies
@@ -25,13 +26,12 @@ App → SupportJourney → NewMerchantJourney / ExistingMerchantJourney; HelpCen
 Browser form validation, image type/size validation, and request error handling in the adapters.
 
 ## File Structure
-- `page.tsx`: iframe entry.
+- `page.tsx`: `ExternalApp` page (Open button) for direct visits to `/prototypes/pg-support-portal`.
 - `metadata.json`: gallery metadata.
-- `../../../public/embeds/pg-support-portal/`: compiled snapshot.
-- Repository `projects/pg-support-portal/`: complete original project source.
+- Repository `projects/pg-support-portal/`: complete source and `vercel.json` (npm install, Vite build, `dist/`).
 
-## Rebuild
-Source: local RAAS workspace, imported 2026-11-24 (no original git history). In `projects/pg-support-portal`, run `npm ci`, then `npm run build -- --base=/embeds/pg-support-portal/`. Copy `dist/` contents into `playground/public/embeds/pg-support-portal/`, regenerate thumbnails, and run the playground checks. No environment variables required.
+## Deploy
+Source: local RAAS workspace, imported 2026-11-24 (no original git history). Vercel project `pine-labs-pg-support`, on the same Vercel account as `pine-one-playground`. From `projects/pg-support-portal`, run `vercel deploy --prod`. Updates show up in the playground automatically. No environment variables required. After a visible change, run `npm run thumbnails -- pg-support-portal` here (it captures the public URL).
 
 ## Validation
-Standalone TypeScript/Vite build and playground `npm run check` passed. The thumbnail script could not run because its Chromium download failed; equivalent static gallery screenshots were captured through the in-app browser and inspected at desktop and 390px mobile. The imported snapshot intentionally keeps its existing light Pine Labs appearance under either gallery theme.
+Standalone TypeScript/Vite build and playground `npm run check` passed. On Nov 24 the gallery switched from an embedded static snapshot to the public deployment. The thumbnail script could not run because its Chromium download failed; equivalent static gallery screenshots were captured through the in-app browser and inspected at desktop and 390px mobile. The imported snapshot intentionally keeps its existing light Pine Labs appearance under either gallery theme.
