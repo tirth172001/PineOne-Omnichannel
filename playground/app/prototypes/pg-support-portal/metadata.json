@@ -1,0 +1,13 @@
+{
+  "title": "PG Support",
+  "description": "Customer guidance, merchant requests and self-service FAQs for Pine Labs Online PG.",
+  "tags": [
+    "support"
+  ],
+  "surface": "web",
+  "group": "Pine Labs",
+  "createdAt": "2026-11-24",
+  "updatedAt": "2026-11-24T08:00:00.000Z",
+  "hidden": false,
+  "public": false
+}

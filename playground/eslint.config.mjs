@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "lib/prototype-registry.generated.ts",
     ".capture/**",
+    // Imported static snapshots are checked in their source project.
+    "public/embeds/**",
   ]),
 ]);
 
