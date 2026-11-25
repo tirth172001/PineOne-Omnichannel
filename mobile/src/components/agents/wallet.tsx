@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { type LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
-import Svg, { Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { AppIcon, type IconName } from '@/components/icons';
 import { ListingCard } from '@/components/listing-hero/listing-card';
@@ -10,12 +10,10 @@ import { DetailScreen } from '@/components/shared/detail-screen';
 import { useSvgId } from '@/components/shared/hatch';
 import { ListRow, ListRowLine, selectFilter } from '@/components/shared/listing';
 import { PanelSheet, SHEET_BUTTON, SheetRow, SheetSection } from '@/components/shared/panel-sheet';
-import { DotStatusBadge } from '@/components/shared/status';
 import { PAGE_PADDING } from '@/components/tab-screen';
 import { Fonts, OPEN_DIGITS } from '@/constants/theme';
 import { MARKETPLACE_AGENTS } from '@/data/agents';
 import { addCredits, AGENT_CREDIT_COST, CREDIT_PACKS, creditCostLabel, formatCredits, type LedgerEntry, RUPEES_PER_CREDIT, useWallet } from '@/data/wallet';
-import { useBusiness } from '@/hooks/use-business';
 import { useToast } from '@/hooks/use-toast';
 
 import { AgentThumbnail } from './agent-visuals';
@@ -29,17 +27,16 @@ type TypeFilter = (typeof TYPE_OPTIONS)[number]['value'];
 const NOUN = { one: 'entry', other: 'entries' };
 
 /**
- * The agent credits wallet (/agents/wallet), after the Wallet in Figma
- * (8217:60988) in the app's colours: credit cards peeking out of a stitched
- * green pocket with the balance, Add credits and two round actions. Under it,
- * History as the app's listings are: search and Filters, then day bands of
- * rows (icon, heading, sub text, badge at the end).
+ * The agent credits wallet (/agents/wallet): a compact wallet (after Figma
+ * 8217:60988, in the app's colours, no cards) with the balance, Add credits
+ * and the credit costs. Under it, History as the app's listings are: search
+ * and Filters, then day bands of rows — the agent's tile, its name and what
+ * it did, and the credits at the end (green when added).
  */
 export function AgentWallet() {
   const theme = useTheme();
   const toast = useToast();
   const { balance, ledger, usedToday } = useWallet();
-  const [hidden, setHidden] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [costsOpen, setCostsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -52,16 +49,9 @@ export function AgentWallet() {
   const muted = { color: theme.colors.onSurfaceVariant };
 
   return (
-    <DetailScreen title="Wallet" fallbackHref="/agents" action={{ label: 'Add credits', icon: 'plus', onPress: () => setAddOpen(true) }}>
+    <DetailScreen title="Wallet" fallbackHref="/agents">
       <View style={styles.stack}>
-        <WalletPocket
-          balance={balance}
-          usedToday={usedToday}
-          hidden={hidden}
-          onAdd={() => setAddOpen(true)}
-          onCosts={() => setCostsOpen(true)}
-          onToggleHidden={() => setHidden((current) => !current)}
-        />
+        <CreditsWallet balance={balance} usedToday={usedToday} onAdd={() => setAddOpen(true)} onCosts={() => setCostsOpen(true)} />
         <ListingCard
           belowHero
           title="History"
@@ -78,20 +68,19 @@ export function AgentWallet() {
             noun={NOUN}
             empty={ledger.length ? 'Nothing matches. Try clearing the search or filters.' : 'No credits used or added yet.'}
             renderRow={(entry) => (
-              <ListRow key={entry.id} icon={<LedgerIcon entry={entry} />} accessibilityLabel={`${entry.credits > 0 ? 'Added' : 'Used'} ${formatCredits(entry.credits)} credits, ${entry.title}, ${entry.detail}, ${entry.time}`}>
+              <ListRow key={entry.id} icon={<LedgerIcon entry={entry} />} accessibilityLabel={`${entry.title}, ${entry.detail}, ${entry.time}, ${entry.credits > 0 ? 'added' : 'used'} ${formatCredits(entry.credits)} credits`}>
                 <ListRowLine
                   left={
                     <>
-                      <Text style={[styles.rowCredits, { color: theme.colors.onSurface }]}>
-                        {entry.credits > 0 ? '+' : '−'}
-                        {formatCredits(entry.credits)} credits
+                      <Text numberOfLines={1} style={[styles.rowTitle, { color: theme.colors.onSurface }]}>
+                        {entry.title}
                       </Text>
                       <Text variant="bodySmall" numberOfLines={1} style={[muted, styles.digits]}>
-                        {entry.agentId ? `${entry.title} · ${entry.detail}` : entry.detail} · {entry.time}
+                        {entry.detail} · {entry.time}
                       </Text>
                     </>
                   }
-                  right={<DotStatusBadge label={entry.credits > 0 ? 'Added' : 'Used'} tone={entry.credits > 0 ? 'success' : 'neutral'} />}
+                  right={<CreditsValue credits={entry.credits} />}
                   centered
                 />
               </ListRow>
@@ -114,116 +103,108 @@ export function AgentWallet() {
   );
 }
 
+/** A row's credits: added in green with a plus; used as a plain number (no minus). */
+function CreditsValue({ credits }: { credits: number }) {
+  const theme = useTheme();
+  const added = credits > 0;
+  return (
+    <View style={styles.creditsValue}>
+      <Text style={[styles.rowCredits, { color: added ? (theme.dark ? '#4ade80' : '#16a34a') : theme.colors.onSurface }]}>
+        {added ? '+' : ''}
+        {formatCredits(credits)}
+      </Text>
+      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+        credits
+      </Text>
+    </View>
+  );
+}
+
 /** A ledger row's icon: the agent's own tile, or a credit arrow for top-ups. */
 function LedgerIcon({ entry }: { entry: LedgerEntry }) {
   const theme = useTheme();
   return entry.agentId ? <AgentThumbnail agentId={entry.agentId} size={40} radius={20} glyphSize={18} /> : <AppIcon name="arrow-down-left" size={18} color={theme.colors.onSurface} />;
 }
 
-const POCKET_GREEN = ['#4d7c0f', '#365314', '#1a2e05'];
-
 /**
- * The wallet: two Pine credit cards tucked into a stitched pocket (its top
- * dips in the middle, as a pocket's opening does), the balance on the pocket,
- * then Add credits and two round actions (credit costs, hide balance).
+ * The wallet itself, compact and a little real: a green leather body with a
+ * soft drop shadow, a stitched flap across the top (its shadow falling on the
+ * body) closed with a snap, a sheen, then the balance, Add credits and the
+ * credit costs. No cards: credits aren't a card.
  */
-function WalletPocket({
-  balance,
-  usedToday,
-  hidden,
-  onAdd,
-  onCosts,
-  onToggleHidden,
-}: {
-  balance: number;
-  usedToday: number;
-  hidden: boolean;
-  onAdd: () => void;
-  onCosts: () => void;
-  onToggleHidden: () => void;
-}) {
-  const { organisation } = useBusiness();
+function CreditsWallet({ balance, usedToday, onAdd, onCosts }: { balance: number; usedToday: number; onAdd: () => void; onCosts: () => void }) {
   const [width, setWidth] = useState(0);
-  const ids = { pocket: useSvgId('pocket'), glow: useSvgId('pocket-glow'), back: useSvgId('card-back'), front: useSvgId('card-front') };
+  const ids = { body: useSvgId('wallet-body'), flap: useSvgId('wallet-flap'), sheen: useSvgId('wallet-sheen'), snap: useSvgId('wallet-snap') };
   const onLayout = (event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width);
   const W = width;
-  const pocketTop = W * 0.22;
-  const H = W * 0.86;
-  const dip = W * 0.12;
-  const r = 28;
-  const pocket = (inset: number) => {
-    const L = inset, R = W - inset, T = pocketTop + inset, B = H - inset, rr = r - inset;
-    return `M ${L} ${T + rr} A ${rr} ${rr} 0 0 1 ${L + rr} ${T} C ${W * 0.32} ${T} ${W * 0.26} ${T + dip} ${W / 2} ${T + dip} C ${W * 0.74} ${T + dip} ${W * 0.68} ${T} ${R - rr} ${T} A ${rr} ${rr} 0 0 1 ${R} ${T + rr} L ${R} ${B - rr} A ${rr} ${rr} 0 0 1 ${R - rr} ${B} L ${L + rr} ${B} A ${rr} ${rr} 0 0 1 ${L} ${B - rr} Z`;
-  };
-  const front = { x: W * 0.06, y: W * 0.045, w: W * 0.88, h: W * 0.4 };
+  const H = 208;
+  const R = 22;
+  const F = 64; // the flap's depth at its edges
+  const bulge = 14; // how far its edge curves down in the middle
+  const flap = (offset = 0) =>
+    `M 0 ${R} A ${R} ${R} 0 0 1 ${R} 0 L ${W - R} 0 A ${R} ${R} 0 0 1 ${W} ${R} L ${W} ${F + offset} C ${W * 0.7} ${F + offset} ${W * 0.62} ${F + bulge + offset} ${W / 2} ${F + bulge + offset} C ${W * 0.38} ${F + bulge + offset} ${W * 0.3} ${F + offset} 0 ${F + offset} Z`;
+  const flapStitch = `M 10 ${F - 8} C ${W * 0.3} ${F - 8} ${W * 0.38} ${F + bulge - 8} ${W / 2} ${F + bulge - 8} C ${W * 0.62} ${F + bulge - 8} ${W * 0.7} ${F - 8} ${W - 10} ${F - 8}`;
   return (
-    <View onLayout={onLayout} style={{ height: W ? H : 300 }} accessible accessibilityLabel={hidden ? 'Agent credits wallet, balance hidden' : `Agent credits wallet, ${formatCredits(balance)} credits`}>
+    <View onLayout={onLayout} style={[styles.wallet, { height: H }]} accessible accessibilityLabel={`Agent credits wallet, ${formatCredits(balance)} credits`}>
       {W ? (
-        <>
+        <View style={styles.walletClip}>
           <Svg width={W} height={H} style={StyleSheet.absoluteFill}>
             <Defs>
-              <LinearGradient id={ids.back} x1="0" y1="0" x2="1" y2="1">
-                <Stop offset={0} stopColor="#d9f99d" />
-                <Stop offset={1} stopColor="#84cc16" />
+              <LinearGradient id={ids.body} x1="0" y1="0" x2="0.4" y2="1">
+                <Stop offset={0} stopColor="#3f6212" />
+                <Stop offset={1} stopColor="#1a2e05" />
               </LinearGradient>
-              <LinearGradient id={ids.front} x1="0" y1="0" x2="1" y2="1">
+              <LinearGradient id={ids.flap} x1="0" y1="0" x2="0" y2="1">
+                <Stop offset={0} stopColor="#4d7c0f" />
+                <Stop offset={1} stopColor="#365314" />
+              </LinearGradient>
+              <RadialGradient id={ids.sheen} cx="18%" cy="0%" rx="60%" ry="80%">
+                <Stop offset={0} stopColor="#ecfccb" stopOpacity={0.22} />
+                <Stop offset={1} stopColor="#ecfccb" stopOpacity={0} />
+              </RadialGradient>
+              <RadialGradient id={ids.snap} cx="35%" cy="30%" rx="70%" ry="70%">
                 <Stop offset={0} stopColor="#f7fee7" />
-                <Stop offset={0.55} stopColor="#d9f99d" />
-                <Stop offset={1} stopColor="#bef264" />
-              </LinearGradient>
-              <LinearGradient id={ids.pocket} x1="0" y1="0" x2="1" y2="1">
-                <Stop offset={0} stopColor={POCKET_GREEN[0]} />
-                <Stop offset={0.55} stopColor={POCKET_GREEN[1]} />
-                <Stop offset={1} stopColor={POCKET_GREEN[2]} />
-              </LinearGradient>
-              <RadialGradient id={ids.glow} cx="22%" cy="30%" rx="50%" ry="45%">
-                <Stop offset={0} stopColor="#bef264" stopOpacity={0.35} />
-                <Stop offset={1} stopColor="#bef264" stopOpacity={0} />
+                <Stop offset={0.45} stopColor="#a3a3a3" />
+                <Stop offset={1} stopColor="#525252" />
               </RadialGradient>
             </Defs>
-            {/* The cards, tucked behind the pocket. */}
-            <Rect x={W * 0.11} y={0} width={W * 0.78} height={W * 0.36} rx={16} fill={`url(#${ids.back})`} opacity={0.75} />
-            <Rect x={front.x} y={front.y} width={front.w} height={front.h} rx={16} fill={`url(#${ids.front})`} />
-            {/* The pocket, its glow, and the stitching along its edge. */}
-            <Path d={pocket(0)} fill={`url(#${ids.pocket})`} />
-            <Path d={pocket(0)} fill={`url(#${ids.glow})`} />
-            <Path d={pocket(10)} fill="none" stroke="#ecfccb" strokeOpacity={0.55} strokeWidth={1.5} strokeDasharray="5 4" />
+            {/* Body, its stitching all round. */}
+            <Rect width={W} height={H} rx={R} fill={`url(#${ids.body})`} />
+            <Rect x={8} y={8} width={W - 16} height={H - 16} rx={R - 8} fill="none" stroke="#ecfccb" strokeOpacity={0.35} strokeWidth={1.2} strokeDasharray="5 4" />
+            {/* The flap's shadow on the body (soft: three faint layers), then the flap, its stitch and the sheen. */}
+            {[6, 4, 2].map((offset) => (
+              <Path key={offset} d={flap(offset)} fill="#000000" opacity={0.12} />
+            ))}
+            <Path d={flap()} fill={`url(#${ids.flap})`} />
+            <Path d={flapStitch} fill="none" stroke="#ecfccb" strokeOpacity={0.45} strokeWidth={1.2} strokeDasharray="5 4" />
+            <Rect width={W} height={H} rx={R} fill={`url(#${ids.sheen})`} />
+            {/* The snap closing the flap. */}
+            <Circle cx={W / 2} cy={F + bulge - 1} r={9} fill="#000000" opacity={0.25} />
+            <Circle cx={W / 2} cy={F + bulge - 3} r={8} fill={`url(#${ids.snap})`} />
           </Svg>
-          {/* On the front card, above the pocket's opening. */}
-          <View style={[styles.cardFace, { left: front.x + 18, right: W - front.x - front.w + 18, top: front.y + 14 }]}>
-            <View style={styles.flex}>
-              <Text numberOfLines={1} style={styles.cardName}>
-                {organisation.name}
-              </Text>
-              <Text style={styles.cardNumber}>•••• •••• {organisation.merchantId.slice(-4)}</Text>
-            </View>
-            <View style={styles.cardRight}>
-              <Text style={styles.cardBrand}>PINE AI</Text>
-              <Text style={styles.cardNumber}>1 credit = ₹{RUPEES_PER_CREDIT}</Text>
-            </View>
+          <View style={[styles.flapContent, { height: F }]}>
+            <AppIcon name="coins-fill" size={16} color="#d9f99d" />
+            <Text style={styles.pocketLabel}>Agent credits</Text>
           </View>
-          {/* On the pocket. */}
-          <View style={[styles.pocketBody, { top: pocketTop + dip + 10, height: H - pocketTop - dip - 10 }]}>
-            <View>
-              <Text style={styles.pocketLabel}>Credits balance</Text>
-              <View style={styles.balanceRow}>
-                <Text style={styles.balance}>{hidden ? '••••' : formatCredits(balance)}</Text>
-                <Text style={styles.balanceUnit}>credits</Text>
-              </View>
-              <Text style={styles.pocketLine}>{hidden ? 'Balance hidden' : `≈ ₹${(balance * RUPEES_PER_CREDIT).toLocaleString('en-IN')} · ${usedToday} used today`}</Text>
+          <View style={[styles.walletBody, { top: F + bulge + 12 }]}>
+            <View style={styles.balanceRow}>
+              <Text style={styles.balance}>{formatCredits(balance)}</Text>
+              <Text style={styles.balanceUnit}>credits</Text>
             </View>
             <View style={styles.pocketActions}>
-              <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel="Add credits" style={({ pressed }) => [styles.addPill, pressed && styles.pressed]}>
-                <AppIcon name="plus" size={18} color="#ffffff" />
-                <Text style={styles.addLabel}>Add credits</Text>
-              </Pressable>
+              <Text style={styles.pocketLine}>
+                ≈ ₹{(balance * RUPEES_PER_CREDIT).toLocaleString('en-IN')} · {usedToday} used today
+              </Text>
               <View style={styles.roundActions}>
                 <RoundButton icon="list-bullets" label="Credit costs" onPress={onCosts} />
-                <RoundButton icon={hidden ? 'eye' : 'eye-slash'} label={hidden ? 'Show balance' : 'Hide balance'} onPress={onToggleHidden} />
+                <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel="Add credits" style={({ pressed }) => [styles.addPill, pressed && styles.pressed]}>
+                  <AppIcon name="plus" size={16} color="#1a2e05" />
+                  <Text style={styles.addLabel}>Add</Text>
+                </Pressable>
               </View>
             </View>
           </View>
-        </>
+        </View>
       ) : null}
     </View>
   );
@@ -304,43 +285,41 @@ const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
   stack: { gap: 8, marginTop: PAGE_PADDING },
   digits: { fontVariant: OPEN_DIGITS },
-  cardFace: { position: 'absolute', flexDirection: 'row', gap: 12 },
-  cardName: { fontFamily: Fonts.semiBold, fontSize: 16, lineHeight: 22, color: '#1a2e05' },
-  cardNumber: { fontFamily: Fonts.medium, fontSize: 11, lineHeight: 16, color: 'rgba(26, 46, 5, 0.7)', letterSpacing: 1, fontVariant: OPEN_DIGITS },
-  cardRight: { alignItems: 'flex-end' },
-  cardBrand: { fontFamily: Fonts.bold, fontSize: 16, lineHeight: 22, color: '#1a2e05', letterSpacing: 1.5, fontStyle: 'italic' },
-  pocketBody: { position: 'absolute', left: 0, right: 0, paddingHorizontal: 24, paddingBottom: 20, justifyContent: 'space-between' },
-  pocketLabel: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 20, color: 'rgba(236, 252, 203, 0.85)' },
-  balanceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  balance: { fontFamily: Fonts.semiBold, fontSize: 38, lineHeight: 46, color: '#ffffff', fontVariant: OPEN_DIGITS },
-  balanceUnit: { fontFamily: Fonts.medium, fontSize: 18, lineHeight: 24, color: 'rgba(236, 252, 203, 0.7)' },
-  pocketLine: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 18, color: 'rgba(236, 252, 203, 0.75)', fontVariant: OPEN_DIGITS },
-  pocketActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  addPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    height: 44,
-    paddingHorizontal: 18,
+  wallet: {
     borderRadius: 22,
-    borderWidth: 1,
-    borderColor: 'rgba(236, 252, 203, 0.35)',
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: '#1a2e05',
+    shadowColor: '#1a2e05',
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
   },
-  addLabel: { fontFamily: Fonts.medium, fontSize: 16, lineHeight: 22, color: '#ffffff' },
-  roundActions: { flexDirection: 'row', gap: 8 },
+  walletClip: { flex: 1, borderRadius: 22, overflow: 'hidden' },
+  flapContent: { position: 'absolute', top: 0, left: 22, right: 22, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  walletBody: { position: 'absolute', left: 22, right: 18, bottom: 22, justifyContent: 'space-between' },
+  pocketLabel: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 20, color: '#d9f99d' },
+  balanceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  balance: { fontFamily: Fonts.semiBold, fontSize: 36, lineHeight: 44, color: '#ffffff', fontVariant: OPEN_DIGITS },
+  balanceUnit: { fontFamily: Fonts.medium, fontSize: 16, lineHeight: 22, color: 'rgba(236, 252, 203, 0.7)' },
+  pocketLine: { flex: 1, fontFamily: Fonts.regular, fontSize: 13, lineHeight: 18, color: 'rgba(236, 252, 203, 0.75)', fontVariant: OPEN_DIGITS },
+  pocketActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  addPill: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 40, paddingHorizontal: 16, borderRadius: 20, backgroundColor: '#d9f99d' },
+  addLabel: { fontFamily: Fonts.semiBold, fontSize: 15, lineHeight: 20, color: '#1a2e05' },
+  roundActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   round: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'rgba(236, 252, 203, 0.35)',
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   pressed: { opacity: 0.8 },
+  rowTitle: { fontFamily: Fonts.medium, fontSize: 16, lineHeight: 22 },
   rowCredits: { fontFamily: Fonts.semiBold, fontSize: 16, lineHeight: 22, fontVariant: OPEN_DIGITS },
+  creditsValue: { alignItems: 'flex-end' },
   sheetBody: { padding: 16, gap: 12 },
   costValue: { fontFamily: Fonts.medium, fontSize: 14, lineHeight: 20, fontVariant: OPEN_DIGITS, paddingRight: 12 },
   note: { fontFamily: Fonts.regular, fontSize: 12, lineHeight: 16, paddingHorizontal: 4 },
