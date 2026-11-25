@@ -5,6 +5,7 @@ import { Animated, BackHandler, Easing, type NativeScrollEvent, type NativeSynth
 import { useTheme } from 'react-native-paper';
 
 import { HeaderActionsProvider, HeaderActionsSlot, useHeaderActionsStore } from '@/components/header-actions';
+import { useAiNudges, WhatsNew } from '@/components/whats-new';
 import { AppHeader, BackButton, useCollapsingHeader } from '@/components/page-header';
 import { ScopeIntroProvider, useScopeLine } from '@/components/scope-intro';
 import { ScopeSwitcherProvider, useOpenScopeSwitcher } from '@/components/scope-switcher';
@@ -14,7 +15,7 @@ import { ProfileNavContext, useProfileNav } from '@/components/profile-return';
 import { ShellTabsProvider, useShellTabsConfig } from '@/components/shell-tabs';
 import { NavigationBar, type NavigationBarDestination } from '@/components/material3/navigation-bar';
 import { CURRENT_USER } from '@/data/businesses';
-import { APP_PAGE_LAYOUT } from '@/constants/experiments';
+import { AI_FIRST_NAV, APP_PAGE_LAYOUT } from '@/constants/experiments';
 import { useNotifications } from '@/data/notifications';
 import { useBusiness } from '@/hooks/use-business';
 import { ToastProvider } from '@/hooks/use-toast';
@@ -42,21 +43,18 @@ const NAV_SVG = {
   // The Guide mark (the playground's guide-logo), one glyph for both states.
   guide: navSvg(require('../../assets/images/guide/guide-logo.svg'), require('../../assets/images/guide/guide-logo.svg')),
   reports: navSvg(require('../../assets/images/nav/document-text-outline.svg'), require('../../assets/images/nav/document-text-filled.svg')),
+  // The web app's Pine AI agents mark (pine-agents-outline / -filled).
+  agents: navSvg(require('../../assets/images/nav/agents-outline.svg'), require('../../assets/images/nav/agents-filled.svg')),
 };
 
-/** Always in the navigation bar (Figma 6470:1236). */
-const FIXED_TABS = [
+/** Every tab: the bar's fixed items and the modules, each of which can take the bar's swappable slot. */
+const TABS = [
   { key: 'index', href: '/', label: 'Overview', icon: 'house', focusedIcon: 'house-fill', svg: NAV_SVG.home, scoped: true },
   { key: 'payments', href: '/payments', label: 'Payments', icon: 'wallet', focusedIcon: 'wallet-fill', svg: NAV_SVG.wallet, scoped: true },
   { key: 'settlements', href: '/settlements', label: 'Settlement', title: 'Settlements', icon: 'bank', focusedIcon: 'bank-fill', svg: NAV_SVG.bank, scoped: true },
-] as const satisfies readonly TabItem[];
-
-/**
- * Every other module, in the web sidebar's groups (Payments, Products, Other).
- * They live behind the bar's expand button; whichever was opened last takes
- * the bar's fourth slot (Guide until then).
- */
-const MODULE_TABS = [
+  // Pine AI agents (web: Agents in the phone's bottom bar).
+  { key: 'agents', href: '/agents', label: 'Agents', icon: 'squares-four', focusedIcon: 'squares-four-fill', svg: NAV_SVG.agents },
+  { key: 'guide', href: '/guide', label: 'Guide', icon: 'sparkle', focusedIcon: 'sparkle-fill', svg: NAV_SVG.guide },
   { key: 'refunds', href: '/refunds', label: 'Refunds', icon: 'arrow-u-up-left', focusedIcon: 'arrow-u-up-left-fill', svg: NAV_SVG.refunds, scoped: true },
   { key: 'disputes', href: '/disputes', label: 'Disputes', icon: 'gavel', focusedIcon: 'gavel-fill', svg: NAV_SVG.disputes, scoped: true },
   { key: 'reports', href: '/reports', label: 'MDR reports', title: 'Reports', icon: 'file', focusedIcon: 'file-fill', svg: NAV_SVG.reports, scoped: true },
@@ -64,26 +62,36 @@ const MODULE_TABS = [
   { key: 'payment-links', href: '/payment-links', label: 'Payment links', icon: 'link-simple', focusedIcon: 'link-simple-fill' },
   { key: 'stores', href: '/stores', label: 'Stores', title: 'Manage stores', icon: 'storefront', focusedIcon: 'storefront-fill' },
   { key: 'users', href: '/users', label: 'Users', title: 'Users & roles', icon: 'users', focusedIcon: 'users-fill' },
-  { key: 'guide', href: '/guide', label: 'Guide', icon: 'sparkle', focusedIcon: 'sparkle-fill', svg: NAV_SVG.guide },
   { key: 'support', href: '/support', label: 'Support', icon: 'chat-centered-text', focusedIcon: 'chat-centered-text-fill', svg: NAV_SVG.support },
 ] as const satisfies readonly TabItem[];
 
-const ALL_TABS: readonly TabItem[] = [...FIXED_TABS, ...MODULE_TABS];
+type TabKey = (typeof TABS)[number]['key'];
+type ModuleKey = TabKey;
 
 /**
- * The modules the bar offers: the selected one takes the fourth slot (Guide by
- * default), and the expanded More shows the others (Support, Refunds,
- * Disputes, MDR reports while Guide is in the slot). The remaining modules keep their pages but aren't
- * in the bar.
+ * The bar: three fixed items, a swappable slot and More (five items at most,
+ * user decision). Default (Figma 6470:1236): Overview, Payments, Settlement
+ * fixed; the slot is one of Agents (default), Guide, Support, Refunds,
+ * Disputes, MDR reports, and the expanded More shows the rest. With
+ * AI_FIRST_NAV, Agents and Guide are fixed instead and Payments and
+ * Settlement join the slot's pool (Payments by default), since Overview
+ * already leads into both. The modules outside the pool (devices, stores,
+ * users, payment links) keep their pages but are reached from the profile.
  */
-const BAR_MODULES = ['guide', 'support', 'refunds', 'disputes', 'reports'] as const satisfies readonly ModuleKey[];
-const inBar = (key: ModuleKey | undefined): key is (typeof BAR_MODULES)[number] => !!key && (BAR_MODULES as readonly string[]).includes(key);
+const FIXED_KEYS: readonly TabKey[] = AI_FIRST_NAV ? ['index', 'agents', 'guide'] : ['index', 'payments', 'settlements'];
+const BAR_MODULES: readonly TabKey[] = AI_FIRST_NAV
+  ? ['payments', 'settlements', 'support', 'refunds', 'disputes', 'reports']
+  : ['agents', 'guide', 'support', 'refunds', 'disputes', 'reports'];
+const DEFAULT_SLOT = BAR_MODULES[0];
+
+const ALL_TABS: readonly TabItem[] = TABS;
+const FIXED_TABS: readonly TabItem[] = FIXED_KEYS.map((key) => TABS.find((item) => item.key === key)!);
+const MODULE_TABS: readonly (TabItem & { key: TabKey })[] = TABS.filter((item) => !FIXED_KEYS.includes(item.key));
+
+const inBar = (key: TabKey | undefined): key is TabKey => !!key && BAR_MODULES.includes(key);
 
 /** Modules the bar doesn't offer: reached from the profile, so their header leads with Back (see profile-return). */
-const isProfilePage = (key: TabKey) => MODULE_TABS.some((item) => item.key === key) && !inBar(key as ModuleKey);
-
-type TabKey = (typeof FIXED_TABS)[number]['key'] | ModuleKey;
-type ModuleKey = (typeof MODULE_TABS)[number]['key'];
+const isProfilePage = (key: TabKey) => !FIXED_KEYS.includes(key) && !inBar(key);
 
 const OVERFLOW_TITLE = 'More';
 
@@ -91,7 +99,7 @@ const OVERFLOW_TITLE = 'More';
 const NavBarHeightContext = createContext<(height: number) => void>(() => {});
 
 /** The module in the navigation bar's fourth slot, shared by every tab's bar. */
-const ModuleSlotContext = createContext<{ slot: ModuleKey; setSlot: (key: ModuleKey) => void }>({ slot: 'guide', setSlot: () => {} });
+const ModuleSlotContext = createContext<{ slot: ModuleKey; setSlot: (key: ModuleKey) => void }>({ slot: DEFAULT_SLOT, setSlot: () => {} });
 
 function moduleAt(pathname: string) {
   return MODULE_TABS.find((item) => item.href === pathname)?.key;
@@ -166,7 +174,7 @@ function Shell() {
   });
   const [slot, setSlot] = useState<ModuleKey>(() => {
     const opened = moduleAt(pathname);
-    return inBar(opened) ? opened : 'guide';
+    return inBar(opened) ? opened : DEFAULT_SLOT;
   });
   // Opening a module by any route (e.g. an Overview quick action) also puts it in the slot.
   const [lastPathname, setLastPathname] = useState(pathname);
@@ -316,6 +324,11 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
   const [navHidden, setNavHidden] = useState(false);
   const [modulesOpen, setModulesOpen] = useState(false);
   const profileNav = useProfileNav();
+  const nudges = useAiNudges();
+  const { markSeen } = nudges;
+  useEffect(() => {
+    if (tab === 'agents' || tab === 'guide') markSeen(tab);
+  }, [tab, markSeen]);
   const header = useCollapsingHeader();
   const { scrollY } = header;
   const [tabsHeight, setTabsHeight] = useState(0);
@@ -367,6 +380,8 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
   };
   const slotModule: TabItem = MODULE_TABS.find((entry) => entry.key === slot) ?? MODULE_TABS[0];
   const slotItem = { ...slotModule, label: slotModule.slotLabel ?? slotModule.label };
+  // Agents and Guide carry a dot until they've been opened once (see whats-new.tsx).
+  const withDot = <T extends TabItem>(destination: T) => (nudges.isNew(destination.key) ? { ...destination, badge: true } : destination);
 
   const title = item.title ?? item.label;
   // Only pages whose data follows the channel / stores get the switcher; the others (e.g. Payment links) have nothing to switch.
@@ -425,16 +440,15 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
           pointerEvents="box-none"
           style={[styles.navBar, { transform: [{ translateY: hidden.interpolate({ inputRange: [0, 1], outputRange: [0, navHeight] }) }] }]}>
           <NavigationBar
-            destinations={[...FIXED_TABS, slotItem]}
+            destinations={[...FIXED_TABS, slotItem].map(withDot)}
             activeKey={picked ?? tab}
             onChange={navigateTo}
             overflow={{
               title: OVERFLOW_TITLE,
               // Five to a row, so the grid takes the bar's short labels too (e.g. Devices).
-              destinations: MODULE_TABS.filter((module) => inBar(module.key) && module.key !== slot).map((module: TabItem) => ({
-                ...module,
-                label: module.slotLabel ?? module.label,
-              })),
+              destinations: MODULE_TABS.filter((module) => inBar(module.key) && module.key !== slot).map((module: TabItem) =>
+                withDot({ ...module, label: module.slotLabel ?? module.label }),
+              ),
               expanded: modulesOpen,
               onExpandedChange: setModulesOpen,
               onCollapsed: onModulesCollapsed,
@@ -446,6 +460,8 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
           />
         </Animated.View>
       ) : null}
+      {/* Once per install, Overview announces Agents and Guide (see whats-new.tsx). */}
+      {showNav && tab === 'index' ? <WhatsNew /> : null}
     </View>
   );
 }

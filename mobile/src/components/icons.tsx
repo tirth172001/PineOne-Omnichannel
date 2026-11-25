@@ -181,6 +181,10 @@ import { GridFourIcon } from 'phosphor-react-native/src/icons/GridFour';
 import { MinusIcon } from 'phosphor-react-native/src/icons/Minus';
 import { XIcon } from 'phosphor-react-native/src/icons/X';
 import { XCircleIcon } from 'phosphor-react-native/src/icons/XCircle';
+import { TargetIcon } from 'phosphor-react-native/src/icons/Target';
+import { ChartLineUpIcon } from 'phosphor-react-native/src/icons/ChartLineUp';
+import { FolderOpenIcon } from 'phosphor-react-native/src/icons/FolderOpen';
+import { UserCheckIcon } from 'phosphor-react-native/src/icons/UserCheck';
 
 /**
  * Every Phosphor icon the app can render, keyed by its Phosphor name
@@ -366,6 +370,10 @@ const ICONS = {
   'arrow-clockwise': ArrowClockwiseIcon,
   'grid-four': GridFourIcon,
   minus: MinusIcon,
+  target: TargetIcon,
+  'chart-line-up': ChartLineUpIcon,
+  'folder-open': FolderOpenIcon,
+  'user-check': UserCheckIcon,
 } satisfies Record<string, Icon>;
 
 export type BaseIconName = keyof typeof ICONS;

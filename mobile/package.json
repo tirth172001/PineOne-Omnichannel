@@ -61,7 +61,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "start:storybook": "STORYBOOK_ENABLED=true expo start",
-    "start:storybook:web": "STORYBOOK_ENABLED=true expo start --web"
+    "start:storybook:web": "STORYBOOK_ENABLED=true expo start --web",
+    "whats-new": "xcrun simctl openurl booted \"exp://127.0.0.1:${PORT:-8082}/--/?whatsnew=$(date +%s)\""
   },
   "private": true
 }
