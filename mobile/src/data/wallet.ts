@@ -40,21 +40,21 @@ export type LedgerEntry = {
   agentId?: AgentId;
   title: string;
   detail: string;
-  /** Day group shown in History ("Today", "Yesterday", "16 Oct"). */
+  /** The day, as the app's listings write dates ("25 Nov 2026"); History groups by it. */
   day: string;
   time: string;
 };
 
 const SEED: LedgerEntry[] = [
-  { id: 'l1', credits: -2, agentId: 'daily_business_snapshot', title: 'Snapshot', detail: 'Daily summary · 6 stores', day: 'Today', time: '9:00 am' },
-  { id: 'l2', credits: -3, agentId: 'payment_failure_spike_alert', title: 'Spike Alert', detail: 'UPI failures at Bandra', day: 'Today', time: '8:12 am' },
-  { id: 'l3', credits: -12, agentId: 'chargeback', title: 'Chargeback Agent', detail: 'Rebuttal for CB-24118 · ₹2,199', day: 'Yesterday', time: '6:40 pm' },
-  { id: 'l4', credits: 500, title: 'Credits added', detail: 'UPI · ₹500', day: 'Yesterday', time: '3:05 pm' },
-  { id: 'l5', credits: -2, agentId: 'daily_business_snapshot', title: 'Snapshot', detail: 'Daily summary · 6 stores', day: 'Yesterday', time: '9:00 am' },
-  { id: 'l6', credits: -25, agentId: 'local-ads', title: 'Market Agent', detail: 'Diwali Gift Hampers campaign', day: '16 Oct', time: '7:20 pm' },
-  { id: 'l7', credits: -4, agentId: 'campaign-analyzer', title: 'Campaign Analyzer Agent', detail: 'Weekly Meta Ads review', day: '16 Oct', time: '10:00 am' },
-  { id: 'l8', credits: -12, agentId: 'chargeback', title: 'Chargeback Agent', detail: 'Rebuttal for CB-24116 · ₹4,299', day: '15 Oct', time: '4:32 pm' },
-  { id: 'l9', credits: 1000, title: 'Credits added', detail: 'Card ending 4421 · ₹1,000', day: '14 Oct', time: '11:15 am' },
+  { id: 'l1', credits: -2, agentId: 'daily_business_snapshot', title: 'Snapshot', detail: 'Daily summary · 6 stores', day: '25 Nov 2026', time: '9:00 am' },
+  { id: 'l2', credits: -3, agentId: 'payment_failure_spike_alert', title: 'Spike Alert', detail: 'UPI failures at Bandra', day: '25 Nov 2026', time: '8:12 am' },
+  { id: 'l3', credits: -12, agentId: 'chargeback', title: 'Chargeback Agent', detail: 'Rebuttal for CB-24118 · ₹2,199', day: '24 Nov 2026', time: '6:40 pm' },
+  { id: 'l4', credits: 500, title: 'Credits added', detail: 'UPI · ₹500', day: '24 Nov 2026', time: '3:05 pm' },
+  { id: 'l5', credits: -2, agentId: 'daily_business_snapshot', title: 'Snapshot', detail: 'Daily summary · 6 stores', day: '24 Nov 2026', time: '9:00 am' },
+  { id: 'l6', credits: -25, agentId: 'local-ads', title: 'Market Agent', detail: 'Diwali Gift Hampers campaign', day: '21 Nov 2026', time: '7:20 pm' },
+  { id: 'l7', credits: -4, agentId: 'campaign-analyzer', title: 'Campaign Analyzer Agent', detail: 'Weekly Meta Ads review', day: '21 Nov 2026', time: '10:00 am' },
+  { id: 'l8', credits: -12, agentId: 'chargeback', title: 'Chargeback Agent', detail: 'Rebuttal for CB-24116 · ₹4,299', day: '20 Nov 2026', time: '4:32 pm' },
+  { id: 'l9', credits: 1000, title: 'Credits added', detail: 'Card ending 4421 · ₹1,000', day: '19 Nov 2026', time: '11:15 am' },
 ];
 
 type WalletState = { ledger: LedgerEntry[] };
@@ -71,6 +71,8 @@ const subscribe = (listener: () => void) => {
 
 let entryCount = SEED.length;
 const now = () => new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+/** Today in the listings' date format ("25 Nov 2026"). */
+export const todayLabel = () => new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).replace('Sept', 'Sep');
 
 export function walletBalance() {
   return state.ledger.reduce((sum, entry) => sum + entry.credits, 0);
@@ -78,13 +80,13 @@ export function walletBalance() {
 
 /** Adds a pack (or any amount) of credits. */
 export function addCredits(credits: number, method = 'UPI') {
-  set({ ledger: [{ id: `l${(entryCount += 1)}`, credits, title: 'Credits added', detail: `${method} · ₹${(credits * RUPEES_PER_CREDIT).toLocaleString('en-IN')}`, day: 'Today', time: now() }, ...state.ledger] });
+  set({ ledger: [{ id: `l${(entryCount += 1)}`, credits, title: 'Credits added', detail: `${method} · ₹${(credits * RUPEES_PER_CREDIT).toLocaleString('en-IN')}`, day: '25 Nov 2026', time: now() }, ...state.ledger] });
 }
 
 /** Records an agent run; returns false (and spends nothing) when the balance is short. */
 export function spendCredits(agentId: AgentId, title: string, detail: string, credits: number) {
   if (walletBalance() < credits) return false;
-  set({ ledger: [{ id: `l${(entryCount += 1)}`, credits: -credits, agentId, title, detail, day: 'Today', time: now() }, ...state.ledger] });
+  set({ ledger: [{ id: `l${(entryCount += 1)}`, credits: -credits, agentId, title, detail, day: '25 Nov 2026', time: now() }, ...state.ledger] });
   return true;
 }
 
@@ -92,7 +94,8 @@ export function spendCredits(agentId: AgentId, title: string, detail: string, cr
 export function useWallet() {
   const current = useSyncExternalStore(subscribe, () => state);
   const balance = current.ledger.reduce((sum, entry) => sum + entry.credits, 0);
-  const usedToday = -current.ledger.filter((entry) => entry.day === 'Today' && entry.credits < 0).reduce((sum, entry) => sum + entry.credits, 0);
+  const today = todayLabel();
+  const usedToday = -current.ledger.filter((entry) => entry.day === today && entry.credits < 0).reduce((sum, entry) => sum + entry.credits, 0);
   return { balance, ledger: current.ledger, usedToday };
 }
 

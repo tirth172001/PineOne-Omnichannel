@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
 
 import { AppIcon } from '@/components/icons';
-import { PanelSheet, SHEET_BUTTON } from '@/components/shared/panel-sheet';
+import { PanelSheet, SHEET_BUTTON, SheetRow, SheetSection } from '@/components/shared/panel-sheet';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import type { MarketplaceAgent } from '@/data/agents';
@@ -79,24 +79,19 @@ export function RunAgentSheet({ agent, action, visible, onDismiss }: { agent: Ma
             </Text>
           </View>
         </View>
-        <View style={[styles.rows, { backgroundColor: theme.colors.background }]}>
-          <CostRow label="Cost" value={creditCostLabel(agent.id)} />
-          <CostRow label="Your balance" value={`${formatCredits(balance)} credits`} />
-          <CostRow label="After this run" value={short ? 'Not enough credits' : `${formatCredits(balance - cost)} credits`} strong tone={short ? 'danger' : undefined} />
-        </View>
+        <SheetSection label="Credits">
+          <SheetRow first title="This run uses" trailing={<CostValue value={creditCostLabel(agent.id)} />} />
+          <SheetRow title="Your balance" trailing={<CostValue value={`${formatCredits(balance)} credits`} />} />
+          <SheetRow title="Left after" trailing={<CostValue value={short ? 'Not enough credits' : `${formatCredits(balance - cost)} credits`} strong tone={short ? 'danger' : undefined} />} />
+        </SheetSection>
       </View>
     </PanelSheet>
   );
 }
 
-function CostRow({ label, value, strong = false, tone }: { label: string; value: string; strong?: boolean; tone?: 'danger' }) {
+function CostValue({ value, strong = false, tone }: { value: string; strong?: boolean; tone?: 'danger' }) {
   const theme = useTheme();
-  return (
-    <View style={styles.row}>
-      <Text style={[agentStyles.body, { color: theme.colors.onSurfaceVariant }]}>{label}</Text>
-      <Text style={[strong ? agentStyles.medium : agentStyles.body, agentStyles.numbers, { color: tone === 'danger' ? theme.colors.error : theme.colors.onSurface }]}>{value}</Text>
-    </View>
-  );
+  return <Text style={[strong ? agentStyles.medium : agentStyles.body, agentStyles.numbers, styles.value, { color: tone === 'danger' ? theme.colors.error : theme.colors.onSurface }]}>{value}</Text>;
 }
 
 const styles = StyleSheet.create({
@@ -105,7 +100,6 @@ const styles = StyleSheet.create({
   lineText: { flex: 1 },
   body: { padding: 16, gap: 16 },
   agent: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  rows: { borderRadius: Shape.max, padding: 12, gap: 10 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+  value: { paddingRight: 12 },
 });
 

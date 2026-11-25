@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { Fragment, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
@@ -9,9 +10,11 @@ import { DetailScreen } from '@/components/shared/detail-screen';
 import { PAGE_PADDING } from '@/components/tab-screen';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
+import { TASK_CONFIG } from '@/data/agent-tasks';
 import { type AgentStepIcon, type ConnectorLogo, type MarketplaceAgent, MY_AGENTS } from '@/data/agents';
 import { useToast } from '@/hooks/use-toast';
 
+import { ScheduledTasksSheet } from './agent-configure';
 import { CreditCostLine, RunAgentSheet } from './agent-credits';
 import { type FigureTone, ToneIcon, agentStyles } from './agent-parts';
 import { HalftoneBackdrop, HeroShade } from './agent-visuals';
@@ -62,8 +65,12 @@ export function AgentDetail({ agent }: { agent: MarketplaceAgent }) {
   const { detail } = agent;
   const [primary, secondary] = agentActions(agent);
   const notYet = (label: string) => toast(`${label} isn’t available in the app yet`);
-  // Starting the agent shows what it costs in credits first (see agent-credits.tsx).
+  // Task agents are configured (stores, schedule) on their own page; the others confirm their credit cost in a sheet first.
+  const configurable = !!TASK_CONFIG[agent.id];
   const [runOpen, setRunOpen] = useState(false);
+  const [tasksOpen, setTasksOpen] = useState(false);
+  const onPrimary = () => (configurable ? router.push({ pathname: '/agents/configure', params: { agent: agent.id } }) : setRunOpen(true));
+  const onSecondary = (label: string) => (configurable ? setTasksOpen(true) : notYet(label));
 
   return (
     <DetailScreen
@@ -73,12 +80,13 @@ export function AgentDetail({ agent }: { agent: MarketplaceAgent }) {
         <View style={styles.footerStack}>
           <CreditCostLine agent={agent} />
           <View style={styles.footer}>
-            {secondary ? <FooterButton label={secondary} mode="outlined" onPress={() => notYet(secondary)} /> : null}
-            <FooterButton label={primary} onPress={() => setRunOpen(true)} />
+            {secondary ? <FooterButton label={secondary} mode="outlined" onPress={() => onSecondary(secondary)} /> : null}
+            <FooterButton label={primary} onPress={onPrimary} />
           </View>
         </View>
       }>
       <RunAgentSheet agent={agent} action={primary} visible={runOpen} onDismiss={() => setRunOpen(false)} />
+      <ScheduledTasksSheet agent={agent} visible={tasksOpen} onDismiss={() => setTasksOpen(false)} />
       <View style={styles.stack}>
         <View style={styles.hero}>
           <HalftoneBackdrop agentId={agent.id} />
