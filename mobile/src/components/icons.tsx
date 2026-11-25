@@ -185,6 +185,8 @@ import { TargetIcon } from 'phosphor-react-native/src/icons/Target';
 import { ChartLineUpIcon } from 'phosphor-react-native/src/icons/ChartLineUp';
 import { FolderOpenIcon } from 'phosphor-react-native/src/icons/FolderOpen';
 import { UserCheckIcon } from 'phosphor-react-native/src/icons/UserCheck';
+import { CoinsIcon } from 'phosphor-react-native/src/icons/Coins';
+import { ArrowDownLeftIcon } from 'phosphor-react-native/src/icons/ArrowDownLeft';
 
 /**
  * Every Phosphor icon the app can render, keyed by its Phosphor name
@@ -374,6 +376,8 @@ const ICONS = {
   'chart-line-up': ChartLineUpIcon,
   'folder-open': FolderOpenIcon,
   'user-check': UserCheckIcon,
+  coins: CoinsIcon,
+  'arrow-down-left': ArrowDownLeftIcon,
 } satisfies Record<string, Icon>;
 
 export type BaseIconName = keyof typeof ICONS;

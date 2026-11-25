@@ -67,7 +67,7 @@ export const startersAt = (offset: number) => [0, 1, 2].map((index) => STARTER_P
 
 const COMPOSER_END = 8;
 
-export function GuideChat({ prompt }: { prompt?: string }) {
+export function GuideChat({ prompt, chatId }: { prompt?: string; /** Reopens a saved chat (from History on the Guide tab). */ chatId?: string }) {
   const theme = useTheme();
   const toast = useToast();
   const insets = useSafeAreaInsets();
@@ -162,6 +162,14 @@ export function GuideChat({ prompt }: { prompt?: string }) {
     sessionRef.current = chat.session;
     setHistoryOpen(false);
   };
+
+  // Opened from History on the Guide tab: carry on that chat.
+  const reopened = useRef(false);
+  useEffect(() => {
+    if (!chatId || reopened.current) return;
+    reopened.current = true;
+    openSavedChat(chatId);
+  });
 
   const onChip = (chip: GuideChip) => {
     if (busy) return;
@@ -397,3 +405,32 @@ const styles = StyleSheet.create({
   note: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20 },
   followUps: { gap: 12, alignSelf: 'stretch' },
 });
+
+/**
+ * History from the Guide tab (its header's clock): the same sheet as in the
+ * chat. A saved chat reopens in the chat, an earlier query is asked afresh.
+ */
+export function GuideHomeHistory({ visible, onDismiss }: { visible: boolean; onDismiss: () => void }) {
+  const saved = useSyncExternalStore(savedStore.subscribe, savedStore.get);
+  const tickets = saved.flatMap((chat) => chat.session.ticketsRaised);
+  return (
+    <GuideHistorySheet
+      visible={visible}
+      onDismiss={onDismiss}
+      saved={saved}
+      tickets={tickets}
+      onOpenChat={(id) => {
+        onDismiss();
+        router.push({ pathname: '/guide/chat', params: { chat: id } });
+      }}
+      onAsk={(query) => {
+        onDismiss();
+        router.push({ pathname: '/guide/chat', params: { prompt: query } });
+      }}
+      onOpenTickets={() => {
+        onDismiss();
+        router.push('/support/tickets');
+      }}
+    />
+  );
+}

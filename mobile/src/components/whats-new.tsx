@@ -59,16 +59,22 @@ function load() {
   Promise.all([AsyncStorage.getItem(ANNOUNCED_KEY), AsyncStorage.getItem(SEEN_KEY)])
     .then(([announced, seen]) => {
       const parsed = seen ? (JSON.parse(seen) as AiFeature[]) : [];
-      set({
-        loaded: true,
-        announced: announced === 'done',
-        seen: parsed.filter((key) => FEATURES.includes(key)),
-      });
+      // Keep anything opened before the saved list arrived (e.g. the app opened straight onto Agents).
+      const merged = [...new Set([...parsed.filter((key) => FEATURES.includes(key)), ...seenBeforeLoad])];
+      set({ loaded: true, announced: announced === 'done', seen: merged });
+      if (seenBeforeLoad.length) AsyncStorage.setItem(SEEN_KEY, JSON.stringify(merged)).catch(() => {});
     })
     .catch(() => set({ loaded: true }));
 }
 
+/** Features opened before the saved list loaded. */
+const seenBeforeLoad: AiFeature[] = [];
+
 function markSeen(feature: AiFeature) {
+  if (!state.loaded) {
+    if (!seenBeforeLoad.includes(feature)) seenBeforeLoad.push(feature);
+    return;
+  }
   if (state.seen.includes(feature)) return;
   const seen = [...state.seen, feature];
   set({ seen });

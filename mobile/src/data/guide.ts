@@ -6,6 +6,9 @@
  * chat screen only renders them; planReply decides what Guide says next.
  */
 
+import { type AgentId, pendingApprovals } from "./agents"
+import { AGENT_CREDIT_COST, formatCredits, spendCredits, walletBalance } from "./wallet"
+
 export type HealthCheckKey = "battery" | "printer" | "software" | "connectivity"
 
 export type GuideCard =
@@ -23,6 +26,8 @@ export type GuideCard =
   | { kind: "txn"; lines: string[] }
   | { kind: "donut" }
   | { kind: "trend" }
+  /** Guide handing work to an agent: what it will do, what it costs in credits, and the wallet balance. */
+  | { kind: "agent-credits"; agentId: AgentId; agentName: string; task: string; credits: number; rate: string; balance: number }
 
 export type KvRow = { label: string; value: string; link?: boolean }
 
@@ -70,6 +75,8 @@ export type GuideSession = {
   vas?: "offer" | "choose" | "done"
   ticketAttempts: number
   ticketsRaised: { title: string; when: string }[]
+  /** An agent Guide has offered to run, awaiting the merchant's yes or no. */
+  agentOffer?: "chargeback"
 }
 
 export const NEW_SESSION: GuideSession = { mode: "business", ticketAttempts: 0, ticketsRaised: [] }
@@ -87,6 +94,7 @@ export const STARTER_POOL = [
   "Show today’s sales by payment method",
   "Aaj ka total collection kitna hai?",
   "How am I doing in comparison to other business",
+  "Help me handle my chargebacks",
 ]
 
 export const SUPPORT_CATEGORIES = [
@@ -431,6 +439,74 @@ export function planReply(
   }
 
   // ---- International card VAS --------------------------------------------
+
+  // ---- Handing work to an agent (uses agent credits) ---------------------
+
+  if (session.agentOffer === "chargeback" && text === "start agent") {
+    next.agentOffer = undefined
+    const cases = pendingApprovals("chargeback")
+    const credits = AGENT_CREDIT_COST.chargeback.credits * cases.length
+    if (!spendCredits("chargeback", "Chargeback Agent", `${cases.length} chargebacks · via Guide`, credits)) {
+      return reply([
+        step({
+          text: `You need **${credits} credits** for this and have **${formatCredits(walletBalance())}**. Add credits from your wallet (the coins at the top of Agents), then ask me again.`,
+          tone: "danger",
+          chips: [{ label: "Need help with something else" }],
+        }),
+      ])
+    }
+    return reply([
+      step(
+        {
+          card: {
+            kind: "success",
+            text: `The **Chargeback Agent** is on it: gathering evidence and drafting rebuttals for ${cases.length} chargebacks. **${credits} credits** used, **${formatCredits(walletBalance())} credits** left.`,
+          },
+          chips: [{ label: "Need help with something else" }, { label: "Done" }],
+        },
+        1000
+      ),
+    ])
+  }
+
+  if (session.agentOffer === "chargeback" && text === "not now") {
+    next.agentOffer = undefined
+    return reply([
+      step({
+        text: "No problem. Your chargebacks stay as they are; ask me whenever you want the Chargeback Agent to take them on.",
+        chips: [{ label: "Need help with something else" }, { label: "Done" }],
+      }),
+    ])
+  }
+
+  if (has(/chargeback|dispute/)) {
+    const cases = pendingApprovals("chargeback")
+    const worth = cases.reduce((sum, item) => sum + Number(item.title.split("₹")[1]?.replace(/,/g, "") ?? 0), 0)
+    const { credits: rate, per } = AGENT_CREDIT_COST.chargeback
+    next.agentOffer = "chargeback"
+    return reply([
+      step({
+        text: `You have **${cases.length} chargebacks** waiting, worth **₹${worth.toLocaleString("en-IN")}**. ${cases[0].title.replace(" · ", " for ")} is due first.`,
+      }),
+      step(
+        {
+          text: "I can hand them to the **Chargeback Agent**. It gathers the evidence and drafts a rebuttal for each, and nothing goes to the bank until you approve.",
+          card: {
+            kind: "agent-credits",
+            agentId: "chargeback",
+            agentName: "Chargeback Agent",
+            task: `${cases.length} chargebacks`,
+            credits: rate * cases.length,
+            rate: `${rate} credits per ${per}`,
+            balance: walletBalance(),
+          },
+          actions: [{ label: "Not now" }, { label: "Start agent", tone: "primary" }],
+          actionsLayout: "card",
+        },
+        600
+      ),
+    ])
+  }
 
   if (has(/payment failures|transactions failed|failed today|card payments are declining/)) {
     next.vas = "offer"

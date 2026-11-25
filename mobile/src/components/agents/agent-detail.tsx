@@ -12,6 +12,7 @@ import { Fonts } from '@/constants/theme';
 import { type AgentStepIcon, type ConnectorLogo, type MarketplaceAgent, MY_AGENTS } from '@/data/agents';
 import { useToast } from '@/hooks/use-toast';
 
+import { CreditCostLine, RunAgentSheet } from './agent-credits';
 import { type FigureTone, ToneIcon, agentStyles } from './agent-parts';
 import { HalftoneBackdrop, HeroShade } from './agent-visuals';
 import { AgentHeroTags } from './agents-view';
@@ -61,17 +62,23 @@ export function AgentDetail({ agent }: { agent: MarketplaceAgent }) {
   const { detail } = agent;
   const [primary, secondary] = agentActions(agent);
   const notYet = (label: string) => toast(`${label} isn’t available in the app yet`);
+  // Starting the agent shows what it costs in credits first (see agent-credits.tsx).
+  const [runOpen, setRunOpen] = useState(false);
 
   return (
     <DetailScreen
       title={agent.name}
       fallbackHref="/agents"
       footer={
-        <View style={styles.footer}>
-          {secondary ? <FooterButton label={secondary} mode="outlined" onPress={() => notYet(secondary)} /> : null}
-          <FooterButton label={primary} onPress={() => notYet(primary)} />
+        <View style={styles.footerStack}>
+          <CreditCostLine agent={agent} />
+          <View style={styles.footer}>
+            {secondary ? <FooterButton label={secondary} mode="outlined" onPress={() => notYet(secondary)} /> : null}
+            <FooterButton label={primary} onPress={() => setRunOpen(true)} />
+          </View>
         </View>
       }>
+      <RunAgentSheet agent={agent} action={primary} visible={runOpen} onDismiss={() => setRunOpen(false)} />
       <View style={styles.stack}>
         <View style={styles.hero}>
           <HalftoneBackdrop agentId={agent.id} />
@@ -275,6 +282,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
   stack: { gap: 8, marginTop: PAGE_PADDING },
   footer: { flexDirection: 'row', gap: 8 },
+  footerStack: { flex: 1, width: '100%' },
   hero: { borderRadius: Shape.max, overflow: 'hidden' },
   heroBody: { position: 'relative', padding: 20, gap: 12 },
   heroTitle: { fontFamily: Fonts.semiBold, fontSize: 28, lineHeight: 34, letterSpacing: -0.4, color: '#ffffff' },

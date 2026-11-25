@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
 import { LocalSvg } from 'react-native-svg/css';
 
+import { AgentThumbnail } from '@/components/agents/agent-visuals';
 import { BankLogo } from '@/components/shared/bank-logo';
 import { SelectionMark } from '@/components/shared/selection-mark';
 import { Shape } from '@/constants/shape';
@@ -477,11 +478,84 @@ export function GuideCardView({
       return <GuideDonut />;
     case 'trend':
       return <GuideTrend />;
+    case 'agent-credits':
+      return <AgentCreditsCard card={card} actions={active ? actions : undefined} onAction={onAction} />;
   }
+}
+
+/**
+ * Guide handing work to an agent: the agent and the task, what it costs in
+ * credits, the wallet balance and what's left after, then Not now / Use agent.
+ * The wallet link opens the credits wallet (Agents).
+ */
+function AgentCreditsCard({
+  card,
+  actions,
+  onAction,
+}: {
+  card: Extract<GuideCard, { kind: 'agent-credits' }>;
+  actions?: GuideAction[];
+  onAction?: (action: GuideAction) => void;
+}) {
+  const theme = useTheme();
+  const toneOf = useActionTone();
+  const short = card.balance < card.credits;
+  const rows: [string, string, boolean?][] = [
+    ['Uses', `${card.credits.toLocaleString('en-IN')} credits · ${card.rate}`],
+    ['Your balance', `${card.balance.toLocaleString('en-IN')} credits`],
+    ['Left after', short ? 'Not enough credits' : `${(card.balance - card.credits).toLocaleString('en-IN')} credits`, true],
+  ];
+  return (
+    <Card width={320}>
+      <View style={styles.agentHead}>
+        <AgentThumbnail agentId={card.agentId} size={40} radius={8} glyphSize={18} />
+        <View style={styles.flex}>
+          <Text style={[styles.optionLabel, styles.medium, { color: theme.colors.onSurface }]}>{card.agentName}</Text>
+          <Text style={[styles.small, { color: theme.colors.onSurfaceVariant }]}>{card.task}</Text>
+        </View>
+        <Icon source="coins-fill" size={18} color={theme.colors.primary} />
+      </View>
+      {rows.map(([label, value, strong]) => (
+        <Fragment key={label}>
+          <Hairline />
+          <View style={styles.kvRow}>
+            <Text style={[styles.kvLabel, styles.flex, { color: theme.colors.onSurfaceVariant }]}>{label}</Text>
+            <Text style={[styles.kvLabel, styles.digits, strong && styles.medium, { color: short && strong ? theme.colors.error : theme.colors.onSurface }]}>{value}</Text>
+          </View>
+        </Fragment>
+      ))}
+      <Hairline />
+      <TouchableRipple onPress={() => router.push('/agents/wallet')} accessibilityRole="link">
+        <View style={styles.kvRow}>
+          <Text style={[styles.kvLabel, styles.flex, styles.medium, { color: theme.colors.primary }]}>Open wallet</Text>
+          <Icon source="caret-right" size={16} color={theme.colors.primary} />
+        </View>
+      </TouchableRipple>
+      {actions?.length ? (
+        <View style={[styles.noticeActions, styles.agentActions]}>
+          {actions.map((action) => {
+            const colors = toneOf(action.tone === 'primary' ? 'primary' : 'neutral');
+            return (
+              <TouchableRipple
+                key={action.label}
+                onPress={() => onAction?.(action)}
+                borderless
+                accessibilityRole="button"
+                style={[styles.noticeButton, { backgroundColor: action.tone === 'primary' ? colors.backgroundColor : undefined }, action.tone !== 'primary' && styles.noticeOutline]}>
+                <Text style={[styles.cardButtonLabel, { color: colors.color }]}>{action.label}</Text>
+              </TouchableRipple>
+            );
+          })}
+        </View>
+      ) : null}
+    </Card>
+  );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  agentHead: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
+  agentActions: { padding: 12 },
   fullWidth: { alignSelf: 'stretch' },
   medium: { fontFamily: Fonts.medium },
   bold: { fontFamily: Fonts.bold },
