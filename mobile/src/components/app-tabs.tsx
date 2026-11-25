@@ -460,7 +460,7 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
           />
         </Animated.View>
       ) : null}
-      {/* Once per install, Overview announces Agents and Guide (see whats-new.tsx). */}
+      {/* Each launch, Overview (where the app always opens) announces Agents and Guide (see whats-new.tsx). */}
       {showNav && tab === 'index' ? <WhatsNew /> : null}
     </View>
   );

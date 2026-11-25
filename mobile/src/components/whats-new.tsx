@@ -12,7 +12,7 @@ import { Fonts } from '@/constants/theme';
 
 /**
  * Introducing the AI features people may not know about, Agents and Guide,
- * as a "What's new" announcement rather than an app tour: once per install,
+ * as a "What's new" announcement rather than an app tour: every launch, on Home,
  * Overview opens a sheet with a page per feature — a carousel of what it
  * does, its mark above its name, one line — and a button to try it. Agents and Guide also carry a small dot in the bar
  * (and in More's grid) until each has been opened once.
@@ -24,7 +24,6 @@ import { Fonts } from '@/constants/theme';
 export type AiFeature = 'agents' | 'guide';
 const FEATURES: AiFeature[] = ['agents', 'guide'];
 
-const ANNOUNCED_KEY = 'pineone.whats-new.ai.v1';
 const SEEN_KEY = 'pineone.ai-seen.v1';
 
 /** `run` counts replays, so a replayed announcement opens on its first page. */
@@ -56,15 +55,16 @@ let replayedFor: string | undefined;
 function load() {
   if (loading) return;
   loading = true;
-  Promise.all([AsyncStorage.getItem(ANNOUNCED_KEY), AsyncStorage.getItem(SEEN_KEY)])
-    .then(([announced, seen]) => {
+  AsyncStorage.getItem(SEEN_KEY)
+    .then((seen) => {
       const parsed = seen ? (JSON.parse(seen) as AiFeature[]) : [];
       // Keep anything opened before the saved list arrived (e.g. the app opened straight onto Agents).
       const merged = [...new Set([...parsed.filter((key) => FEATURES.includes(key)), ...seenBeforeLoad])];
-      set({ loaded: true, announced: announced === 'done', seen: merged });
+      // Announced each launch, once Home is up (user decision); the dots stay cleared once seen.
+      set({ loaded: true, announced: false, seen: merged });
       if (seenBeforeLoad.length) AsyncStorage.setItem(SEEN_KEY, JSON.stringify(merged)).catch(() => {});
     })
-    .catch(() => set({ loaded: true }));
+    .catch(() => set({ loaded: true, announced: false }));
 }
 
 /** Features opened before the saved list loaded. */
@@ -83,12 +83,11 @@ function markSeen(feature: AiFeature) {
 
 function markAnnounced() {
   set({ announced: true });
-  AsyncStorage.setItem(ANNOUNCED_KEY, 'done').catch(() => {});
 }
 
 function replay() {
   set({ loaded: true, announced: false, seen: [], run: state.run + 1 });
-  AsyncStorage.multiRemove([ANNOUNCED_KEY, SEEN_KEY]).catch(() => {});
+  AsyncStorage.removeItem(SEEN_KEY).catch(() => {});
 }
 
 /** Which of Agents and Guide still get their dot, and a way to clear it once the page is opened. */

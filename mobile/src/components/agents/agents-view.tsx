@@ -2,12 +2,12 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
-import { LocalSvg } from 'react-native-svg/css';
 
 import { AppIcon } from '@/components/icons';
-import { Tabs } from '@/components/material3/tabs';
-import { SearchField } from '@/components/search-field';
-import { DotStatusBadge } from '@/components/shared/status';
+import { SummaryCard } from '@/components/listing-hero/answer-hero';
+import { ListingCard, ListingRows } from '@/components/listing-hero/listing-card';
+import { DayGroupedList, groupByDay } from '@/components/shared/day-groups';
+import { ListRow, ListRowLine, selectFilter, StatusStack } from '@/components/shared/listing';
 import { concentric, Shape } from '@/constants/shape';
 import { Fonts } from '@/constants/theme';
 import {
@@ -24,93 +24,90 @@ import {
 } from '@/data/agents';
 import { useToast } from '@/hooks/use-toast';
 
-import { AGENT_ROW_RADIUS, AgentMarketplaceRow, AgentsHeading, AgentStatusBadge, agentStyles } from './agent-parts';
+import { AgentStatusBadge, agentStyles } from './agent-parts';
 import { AgentThumbnail, HalftoneBackdrop, HeroShade } from './agent-visuals';
-
-const AGENTS_GLYPH = require('../../../assets/images/nav/agents-outline.svg');
 
 export const AGENT_TABS = [
   { key: 'my', label: 'My agents' },
   { key: 'discover', label: 'Discover agents' },
 ];
 
-/** The page header's figures (web: PageHeaderMeta), in a card above the tab's content. */
+/** The page's summary card, as on the other pages: agents set up (of all on offer), then what's live and waiting. */
 export function AgentsSummary() {
-  const theme = useTheme();
   const live = MY_AGENTS.filter((agent) => agent.status === 'Live').length;
   const waiting = PENDING_APPROVALS.length;
-  const muted = theme.colors.onSurfaceVariant;
   return (
-    <View style={[agentStyles.card, styles.summary, { backgroundColor: theme.colors.surface }]}>
-      <View style={styles.meta}>
-        <LocalSvg asset={AGENTS_GLYPH} width={16} height={16} color={muted} />
-        <Text style={[agentStyles.body, agentStyles.numbers, { color: muted }]}>
-          {MY_AGENTS.length} agents set up · {live} live
-        </Text>
-      </View>
-      <View style={styles.meta}>
-        <AppIcon name="clock" size={16} color={muted} />
-        <Text style={[agentStyles.body, agentStyles.numbers, { color: muted }]}>
-          {waiting > 0 ? `${waiting} action${waiting > 1 ? 's' : ''} waiting on you` : 'Nothing waiting on you'}
-        </Text>
-      </View>
-    </View>
+    <SummaryCard
+      icon="squares-four"
+      title="Agents set up"
+      count={{ value: MY_AGENTS.length, of: MARKETPLACE_AGENTS.length }}
+      line={`${live} live · ${waiting > 0 ? `${waiting} action${waiting > 1 ? 's' : ''} waiting on you` : 'nothing waiting on you'}`}
+    />
   );
 }
 
-/** Discover agents (web: DiscoverAgents): the agent of the week, then the catalogue by filter, searchable. */
+const CATEGORY_OPTIONS = DISCOVER_FILTERS.map((entry) => ({ value: entry.value, label: entry.label }));
+const AGENT_NOUN = { one: 'agent', other: 'agents' };
+const SECTION_LABELS = { recommended: 'Recommended for your business', featured: 'Featured' } as const;
+
+/**
+ * Discover agents (web: DiscoverAgents): the agent of the week, then the
+ * catalogue as the app's listings are — search and Filters (Category), bands
+ * for Recommended and Featured, and rows (the agent's tile, its name, users
+ * and rating; its state when it's already yours).
+ */
 export function DiscoverAgents() {
   const theme = useTheme();
   const [filter, setFilter] = useState<DiscoverFilter>('all');
   const [search, setSearch] = useState('');
   const query = search.trim().toLowerCase();
-  const matches = MARKETPLACE_AGENTS.filter((agent) => !query || `${agent.name} ${agent.cardDescription}`.toLowerCase().includes(query));
-  const filterLabel = DISCOVER_FILTERS.find((entry) => entry.value === filter)?.label ?? '';
-  const sections: { title: string; agents: MarketplaceAgent[] }[] = query
-    ? [{ title: `Results for “${search.trim()}”`, agents: matches }]
-    : filter === 'all'
-      ? [
-          { title: 'Recommended for your business', agents: matches.filter((agent) => agent.section === 'recommended') },
-          { title: 'Featured', agents: matches.filter((agent) => agent.section === 'featured') },
-        ]
-      : filter === 'recommended'
-        ? [{ title: 'Recommended for your business', agents: matches.filter((agent) => agent.section === 'recommended') }]
-        : [{ title: filterLabel, agents: matches.filter((agent) => agent.categories.includes(filter)) }];
-  const empty = sections.every((section) => section.agents.length === 0);
+  const rows = MARKETPLACE_AGENTS.filter(
+    (agent) =>
+      (!query || `${agent.name} ${agent.cardDescription}`.toLowerCase().includes(query)) &&
+      (filter === 'all' || (filter === 'recommended' ? agent.section === 'recommended' : agent.categories.includes(filter))),
+  ).sort((a, b) => (a.section === b.section ? 0 : a.section === 'recommended' ? -1 : 1));
   const agentOfTheWeek = getMarketplaceAgent(AGENT_OF_THE_WEEK_ID);
+  const muted = { color: theme.colors.onSurfaceVariant };
 
   return (
     <>
       {agentOfTheWeek && !query ? <AgentOfTheWeek agent={agentOfTheWeek} /> : null}
-      <View style={[styles.listCard, { backgroundColor: theme.colors.surface }]}>
-        <Tabs
-          variant="card"
-          scrollable
-          tabs={DISCOVER_FILTERS.map((entry) => ({ key: entry.value, label: entry.label }))}
-          activeKey={filter}
-          onChange={(key) => setFilter(key as DiscoverFilter)}
-          tabRadius={concentric(Shape.max, 0)}
+      <ListingCard
+        belowHero
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search agents"
+        filters={[selectFilter({ label: 'Category', options: CATEGORY_OPTIONS, value: filter, onApply: (value) => setFilter(value as DiscoverFilter) })]}
+        totals={{ all: MARKETPLACE_AGENTS.length, shown: rows.length }}
+        noun={AGENT_NOUN}>
+        <DayGroupedList
+          flat
+          groups={groupByDay(rows, (agent) => SECTION_LABELS[agent.section])}
+          noun={AGENT_NOUN}
+          empty="No agents match. Try clearing the search or filters."
+          renderRow={(agent) => {
+            const mine = MY_AGENTS.find((entry) => entry.id === agent.id);
+            return (
+              <ListRow key={agent.id} icon={<AgentThumbnail agentId={agent.id} size={40} radius={20} glyphSize={18} />} onPress={() => router.push(`/agents/${agent.id}`)} accessibilityLabel={`${agent.name}, ${agent.users} users, rated ${agent.rating} of 5`}>
+                <ListRowLine
+                  left={
+                    <>
+                      <Text numberOfLines={1} style={[styles.rowTitle, { color: theme.colors.onSurface }]}>
+                        {agent.name}
+                      </Text>
+                      <Text variant="bodySmall" numberOfLines={1} style={[muted, agentStyles.numbers]}>
+                        {agent.users} users · ★ {agent.rating}/5 ({agent.reviewCount})
+                      </Text>
+                    </>
+                  }
+                  right={mine ? <AgentStatusBadge status={mine.status} /> : undefined}
+                  centered
+                />
+              </ListRow>
+            );
+          }}
         />
-        <View style={styles.listBody}>
-          <SearchField value={search} onChangeText={setSearch} placeholder="Search agents" radius={concentric(Shape.max, 12)} />
-          {empty ? (
-            <Text style={[agentStyles.body, styles.empty, { color: theme.colors.onSurfaceVariant }]}>No agents match “{search.trim()}”.</Text>
-          ) : (
-            sections
-              .filter((section) => section.agents.length > 0)
-              .map((section) => (
-                <View key={section.title} style={styles.section}>
-                  <AgentsHeading>{section.title}</AgentsHeading>
-                  <View style={styles.rows}>
-                    {section.agents.map((agent) => (
-                      <AgentMarketplaceRow key={agent.id} agent={agent} radius={AGENT_ROW_RADIUS} />
-                    ))}
-                  </View>
-                </View>
-              ))
-          )}
-        </View>
-      </View>
+      </ListingCard>
     </>
   );
 }
@@ -191,69 +188,71 @@ function HeroButton({ label, icon, filled = false, onPress }: { label: string; i
   );
 }
 
-/** My agents (web: MyAgents): the set-up agents, each with its state and what's waiting on the merchant. */
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'All' },
+  { value: 'Live', label: 'Live' },
+  { value: 'Inactive', label: 'Inactive' },
+] as const;
+
+/**
+ * My agents (web: MyAgents) as the app's listings are: search and Filters
+ * (Status), then rows — the agent's tile, its name and what's waiting on you
+ * (or what it does), and its state with the waiting count under it.
+ */
 export function MyAgents() {
   const theme = useTheme();
   const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<string>('all');
   const query = search.trim().toLowerCase();
-  const agents = MY_AGENTS.flatMap((entry) => {
+  const rows = MY_AGENTS.flatMap((entry) => {
     const agent = getMarketplaceAgent(entry.id);
-    return agent && (!query || `${agent.name} ${agent.cardDescription}`.toLowerCase().includes(query)) ? [{ agent, status: entry.status }] : [];
+    return agent && (!query || `${agent.name} ${agent.cardDescription}`.toLowerCase().includes(query)) && (status === 'all' || entry.status === status) ? [{ agent, status: entry.status }] : [];
   });
+  const muted = { color: theme.colors.onSurfaceVariant };
   return (
-    <>
-      <View style={[agentStyles.card, { backgroundColor: theme.colors.surface }]}>
-        <AgentsHeading>My agents</AgentsHeading>
-        <SearchField value={search} onChangeText={setSearch} placeholder="Search agents" radius={concentric(Shape.max, 12)} />
-      </View>
-      {agents.length === 0 ? (
-        <View style={[agentStyles.card, { backgroundColor: theme.colors.surface }]}>
-          <Text style={[agentStyles.body, styles.empty, { color: theme.colors.onSurfaceVariant }]}>
-            {query ? `No agents match “${search.trim()}”.` : 'No agents set up yet. Find one in Discover agents.'}
-          </Text>
-        </View>
-      ) : (
-        agents.map(({ agent, status }) => <MyAgentCard key={agent.id} agent={agent} status={status} />)
-      )}
-    </>
-  );
-}
-
-function MyAgentCard({ agent, status }: { agent: MarketplaceAgent; status: (typeof MY_AGENTS)[number]['status'] }) {
-  const theme = useTheme();
-  const waiting = pendingApprovals(agent.id);
-  return (
-    <Pressable
-      onPress={() => router.push(`/agents/${agent.id}`)}
-      accessibilityRole="button"
-      accessibilityLabel={`${agent.name}, ${status}${waiting.length ? `, ${waiting.length} waiting` : ''}`}
-      style={({ pressed }) => [styles.myCard, { backgroundColor: pressed ? theme.colors.surfaceVariant : theme.colors.surface }]}>
-      <AgentThumbnail agentId={agent.id} size={78} radius={concentric(Shape.max, 12)} glyphSize={28} />
-      <View style={styles.myText}>
-        <View style={styles.myTop}>
-          <Text style={[styles.myName, { color: theme.colors.onSurface }]}>{agent.name}</Text>
-          <AgentStatusBadge status={status} />
-        </View>
-        <Text numberOfLines={2} style={[agentStyles.body, { color: theme.colors.onSurfaceVariant }]}>
-          {agent.cardDescription}
-        </Text>
-        {waiting.length > 0 ? (
-          <View style={styles.waiting}>
-            <DotStatusBadge label={`${waiting.length} waiting`} tone="warning" />
-            <Text numberOfLines={1} style={[agentStyles.body, agentStyles.numbers, styles.waitingText, { color: theme.colors.onSurface }]}>
-              {waiting[0].title}
-              {waiting.length > 1 ? <Text style={{ color: theme.colors.onSurfaceVariant }}> + {waiting.length - 1} more</Text> : null}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-    </Pressable>
+    <ListingCard
+      belowHero
+      search={search}
+      onSearchChange={setSearch}
+      searchPlaceholder="Search my agents"
+      filters={[selectFilter({ label: 'Status', options: STATUS_OPTIONS, value: status, onApply: setStatus })]}
+      totals={{ all: MY_AGENTS.length, shown: rows.length }}
+      noun={AGENT_NOUN}>
+      <ListingRows empty={MY_AGENTS.length ? 'No agents match. Try clearing the search or filters.' : 'No agents set up yet. Find one in Discover agents.'}>
+        {rows.map(({ agent, status: state }) => {
+          const waiting = pendingApprovals(agent.id);
+          return (
+            <ListRow
+              key={agent.id}
+              icon={<AgentThumbnail agentId={agent.id} size={40} radius={20} glyphSize={18} />}
+              onPress={() => router.push(`/agents/${agent.id}`)}
+              accessibilityLabel={`${agent.name}, ${state}${waiting.length ? `, ${waiting.length} waiting` : ''}`}>
+              <ListRowLine
+                left={
+                  <>
+                    <Text numberOfLines={1} style={[styles.rowTitle, { color: theme.colors.onSurface }]}>
+                      {agent.name}
+                    </Text>
+                    <Text variant="bodySmall" numberOfLines={1} style={[muted, agentStyles.numbers]}>
+                      {waiting.length ? `${waiting[0].title}${waiting.length > 1 ? ` + ${waiting.length - 1} more` : ''}` : agent.cardDescription}
+                    </Text>
+                  </>
+                }
+                right={<StatusStack status={<AgentStatusBadge status={state} />} note={waiting.length ? `${waiting.length} waiting` : undefined} />}
+                centered
+              />
+            </ListRow>
+          );
+        })}
+      </ListingRows>
+    </ListingCard>
   );
 }
 
 const WHITE_90 = 'rgba(255, 255, 255, 0.9)';
 
 const styles = StyleSheet.create({
+  rowTitle: { fontFamily: Fonts.medium, fontSize: 16, lineHeight: 22 },
   summary: { gap: 8 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   listCard: { borderRadius: Shape.max, overflow: 'hidden' },
