@@ -1,6 +1,6 @@
 {
   "title": "Pine One app",
-  "description": "The Pine One merchant app: Home, payments, settlements, support, the profile and business profile. The latest Expo web build, in a phone frame.",
+  "description": "The Pine One merchant app: Home, payments, settlements, Agents and Guide (fixed in the bar since the AI-first trial), support, the profile and business profile. The latest Expo web build, in a phone frame.",
   "tags": [
     "pine-one"
   ],
@@ -8,7 +8,7 @@
   "surface": "mobile",
   "group": "Pine One",
   "createdAt": "2026-07-01",
-  "updatedAt": "2026-11-19T10:22:02.000Z",
+  "updatedAt": "2026-11-25T11:31:10.000Z",
   "hidden": false,
   "public": false,
   "external": {
