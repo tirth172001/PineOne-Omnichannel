@@ -1,0 +1,18 @@
+{
+  "title": "What's new: Agents and Guide",
+  "description": "The feature introduction for Agents and Guide on Overview: each one's mark, a line, and a carousel of real use cases, with a button to try it. Shown once; this link replays it.",
+  "tags": [
+    "pine-one"
+  ],
+  "folder": "pine-one-app",
+  "surface": "mobile",
+  "group": "Pine One",
+  "createdAt": "2026-11-25",
+  "updatedAt": "2026-11-25T11:31:10.000Z",
+  "hidden": false,
+  "public": false,
+  "external": {
+    "url": "https://pine-one-app.vercel.app/?whatsnew=1",
+    "embed": "phone"
+  }
+}
