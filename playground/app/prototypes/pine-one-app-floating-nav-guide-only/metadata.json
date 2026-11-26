@@ -1,0 +1,20 @@
+{
+  "title": "Floating bar: Guide, no Agents",
+  "description": "The floating bottom bar for a merchant with Guide but no Agents (Poorvika): Home, MPR, UPI and Support fit beside the Guide orb, so there's no More.",
+  "tags": [
+    "pine-one",
+    "navigation",
+    "floating-nav"
+  ],
+  "folder": "pine-one-app",
+  "surface": "mobile",
+  "group": "Pine One",
+  "createdAt": "2026-11-26",
+  "updatedAt": "2026-11-26T10:00:00.000Z",
+  "hidden": false,
+  "public": false,
+  "external": {
+    "url": "https://pine-one-app.vercel.app/?merchant=poorvika",
+    "embed": "phone"
+  }
+}
