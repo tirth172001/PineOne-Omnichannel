@@ -65,7 +65,7 @@ export const SHOW_PAYMENT_LINKS = true;
 /**
  * AI-first bottom bar (trial, Nov 25, 2026): Overview, Agents and Guide are
  * fixed, and Payments and Settlement move into the swappable fourth slot
- * (Payments by default) with Support, Refunds, Disputes and MDR reports,
+ * (Payments by default) with Support, Refunds, Disputes and MPR,
  * since Overview already leads into both. Off: Overview, Payments,
  * Settlement fixed, with Agents in the slot by default.
  *

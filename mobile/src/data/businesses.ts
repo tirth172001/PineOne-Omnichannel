@@ -22,6 +22,13 @@ export type Organisation = {
   logo?: ImageSourcePropType;
   /** Also takes payments through a partner bank, so Overview splits today by source. */
   hasPartnerBank?: boolean;
+  /**
+   * Trial: this merchant's app uses the floating bottom bar from the Osmosis
+   * app instead of the docked bar, shaped by which AI products it has: Guide
+   * on its own round orb beside the bar, and Agents in it. See app-tabs.tsx
+   * (floatingLayout).
+   */
+  floatingNav?: { guide: boolean; agents: boolean };
   shops: Shop[];
 };
 
@@ -46,6 +53,50 @@ export const ORGANISATIONS: Organisation[] = [
     shops: [
       { id: 'vs-sector-21', name: 'Sector 21', address: 'Candor TechSpace, Noida', share: 0.6 },
       { id: 'vs-sector-35', name: 'Sector 35', address: 'Candor TechSpace, Noida', share: 0.4 },
+    ],
+  },
+  {
+    // The Osmosis app's demo merchant; the floating bottom bar trial runs on this merchant only.
+    id: 'gd-electronics',
+    name: 'GD Electronics',
+    merchantId: 'MER-738723340188',
+    floatingNav: { guide: true, agents: true },
+    shops: [
+      { id: 'gd-andheri', name: 'Andheri West', address: 'Infiniti Mall, Link Rd, Andheri West, Mumbai', share: 0.55 },
+      { id: 'gd-powai', name: 'Powai', address: 'R City Mall, LBS Marg, Ghatkopar West, Mumbai', share: 0.45 },
+    ],
+  },
+  {
+    // Floating bar trial without Guide: its five options fit the bar, so there's no More.
+    id: 'croma',
+    name: 'Croma',
+    merchantId: 'MER-738723352240',
+    floatingNav: { guide: false, agents: true },
+    shops: [
+      { id: 'croma-indiranagar', name: 'Indiranagar', address: '100 Feet Rd, Indiranagar, Bengaluru', share: 0.6 },
+      { id: 'croma-jayanagar', name: 'Jayanagar', address: '9th Main Rd, Jayanagar 3rd Block, Bengaluru', share: 0.4 },
+    ],
+  },
+  {
+    // Floating bar trial without Guide or Agents: four options, no More.
+    id: 'sangeetha-mobiles',
+    name: 'Sangeetha Mobiles',
+    merchantId: 'MER-738723364417',
+    floatingNav: { guide: false, agents: false },
+    shops: [
+      { id: 'sm-tnagar', name: 'T. Nagar', address: 'Usman Rd, T. Nagar, Chennai', share: 0.55 },
+      { id: 'sm-velachery', name: 'Velachery', address: 'Velachery Main Rd, Velachery, Chennai', share: 0.45 },
+    ],
+  },
+  {
+    // Floating bar trial with Guide but no Agents: four options fit beside the Guide orb, so there's no More.
+    id: 'poorvika',
+    name: 'Poorvika',
+    merchantId: 'MER-738723371530',
+    floatingNav: { guide: true, agents: false },
+    shops: [
+      { id: 'pv-anna-nagar', name: 'Anna Nagar', address: '2nd Avenue, Anna Nagar, Chennai', share: 0.5 },
+      { id: 'pv-koramangala', name: 'Koramangala', address: '80 Feet Rd, Koramangala, Bengaluru', share: 0.5 },
     ],
   },
 ];

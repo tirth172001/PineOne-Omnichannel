@@ -4,6 +4,7 @@ import { ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Icon, IconButton, Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { DetailScreen } from '@/components/shared/detail-screen';
+import { TabScreen } from '@/components/tab-screen';
 import { PanelSheet } from '@/components/shared/panel-sheet';
 import { QR_BACKGROUND_SWATCHES, QrPreview } from '@/components/shared/qr-preview';
 import { OptionCard, SheetBlock, SheetButton, SheetRow, SheetSuccess } from '@/components/shared/sheet-parts';
@@ -23,7 +24,7 @@ const rupees = (amount: number) => formatInr(amount).split('.')[0];
  * UPI QR to show at the counter, per store, with its colour, and Download
  * or Share to print it.
  */
-export function AcceptPayments() {
+export function AcceptPayments({ asTab = false }: { asTab?: boolean }) {
   const theme = useTheme();
   const toast = useToast();
   const { organisation } = useBusiness();
@@ -34,17 +35,12 @@ export function AcceptPayments() {
   const shop = shops.find((item) => item.id === shopId) ?? shops[0];
   const upiId = `${organisation.name.toLowerCase().replace(/[^a-z]/g, '').slice(0, 10)}.${(shop?.name ?? 'store').toLowerCase().replace(/[^a-z]/g, '').slice(0, 8)}@pinelabs`;
 
-  return (
-    <DetailScreen
-      title="Accept payments"
-      fallbackHref="/"
-      footer={
-        <>
-          <FooterButton label="Share" mode="outlined" icon="share-network" onPress={() => Share.share({ message: `Pay ${organisation.name} – ${shop?.name} by UPI: ${upiId}` })} />
-          <FooterButton label="Download" icon="download-simple" onPress={() => toast('QR saved to your photos')} />
-        </>
-      }>
-      <View style={[profileStyles.stack, profileStyles.first]}>
+  const share = () => Share.share({ message: `Pay ${organisation.name} – ${shop?.name} by UPI: ${upiId}` });
+  const download = () => toast('QR saved to your photos');
+
+  const body = (
+    <>
+      <View style={[profileStyles.stack, !asTab && profileStyles.first]}>
         <TouchableRipple
           onPress={() => setPicking(true)}
           borderless
@@ -106,6 +102,33 @@ export function AcceptPayments() {
           ))}
         </SheetBlock>
       </PanelSheet>
+    </>
+  );
+
+  // The UPI tab (GD Electronics' floating bar): the same QR as a tab root, Share and Download in the header.
+  if (asTab)
+    return (
+      <TabScreen
+        tab="upi"
+        actions={[
+          { label: 'Share', icon: 'share-network', onPress: share },
+          { label: 'Download', icon: 'download-simple', onPress: download },
+        ]}>
+        {body}
+      </TabScreen>
+    );
+
+  return (
+    <DetailScreen
+      title="Accept payments"
+      fallbackHref="/"
+      footer={
+        <>
+          <FooterButton label="Share" mode="outlined" icon="share-network" onPress={share} />
+          <FooterButton label="Download" icon="download-simple" onPress={download} />
+        </>
+      }>
+      {body}
     </DetailScreen>
   );
 }

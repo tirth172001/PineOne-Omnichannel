@@ -57,12 +57,14 @@ const TABS = [
   { key: 'guide', href: '/guide', label: 'Guide', icon: 'sparkle', focusedIcon: 'sparkle-fill', svg: NAV_SVG.guide },
   { key: 'refunds', href: '/refunds', label: 'Refunds', icon: 'arrow-u-up-left', focusedIcon: 'arrow-u-up-left-fill', svg: NAV_SVG.refunds, scoped: true },
   { key: 'disputes', href: '/disputes', label: 'Disputes', icon: 'gavel', focusedIcon: 'gavel-fill', svg: NAV_SVG.disputes, scoped: true },
-  { key: 'reports', href: '/reports', label: 'MDR reports', title: 'Reports', icon: 'file', focusedIcon: 'file-fill', svg: NAV_SVG.reports, scoped: true },
+  { key: 'reports', href: '/reports', label: 'MPR', title: 'Reports', icon: 'file', focusedIcon: 'file-fill', svg: NAV_SVG.reports, scoped: true },
   { key: 'terminal-devices', href: '/terminal-devices', label: 'In-store devices', slotLabel: 'Devices', icon: 'cash-register', focusedIcon: 'cash-register-fill' },
   { key: 'payment-links', href: '/payment-links', label: 'Payment links', icon: 'link-simple', focusedIcon: 'link-simple-fill' },
   { key: 'stores', href: '/stores', label: 'Stores', title: 'Manage stores', icon: 'storefront', focusedIcon: 'storefront-fill' },
   { key: 'users', href: '/users', label: 'Users', title: 'Users & roles', icon: 'users', focusedIcon: 'users-fill' },
   { key: 'support', href: '/support', label: 'Support', icon: 'chat-centered-text', focusedIcon: 'chat-centered-text-fill', svg: NAV_SVG.support },
+  // The store's UPI QR (profile → Accept payments), a tab on GD Electronics' floating bar.
+  { key: 'upi', href: '/upi', label: 'UPI', icon: 'qr-code', focusedIcon: 'qr-code' },
 ] as const satisfies readonly TabItem[];
 
 type TabKey = (typeof TABS)[number]['key'];
@@ -72,26 +74,94 @@ type ModuleKey = TabKey;
  * The bar: three fixed items, a swappable slot and More (five items at most,
  * user decision). Default (Figma 6470:1236): Overview, Payments, Settlement
  * fixed; the slot is one of Agents (default), Guide, Support, Refunds,
- * Disputes, MDR reports, and the expanded More shows the rest. With
+ * Disputes, MPR, and the expanded More shows the rest. With
  * AI_FIRST_NAV, Agents and Guide are fixed instead and Payments and
  * Settlement join the slot's pool (Payments by default), since Overview
  * already leads into both. The modules outside the pool (devices, stores,
  * users, payment links) keep their pages but are reached from the profile.
  */
-const FIXED_KEYS: readonly TabKey[] = AI_FIRST_NAV ? ['index', 'agents', 'guide'] : ['index', 'payments', 'settlements'];
-const BAR_MODULES: readonly TabKey[] = AI_FIRST_NAV
-  ? ['payments', 'settlements', 'support', 'refunds', 'disputes', 'reports']
-  : ['agents', 'guide', 'support', 'refunds', 'disputes', 'reports'];
-const DEFAULT_SLOT = BAR_MODULES[0];
+type NavLayout = {
+  /** Pages that always have the bar: its fixed items (and Guide's own button on the floating bar). */
+  fixed: readonly TabKey[];
+  /** The bar's items in order; 'slot' marks where the swappable module sits. More always ends the bar. */
+  order: readonly (TabKey | 'slot')[];
+  /** The modules that can take the slot (the first by default); the expanded More shows the rest. Empty: no slot and no More. */
+  pool: readonly TabKey[];
+  /** The floating bar (the Osmosis app's) instead of the docked one. */
+  floating: boolean;
+  /** Floating only: Guide on its own round orb beside the bar. */
+  guide?: boolean;
+  /** Labels this bar shows instead of the tabs' own (e.g. Home for Overview). */
+  labels?: Partial<Record<TabKey, string>>;
+};
+
+const DOCKED_NAV: NavLayout = AI_FIRST_NAV
+  ? {
+      fixed: ['index', 'agents', 'guide'],
+      order: ['index', 'agents', 'guide', 'slot'],
+      pool: ['payments', 'settlements', 'support', 'refunds', 'disputes', 'reports'],
+      floating: false,
+    }
+  : {
+      fixed: ['index', 'payments', 'settlements'],
+      order: ['index', 'payments', 'settlements', 'slot'],
+      pool: ['agents', 'guide', 'support', 'refunds', 'disputes', 'reports'],
+      floating: false,
+    };
+
+/** Most items the floating bar holds (More included): five across the screen, four beside the Guide orb. */
+const FLOATING_CAPACITY = 5;
+const FLOATING_CAPACITY_WITH_GUIDE = 4;
+
+/**
+ * Trial for merchants with `floatingNav`, after the Osmosis app: a floating
+ * bar of Home (Overview), Agents, MPR, UPI and Support, with Guide on its own
+ * orb beside the bar. Merchants without Guide or Agents drop them. When the
+ * options fit the bar (five, or four beside the orb) they're all shown and
+ * there's no More; otherwise the bar leads with the first ones, then the
+ * swappable slot and More (an arrow), which grows the bar in place to the
+ * slot's other modules, swapping exactly as on the docked bar.
+ *   GD Electronics (Guide, Agents): Home, Agents, [MPR], More (UPI, Support) + orb.
+ *   Croma (Agents, no Guide): Home, Agents, MPR, UPI, Support.
+ *   Sangeetha Mobiles (neither): Home, MPR, UPI, Support.
+ *   Poorvika (Guide, no Agents): Home, MPR, UPI, Support + orb.
+ */
+function floatingLayout({ guide, agents }: { guide: boolean; agents: boolean }): NavLayout {
+  const options: TabKey[] = ['index', ...(agents ? (['agents'] as const) : []), 'reports', 'upi', 'support'];
+  const capacity = guide ? FLOATING_CAPACITY_WITH_GUIDE : FLOATING_CAPACITY;
+  const orb: TabKey[] = guide ? ['guide'] : [];
+  // As the Osmosis app's bar.
+  const labels = { index: 'Home' };
+  if (options.length <= capacity) return { fixed: [...options, ...orb], order: options, pool: [], floating: true, guide, labels };
+  // Room for the leading items, the slot and More.
+  const lead = options.slice(0, capacity - 2);
+  return { fixed: [...lead, ...orb], order: [...lead, 'slot'], pool: options.slice(capacity - 2), floating: true, guide, labels };
+}
+
+const FLOATING_LAYOUTS = new Map<string, NavLayout>();
+
+/** The current merchant's bar. */
+function useNavLayout() {
+  const floating = useBusiness().organisation.floatingNav;
+  if (!floating) return DOCKED_NAV;
+  const key = `${floating.guide}-${floating.agents}`;
+  if (!FLOATING_LAYOUTS.has(key)) FLOATING_LAYOUTS.set(key, floatingLayout(floating));
+  return FLOATING_LAYOUTS.get(key)!;
+}
+
+/** Whether the current merchant has Agents and Guide (every merchant except some on the floating bar trial). */
+export function useAiProducts() {
+  const floating = useBusiness().organisation.floatingNav;
+  return { agents: floating?.agents ?? true, guide: floating?.guide ?? true };
+}
 
 const ALL_TABS: readonly TabItem[] = TABS;
-const FIXED_TABS: readonly TabItem[] = FIXED_KEYS.map((key) => TABS.find((item) => item.key === key)!);
-const MODULE_TABS: readonly (TabItem & { key: TabKey })[] = TABS.filter((item) => !FIXED_KEYS.includes(item.key));
+const tabFor = (key: TabKey): TabItem => TABS.find((item) => item.key === key)!;
 
-const inBar = (key: TabKey | undefined): key is TabKey => !!key && BAR_MODULES.includes(key);
+const inBar = (layout: NavLayout, key: TabKey | undefined): key is TabKey => !!key && layout.pool.includes(key);
 
 /** Modules the bar doesn't offer: reached from the profile, so their header leads with Back (see profile-return). */
-const isProfilePage = (key: TabKey) => !FIXED_KEYS.includes(key) && !inBar(key);
+const isProfilePage = (layout: NavLayout, key: TabKey) => !layout.fixed.includes(key) && !inBar(layout, key);
 
 const OVERFLOW_TITLE = 'More';
 
@@ -99,10 +169,10 @@ const OVERFLOW_TITLE = 'More';
 const NavBarHeightContext = createContext<(height: number) => void>(() => {});
 
 /** The module in the navigation bar's fourth slot, shared by every tab's bar. */
-const ModuleSlotContext = createContext<{ slot: ModuleKey; setSlot: (key: ModuleKey) => void }>({ slot: DEFAULT_SLOT, setSlot: () => {} });
+const ModuleSlotContext = createContext<{ slot: ModuleKey; setSlot: (key: ModuleKey) => void }>({ slot: DOCKED_NAV.pool[0], setSlot: () => {} });
 
 function moduleAt(pathname: string) {
-  return MODULE_TABS.find((item) => item.href === pathname)?.key;
+  return TABS.find((item) => item.href === pathname)?.key;
 }
 
 /**
@@ -172,16 +242,17 @@ function Shell() {
     });
     return () => subscription.remove();
   });
+  const navLayout = useNavLayout();
   const [slot, setSlot] = useState<ModuleKey>(() => {
     const opened = moduleAt(pathname);
-    return inBar(opened) ? opened : DEFAULT_SLOT;
+    return inBar(navLayout, opened) ? opened : (navLayout.pool[0] ?? 'index');
   });
   // Opening a module by any route (e.g. an Overview quick action) also puts it in the slot.
   const [lastPathname, setLastPathname] = useState(pathname);
   if (pathname !== lastPathname) {
     setLastPathname(pathname);
     const opened = moduleAt(pathname);
-    if (inBar(opened)) setSlot(opened);
+    if (inBar(navLayout, opened)) setSlot(opened);
     // Left the profile's page some other way (not its Back): the profile is done with too.
     if (profilePage && pathname !== profilePage && !pathname.startsWith(`${profilePage}/`)) {
       setProfilePage(null);
@@ -312,10 +383,12 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
   const reportNavBarHeight = useContext(NavBarHeightContext);
   const { slot, setSlot } = useContext(ModuleSlotContext);
   const headerActions = useHeaderActionsStore();
-  const item: TabItem = ALL_TABS.find((entry) => entry.key === tab) ?? FIXED_TABS[0];
+  const item: TabItem = ALL_TABS.find((entry) => entry.key === tab) ?? tabFor('index');
+  const navLayout = useNavLayout();
+  const aiProducts = useAiProducts();
   const [navHeight, setNavHeight] = useState(0);
   // Pages opened from the profile (devices, stores, users, payment links) are inner pages: Back, no navigation bar.
-  const showNav = !isProfilePage(tab);
+  const showNav = !isProfilePage(navLayout, tab);
   const bottomInset = useSafeAreaInsets().bottom;
   useEffect(() => {
     if (!showNav) reportNavBarHeight(0);
@@ -363,11 +436,11 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
     setModulesOpen(true);
   };
   const navigateTo = (key: string) => {
-    const module = MODULE_TABS.find((entry) => entry.key === key);
-    if (modulesOpen && module) {
-      setSlot(module.key);
+    const module = key as TabKey;
+    if (modulesOpen && inBar(navLayout, module)) {
+      setSlot(module);
       setModulesOpen(false);
-      if (module.key !== tab) setPicked(module.key);
+      if (module !== tab) setPicked(module);
       return;
     }
     setModulesOpen(false);
@@ -378,7 +451,7 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
     setPicked(null);
     router.navigate(ALL_TABS.find((entry) => entry.key === picked)?.href ?? '/');
   };
-  const slotModule: TabItem = MODULE_TABS.find((entry) => entry.key === slot) ?? MODULE_TABS[0];
+  const slotModule: TabItem = tabFor(inBar(navLayout, slot) ? slot : (navLayout.pool[0] ?? 'index'));
   const slotItem = { ...slotModule, label: slotModule.slotLabel ?? slotModule.label };
   // Agents and Guide carry a dot until they've been opened once (see whats-new.tsx).
   const withDot = <T extends TabItem>(destination: T) => (nudges.isNew(destination.key) ? { ...destination, badge: true } : destination);
@@ -405,7 +478,7 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
       <AppHeader
         onLayout={header.onBarLayout}
         // Modules outside the bar (devices, stores, users, payment links) are opened from the profile: Back returns there.
-        leading={isProfilePage(tab) ? <BackButton fallbackHref="/" /> : undefined}
+        leading={isProfilePage(navLayout, tab) ? <BackButton fallbackHref="/" /> : undefined}
         user={tab === 'index' ? CURRENT_USER : undefined}
         title={title}
         context={scope ?? business.organisation.name}
@@ -440,13 +513,17 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
           pointerEvents="box-none"
           style={[styles.navBar, { transform: [{ translateY: hidden.interpolate({ inputRange: [0, 1], outputRange: [0, navHeight] }) }] }]}>
           <NavigationBar
-            destinations={[...FIXED_TABS, slotItem].map(withDot)}
+            destinations={navLayout.order.map((key) => (key === 'slot' ? slotItem : { ...tabFor(key), label: navLayout.labels?.[key] ?? tabFor(key).label })).map(withDot)}
             activeKey={picked ?? tab}
             onChange={navigateTo}
-            overflow={{
+            // The floating bar (GD Electronics' trial) keeps Guide on its own round button beside it.
+            variant={navLayout.floating ? 'floating' : 'docked'}
+            detached={navLayout.guide ? withDot(tabFor('guide')) : undefined}
+            // No More when every option fits the bar.
+            overflow={navLayout.pool.length === 0 ? undefined : {
               title: OVERFLOW_TITLE,
               // Five to a row, so the grid takes the bar's short labels too (e.g. Devices).
-              destinations: MODULE_TABS.filter((module) => inBar(module.key) && module.key !== slot).map((module: TabItem) =>
+              destinations: navLayout.pool.filter((key) => key !== slotModule.key).map(tabFor).map((module) =>
                 withDot({ ...module, label: module.slotLabel ?? module.label }),
               ),
               expanded: modulesOpen,
@@ -460,8 +537,8 @@ export function TabChrome({ tab, children }: { tab: TabKey; children: ReactNode 
           />
         </Animated.View>
       ) : null}
-      {/* Each launch, Overview (where the app always opens) announces Agents and Guide (see whats-new.tsx). */}
-      {showNav && tab === 'index' ? <WhatsNew /> : null}
+      {/* Each launch, Overview (where the app always opens) announces Agents and Guide (see whats-new.tsx), for merchants that have both. */}
+      {showNav && tab === 'index' && aiProducts.agents && aiProducts.guide ? <WhatsNew /> : null}
     </View>
   );
 }

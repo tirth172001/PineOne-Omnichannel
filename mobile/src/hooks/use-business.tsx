@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useContext, useMemo, useState } from 'react';
 
+import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { ORGANISATIONS, type Organisation, type Shop } from '@/data/businesses';
 import { CHANNEL_MULTIPLIER, CHANNEL_OPTIONS, type ChannelFilter, MIN_STORE_SCALE } from '@/data/overview';
@@ -59,7 +60,12 @@ const RELOAD_MS = 900;
  * In memory only for now.
  */
 export function BusinessProvider({ children }: { children: ReactNode }) {
-  const [organisationId, setOrganisationId] = useState(ORGANISATIONS[0].id);
+  // A launch link with `?merchant=<id>` opens on that organisation (e.g. links to GD Electronics' floating bar trial).
+  const [organisationId, setOrganisationId] = useState(() => {
+    const url = Linking.getLinkingURL();
+    const requested = url ? Linking.parse(url).queryParams?.merchant : null;
+    return ORGANISATIONS.find((org) => org.id === requested)?.id ?? ORGANISATIONS[0].id;
+  });
   // Starts on all stores (user decision).
   const [shopIds, setShopIds] = useState<string[]>([]);
   const [channel, setChannel] = useState<ChannelFilter>('all');
